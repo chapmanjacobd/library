@@ -1,3 +1,4 @@
+import sqlite3
 import argparse, os, random, re, textwrap, typing
 from pathlib import Path
 from shutil import which
@@ -79,8 +80,11 @@ def args_post(args, parser, create_db=False):
     if create_db:
         Path(args.database).touch()
         args.db = db_utils.connect(args)
-        with args.db.conn:  # type: ignore
-            args.db.conn.execute("PRAGMA application_id = 0x" + bytes("XKLB", "ASCII").hex())  # type: ignore
+        try:
+            with args.db.conn:  # type: ignore
+                args.db.conn.execute("PRAGMA application_id = 0x" + bytes("XKLB", "ASCII").hex())  # type: ignore
+        except sqlite3.OperationalError:
+            pass
     elif getattr(args, "database", False):
         args.db = db_utils.connect(args)
 

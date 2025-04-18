@@ -743,20 +743,29 @@ def torrents_info():
                 if not originally_stopped:
                     qbt_client.torrents_start(torrent_hashes=[t.hash])
 
-    if args.start is not None:
+    if args.start:
         print("Starting", len(torrents))
         qbt_client.torrents_start(torrent_hashes=torrent_hashes)
 
     if args.force_start is not None:
-        print("Force-starting", len(torrents))
+        if args.force_start:
+            print("Setting force-start", len(torrents))
+        else:
+            print("Setting normal-start", len(torrents))
         qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
 
     if args.download_limit is not None:
-        print("Setting DL limit", len(torrents))
+        if args.download_limit:
+            print("Setting DL limit", len(torrents))
+        else:
+            print("Removing DL limit", len(torrents))
         qbt_client.torrents_set_download_limit(args.download_limit or -1, torrent_hashes=torrent_hashes)
 
     if args.upload_limit is not None:
-        print("Setting UP limit", len(torrents))
+        if args.upload_limit:
+            print("Setting UP limit", len(torrents))
+        else:
+            print("Removing UP limit", len(torrents))
         qbt_client.torrents_set_upload_limit(args.upload_limit or -1, torrent_hashes=torrent_hashes)
 
     if args.check:
