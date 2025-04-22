@@ -2112,8 +2112,27 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--checking", action=argparse.BooleanOptionalAction, help="Include checking torrents")
     parser.add_argument("--queued", action=argparse.BooleanOptionalAction, help="Include queued torrents")
 
-    parser.add_argument("--complete", "--completed", action="store_true", help="Include completed torrents")
-    parser.add_argument("--incomplete", action="store_true", help="Include incomplete torrents")
+    parser.add_argument(
+        "--complete",
+        "--completed",
+        "--uploading",
+        "--upload",
+        "--up",
+        "--ul",
+        "--seeding",
+        action="store_true",
+        help="Include completed torrents",
+    )
+    parser.add_argument(
+        "--incomplete",
+        "--downloading",
+        "--download",
+        "--down",
+        "--dl",
+        "--leeching",
+        action="store_true",
+        help="Include incomplete torrents",
+    )
     parser.add_argument(
         "--any-exists", "--exists", action=argparse.BooleanOptionalAction, help="Include torrents with any file on-disk"
     )
@@ -2163,28 +2182,17 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--remaining", action="append", help="Include torrents with N bytes remaining")
     parser.add_argument("--downloaded", action="append", help="Include torrents with N bytes downloaded")
     parser.add_argument("--uploaded", action="append", help="Include torrents with N bytes uploaded")
+    parser.add_argument(
+        "--downloaded-session",
+        action="append",
+        help="Include torrents with N bytes downloaded during the current session",
+    )
+    parser.add_argument(
+        "--uploaded-session",
+        action="append",
+        help="Include torrents with N bytes uploaded during the current session",
+    )
     parser.add_argument("--ratio", action="append", help="Include torrents with N ratio")
-
-    parser.add_argument(
-        "--downloading",
-        "--download",
-        "--down",
-        "--dl",
-        "--leeching",
-        "--leech",
-        action="store_true",
-        help="Include downloading torrents",
-    )
-    parser.add_argument(
-        "--uploading",
-        "--upload",
-        "--up",
-        "--ul",
-        "--seeding",
-        "--seeds",
-        action="store_true",
-        help="Include uploading torrents",
-    )
 
     parser.add_argument("--file-counts", action="store_true", help="Include file counts column (a bit slow)")
     parser.add_argument("--trackers", action="store_true", help="Include tracker column")
@@ -2218,6 +2226,8 @@ def qBittorrent_torrents_post(args):
     args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
     args.downloaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded)
     args.uploaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded)
+    args.downloaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded_session)
+    args.uploaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded_session)
     args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
     args.file_count = sql_utils.parse_human_to_lambda(int, args.file_count)
 
