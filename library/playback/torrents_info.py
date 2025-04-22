@@ -112,13 +112,6 @@ def filter_torrents_by_activity(args, torrents):
     if args.incomplete:
         torrents = [t for t in torrents if not t.state_enum.is_complete]
 
-    if args.downloading and args.uploading:
-        return [t for t in torrents if t.downloaded_session > 0 and t.uploaded_session > 0]
-
-    if args.downloading:
-        torrents = [t for t in torrents if not t.state_enum.is_complete]
-    elif args.uploading:
-        torrents = [t for t in torrents if t.state_enum.is_complete]
     if args.active:
         torrents = [t for t in torrents if t.is_active]
     if args.inactive:
@@ -185,6 +178,10 @@ def filter_torrents_by_criteria(args, torrents):
         torrents = [t for t in torrents if args.downloaded(t.downloaded)]
     if "uploaded" not in args.defaults:
         torrents = [t for t in torrents if args.uploaded(t.uploaded)]
+    if "downloaded_session" not in args.defaults:
+        torrents = [t for t in torrents if args.downloaded_session(t.downloaded_session)]
+    if "uploaded_session" not in args.defaults:
+        torrents = [t for t in torrents if args.uploaded_session(t.uploaded_session)]
     if "remaining" not in args.defaults:
         torrents = [t for t in torrents if args.remaining(t.amount_left)]
 
