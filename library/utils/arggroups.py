@@ -1,5 +1,4 @@
-import sqlite3
-import argparse, os, random, re, textwrap, typing
+import argparse, os, random, re, sqlite3, textwrap, typing
 from pathlib import Path
 from shutil import which
 
