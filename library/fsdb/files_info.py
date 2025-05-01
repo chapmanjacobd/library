@@ -90,7 +90,7 @@ def filter_files_by_criteria(args, files):
     return files
 
 
-def filesystem(defaults_override=None):
+def files_info(defaults_override=None):
     args = parse_args(defaults_override)
     files = get_data(args)
 
