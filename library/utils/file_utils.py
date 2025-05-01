@@ -1,5 +1,6 @@
 import errno, mimetypes, os, shlex, shutil, subprocess, tempfile, time
 from collections import Counter, namedtuple
+from contextlib import suppress
 from fnmatch import fnmatch
 from functools import wraps
 from io import StringIO
@@ -776,13 +777,30 @@ def read_file_to_dataframes(
     return dfs
 
 
-def get_filesize(d):
+def get_file_stats(d):
     try:
         stat = Path(d["path"]).stat()
         d["size"] = stat.st_size
+
         d["time_deleted"] = 0
+        d["time_created"] = int(stat.st_ctime)
+        d["time_modified"] = int(stat.st_mtime)
+        if stat.st_atime and stat.st_atime != stat.st_mtime:
+            d["time_accessed"] = int(stat.st_atime)
     except FileNotFoundError:
         d["size"] = None
+        if "time_deleted" not in d:
+            d["time_deleted"] = consts.APPLICATION_START
+
+    return d
+
+
+def get_file_type(d):
+    try:
+        with suppress(TimeoutError):
+            d["type"] = detect_mimetype(d["path"])
+    except FileNotFoundError:
+        d["type"] = None
         if "time_deleted" not in d:
             d["time_deleted"] = consts.APPLICATION_START
 

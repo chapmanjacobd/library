@@ -208,6 +208,7 @@ modules = {
     "library.folders.mount_stats.disk_free": ["df", "free"],
     "library.folders.mount_stats.mount_stats": ["mu", "mount-usage"],
     "library.folders.big_dirs.big_dirs": ["large-folders"],
+    "library.fsdb.files_info.filesystem": ["fs", "files"],
     "library.fsdb.disk_usage.disk_usage": ["du", "usage"],
     "library.fsdb.disk_usage.extensions": ["exts"],
     "library.fsdb.search_db.search_db": ["s", "sdb", "search-dbs"],
@@ -237,8 +238,7 @@ modules = {
     "library.multidb.merge_dbs.merge_dbs": ["merge-db"],
     "library.multidb.allocate_torrents.allocate_torrents": [],
     "library.playback.links_open.links_open": ["open-links"],
-    "library.playback.play_actions.media": [],
-    "library.playback.play_actions.filesystem": ["fs", "open"],
+    "library.playback.play_actions.media": ["db", "open"],
     "library.playback.play_actions.listen": ["lt", "tubelisten", "tl"],
     "library.playback.play_actions.read": ["books", "docs"],
     "library.playback.play_actions.view": ["images", "see", "look"],
@@ -285,6 +285,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     # this needs to stay inside the function to prevent side-effects during testing
     known_subcommands = [
         "fs",
+        "db",
         "media",
         "open",
         "table",

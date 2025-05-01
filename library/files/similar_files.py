@@ -98,7 +98,7 @@ def filter_groups_by_size(args, groups):
 def similar_files():
     args = parse_args()
     media = list(file_utils.gen_d(args))
-    media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
+    media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
 
     groups: list[dict] = []
     if args.filter_sizes or args.filter_durations:

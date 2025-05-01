@@ -685,6 +685,14 @@ disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--d
         4 file extensions
 """
 
+
+file_info = """library files-info
+
+    List files and filter by specific file types
+
+        library fs
+"""
+
 christen = """library christen [--run]
 
     Rename files to be somewhat normalized

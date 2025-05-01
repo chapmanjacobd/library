@@ -105,7 +105,7 @@ def get_data(args) -> list[dict]:
         if args.hide_deleted:
             args.paths = [p for p in args.paths if os.path.exists(p)]
         media = file_utils.gen_d(args)
-        media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
+        media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
 
     if not media:
         processes.no_media_found()
@@ -142,7 +142,8 @@ def disk_usage(defaults_override=None):
     )
     if not args.to_json:
         for d in summary:
-            print(f"{d['path']}={strings.file_size(d['size'])} count={d['count']}")
+            if "count" in d:
+                print(f"{d['path']}={strings.file_size(d['size'])} count={d['count']}")
 
 
 def extensions():

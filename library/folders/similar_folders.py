@@ -155,7 +155,7 @@ def filter_groups_by_numbers(args, groups):
 def similar_folders():
     args = parse_args()
     media = file_utils.gen_d(args)
-    media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
+    media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
     media = big_dirs.group_files_by_parent(args, media)
     media = big_dirs.process_big_dirs(args, media)
 
