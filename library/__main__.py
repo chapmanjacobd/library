@@ -5,7 +5,7 @@ from tabulate import tabulate
 from library.utils import argparse_utils, iterables
 from library.utils.log_utils import log
 
-__version__ = "3.0.087"
+__version__ = "3.0.088"
 
 progs = {
     "Create database subcommands": {
@@ -57,6 +57,7 @@ progs = {
         "christen": "Clean file paths",
         "sample_hash": "Calculate a hash based on small file segments",
         "sample_compare": "Compare files using sample-hash and other shortcuts",
+        "files_info": "Find files by mimetype and size",
         "similar_files": "Find similar files based on filename and size",
         "llm_map": "Run LLMs across multiple files",
     },

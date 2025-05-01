@@ -6,7 +6,7 @@ from library.utils import arggroups, argparse_utils, consts, file_utils, iterabl
 
 
 def parse_args(defaults_override=None):
-    parser = argparse_utils.ArgumentParser(usage=usage.file_info)
+    parser = argparse_utils.ArgumentParser(usage=usage.files_info)
     arggroups.files(parser)
     arggroups.sql_fs(parser)
     parser.set_defaults(hide_deleted=True)
