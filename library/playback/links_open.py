@@ -1,9 +1,11 @@
 import argparse
+from typing import Counter
 
 from library import usage
 from library.mediadb import db_history, db_media
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, consts, devices, processes, sqlgroups, web
+from library.utils.path_utils import domain_from_url
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.related(parser)
 
     parser.add_argument("--browser", nargs="?", const="default")
+    parser.add_argument("--max-same-domain", type=int, help="Limit to N tabs per domain")
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -98,6 +101,10 @@ def links_open() -> None:
         from library.text import cluster_sort
 
         media = cluster_sort.sort_dicts(args, media)
+
+    if args.max_same_domain and args.max_same_domain > 0:
+        domain_counts = Counter(domain_from_url(d["path"]) for d in media)
+        media = [d for d in media if domain_counts[domain_from_url(d["path"])] <= args.max_same_domain]
 
     if not "a" in args.print:
         if is_whole_db_query:
