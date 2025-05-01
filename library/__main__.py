@@ -5,7 +5,7 @@ from tabulate import tabulate
 from library.utils import argparse_utils, iterables
 from library.utils.log_utils import log
 
-__version__ = "3.0.088"
+__version__ = "3.0.089"
 
 progs = {
     "Create database subcommands": {
@@ -209,7 +209,7 @@ modules = {
     "library.folders.mount_stats.disk_free": ["df", "free"],
     "library.folders.mount_stats.mount_stats": ["mu", "mount-usage"],
     "library.folders.big_dirs.big_dirs": ["large-folders"],
-    "library.fsdb.files_info.filesystem": ["fs", "files"],
+    "library.fsdb.files_info.files_info": ["fs", "files", "filesystem"],
     "library.fsdb.disk_usage.disk_usage": ["du", "usage"],
     "library.fsdb.disk_usage.extensions": ["exts"],
     "library.fsdb.search_db.search_db": ["s", "sdb", "search-dbs"],

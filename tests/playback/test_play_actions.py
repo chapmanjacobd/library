@@ -105,7 +105,7 @@ def test_flags_covered(o):
 @mock.patch("library.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize(("flags", "count", "first"), fs_flags)
 def test_fs_flags(play_mocked, flags, count, first):
-    for subcommand in ["fs", "media"]:
+    for subcommand in ["media"]:
         if count == 0:
             with pytest.raises(SystemExit):
                 lb([subcommand, v_db, *shlex.split(flags)])
@@ -153,7 +153,7 @@ printing_flags = [
 @mock.patch("library.playback.media_printer.media_printer", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize("flags", printing_flags)
 def test_print_flags(print_mocked, flags):
-    for subcommand in ["fs", "media"]:
+    for subcommand in ["media"]:
         lb([subcommand, v_db, *shlex.split(flags)])
         out = print_mocked.call_args[0][1]
         assert out is not None, f"Test failed for {flags}"
