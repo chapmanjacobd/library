@@ -500,11 +500,6 @@ def process_playqueue(args) -> None:
         return None
 
 
-def filesystem() -> None:
-    args = parse_args(SC.filesystem)
-    process_playqueue(args)
-
-
 def media() -> None:
     args = parse_args(SC.media)
     process_playqueue(args)

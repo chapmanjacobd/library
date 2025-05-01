@@ -132,7 +132,7 @@ def collect_media(args) -> list[dict]:
             media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
     else:
         media = file_utils.gen_d(args, default_exts)
-        media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
+        media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
     return media
 
 

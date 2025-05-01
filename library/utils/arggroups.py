@@ -2251,3 +2251,31 @@ def qBittorrent_torrents_post(args):
         if args.all or args.torrent_search or args.file_search:
             args.active = False
             args.inactive = False
+
+
+def files(parent_parser):
+    parser = parent_parser.add_argument_group("Files")
+    # parser.add_argument("--errored", action=argparse.BooleanOptionalAction, help="Include files with read errors")
+    # parser.add_argument(
+    #     "--opened",
+    #     action=argparse.BooleanOptionalAction,
+    #     help="Include files with files currently in use by other processes",
+    # )
+
+    parser.add_argument("--type", action=argparse_utils.ArgparseList, help="The type of files to include")
+    parser.add_argument("--no-type", action=argparse_utils.ArgparseList, help="The type of files to exclude")
+
+    parser.add_argument("--time-created", "--time-added", action="append", help="Include files with N time since added")
+    parser.add_argument(
+        "--time-modified", "--time-stalled", action="append", help="Include files with N time since last activity"
+    )
+
+
+def files_post(args):
+    args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
+    args.time_modified = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_modified)
+
+    if args.type:
+        args.type = set(args.type)
+    if args.no_type:
+        args.no_type = set(args.no_type)

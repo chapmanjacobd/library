@@ -149,7 +149,7 @@ def collect_media(args) -> list[dict]:
         if args.hide_deleted:
             args.paths = [p for p in args.paths if os.path.exists(p)]
         media = file_utils.gen_d(args)
-        media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
+        media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
     return media
 
 
