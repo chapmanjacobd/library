@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.087; 100 subcommands)
+    library (v3.0.088; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -195,6 +195,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ sample-hash    │ Calculate a hash based on small file segments       │
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ sample-compare │ Compare files using sample-hash and other shortcuts │
+    ├────────────────┼─────────────────────────────────────────────────────┤
+    │ files-info     │ Find files by mimetype and size                     │
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ similar-files  │ Find similar files based on filename and size       │
     ├────────────────┼─────────────────────────────────────────────────────┤
@@ -1720,6 +1722,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     usage: library sample-compare [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Convenience subcommand to compare multiple files using sample-hash
+
+
+</details>
+
+###### files-info
+
+<details><summary>Find files by mimetype and size</summary>
+
+    $ library files-info -h
+    usage: library files-info
+
+    List files and filter by specific file types
+
+        library fs
 
 
 </details>

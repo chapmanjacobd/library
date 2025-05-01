@@ -686,7 +686,7 @@ disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--d
 """
 
 
-file_info = """library files-info
+files_info = """library files-info
 
     List files and filter by specific file types
 
