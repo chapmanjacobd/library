@@ -12,7 +12,7 @@ dependencies = [
   "humanize",
   "ipython",
   "lxml",
-  "Markdown",
+  "markdown-it-py",
   "mutagen",
   "natsort",
   "praw",
