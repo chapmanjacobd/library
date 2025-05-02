@@ -40,7 +40,7 @@ def get_page_links(path, text) -> tuple[set, set]:
 
 
 def reddit_selftext() -> None:
-    from markdown import markdown
+    from markdown_it import MarkdownIt
 
     args = parse_args()
     m_columns = db_utils.columns(args, "media")
@@ -56,8 +56,10 @@ def reddit_selftext() -> None:
         ),
     )
 
+    md = MarkdownIt()
+
     for d in reddit_posts:
-        html_data = markdown(d["selftext"])
+        html_data = md.render(d["selftext"])
         internal_links, external_links = get_page_links(d["path"], html_data)
         if internal_links:
             for i_link in internal_links:
