@@ -197,7 +197,12 @@ If you don't know the exact name of your chromecast group run `catt scan`
     )
     arggroups.debug(parser)
 
-    arggroups.database(parser)
+    db_parser = parser.add_argument_group("Database")
+    db_parser.add_argument("--db", "-db", help="Positional argument override")
+    db_parser.add_argument("paths", nargs="+", action=argparse_utils.ArgparseDBOrPaths)
+    arggroups.capability_soft_delete(parser)
+    arggroups.capability_delete(parser)
+
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     for i in range(0, 255):
@@ -345,21 +350,24 @@ def filter_total_size(media, max_size):
 
 
 def process_playqueue(args) -> None:
-    db_history.create(args)
+    if args.database:
+        db_history.create(args)
 
-    if args.action == SC.filesystem:
-        query, bindings = sqlgroups.fs_sql(args, args.limit)
-    else:
-        query, bindings = sqlgroups.media_sql(args)
+        if args.action == SC.filesystem:
+            query, bindings = sqlgroups.fs_sql(args, args.limit)
+        else:
+            query, bindings = sqlgroups.media_sql(args)
 
-    t = Timer()
-    if args.playlists:
-        args.playlists = [p if p.startswith("http") else str(Path(p).resolve()) for p in args.playlists]
-        media = db_media.get_playlist_media(args, args.playlists)
+        t = Timer()
+        if args.playlists:
+            args.playlists = [p if p.startswith("http") else str(Path(p).resolve()) for p in args.playlists]
+            media = db_media.get_playlist_media(args, args.playlists)
+        else:
+            media = list(args.db.query(query, bindings))
+            log.debug("len(media_sql) = %s", len(media))
+        log.debug("query: %s", t.elapsed())
     else:
-        media = list(args.db.query(query, bindings))
-        log.debug("len(media_sql) = %s", len(media))
-    log.debug("query: %s", t.elapsed())
+        media = file_or_folder_media(args, args.paths)
 
     if args.fetch_siblings:
         media = db_media.get_sibling_media(args, media)

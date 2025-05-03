@@ -103,9 +103,11 @@ class ArgparseDBOrPaths(argparse.Action):
                 paths = None
             else:
                 paths = [s.strip() for s in paths]
-        elif values is not None and len(values) == 1 and is_sqlite(values[0]):
+        elif values and is_sqlite(values[0]):
             database = values[0]
             paths = None
+            if len(values) > 1:
+                setattr(namespace, "include", values[1:])
         else:
             paths = values
         setattr(namespace, "database", database)

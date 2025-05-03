@@ -61,7 +61,9 @@ def connect(args, conn=None, **kwargs):
     if db_override and isinstance(db_override, str):
         args.database = db_override
 
-    if conn is None and not Path(args.database).exists() and ":memory:" not in args.database:
+    if conn is None and args.database is None:
+        return None
+    elif conn is None and not Path(args.database).exists() and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)
 
