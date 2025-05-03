@@ -454,23 +454,50 @@ def timezone(s):
         raise SystemExit(3)
 
 
-def glob_match(search_terms, texts):
+def glob_match_any(search_terms, texts):
     if isinstance(search_terms, str):
         search_terms = [search_terms]
     if isinstance(texts, str):
         texts = [texts]
 
-    search_pattern = "*" + "*".join(s.casefold() for s in search_terms) + "*"
+    if not search_terms or not texts:
+        return False
 
-    for text in texts:
-        if not text:
-            continue
+    texts = [str(t).casefold() for t in texts if t]
 
-        text = str(text).casefold()
-        if fnmatch(text, search_pattern):
-            return True
+    for search_term in search_terms:
+        search_pattern = "*" + str(search_term).casefold() + "*"
+        for text in texts:
+            if fnmatch(text, search_pattern):
+                return True
 
     return False
+
+
+def glob_match_all(search_terms, texts):
+    if isinstance(search_terms, str):
+        search_terms = [search_terms]
+    if isinstance(texts, str):
+        texts = [texts]
+
+    if not search_terms or not texts:
+        return False
+
+    processed_texts = [str(t).casefold() for t in texts if t]
+
+    for search_term in search_terms:
+        search_pattern = "*" + str(search_term).casefold() + "*"
+        found_match = False
+        for text in processed_texts:
+            if fnmatch(text, search_pattern):
+                found_match = True
+                break
+
+        # if after checking all texts, no match was found for the specific term
+        if not found_match:
+            return False
+
+    return True
 
 
 def output_filter(ignore_pattern: re.Pattern):

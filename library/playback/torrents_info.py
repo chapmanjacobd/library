@@ -195,18 +195,20 @@ def filter_torrents_by_criteria(args, torrents):
         torrents = [
             t
             for t in torrents
-            if strings.glob_match(args.torrent_search, [t.name, t.comment, t.download_path, t.save_path, t.hash])
+            if strings.glob_match_all(args.torrent_search, [t.name, t.comment, t.download_path, t.save_path, t.hash])
         ]
     if args.torrent_exclude:
         torrents = [
             t
             for t in torrents
-            if not strings.glob_match(args.torrent_exclude, [t.name, t.comment, t.download_path, t.save_path, t.hash])
+            if not strings.glob_match_any(
+                args.torrent_exclude, [t.name, t.comment, t.download_path, t.save_path, t.hash]
+            )
         ]
     if args.file_search:
-        torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
+        torrents = [t for t in torrents if strings.glob_match_all(args.file_search, [f.name for f in t.files])]
     if args.file_exclude:
-        torrents = [t for t in torrents if not strings.glob_match(args.file_exclude, [f.name for f in t.files])]
+        torrents = [t for t in torrents if not strings.glob_match_any(args.file_exclude, [f.name for f in t.files])]
 
     if args.tracker:
         trackers = set(args.tracker)
@@ -518,7 +520,7 @@ def torrents_info():
 
                 if args.file_search:
                     files = t.files
-                    files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
+                    files = [f for f in t.files if strings.glob_match_all(args.file_search, [f.name])]
 
                     print(t.name)
                     printing.extended_view(files)
@@ -583,7 +585,7 @@ def torrents_info():
                     }
                 if args.file_search:
                     files = t.files
-                    files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
+                    files = [f for f in t.files if strings.glob_match_all(args.file_search, [f.name])]
 
                     print(t.name)
                     printing.extended_view(files)
