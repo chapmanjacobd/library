@@ -144,7 +144,7 @@ def post_act(
 
     player_exit_code = getattr(player_process, "returncode", None) or 0
 
-    if record_history and player_exit_code == 0:
+    if record_history and player_exit_code == 0 and args.db:
         db_history.add(args, [media_file], mark_done=True)
 
     if 0 < player_exit_code < 5 and not args.ignore_errors:

@@ -685,7 +685,7 @@ def play(args, m, media_len) -> None:
             media_duration=m.get("duration"),
         )
         log.debug("save_playhead %s", playhead)
-        if playhead:
+        if playhead and args.db:
             db_history.add(args, [m["original_path"]], playhead=playhead)
 
 
