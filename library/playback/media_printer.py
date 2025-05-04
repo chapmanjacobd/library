@@ -189,7 +189,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
             )  # TODO where= p.extractor_key, or try to use SQL
 
     if not any([args.to_json, "f" in print_args]):
-        for k, v in list(media[0].items()):
+        for k in set.union(*(set(d.keys()) for d in media)):
             if k.endswith("size"):
                 printing.col_filesize(media, k)
             elif k.endswith("duration") or k in ("playhead",):
@@ -207,10 +207,6 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
             elif k.startswith("percent") or k.endswith("ratio"):
                 for d in media:
                     d[k] = strings.percent(d[k])
-            # elif isinstance(v, (int, float)):
-            #     for d in media:
-            #         if d[k] is not None:
-            #             d[k] = f'{d[k]:n}'  # TODO add locale comma separators
 
     media = iterables.list_dict_filter_bool(media)
 
