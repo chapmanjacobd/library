@@ -636,12 +636,12 @@ def sql_fs_post(args, table_prefix="m.") -> None:
 
     if args.local_media_only:
         args.filter_sql.append('AND path not LIKE "http%"')
-        if "time_downloaded" in m_columns:
+        if args.db and "time_downloaded" in m_columns:
             args.filter_sql.append("AND COALESCE(time_downloaded,1) != 0")
 
     if args.online_media_only:
         args.filter_sql.append('AND path LIKE "http%"')
-        if "time_downloaded" in m_columns:
+        if args.db and "time_downloaded" in m_columns:
             args.filter_sql.append("AND COALESCE(time_downloaded,0) = 0")
 
     if args.sizes:
@@ -730,7 +730,7 @@ def sql_fs_post(args, table_prefix="m.") -> None:
     if args.only_deleted:
         args.hide_deleted = False  # --deleted overrides the --hide-deleted default
 
-    if "time_deleted" not in m_columns:
+    if args.db and "time_deleted" not in m_columns:
         args.hide_deleted = False
         args.only_deleted = False
 

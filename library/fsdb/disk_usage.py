@@ -84,7 +84,9 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
 
 
 def load_subset(args):
-    if not args.group_by_extensions and args.depth == 0:
+    if len(args.data) <= 2:
+        args.subset = args.data
+    elif args.depth == 0 and not args.group_by_extensions:
         while len(args.subset) < 2:
             args.depth += 1
             args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
