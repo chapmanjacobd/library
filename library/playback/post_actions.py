@@ -32,7 +32,7 @@ def mv_to_keep_folder(args, src: str) -> str:
     if src == dest:
         return src
 
-    if dest and hasattr(args, "db"):
+    if dest and hasattr(args, "db") and args.db:
         with args.db.conn:
             args.db.conn.execute("DELETE FROM media where path = ?", [dest])  # remove any existing records
             args.db.conn.execute("UPDATE media set path = ? where path = ?", [dest, src])
@@ -51,7 +51,7 @@ def delete_media(args, paths) -> int:
         else:
             file_utils.trash(args, p, detach=len(paths) < 30)
 
-    if hasattr(args, "db"):
+    if hasattr(args, "db") and args.db:
         return db_media.mark_media_deleted(args, paths)
     else:
         return len(paths)

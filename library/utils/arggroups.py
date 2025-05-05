@@ -1428,6 +1428,14 @@ Choose ONE of the following options:
     )
 
 
+def media_scan(parent_parser):
+    parser = parent_parser.add_argument_group("Media Scan")
+    parser.add_argument("--ocr", "--OCR", action="store_true")
+    parser.add_argument("--speech-recognition", "--speech", action="store_true")
+    parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true")
+    parser.add_argument("--hash", action="store_true")
+
+
 def process_ffmpeg(parent_parser):
     parser = parent_parser.add_argument_group("FFMPEG Processing")
     parser.add_argument(

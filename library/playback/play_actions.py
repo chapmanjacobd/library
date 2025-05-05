@@ -2,13 +2,13 @@ import argparse, os
 from pathlib import Path
 
 from library import usage
-from library.createdb import tube_backend
+from library.createdb import fs_add, tube_backend
 from library.folders import big_dirs
 from library.mediadb import db_history, db_media
 from library.playback import media_player, media_printer
 from library.tablefiles import mcda
 from library.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, nums, processes, sqlgroups
-from library.utils.consts import SC
+from library.utils.consts import SC, DBType
 from library.utils.log_utils import Timer, log
 
 
@@ -195,6 +195,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
     parser.add_argument(
         "--delete-unplayable", action="store_true", help="Delete from disk any media which does not open successfully"
     )
+    arggroups.media_scan(parser)
     arggroups.debug(parser)
 
     db_parser = parser.add_argument_group("Database")
@@ -382,10 +383,18 @@ def process_playqueue(args) -> None:
 
         path = " ".join(args.include)
         media = db_media.get_playlist_media(args, [path])
-        if not media:
+        if not media and os.path.exists(path):
             media = db_media.get_dir_media(args, [path])
-        if not media:
-            media = file_or_folder_media(args, [path])
+        if not media and os.path.exists(args.include[0]):
+            args.scan_all_files = False
+            args.force = False
+            args.process = False
+            args.check_corrupt = False
+            for path in args.include:
+                file_count = fs_add.scan_path(args, path)
+                log.info("Imported %s media", file_count)
+                process_playqueue(args)
+            return
         if not media:
             processes.no_media_found()
 
@@ -510,24 +519,29 @@ def process_playqueue(args) -> None:
 
 def media() -> None:
     args = parse_args(SC.media)
+    args.profiles = [DBType.audio, DBType.image, DBType.video, DBType.text]
     process_playqueue(args)
 
 
 def watch() -> None:
     args = parse_args(SC.watch, default_chromecast="Living Room TV")
+    args.profiles = [DBType.video]
     process_playqueue(args)
 
 
 def listen() -> None:
     args = parse_args(SC.listen, default_chromecast="Xylo and Orchestra")
+    args.profiles = [DBType.audio]
     process_playqueue(args)
 
 
 def read() -> None:
     args = parse_args(SC.read)
+    args.profiles = [DBType.text]
     process_playqueue(args)
 
 
 def view() -> None:
     args = parse_args(SC.view)
+    args.profiles = [DBType.image]
     process_playqueue(args)
