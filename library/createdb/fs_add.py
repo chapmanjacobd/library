@@ -29,13 +29,9 @@ def parse_args(action, usage):
 
     parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
 
-    parser.add_argument("--ocr", "--OCR", action="store_true")
-    parser.add_argument("--speech-recognition", "--speech", action="store_true")
-    parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true")
-
-    parser.add_argument("--hash", action="store_true")
-
+    arggroups.media_scan(parser)
     parser.add_argument("--process", action="store_true")
+
     arggroups.clobber(parser)
     arggroups.process_ffmpeg(parser)
 
