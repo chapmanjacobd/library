@@ -10,7 +10,7 @@ dependencies = [
   "wcwidth",
   "gallery-dl",
   "humanize",
-  "ipython",
+  "ipython>=9.0.0",
   "lxml",
   "markdown-it-py",
   "mutagen",
