@@ -55,8 +55,7 @@ deluxe = [
   "pyvirtualdisplay",
   "qbittorrent-api",
   "scikit-learn",
-  "selenium-wire",
-  "subliminal",
+  "selenium",
   "torrentool",
   "tqdm",
   "wordllama>=0.2.7.post0",
@@ -68,6 +67,8 @@ fat = [
   "opencv-python",
   "orjson",
   "pypdf_table_extraction",
+  "selenium-wire",
+  "subliminal",
   "textract-py3==2.0.1",
 ]
 
