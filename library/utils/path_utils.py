@@ -267,7 +267,9 @@ def mountpoint(path):
 
 def relative_from_mountpoint(src: Union[str, Path], dest: Union[str, Path]) -> Path:
     dest = Path(dest)
-    src = Path(src).resolve()
+    src = Path(src)
+    if not src.is_absolute():
+        src = src.resolve()
 
     mount_path = Path(mountpoint(src))
     relative_src_parts = src.parts[len(mount_path.parts) :]
