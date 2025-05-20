@@ -34,7 +34,7 @@ def is_animation_from_probe(probe) -> bool:
     if probe.audio_streams:
         return True
     for stream in probe.video_streams:
-        frames = nums.safe_int(stream["nb_frames"])
+        frames = nums.safe_int(stream.get("nb_frames"))
         if frames is None:
             r = processes.cmd(
                 "ffprobe",
