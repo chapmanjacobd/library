@@ -59,6 +59,11 @@ def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, low
     stem = ftfy.fix_text(stem, explain=False)
     # log.debug("ftfy %s %s", parent, stem)
 
+    # clean any downcasted chars
+    parent = [strings.clean_string(part) for part in path.parent.parts]
+    stem = strings.clean_string(path.stem)
+    # log.debug("cleaned %s %s", parent, stem)
+
     parent = [strings.remove_prefixes(part, [" ", "-"]) for part in parent]
     # log.debug("parent_prefixes %s %s", parent, stem)
     parent = [strings.remove_suffixes(part, [" ", "-", "_", "."]) for part in parent]
