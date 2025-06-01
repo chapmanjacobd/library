@@ -135,6 +135,7 @@ def clean_string(p) -> str:
         .replace('"', "")
         .replace(")", "")
         .replace(":", "")
+        .replace("：", "")
         .replace(">", "")
         .replace("<", "")
         .replace("\\", " ")
