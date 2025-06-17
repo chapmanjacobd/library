@@ -154,7 +154,17 @@ def filter_torrents_by_criteria(args, torrents):
             and args.time_completed(consts.APPLICATION_START - t.completion_on)
         ]
     if "time_remaining" not in args.defaults:
-        torrents = [t for t in torrents if t.eta and t.eta < 8640000 and args.time_remaining(t.eta)]
+        torrents = [
+            t
+            for t in torrents
+            if (not t.state_enum.is_complete and t.eta and t.eta < 8640000 and args.time_remaining(t.eta))
+            or (
+                t.state_enum.is_complete
+                and t.upspeed
+                and t.upspeed > 500
+                and args.time_remaining(t.total_size / t.upspeed)
+            )
+        ]
     if "time_unseeded" not in args.defaults:
         torrents = [
             t
@@ -320,6 +330,12 @@ def print_torrents_by_tracker(args, torrents):
 def agg_torrents_state(args, state, state_torrents):
     remaining = sum(t.amount_left for t in state_torrents)
     etas = [t.eta for t in state_torrents if t.eta < 8640000]
+    if not etas:
+        etas = [
+            t.total_size / t.upspeed
+            for t in state_torrents
+            if t.state_enum.is_complete and t.upspeed and t.upspeed > 500
+        ]
     dl_speed = sum(t.dlspeed for t in state_torrents)
     up_speed = sum(t.upspeed for t in state_torrents)
     downloaded = sum(t.downloaded for t in state_torrents)
@@ -589,6 +605,9 @@ def torrents_info():
                         "session": strings.file_size(t.uploaded_session),
                         "uploaded": strings.file_size(t.uploaded),
                         "speed": strings.file_size(t.upspeed) + "/s" if t.upspeed else None,
+                        "eta": (
+                            strings.duration_short(t.total_size / t.upspeed) if t.upspeed and t.upspeed > 500 else None
+                        ),
                     }
                 if args.file_search:
                     files = t.files
