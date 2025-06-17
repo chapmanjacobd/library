@@ -2107,11 +2107,9 @@ def torrents_start(parser):
 
 def qBittorrent_torrents(parent_parser):
     parser = parent_parser.add_argument_group("qBittorrent Torrents")
-    parser.add_argument("--all", action="store_true", help="Include active and inactive torrents")
-    parser.add_argument(
-        "--active", action="store_true", help="Include active torrents (default when not --all or --inactive)"
-    )
+    parser.add_argument("--active", action="store_true", help="Include active torrents")
     parser.add_argument("--inactive", "--dead", action="store_true", help="Include inactive torrents")
+    parser.add_argument("--now", action="store_true", help="Include currently UL/DL torrents")
 
     parser.add_argument("--stopped", "--paused", action=argparse.BooleanOptionalAction, help="Include stopped torrents")
     parser.add_argument("--missing", action=argparse.BooleanOptionalAction, help="Include missing torrents")
@@ -2261,7 +2259,7 @@ def qBittorrent_torrents_post(args):
     args.progress = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.progress)
 
     if set(["active", "inactive"]).issubset(args.defaults.keys()):
-        if args.all or args.torrent_search or args.file_search:
+        if args.torrent_search or args.file_search:
             args.active = False
             args.inactive = False
 
