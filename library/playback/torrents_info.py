@@ -116,6 +116,12 @@ def filter_torrents_by_activity(args, torrents):
         torrents = [t for t in torrents if t.is_active]
     if args.inactive:
         torrents = [t for t in torrents if t.is_inactive]
+    if args.now:
+        torrents = [
+            t
+            for t in torrents
+            if (not t.state_enum.is_complete and t.dlspeed > 500) or (t.state_enum.is_complete and t.upspeed > 500)
+        ]
 
     return torrents
 
@@ -582,6 +588,7 @@ def torrents_info():
                         "duration": strings.duration_short(t.seeding_time),
                         "session": strings.file_size(t.uploaded_session),
                         "uploaded": strings.file_size(t.uploaded),
+                        "speed": strings.file_size(t.upspeed) + "/s" if t.upspeed else None,
                     }
                 if args.file_search:
                     files = t.files
