@@ -63,10 +63,10 @@ deluxe = [
 ]
 fat = [
   "brotab",
+  "camelot-py>=0.11.0",
   "ghostscript",
   "opencv-python",
   "orjson",
-  "pypdf_table_extraction",
   "selenium-wire",
   "subliminal",
   "textract-py3==2.0.1",
