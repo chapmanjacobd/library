@@ -16,6 +16,7 @@ def parse_args(defaults_override=None):
     parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
 
     parser.add_argument("--group-by-extensions", action="store_true", help="Print statistics about file extensions")
+    parser.add_argument("--group-by-size", action="store_true", help="Print statistics about file size")
 
     arggroups.debug(parser)
 
@@ -56,6 +57,38 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
             d[ext]["size"] += m.get("size") or 0
             d[ext]["duration"] += m.get("duration") or 0
             d[ext]["count"] += 1
+        elif args.group_by_size:
+            base_edges = [2, 5, 10]
+            multipliers = base_edges + [n * 10 for n in base_edges] + [n * 100 for n in base_edges]
+
+            unit_multiplier = 1024
+            units = [
+                1,
+                unit_multiplier,
+                unit_multiplier**2,
+                unit_multiplier**3,
+                unit_multiplier**4,
+            ]  # Bytes, KB, MB, GB, TB
+
+            bin_edges = [0.0]
+            for unit in units:
+                for m_mult in multipliers:
+                    bin_edges.append(float(m_mult * unit))
+            bin_edges.append(float("inf"))
+
+            file_size = m.get("size") or 0
+            for i in range(len(bin_edges) - 1):
+                lower_bound = bin_edges[i]
+                upper_bound = bin_edges[i + 1]
+                bin_label = f"{strings.file_size(lower_bound)}-{strings.file_size(upper_bound)}"
+                if bin_label not in d:
+                    d[bin_label] = {"size": 0, "duration": 0, "count": 0}
+
+                if lower_bound <= file_size < upper_bound:
+                    d[bin_label]["size"] += file_size
+                    d[bin_label]["duration"] += m.get("duration") or 0
+                    d[bin_label]["count"] += 1
+                    break
         else:
             while len(p) >= 2:
                 p.pop()
@@ -72,6 +105,9 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
 
+    if args.group_by_size:
+        return list(reversed([{"path": k, **v} for k, v in d.items() if v["count"] > 0]))
+
     reverse = True
     if args.sort_groups_by and " desc" in args.sort_groups_by:
         reverse = False
@@ -84,9 +120,11 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
 
 
 def load_subset(args):
-    if len(args.data) <= 2:
+    if any([args.group_by_extensions, args.group_by_size]):
+        args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
+    elif len(args.data) <= 2:
         args.subset = args.data
-    elif args.depth == 0 and not args.group_by_extensions:
+    elif args.depth == 0:
         while len(args.subset) < 2:
             args.depth += 1
             args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
@@ -133,15 +171,14 @@ def disk_usage(defaults_override=None):
     summary = iterables.list_dict_summary(args.subset)
     args.subset = args.subset[: args.limit]
 
-    media_printer.media_printer(
-        args,
-        args.subset,
-        units=(
-            f"file extensions"
-            if args.group_by_extensions
-            else f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)"
-        ),
-    )
+    if args.group_by_extensions:
+        units = "file extensions"
+    elif args.group_by_size:
+        units = "file sizes"
+    else:
+        units = f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)"
+
+    media_printer.media_printer(args, args.subset, units=units)
     if not args.to_json:
         for d in summary:
             if "count" in d:
@@ -150,3 +187,7 @@ def disk_usage(defaults_override=None):
 
 def extensions():
     disk_usage({"group_by_extensions": True})
+
+
+def sizes():
+    disk_usage({"group_by_size": True})
