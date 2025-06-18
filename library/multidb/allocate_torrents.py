@@ -253,38 +253,44 @@ def allocate_torrents():
     print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")
 
     if not args.print and (args.no_confirm or devices.confirm("Allocate and start downloads?")):
+        import paramiko.ssh_exception
+
         for d in disks:
             torrent_files = [t["path"] for t in d["downloads"] if os.path.exists(t["path"])]
             if not torrent_files:
                 continue
 
-            with paramiko.SSHClient() as ssh:
-                ssh.load_system_host_keys()
-                ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
-                ssh.connect(d["host"])
-                setattr(ssh, "host", d["host"])
+            try:
+                with paramiko.SSHClient() as ssh:
+                    ssh.load_system_host_keys()
+                    ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
+                    ssh.connect(d["host"])
+                    setattr(ssh, "host", d["host"])
 
-                torrent_files_chunks = iterables.chunks(torrent_files, 128)
-                for torrent_files_chunk in torrent_files_chunks:
-                    remote_processes.cmd(
-                        ssh,
-                        "python3",
-                        "-m",
-                        "library",
-                        "torrents-start",
-                        *argparse_utils.forward_arggroups(args, arggroups.torrents_start),
-                        *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
-                        *argparse_utils.forward_arggroups(
-                            args,
-                            arggroups.qBittorrent_paths,
-                            download_drive=d["mountpoint"],
-                        ),
-                        *torrent_files_chunk,
-                        local_files=torrent_files_chunk,
-                        # cwd="lb",  # debug
-                    )
+                    torrent_files_chunks = iterables.chunks(torrent_files, 128)
+                    for torrent_files_chunk in torrent_files_chunks:
+                        remote_processes.cmd(
+                            ssh,
+                            "python3",
+                            "-m",
+                            "library",
+                            "torrents-start",
+                            *argparse_utils.forward_arggroups(args, arggroups.torrents_start),
+                            *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
+                            *argparse_utils.forward_arggroups(
+                                args,
+                                arggroups.qBittorrent_paths,
+                                download_drive=d["mountpoint"],
+                            ),
+                            *torrent_files_chunk,
+                            local_files=torrent_files_chunk,
+                            # cwd="lb",  # debug
+                        )
 
-            if args.delete_torrent:
-                for path in torrent_files:
-                    log.debug("Trashed %s", path)
-                    trash(args, path, detach=False)
+                if args.delete_torrent:
+                    for path in torrent_files:
+                        log.debug("Trashed %s", path)
+                        trash(args, path, detach=False)
+
+            except paramiko.ssh_exception.NoValidConnectionsError:
+                log.error("Unable to connect to %s", d['host'])

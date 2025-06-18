@@ -71,6 +71,8 @@ def log_warning_if_same_free_space(computer_info, disks):
 
 
 def computer_add(args, hostnames):
+    import paramiko.ssh_exception
+
     with concurrent.futures.ThreadPoolExecutor() as ex:
         future_to_hostname = {ex.submit(gather_system_info, hostname): hostname for hostname in hostnames}
 
@@ -78,6 +80,8 @@ def computer_add(args, hostnames):
             hostname = future_to_hostname[future]
             try:
                 computer_info = future.result()
+            except paramiko.ssh_exception.NoValidConnectionsError:
+                log.error("Unable to connect to %s", hostname)
             except Exception:
                 log.exception(hostname)
                 if args.verbose >= consts.LOG_DEBUG:
