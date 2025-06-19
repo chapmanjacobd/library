@@ -525,6 +525,8 @@ def parse_args_limit(args):
                 args.limit = consts.MANY_LINKS - 1
             elif args.action in (SC.download,):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 60
+            elif args.action in (SC.tabs_open,):
+                args.limit = None
     elif args.limit.lower() in ("inf", "all"):
         args.limit = None
     else:
