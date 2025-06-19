@@ -79,4 +79,8 @@ def tabs_open() -> None:
     ).fetchall()
     media = frequency_filter(counts, media)
 
-    play(args, media)
+    if args.simulate:
+        media_printer.media_printer(args, media)
+        return
+    else:
+        play(args, media)
