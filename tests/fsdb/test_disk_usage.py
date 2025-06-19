@@ -1,8 +1,12 @@
 import json
 
+import pytest
+
 from library.__main__ import library as lb
 from library.utils import consts
 from tests.utils import v_db
+
+pytestmark = pytest.mark.skipif(consts.IS_WINDOWS, reason="Windows GitHub environment sometimes C:\\ sometimes D:\\")
 
 platform = "linux"
 if consts.IS_WINDOWS:
