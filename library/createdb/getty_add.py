@@ -32,7 +32,7 @@ def getty_fetch(url):
         return None
     if r.status_code == 404:
         log.warning("404 Not Found Error: %s", url)
-        return
+        return None
     else:
         r.raise_for_status()
 

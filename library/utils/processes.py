@@ -443,7 +443,7 @@ def unar_delete(archive_path):
         lsar_json = strings.safe_json_loads(lsar_output.stdout)
     except json.JSONDecodeError:
         log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
-        return
+        return None
     part_files = lsar_json["lsarProperties"]["XADVolumes"]
 
     original_stats = os.stat(archive_path)
@@ -464,7 +464,7 @@ def unar_delete(archive_path):
                 archive_path,
                 e.stderr.replace("Use the -p option to provide one.", "Use unar -p to extract."),
             )
-            return
+            return None
         elif is_file_error:
             pass  # delete archive
         else:

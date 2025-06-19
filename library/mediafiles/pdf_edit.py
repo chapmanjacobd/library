@@ -2,7 +2,6 @@
 
 import argparse, io
 from pathlib import Path
-from typing import List
 
 from library import usage
 from library.utils import arggroups, argparse_utils, devices, file_utils
@@ -66,7 +65,7 @@ def process_path(args, input_path):
     output_path = Path(args.output_path) if args.output_path else None
 
     if output_path is None:
-        params: List[str] = []
+        params: list[str] = []
         if args.autolevels:
             params.append("A")
         if args.autocontrast:

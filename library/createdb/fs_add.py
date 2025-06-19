@@ -118,7 +118,7 @@ def find_new_files(args, path) -> list[str]:
         if db_media.exists(args, path):
             try:
                 time_deleted = args.db.pop(
-                    f"""select time_deleted from media where path = ?""",
+                    """select time_deleted from media where path = ?""",
                     [path],
                 )
             except Exception as e:

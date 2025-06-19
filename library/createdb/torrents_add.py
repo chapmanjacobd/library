@@ -116,7 +116,7 @@ def torrents_add():
             deleted_files = [p for p in deleted_files if not Path(p).exists()]
             deleted_count = db_playlists.mark_media_deleted(args, deleted_files)
             if deleted_count > 0:
-                print(f"Marking", deleted_count, "orphaned metadata records as deleted")
+                print("Marking", deleted_count, "orphaned metadata records as deleted")
 
     num_paths = len(paths)
     start_time = consts.now()

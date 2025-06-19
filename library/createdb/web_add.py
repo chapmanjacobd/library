@@ -196,14 +196,13 @@ def spider(args, paths: list):
                 else:
                     new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)
 
-        else:  # not HTML page
-            if path in traversed_paths or path in paths:
-                pass
-            else:
-                if db_media.exists(args, path):
-                    known_paths.add(path)
-                else:
-                    new_paths[path] = None  # add key to map; title: None
+        # not HTML page
+        elif path in traversed_paths or path in paths:
+            pass
+        elif db_media.exists(args, path):
+            known_paths.add(path)
+        else:
+            new_paths[path] = None  # add key to map; title: None
 
         media = [consolidate_media(args, k) | (v or {}) for k, v in new_paths.items()]
         new_media_count += len(media)

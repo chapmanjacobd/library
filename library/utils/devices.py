@@ -497,7 +497,7 @@ def browse(browser, urls):
 
 def cb(data=None):
     if data is None:
-        result = subprocess.run(["cb"], stdout=subprocess.PIPE)
+        result = subprocess.run(["cb"], stdout=subprocess.PIPE, check=False)
         return result.stdout.decode("utf-8")
     else:
         process = subprocess.Popen(["cb"], stdin=subprocess.PIPE)
