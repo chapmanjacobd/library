@@ -293,4 +293,4 @@ def allocate_torrents():
                         trash(args, path, detach=False)
 
             except paramiko.ssh_exception.NoValidConnectionsError:
-                log.error("Unable to connect to %s", d['host'])
+                log.error("Unable to connect to %s", d["host"])
