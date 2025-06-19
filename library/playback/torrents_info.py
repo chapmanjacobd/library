@@ -348,14 +348,14 @@ def agg_torrents_state(args, state, state_torrents):
         "count": len(state_torrents),
         "files": (sum(len(t.files) for t in state_torrents) if args.file_counts else None),
         "size": strings.file_size(sum(t.total_size for t in state_torrents)),
-        "remaining": strings.file_size(remaining) if remaining else None,
         "downloaded": strings.file_size(downloaded) if downloaded else None,
-        "downloaded_session": strings.file_size(downloaded_session) if downloaded_session else None,
-        "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
+        "uploaded": strings.file_size(uploaded) if uploaded else None,
+        "remaining": strings.file_size(remaining) if remaining else None,
         "next_eta": strings.duration_short(min(etas)) if etas else None,
         "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
-        "uploaded": strings.file_size(uploaded) if uploaded else None,
+        "downloaded_session": strings.file_size(downloaded_session) if downloaded_session else None,
         "uploaded_session": strings.file_size(uploaded_session) if uploaded_session else None,
+        "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
         "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
     }
 
@@ -704,7 +704,7 @@ def torrents_info():
         for idx, t in enumerate(torrents):
             print("Moving", idx + 1, "of", len(torrents))
 
-            originally_stopped = t.state_enum.is_stopped
+            originally_stopped = bool(t.state_enum.is_stopped)
             qbt_client.torrents_stop(torrent_hashes=[t.hash])
 
             if "temp_drive" not in args.defaults:
@@ -723,17 +723,19 @@ def torrents_info():
             else:
                 download_path = args.move
 
-            if not temp_path.is_absolute():  # --temp-drive or --move could be relative
-                mountpoint = path_utils.mountpoint(t.content_path)
-                temp_path = Path(mountpoint) / temp_path
-            if args.temp_prefix:
-                temp_path /= args.temp_prefix
+            if temp_path:
+                if not temp_path.is_absolute():  # --temp-drive or --move could be relative
+                    mountpoint = path_utils.mountpoint(t.content_path)
+                    temp_path = Path(mountpoint) / temp_path
+                if args.temp_prefix:
+                    temp_path /= args.temp_prefix
 
-            if not download_path.is_absolute():  # --download-drive or --move could be relative
-                mountpoint = path_utils.mountpoint(t.content_path)
-                download_path = Path(mountpoint) / download_path
-            if args.download_prefix:
-                download_path /= args.download_prefix
+            if download_path:
+                if not download_path.is_absolute():  # --download-drive or --move could be relative
+                    mountpoint = path_utils.mountpoint(t.content_path)
+                    download_path = Path(mountpoint) / download_path
+                if args.download_prefix:
+                    download_path /= args.download_prefix
 
             if args.tracker_dirnames:
                 domain = t.tracker_domain()
