@@ -113,7 +113,7 @@ def temp_db(request):
     return _create_temp_db
 
 
-def generate_file_tree_dict(temp_dir, inodes=True):
+def read_relative_file_tree_dict(temp_dir, inodes=True):
     def _generate_tree_dict(directory):
         tree_dict = {}
         for item in directory.iterdir():
@@ -131,9 +131,6 @@ def generate_file_tree_dict(temp_dir, inodes=True):
     if base_path.is_file():
         return {base_path.name: (base_path.stat().st_ino, base_path.read_text()) if inodes else base_path.read_text()}
 
-    if base_path.drive:
-        return {base_path.drive: _generate_tree_dict(base_path)}
-
     return _generate_tree_dict(base_path)
 
 
@@ -149,16 +146,16 @@ def test_file_tree_creation(temp_file_tree):
     assert Path(temp_dir).exists()
     assert Path(temp_dir, "file4.txt").read_text() == "Content of file 4"
     assert Path(temp_dir, "folder1", "subfolder1").is_dir()
-    assert file_tree == generate_file_tree_dict(temp_dir)
+    assert file_tree == read_relative_file_tree_dict(temp_dir)
 
     file_tree = {}
     temp_dir = temp_file_tree(file_tree)
-    assert file_tree == generate_file_tree_dict(temp_dir)
+    assert file_tree == read_relative_file_tree_dict(temp_dir)
 
     file_tree = {"folder1": {}}
     temp_dir = temp_file_tree(file_tree)
-    assert file_tree == generate_file_tree_dict(temp_dir)
+    assert file_tree == read_relative_file_tree_dict(temp_dir)
 
     file_tree = {"file4.txt": "Content of file 4"}
     temp_dir = temp_file_tree(file_tree)
-    assert file_tree == generate_file_tree_dict(temp_dir)
+    assert file_tree == read_relative_file_tree_dict(temp_dir)

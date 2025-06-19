@@ -384,11 +384,12 @@ def gen_rel_path(source, dest, relative_to):
         rel = Path(rel, str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
     else:
         rel = Path(relative_to).expanduser().resolve()
-    log.debug("rel %s", rel)
 
+    log.warning("rel %s", rel)
+    log.warning("abspath.drive %s", abspath.drive)
     try:
         relpath = str(abspath.relative_to(rel))
-        log.debug("abspath %s relative to %s = %s", abspath, rel, relpath)
+        log.warning("abspath %s relative to %s = %s", abspath, rel, relpath)
     except ValueError:
         if abspath.drive.endswith(":"):  # Windows Drives
             relpath = str(Path(abspath.drive.strip(":")) / abspath.relative_to(abspath.drive + "\\"))
@@ -397,9 +398,9 @@ def gen_rel_path(source, dest, relative_to):
             relpath = str(Path(server_share.lstrip("\\").replace("\\", os.sep)) / os.sep.join(abspath.parts[1:]))
         else:
             relpath = str(abspath.relative_to(os.sep))
-        log.debug("ValueError using abspath %s", relpath)
+        log.warning("ValueError using abspath %s", relpath)
 
     source_destination = str(Path(dest) / relpath)
-    log.debug("source destination %s", source_destination)
+    log.warning("source destination %s", source_destination)
 
     return source_destination

@@ -2,7 +2,7 @@ import pytest
 
 from library.__main__ import library as lb
 from library.utils import arggroups, devices, objects
-from tests.conftest import generate_file_tree_dict
+from tests.conftest import read_relative_file_tree_dict
 
 
 @pytest.mark.parametrize("file_over_file", objects.class_enum(arggroups.FileOverFile))
@@ -21,7 +21,7 @@ def test_file_over_file_mod_start(file_over_file, temp_file_tree):
     else:
         lb(cmd)
 
-    target_inodes = generate_file_tree_dict(dest, inodes=False)
+    target_inodes = read_relative_file_tree_dict(dest, inodes=False)
     if file_over_file == arggroups.FileOverFile.SKIP:
         assert target_inodes == {"file4.txt": "4", "file2.txt": "5", "folder2": {"file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.DELETE_SRC:
@@ -62,7 +62,7 @@ def test_file_over_file_mod_end(file_over_file, temp_file_tree):
     else:
         lb(cmd)
 
-    target_inodes = generate_file_tree_dict(dest, inodes=False)
+    target_inodes = read_relative_file_tree_dict(dest, inodes=False)
     if file_over_file == arggroups.FileOverFile.SKIP:
         assert target_inodes == {"file4.txt": "4", "folder1": {"file2.txt": "5", "file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.DELETE_SRC:
@@ -101,7 +101,7 @@ def test_file_over_file_mod_rev(file_over_file, temp_file_tree):
     else:
         lb(cmd)
 
-    target_inodes = generate_file_tree_dict(dest, inodes=False)
+    target_inodes = read_relative_file_tree_dict(dest, inodes=False)
     if file_over_file == arggroups.FileOverFile.SKIP:
         assert target_inodes == {
             "file4.txt": "4",
@@ -143,8 +143,8 @@ def test_folder_over_file(folder_over_file, temp_file_tree):
     src1 = temp_file_tree({"f1": {"f1": {"file2": "2"}}})
     dest = temp_file_tree({"f1": "1"})
 
-    src1_inodes = generate_file_tree_dict(src1, inodes=False)
-    dest_inodes = generate_file_tree_dict(dest, inodes=False)
+    src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
+    dest_inodes = read_relative_file_tree_dict(dest, inodes=False)
 
     cmd = ["merge-mv", "--modify-depth", "1"]
     cmd += ["--file-over-file", "skip"]
@@ -152,7 +152,7 @@ def test_folder_over_file(folder_over_file, temp_file_tree):
     cmd += [src1, dest]
     lb(cmd)
 
-    target_inodes = generate_file_tree_dict(dest, inodes=False)
+    target_inodes = read_relative_file_tree_dict(dest, inodes=False)
     if folder_over_file == arggroups.FolderOverFile.SKIP:
         assert target_inodes == dest_inodes
     elif folder_over_file == arggroups.FolderOverFile.DELETE_SRC:
