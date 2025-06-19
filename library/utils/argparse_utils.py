@@ -83,6 +83,16 @@ class ArgparseArgsOrStdin(argparse.Action):
         setattr(namespace, self.dest, lines)
 
 
+class ArgparseArgsOrStdinGen(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values == STDIN_DASH:
+            print(f"{parser.prog}: Reading from stdin...", file=sys.stderr)
+            lines = sys.stdin
+        else:
+            lines = values
+        setattr(namespace, self.dest, lines)
+
+
 def is_sqlite(path):
     try:
         with open(path, "rb") as f:
