@@ -346,22 +346,23 @@ def url_decode(href):
     return href
 
 
-def relativize(abspath: Path):
-    if abspath.drive.endswith(":"):  # Windows Drives
-        relpath = str(Path(abspath.drive.strip(":")) / abspath.relative_to(abspath.drive + "\\"))
-    elif abspath.drive.startswith("\\\\"):  # UNC paths
-        server_share = abspath.parts[0]
-        relpath = str(Path(server_share.lstrip("\\").replace("\\", os.sep)) / os.sep.join(abspath.parts[1:]))
-    else:
-        relpath = str(abspath.relative_to(os.sep))
-    return relpath
+def relativize(p: Path):
+    if p.drive.endswith(":"):  # Windows Drives
+        p = Path(p.drive.strip(":")) / p.relative_to(p.drive + "\\")
+    elif p.drive.startswith("\\\\"):  # UNC paths
+        server_share = p.parts[0]
+        p = Path(server_share.lstrip("\\").replace("\\", os.sep)) / os.sep.join(p.parts[1:])
+
+    if str(p).startswith("\\"):
+        p = p.relative_to("\\")
+    if str(p).startswith("/"):
+        p = p.relative_to("/")
+    return p
 
 
 @strings.repeat_until_same
 def strip_mount_syntax(path):
-    path = path.lstrip("/").lstrip("\\")
-    path = relativize(Path(path))
-    return path
+    return str(relativize(Path(path)))
 
 
 def path_tuple_from_url(url):
@@ -393,7 +394,7 @@ def gen_rel_path(source, dest, relative_to):
 
         log.debug("rel %s", rel)
         try:
-            relpath = str(abspath.relative_to(rel))
+            relpath = abspath.relative_to(rel)
             log.debug("abspath %s relative to %s = %s", abspath, rel, relpath)
         except ValueError:
             relpath = relativize(abspath)
