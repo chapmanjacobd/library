@@ -346,16 +346,21 @@ def url_decode(href):
     return href
 
 
+def relativize(abspath: Path):
+    if abspath.drive.endswith(":"):  # Windows Drives
+        relpath = str(Path(abspath.drive.strip(":")) / abspath.relative_to(abspath.drive + "\\"))
+    elif abspath.drive.startswith("\\\\"):  # UNC paths
+        server_share = abspath.parts[0]
+        relpath = str(Path(server_share.lstrip("\\").replace("\\", os.sep)) / os.sep.join(abspath.parts[1:]))
+    else:
+        relpath = str(abspath.relative_to(os.sep))
+    return relpath
+
+
 @strings.repeat_until_same
-def relativize(path):
-    """Denormalize paths"""
-
+def strip_mount_syntax(path):
     path = path.lstrip("/").lstrip("\\")
-
-    p = Path(path)
-    if p.drive and p.drive.endswith(":"):
-        path = str(path)[len(p.drive) :]
-
+    path = relativize(Path(path))
     return path
 
 
@@ -368,7 +373,7 @@ def path_tuple_from_url(url):
     absolute_path = safe_join(netloc, relative_path)
     parent_path = os.path.dirname(absolute_path) or netloc
 
-    parent = relativize(parent_path)
+    parent = strip_mount_syntax(parent_path)
     filename = basename(relative_path)
     return parent, filename
 
@@ -376,31 +381,27 @@ def path_tuple_from_url(url):
 def gen_rel_path(source, dest, relative_to):
     abspath = Path(source).expanduser().resolve()
 
-    if str(relative_to).startswith("::") and dest.strip(os.sep) in source:
-        rel = source.split(dest.strip(os.sep), 1)[0]
-        rel = Path(rel, dest.strip(os.sep), str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
-    elif str(relative_to).startswith(":"):
-        rel = os.path.commonpath([abspath, dest])
-        rel = Path(rel, str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
-    else:
-        rel = Path(relative_to).expanduser().resolve()
-
-    log.warning("rel %s", rel)
-    log.warning("abspath.drive %s", abspath.drive)
-    try:
-        relpath = str(abspath.relative_to(rel))
-        log.warning("abspath %s relative to %s = %s", abspath, rel, relpath)
-    except ValueError:
-        if abspath.drive.endswith(":"):  # Windows Drives
-            relpath = str(Path(abspath.drive.strip(":")) / abspath.relative_to(abspath.drive + "\\"))
-        elif abspath.drive.startswith("\\\\"):  # UNC paths
-            server_share = abspath.parts[0]
-            relpath = str(Path(server_share.lstrip("\\").replace("\\", os.sep)) / os.sep.join(abspath.parts[1:]))
+    if relative_to:
+        if str(relative_to).startswith("::") and dest.strip(os.sep) in source:
+            rel = source.split(dest.strip(os.sep), 1)[0]
+            rel = Path(rel, dest.strip(os.sep), str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
+        elif str(relative_to).startswith(":"):
+            rel = os.path.commonpath([abspath, dest])
+            rel = Path(rel, str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
         else:
-            relpath = str(abspath.relative_to(os.sep))
-        log.warning("ValueError using abspath %s", relpath)
+            rel = Path(relative_to).expanduser().resolve()
+
+        log.debug("rel %s", rel)
+        try:
+            relpath = str(abspath.relative_to(rel))
+            log.debug("abspath %s relative to %s = %s", abspath, rel, relpath)
+        except ValueError:
+            relpath = relativize(abspath)
+            log.debug("ValueError using abspath %s", relpath)
+    else:
+        relpath = relativize(abspath)
 
     source_destination = str(Path(dest) / relpath)
-    log.warning("source destination %s", source_destination)
+    log.debug("source destination %s", source_destination)
 
     return source_destination
