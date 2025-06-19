@@ -89,7 +89,6 @@ def create_file_tree(parent_dir, tree):
 def temp_file_tree(request):
     def _create_temp_file_tree(tree):
         temp_dir = tempfile.mkdtemp()
-        temp_dir = str(Path(temp_dir).resolve())
         create_file_tree(temp_dir, tree)
         request.addfinalizer(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
         return temp_dir
@@ -131,6 +130,9 @@ def generate_file_tree_dict(temp_dir, inodes=True):
     base_path = Path(temp_dir)
     if base_path.is_file():
         return {base_path.name: (base_path.stat().st_ino, base_path.read_text()) if inodes else base_path.read_text()}
+
+    if base_path.drive:
+        return {base_path.drive: _generate_tree_dict(base_path)}
 
     return _generate_tree_dict(base_path)
 
