@@ -2,7 +2,6 @@ import os.path
 from collections import Counter, OrderedDict
 from contextlib import suppress
 from pathlib import Path
-from typing import Union
 from urllib.parse import parse_qsl, quote, unquote, urlparse, urlunparse
 
 from idna import decode as puny_decode
@@ -270,7 +269,7 @@ def mountpoint(path):
     return os.path.expanduser("~")
 
 
-def relative_from_mountpoint(src: Union[str, Path], dest: Union[str, Path]) -> Path:
+def relative_from_mountpoint(src: str | Path, dest: str | Path) -> Path:
     dest = Path(dest)
     src = Path(src)
     if not src.is_absolute():

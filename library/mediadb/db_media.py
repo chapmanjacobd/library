@@ -1,7 +1,7 @@
 import argparse, os, re, sqlite3
+from collections import Counter
 from collections.abc import Collection
 from pathlib import Path
-from typing import Counter
 
 from library.createdb import fs_add_metadata
 from library.createdb.subtitle import clean_up_temp_dirs

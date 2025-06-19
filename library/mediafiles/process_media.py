@@ -267,13 +267,12 @@ def check_shrink(args, m) -> list:
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
         return [check_shrink(args, d) for d in contents]
-    else:
-        # TODO: csv, json => parquet
+    # TODO: csv, json => parquet
 
-        if m.get("compressed_size"):
-            log.warning("[%s]: Skipping unknown filetype %s from archive", m["path"], m["ext"])
-        else:
-            log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
+    elif m.get("compressed_size"):
+        log.warning("[%s]: Skipping unknown filetype %s from archive", m["path"], m["ext"])
+    else:
+        log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []
 
 
@@ -307,7 +306,7 @@ def process_media() -> None:
     for m in media:
         media_key = f"{m['media_type']}: {m['ext']}"
         if m.get("compressed_size"):
-            media_key += f" (archived)"
+            media_key += " (archived)"
 
         if media_key not in summary:
             summary[media_key] = {
@@ -349,7 +348,7 @@ def process_media() -> None:
 
     uncompressed_archives = set()
     new_free_space = 0
-    if args.no_confirm or devices.confirm(f"Proceed?"):
+    if args.no_confirm or devices.confirm("Proceed?"):
         for m in media:
             log.info(
                 "%s freed. Processing %s (%s)",
@@ -372,16 +371,15 @@ def process_media() -> None:
                 if not os.path.exists(m["path"]):
                     log.error("[%s]: FileNotFoundError from archive %s", m["path"], m["archive_path"])
                     continue
-            else:
-                if not os.path.exists(m["path"]):
-                    log.error("[%s]: FileNotFoundError", m["path"])
-                    m["time_deleted"] = consts.APPLICATION_START
-                    if args.database:
-                        with suppress(sqlite3.OperationalError), args.db.conn:
-                            args.db.conn.execute(
-                                "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
-                            )
-                    continue
+            elif not os.path.exists(m["path"]):
+                log.error("[%s]: FileNotFoundError", m["path"])
+                m["time_deleted"] = consts.APPLICATION_START
+                if args.database:
+                    with suppress(sqlite3.OperationalError), args.db.conn:
+                        args.db.conn.execute(
+                            "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
+                        )
+                continue
 
             if args.simulate:
                 if m["media_type"] in ("Audio", "Video"):

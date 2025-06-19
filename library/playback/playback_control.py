@@ -84,7 +84,7 @@ def reformat_ffprobe(path):
         return path
 
     codec_types = [s.get("codec_type") for s in probe.streams]
-    audio_count = sum((1 for s in codec_types if s == "audio"))
+    audio_count = sum(1 for s in codec_types if s == "audio")
 
     excluded_keys = [
         "encoder",

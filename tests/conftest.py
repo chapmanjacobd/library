@@ -89,6 +89,7 @@ def create_file_tree(parent_dir, tree):
 def temp_file_tree(request):
     def _create_temp_file_tree(tree):
         temp_dir = tempfile.mkdtemp()
+        temp_dir = str(Path(temp_dir).resolve())
         create_file_tree(temp_dir, tree)
         request.addfinalizer(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
         return temp_dir

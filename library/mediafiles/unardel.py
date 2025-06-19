@@ -60,11 +60,10 @@ def check_shrink(args, m) -> list:
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
         return [check_shrink(args, d) for d in contents]
+    elif m.get("compressed_size"):
+        return [m]
     else:
-        if m.get("compressed_size"):
-            return [m]
-        else:
-            log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
+        log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []
 
 
@@ -96,7 +95,7 @@ def unardel() -> None:
     for m in media:
         media_key = m["ext"]
         if m.get("compressed_size"):
-            media_key += f" (archived)"
+            media_key += " (archived)"
 
         if media_key not in summary:
             summary[media_key] = {
@@ -125,7 +124,7 @@ def unardel() -> None:
 
     uncompressed_archives = set()
     new_free_space = 0
-    if args.no_confirm or devices.confirm(f"Proceed?"):
+    if args.no_confirm or devices.confirm("Proceed?"):
         for m in media:
             log.info(
                 "%s freed. Processing %s (%s)",

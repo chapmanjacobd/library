@@ -1,5 +1,5 @@
 import argparse
-from typing import Counter
+from collections import Counter
 
 from library import usage
 from library.mediadb import db_history, db_media

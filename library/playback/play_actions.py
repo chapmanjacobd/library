@@ -185,7 +185,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
         help="Attempt to transcode to a format that will work with chromecast or other players better leaving any video streams AS-IS",
     )
 
-    for i in range(0, 255):
+    for i in range(255):
         parser.add_argument(f"--cmd{i}", help=argparse.SUPPRESS)
 
     parser.add_argument("--safe", action="store_true", help="Skip generic URLs")
@@ -206,7 +206,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
 
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-    for i in range(0, 255):
+    for i in range(255):
         if getattr(args, f"cmd{i}") is None:
             delattr(args, f"cmd{i}")
     arggroups.args_post(args, parser)
@@ -394,7 +394,7 @@ def process_playqueue(args) -> None:
                 file_count = fs_add.scan_path(args, path)
                 log.info("Imported %s media", file_count)
                 process_playqueue(args)
-            return
+            return None
         if not media:
             processes.no_media_found()
 
