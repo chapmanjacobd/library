@@ -242,6 +242,9 @@ def filter_corpus(corpus_stats, words, unique, dups):
 
 
 def text_processor(args, lines):
+    if not lines:
+        processes.no_media_found()
+
     if getattr(args, "stop_words", None) is None:
         from library.data import wordbank
 

@@ -750,19 +750,6 @@ def mmv_folders(parent_parser):
     parser.add_argument(
         "--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source"
     )
-    parser.add_argument(
-        "--sizes",
-        "--size",
-        "-S",
-        action="append",
-        help="""Constrain media to file sizes (uses the same syntax as fd-find)
--S 6           # 6 MB exactly (not likely)
--S-6           # less than 6 MB
--S+6           # more than 6 MB
--S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
--S+5GB -S-7GB  # between 5 and 7 GB""",
-    )
-    parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of files transferred")
     parser.add_argument("--relative", "--rel", action="store_true", help="Shortcut: --relative-to=/")
     parser.add_argument(
         "--relative-to",
@@ -794,20 +781,12 @@ library relmv /src/d1/ /mnt/d1/ /mnt/dest/
         action="store_true",
         help="Destination-is-a-folder mode",
     )
-    parser.add_argument(
-        "--exclude",
-        "-E",
-        nargs="+",
-        action="extend",
-        default=[],
-        help="""Exclude files via search
--E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
-    )
+    parser.add_argument("--copy", "--cp", "-c", action="store_true", help=argparse.SUPPRESS)
 
 
 def mmv_folders_post(args):
-    if args.sizes:
-        args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
+    if args.move_sizes:
+        args.move_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.move_sizes)
 
     if args.relative_to and args.relative_to.startswith(":"):
         pass

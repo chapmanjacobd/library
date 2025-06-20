@@ -1,4 +1,4 @@
-import argparse, concurrent.futures, os, shutil
+import concurrent.futures, os, shutil
 from pathlib import Path
 
 from library import usage
@@ -11,8 +11,31 @@ from library.utils.log_utils import log
 
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
-    parser.add_argument("--copy", "--cp", "-c", action="store_true", help=argparse.SUPPRESS)
     arggroups.mmv_folders(parser)
+    parser.add_argument(
+        "--move-sizes",
+        "--sizes",
+        "--size",
+        "-S",
+        action="append",
+        help="""Constrain files moved by file size (uses the same syntax as fd-find)
+-S 6           # 6 MB exactly (not likely)
+-S-6           # less than 6 MB
+-S+6           # more than 6 MB
+-S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-S+5GB -S-7GB  # between 5 and 7 GB""",
+    )
+    parser.add_argument("--move-limit", "--limit", "-n", "-l", "-L", type=int, help="Limit number of files transferred")
+    parser.add_argument(
+        "--move-exclude",
+        "--exclude",
+        "-E",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Exclude files via search
+-E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+    )
     parser.add_argument(
         "--clobber", "--overwrite", action="store_true", help="Shortcut for --file-over-file delete-dest"
     )
@@ -27,8 +50,6 @@ def parse_args(defaults_override=None):
     arggroups.args_post(args, parser)
 
     arggroups.mmv_folders_post(args)
-    if not any([args.dest_bsd, args.dest_file, args.dest_folder]):
-        args.destination_folder = True
 
     if args.clobber:
         if args.file_over_file[-1] == "rename-dest":
@@ -79,7 +100,7 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
                     shortcut_allowed,
                     not args.simulate,
                     not args.timeout_size,
-                    not args.limit,
+                    not args.move_limit,
                     not args.modify_depth,
                     not os.path.exists(folder_dest),
                 ]
@@ -134,7 +155,9 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
                 elif args.dest_folder:
                     append_basename = True
                 else:  # args.dest_bsd
-                    append_basename = destination.endswith(os.sep) or os.path.isdir(destination)
+                    append_basename = (
+                        destination.endswith(os.sep) or os.path.isdir(destination) or not os.path.exists(destination)
+                    )
                 if append_basename:
                     file_dest = os.path.join(file_dest, path_utils.basename(source))
                     log.debug("file append basename %s", file_dest)

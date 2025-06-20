@@ -47,7 +47,22 @@ def parse_args():
     )
     parser.add_argument("--move", type=Path, help="Directory to move folders/files")
     arggroups.mmv_folders(parser)
+    parser.add_argument(
+        "--move-sizes",
+        action="append",
+        help="""Move files with --move constrained by file sizes (uses the same syntax as fd-find)""",
+    )
+    parser.add_argument("--move-limit", type=int, help="Limit number of files transferred")
+    parser.add_argument(
+        "--move-exclude",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Exclude files via search
+-E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+    )
     arggroups.clobber(parser)
+    parser.set_defaults(parent=True, file_over_file="delete-src-smaller delete-dest")
     parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
     parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
     parser.add_argument("--download-limit", "--dl-limit", type=nums.human_to_bytes, help="Torrent download limit")
@@ -69,6 +84,7 @@ def parse_args():
     arggroups.args_post(args, parser)
 
     arggroups.qBittorrent_torrents_post(args)
+    arggroups.mmv_folders_post(args)
 
     return args
 
