@@ -5,6 +5,7 @@ from pathlib import Path
 from statistics import mean, median
 
 from library import usage
+from library.folders import merge_mv
 from library.mediafiles import torrents_start
 from library.utils import (
     arggroups,
@@ -756,7 +757,7 @@ def torrents_info():
                 print("Moving", t.content_path, "to", new_path)
                 if Path(t.content_path).parent != new_path:
                     new_path.mkdir(parents=True, exist_ok=True)
-                    file_utils.move(args, t.content_path, new_path)
+                    merge_mv.move(args, [t.content_path], str(new_path))
 
             if not (args.delete_files or args.delete_rows):
                 # update metadata

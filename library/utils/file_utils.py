@@ -336,7 +336,7 @@ def rename_move_file(source_file, destination_file, simulate=False):
                 raise
 
 
-def move(args, src, dest):
+def rel_move(args, src, dest):
     dest = path_utils.gen_rel_path(src, dest, ":")
     if getattr(args, "clean_path", True):
         dest = path_utils.clean_path(os.fsencode(dest))
