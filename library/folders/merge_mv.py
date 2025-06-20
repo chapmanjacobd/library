@@ -173,6 +173,16 @@ def merge_mv(defaults_override=None):
                 path_utils.bfs_removedirs(p)
 
 
+def move(args, srcs: list, dest: str):
+    if getattr(args, "clean_path", True):
+        dest = path_utils.clean_path(os.fsencode(dest))
+    else:
+        dest = str(dest)
+
+    merge_mv.mmv_folders(args, mmv_file, srcs, dest)
+    return dest
+
+
 def merge_cp():
     merge_mv({"copy": True, "file_over_file": "skip-hash rename-dest"})
 

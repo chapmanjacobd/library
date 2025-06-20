@@ -28,7 +28,7 @@ def mv_to_keep_folder(args, src: str) -> str:
     keep_dir = keep_dir.resolve()
     keep_dir.mkdir(exist_ok=True)
 
-    dest = file_utils.move(args, src, keep_dir)
+    dest = file_utils.rel_move(args, src, keep_dir)
     if src == dest:
         return src
 
