@@ -47,7 +47,22 @@ def parse_args():
     )
     parser.add_argument("--move", type=Path, help="Directory to move folders/files")
     arggroups.mmv_folders(parser)
+    parser.add_argument(
+        "--move-sizes",
+        action="append",
+        help="""Move files with --move constrained by file sizes (uses the same syntax as fd-find)""",
+    )
+    parser.add_argument("--move-limit", type=int, help="Limit number of files transferred")
+    parser.add_argument(
+        "--move-exclude",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Exclude files via search
+-E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+    )
     arggroups.clobber(parser)
+    parser.set_defaults(parent=True, file_over_file="delete-src-smaller delete-dest")
     parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
     parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
     parser.add_argument("--download-limit", "--dl-limit", type=nums.human_to_bytes, help="Torrent download limit")
@@ -69,6 +84,7 @@ def parse_args():
     arggroups.args_post(args, parser)
 
     arggroups.qBittorrent_torrents_post(args)
+    arggroups.mmv_folders_post(args)
 
     return args
 
@@ -531,6 +547,9 @@ def torrents_info():
                     "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else ""),
                     "last_activity": strings.relative_datetime(t.last_activity),
                 }
+                if args.status or args.verbose >= consts.LOG_INFO:
+                    d |= {"state": t.state}
+
                 if not t.state_enum.is_complete:
                     d |= {
                         "duration": strings.duration_short(t.downloading_time),
@@ -542,6 +561,14 @@ def torrents_info():
                         "duration": strings.duration_short(t.seeding_time),
                         "uploaded": strings.file_size(t.uploaded),
                     }
+
+                if args.sizes or args.avg_sizes or "size" in args.sort:
+                    d |= {"size": strings.file_size(t.total_size)}
+
+                if args.sort == "priority":
+                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
+                if args.trackers:
+                    d |= {"tracker": t.tracker_domain()}
 
                 if args.file_search:
                     files = t.files
@@ -555,14 +582,6 @@ def torrents_info():
                 elif args.file_counts:
                     d |= {"files": len(t.files)}
 
-                if args.sort == "priority":
-                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
-                if args.trackers:
-                    d |= {"tracker": t.tracker_domain()}
-                if args.status:
-                    d |= {"state": t.state}
-                if args.sizes or args.avg_sizes or "size" in args.sort:
-                    d |= {"size": strings.file_size(t.total_size)}
                 if args.paths:
                     if t.state_enum.is_complete:
                         d |= {"path": t.save_path}
@@ -594,6 +613,9 @@ def torrents_info():
                     "num_seeds": f"{t.num_seeds} ({t.num_complete})",
                     "progress": strings.percent(t.progress),
                 }
+                if args.status or args.verbose >= consts.LOG_INFO:
+                    d |= {"state": t.state}
+
                 if not t.state_enum.is_complete:
                     d |= {
                         "duration": strings.duration_short(t.downloading_time),
@@ -612,6 +634,15 @@ def torrents_info():
                             strings.duration_short(t.total_size / t.upspeed) if t.upspeed and t.upspeed > 500 else None
                         ),
                     }
+
+                if args.sizes or args.avg_sizes or "size" in args.sort:
+                    d |= {"size": strings.file_size(t.total_size)}
+
+                if args.sort == "priority":
+                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
+                if args.trackers:
+                    d |= {"tracker": t.tracker_domain()}
+
                 if args.file_search:
                     files = t.files
                     files = [f for f in t.files if strings.glob_match_all(args.file_search, [f.name])]
@@ -624,14 +655,6 @@ def torrents_info():
                 elif args.file_counts:
                     d |= {"files": len(t.files)}
 
-                if args.sort == "priority":
-                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
-                if args.trackers:
-                    d |= {"tracker": t.tracker_domain()}
-                if args.status:
-                    d |= {"state": t.state}
-                if args.sizes or args.avg_sizes or "size" in args.sort:
-                    d |= {"size": strings.file_size(t.total_size)}
                 if args.paths:
                     if t.state_enum.is_complete:
                         d |= {"path": t.save_path}

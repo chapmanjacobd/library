@@ -13,17 +13,17 @@ def filter_src(args, path):
         stat = os.stat(path)
     except FileNotFoundError:
         return False
-    if args.sizes and not args.sizes(stat.st_size):
+    if args.move_sizes and not args.move_sizes(stat.st_size):
         return False
 
-    if any(fnmatch(path, s) for s in args.exclude):
+    if any(fnmatch(path, s) for s in args.move_exclude):
         return False
 
     if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
         print(f"\nReached sizeout... ({args.timeout_size})")
         raise SystemExit(124)
-    elif args.limit and MOVED_COUNT >= args.limit:
-        print(f"\nReached file moved limit... ({args.limit})")
+    elif args.move_limit and MOVED_COUNT >= args.move_limit:
+        print(f"\nReached file move limit... ({args.move_limit})")
         raise SystemExit(124)
 
     return True

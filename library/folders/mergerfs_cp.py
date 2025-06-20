@@ -24,8 +24,32 @@ from library.utils import arggroups, argparse_utils, consts, processes
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
-    arggroups.mmv_folders(parser)
 
+    arggroups.mmv_folders(parser)
+    parser.add_argument(
+        "--move-sizes",
+        "--sizes",
+        "--size",
+        "-S",
+        action="append",
+        help="""Constrain files copied by file size (uses the same syntax as fd-find)
+-S 6           # 6 MB exactly (not likely)
+-S-6           # less than 6 MB
+-S+6           # more than 6 MB
+-S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-S+5GB -S-7GB  # between 5 and 7 GB""",
+    )
+    parser.add_argument("--move-limit", "--limit", "-n", "-l", "-L", type=int, help="Limit number of files transferred")
+    parser.add_argument(
+        "--move-exclude",
+        "--exclude",
+        "-E",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Exclude files via search
+-E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+    )
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="skip-hash rename-dest")
 

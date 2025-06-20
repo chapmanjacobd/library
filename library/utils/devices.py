@@ -101,7 +101,6 @@ def log_size_diff(src_size, dst_size):
     elif src_size < dst_size:
         print(f"Source ({src_size_str}) is {dst_size_str} smaller than destination ({diff_size_str})")
 
-
 def clobber(args, source, destination) -> tuple[str | None, str]:
     if source == destination:
         log.info("Destination is the same as source\t%s", destination)
@@ -141,10 +140,10 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                 log.info("Destination is the same as source\t%s", destination)
                 return None, destination
 
-            src_size = src_stat.st_size
-            dst_size = dst_stat.st_size
+            src_size = src_stat.st_blocks or src_stat.st_size
+            dst_size = dst_stat.st_blocks or dst_stat.st_size
 
-            if dst_size == 0:
+            if dst_size == 0 or dst_stat.st_size == 0:
                 log.debug("Overwriting empty file destination %s\t%s", source, destination)
                 unlink(args, destination)
                 return source, destination
