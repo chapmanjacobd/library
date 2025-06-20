@@ -46,6 +46,8 @@ def parse_args():
         help="Delete incomplete files from matching torrents",
     )
     parser.add_argument("--move", type=Path, help="Directory to move folders/files")
+    arggroups.mmv_folders(parser)
+    arggroups.clobber(parser)
     parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
     parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
     parser.add_argument("--download-limit", "--dl-limit", type=nums.human_to_bytes, help="Torrent download limit")
