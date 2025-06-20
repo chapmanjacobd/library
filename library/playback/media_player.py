@@ -362,7 +362,9 @@ def get_multiple_player_template(args) -> list[tuple[str, str]]:
 
         grids = grid_stack(display, qty, swap=is_hstack(args, display))
         if args.fstack and qty > 1:
-            players.extend([("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"') for _ in grids])
+            players.extend(
+                [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"') for _ in grids]
+            )
         else:
             players.extend(grids)
 
