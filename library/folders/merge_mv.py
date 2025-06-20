@@ -147,11 +147,10 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
 def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):
     destination = os.path.realpath(destination) + (os.sep if destination.endswith(os.sep) else "")
 
-    if args.bsd:
-        # preserve trailing slash
-        sources = (os.path.realpath(s) + (os.sep if s.endswith(os.sep) else "") for s in sources)
-    else:
-        sources = (os.path.realpath(s) for s in sources)
+    sources = (
+        os.path.realpath(s) + (os.sep if s.endswith(os.sep) else "")  # preserve trailing slash for --bsd
+        for s in sources
+    )
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as ex:
         for f in (
@@ -179,7 +178,7 @@ def move(args, srcs: list, dest: str):
     else:
         dest = str(dest)
 
-    merge_mv.mmv_folders(args, mmv_file, srcs, dest)
+    mmv_folders(args, mmv_file, srcs, dest)
     return dest
 
 

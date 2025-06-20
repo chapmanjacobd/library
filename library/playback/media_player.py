@@ -360,7 +360,11 @@ def get_multiple_player_template(args) -> list[tuple[str, str]]:
         if remainder > 0 and d_idx == 0:
             qty += remainder
 
-        players.extend(grid_stack(display, qty, swap=is_hstack(args, display)))
+        grids = grid_stack(display, qty, swap=is_hstack(args, display))
+        if args.fstack and qty > 1:
+            players.extend([("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"') for _ in grids])
+        else:
+            players.extend(grids)
 
     log.debug(players)
 
