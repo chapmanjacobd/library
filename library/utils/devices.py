@@ -101,6 +101,7 @@ def log_size_diff(src_size, dst_size):
     elif src_size < dst_size:
         print(f"Source ({src_size_str}) is {dst_size_str} smaller than destination ({diff_size_str})")
 
+
 def clobber(args, source, destination) -> tuple[str | None, str]:
     if source == destination:
         log.info("Destination is the same as source\t%s", destination)
