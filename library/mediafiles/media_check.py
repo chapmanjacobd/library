@@ -165,7 +165,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
 def corruption_threshold_exceeded(threshold: bool | float, corruption, duration):
     if threshold:
         if threshold is True:
-            threshold = 0.15
+            threshold = 0.069
 
         if 1 > threshold > 0:
             if corruption >= threshold:
