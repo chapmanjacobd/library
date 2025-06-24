@@ -33,7 +33,8 @@ def get_tracker(torrent):
 
     for tracker in iterables.flatten(torrent.announce_urls):
         domain = tld_from_url(tracker)
-        return domain
+        if domain:
+            return domain
 
     return torrent.source
 

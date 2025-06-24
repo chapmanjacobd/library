@@ -1529,7 +1529,7 @@ def download(parent_parser):
         "--download-attempts",
         "--max-download-attempts",
         type=int,
-        default=5,
+        default=2,
         help="Skip links that have failed more than N times (ie. previous sessions, requires DB)",
     )
     parser.add_argument(

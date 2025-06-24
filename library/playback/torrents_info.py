@@ -283,6 +283,9 @@ def filter_torrents_by_criteria(args, torrents):
 
     if args.timeout_size:
         torrents = [t for t in torrents if not processes.sizeout(args.timeout_size, t.total_size)]
+        # reset sizeout for check during --move
+        processes.sizeout_max = None
+        processes.sizeout_total = 0
 
     return torrents
 

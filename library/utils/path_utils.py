@@ -232,6 +232,9 @@ def domain_from_url(tracker):
 
 
 def tld_from_url(url):
+    if not url:
+        return None
+
     import tldextract
 
     components = tldextract.extract(url)
