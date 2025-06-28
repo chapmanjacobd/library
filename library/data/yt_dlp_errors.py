@@ -143,6 +143,7 @@ yt_unrecoverable_errors = re.compile(
 .*already ended
 .*id.*was not found
 .*No video player ID
+.*is not archived
 .*has been removed
 .*from a suspended account
 .*has not been found
