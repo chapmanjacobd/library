@@ -212,6 +212,7 @@ modules = {
     "library.fsdb.files_info.files_info": ["fs", "files", "filesystem"],
     "library.fsdb.disk_usage.disk_usage": ["du", "usage"],
     "library.fsdb.disk_usage.extensions": ["exts"],
+    "library.fsdb.disk_usage.mimetypes": ["types"],
     "library.fsdb.disk_usage.sizes": ["size"],
     "library.fsdb.search_db.search_db": ["s", "sdb", "search-dbs"],
     "library.mediadb.block.block": [],

@@ -16,6 +16,9 @@ def parse_args(defaults_override=None):
     parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
 
     parser.add_argument("--group-by-extensions", action="store_true", help="Print statistics about file extensions")
+    parser.add_argument(
+        "--group-by-mimetypes", "--group-by-type", action="store_true", help="Print statistics about file types"
+    )
     parser.add_argument("--group-by-size", action="store_true", help="Print statistics about file size")
 
     arggroups.debug(parser)
@@ -57,6 +60,13 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
             d[ext]["size"] += m.get("size") or 0
             d[ext]["duration"] += m.get("duration") or 0
             d[ext]["count"] += 1
+        elif args.group_by_mimetypes:
+            mimetype = file_utils.get_file_type(m)["type"]
+            if mimetype not in d:
+                d[mimetype] = {"size": 0, "duration": 0, "count": 0}
+            d[mimetype]["size"] += m.get("size") or 0
+            d[mimetype]["duration"] += m.get("duration") or 0
+            d[mimetype]["count"] += 1
         elif args.group_by_size:
             base_edges = [2, 5, 10]
             multipliers = base_edges + [n * 10 for n in base_edges] + [n * 100 for n in base_edges]
@@ -120,7 +130,7 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
 
 
 def load_subset(args):
-    if any([args.group_by_extensions, args.group_by_size]):
+    if any([args.group_by_extensions, args.group_by_mimetypes, args.group_by_size]):
         args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
     elif len(args.data) <= 2:
         args.subset = args.data
@@ -173,6 +183,8 @@ def disk_usage(defaults_override=None):
 
     if args.group_by_extensions:
         units = "file extensions"
+    elif args.group_by_mimetypes:
+        units = "file types"
     elif args.group_by_size:
         units = "file sizes"
     else:
@@ -187,6 +199,10 @@ def disk_usage(defaults_override=None):
 
 def extensions():
     disk_usage({"group_by_extensions": True})
+
+
+def mimetypes():
+    disk_usage({"group_by_mimetypes": True})
 
 
 def sizes():
