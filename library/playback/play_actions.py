@@ -386,6 +386,10 @@ def process_playqueue(args) -> None:
         if not media and os.path.exists(path):
             media = db_media.get_dir_media(args, [path])
         if not media and os.path.exists(args.include[0]):
+            if getattr(args, "fs_add_attempted", False):
+                processes.no_media_found()
+            setattr(args, "fs_add_attempted", True)
+
             args.scan_all_files = False
             args.force = False
             args.process = False

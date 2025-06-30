@@ -458,6 +458,9 @@ class MediaPrefetcher:
                 if getattr(args, "volume", None) is not None:
                     player.extend([f"--volume={args.volume}"])
 
+                if getattr(args, "mute", False):
+                    player.extend(["--mute"])
+
                 if m["path"] and m["path"].startswith("http"):
                     player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 

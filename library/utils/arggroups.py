@@ -827,6 +827,7 @@ def playback(parent_parser):
 --end 60%%  # stop media playback at the time of 60%% of duration; avogadro constant""",
     )
     parser.add_argument("--volume", type=float, help="Set volume level before playing")
+    parser.add_argument("--mute", "-M", action="store_true", help="Start mpv muted")
 
     parser.add_argument("--mpv-socket", help="Use a custom mpv socket location")
     parser.add_argument(
@@ -1146,7 +1147,7 @@ def cluster_sort(parent_parser):
     parser.add_argument("--tfidf", action="store_true", help="Use TF-IDF+kmeans instead of wordllama")
 
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
-    parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")
+    parser.add_argument("--move-groups", action="store_true", help="Move groups into subfolders")
 
 
 WORD_SORTS_OPTS = typing.get_args(consts.WordSortOpt)

@@ -3,6 +3,7 @@ import argparse, os, statistics
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean, median
+from time import sleep
 
 from library import usage
 from library.folders import merge_mv
@@ -70,6 +71,7 @@ def parse_args():
         "--upload-limit", "--up-limit", "--ul-limit", type=nums.human_to_bytes, help="Torrent upload limit"
     )
     parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
+    parser.add_argument("--wait", action=argparse_utils.ArgparseList, help="Wait for a specific status type")
     parser.add_argument("--export", action="store_true", help="Export matching torrent files")
     parser.add_argument("--add-tracker", action=argparse_utils.ArgparseList, help="Add trackers to matching torrents")
     parser.add_argument(
@@ -380,6 +382,20 @@ def agg_torrents_state(args, state, state_torrents):
         "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
         "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
     }
+
+
+def map_value_status(t, status):
+    MAP_VALUE = {
+        "stopped": t.state_enum.is_stopped,
+        "errored": t.state == "error",
+        "missing": t.state == "missingFiles",
+        "checking": t.state.startswith("checking"),
+        "queued": t.state.startswith("queued"),
+        "complete": t.state_enum.is_complete,
+        "incomplete": not t.state_enum.is_complete,
+    }
+
+    return MAP_VALUE.get(status, t.state == status)
 
 
 def torrents_info():
@@ -860,3 +876,20 @@ def torrents_info():
     elif args.delete_rows:
         print("Deleting from qBit", len(torrents))
         qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
+
+    if args.wait:
+        for idx, t in enumerate(torrents):
+            print("Waiting for", idx + 1, "of", len(torrents), "to be one of:", ", ".join(args.wait))
+
+            while True:
+                ts = qbt_client.torrents_info(torrent_hashes=t.hash)
+                if not ts:
+                    log.error("Torrent %s not found %s", t.name, t.hash)
+                    break
+                if len(ts) > 1:
+                    log.warning("More than one torrent matched %s: %s", t.hash, ts)
+
+                t = ts[0]
+                if any(map_value_status(t, status) for status in args.wait):
+                    break
+                sleep(3)
