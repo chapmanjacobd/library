@@ -33,7 +33,7 @@ def history() -> None:
 
     if args.completed:
         print("Completed:")
-    elif args.in_progress:
+    elif args.incomplete:
         print("In progress:")
     else:
         print("History:")

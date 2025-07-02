@@ -27,17 +27,33 @@ def parse_args(defaults_override=None):
 
 def get_data(args) -> list[dict]:
     if args.database:
-        media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
+        files = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
     else:
         if args.hide_deleted:
             args.paths = [p for p in args.paths if os.path.exists(p)]
-        media = file_utils.gen_d(args)
-        media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
-        media = [d if "type" in d else file_utils.get_file_type(d) for d in media]
+        files = file_utils.gen_d(args)
+        files = [d if "size" in d else file_utils.get_file_stats(d) for d in files]
+        files = [d if "type" in d else file_utils.get_file_type(d) for d in files]
 
-    if not media:
+        if "sizes" not in args.defaults:
+            files = [d for d in files if args.sizes(d["size"])]
+
+        if "time_created" not in args.defaults:
+            files = [
+                d
+                for d in files
+                if d["time_created"] > 0 and args.time_created(consts.APPLICATION_START - d["time_created"])  # type: ignore
+            ]
+        if "time_modified" not in args.defaults:
+            files = [
+                d
+                for d in files
+                if d["time_modified"] > 0 and args.time_modified(consts.APPLICATION_START - d["time_modified"])  # type: ignore
+            ]
+
+    if not files:
         processes.no_media_found()
-    return media
+    return files
 
 
 def is_mime_match(types, mime_type):
@@ -66,22 +82,6 @@ def is_mime_match(types, mime_type):
 
 
 def filter_files_by_criteria(args, files):
-    if "sizes" not in args.defaults:
-        files = [d for d in files if args.sizes(d["size"])]
-
-    if "time_created" not in args.defaults:
-        files = [
-            d
-            for d in files
-            if d["time_created"] > 0 and args.time_created(consts.APPLICATION_START - d["time_created"])
-        ]
-    if "time_modified" not in args.defaults:
-        files = [
-            d
-            for d in files
-            if d["time_modified"] > 0 and args.time_modified(consts.APPLICATION_START - d["time_modified"])
-        ]
-
     if args.no_type:
         files = [d for d in files if not is_mime_match(args.no_type, d["type"] or "None")]
     if args.type:
