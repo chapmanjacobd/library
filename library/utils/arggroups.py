@@ -1939,6 +1939,8 @@ def history(parser):
     history = parser.add_mutually_exclusive_group()
     history.add_argument(
         "--completed",
+        "--complete",
+        "--no-incomplete",
         "--played",
         "--watched",
         "--listened",
@@ -1946,7 +1948,10 @@ def history(parser):
         help="Exclude partially watched media",
     )
     history.add_argument(
+        "--incomplete",
         "--in-progress",
+        "--no-completed",
+        "--no-complete",
         "--playing",
         "--watching",
         "--listening",
@@ -2104,6 +2109,7 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument(
         "--complete",
         "--completed",
+        "--no-incomplete",
         "--uploading",
         "--upload",
         "--up",
@@ -2114,6 +2120,7 @@ def qBittorrent_torrents(parent_parser):
     )
     parser.add_argument(
         "--incomplete",
+        "--no-complete",
         "--downloading",
         "--download",
         "--down",
@@ -2216,30 +2223,51 @@ def qBittorrent_torrents(parent_parser):
 
 
 def qBittorrent_torrents_post(args):
-    args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
-    args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
-    args.downloaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded)
-    args.uploaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded)
-    args.downloaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded_session)
-    args.uploaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded_session)
-    args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
-    args.file_count = sql_utils.parse_human_to_lambda(int, args.file_count)
+    if args.sizes:
+        args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
+    if args.remaining:
+        args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
+    if args.downloaded:
+        args.downloaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded)
+    if args.uploaded:
+        args.uploaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded)
+    if args.downloaded_session:
+        args.downloaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded_session)
+    if args.uploaded_session:
+        args.uploaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded_session)
+    if args.avg_sizes:
+        args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
+    if args.file_count:
+        args.file_count = sql_utils.parse_human_to_lambda(int, args.file_count)
 
-    args.priority = sql_utils.parse_human_to_lambda(int, args.priority)
-    args.seeders = sql_utils.parse_human_to_lambda(int, args.seeders)
-    args.leechers = sql_utils.parse_human_to_lambda(int, args.leechers)
+    if args.priority:
+        args.priority = sql_utils.parse_human_to_lambda(int, args.priority)
+    if args.seeders:
+        args.seeders = sql_utils.parse_human_to_lambda(int, args.seeders)
+    if args.leechers:
+        args.leechers = sql_utils.parse_human_to_lambda(int, args.leechers)
 
-    args.time_added = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_added)
-    args.time_stalled = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_stalled)
-    args.time_unseeded = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_unseeded)
-    args.time_active = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_active)
-    args.time_downloading = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_downloading)
-    args.time_seeding = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_seeding)
-    args.time_completed = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_completed)
-    args.time_remaining = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_remaining)
+    if args.time_added:
+        args.time_added = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_added)
+    if args.time_stalled:
+        args.time_stalled = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_stalled)
+    if args.time_unseeded:
+        args.time_unseeded = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_unseeded)
+    if args.time_active:
+        args.time_active = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_active)
+    if args.time_downloading:
+        args.time_downloading = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_downloading)
+    if args.time_seeding:
+        args.time_seeding = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_seeding)
+    if args.time_completed:
+        args.time_completed = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_completed)
+    if args.time_remaining:
+        args.time_remaining = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_remaining)
 
-    args.ratio = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.ratio)
-    args.progress = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.progress)
+    if args.ratio:
+        args.ratio = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.ratio)
+    if args.progress:
+        args.progress = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.progress)
 
     if set(["active", "inactive"]).issubset(args.defaults.keys()):
         if args.torrent_search or args.file_search:
@@ -2266,8 +2294,10 @@ def files(parent_parser):
 
 
 def files_post(args):
-    args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
-    args.time_modified = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_modified)
+    if args.time_created:
+        args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
+    if args.time_modified:
+        args.time_modified = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_modified)
 
     if args.type:
         args.type = set(args.type)

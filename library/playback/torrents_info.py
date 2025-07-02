@@ -581,7 +581,7 @@ def torrents_info():
                         "uploaded": strings.file_size(t.uploaded),
                     }
 
-                if args.sizes or args.avg_sizes or "size" in args.sort:
+                if args.sizes or args.avg_sizes or (args.sort and "size" in args.sort):
                     d |= {"size": strings.file_size(t.total_size)}
 
                 if args.sort == "priority":
@@ -654,7 +654,7 @@ def torrents_info():
                         ),
                     }
 
-                if args.sizes or args.avg_sizes or "size" in args.sort:
+                if args.sizes or args.avg_sizes or (args.sort and "size" in args.sort):
                     d |= {"size": strings.file_size(t.total_size)}
 
                 if args.sort == "priority":
