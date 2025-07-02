@@ -80,6 +80,7 @@ yt_meaningless_errors = re.compile(
 .*Extract.* cookies
 .*File .*, line .*,
 .*Requested format is not available
+.*info.* Testing format
 .*This channel does not have
 .*fragment_filename_sanitized
 .*no suitable InfoExtractor for URL
