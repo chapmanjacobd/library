@@ -581,7 +581,7 @@ def torrents_info():
                         "uploaded": strings.file_size(t.uploaded),
                     }
 
-                if args.sizes or args.avg_sizes or "size" in args.sort:
+                if args.sizes or args.avg_sizes or (args.sort and "size" in args.sort):
                     d |= {"size": strings.file_size(t.total_size)}
 
                 if args.sort == "priority":
@@ -654,7 +654,7 @@ def torrents_info():
                         ),
                     }
 
-                if args.sizes or args.avg_sizes or "size" in args.sort:
+                if args.sizes or args.avg_sizes or (args.sort and "size" in args.sort):
                     d |= {"size": strings.file_size(t.total_size)}
 
                 if args.sort == "priority":
@@ -722,7 +722,7 @@ def torrents_info():
                 for base_path in base_paths:
                     file_path = Path(base_path) / file.name
                     if file_path.exists():
-                        if file.progress < args.delete_incomplete:
+                        if 0.0 < file.progress < args.delete_incomplete:
                             print(f"Deleting incomplete file: {file_path}")
                             file_utils.trash(args, str(file_path), detach=False)
                         break  # Stop after deleting first valid path
