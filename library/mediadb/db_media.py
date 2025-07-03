@@ -1,5 +1,5 @@
 import argparse, os, re, sqlite3
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Collection
 from pathlib import Path
 
@@ -430,7 +430,24 @@ def natsort_media(args, media):
     if compat:
         NS_OPTS = NS_OPTS | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
 
-    if alg == "natural":
+    if alg == "keep":
+        grouped_media = defaultdict(list)
+        parent_order = []
+
+        for m in media:
+            parent = Path(m["path"]).parent
+            if parent not in grouped_media:
+                parent_order.append(parent)
+            grouped_media[parent].append(m)
+
+        media = []
+        for parent in parent_order:
+            group = grouped_media[parent]
+
+            # TODO: use natsort_media recursively to sort stem how people want it
+            sorted_group = natsorted(group, key=media_sort_key, alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
+            media.extend(sorted_group)
+    elif alg == "natural":
         media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
     elif alg in ("nspath", "path"):
         media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.PATH, reverse=reverse)

@@ -33,7 +33,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     ordering.add_argument(
         "--play-in-order",
         "-O",
-        default="natural_ps",
+        default="keep_stem",
         help="""Play media in order (for similarly named episodes)
 
 -O [option]_[algorithm]_[field]
@@ -48,6 +48,7 @@ Options:
 
 Algorithms:
 
+    - keep: do not re-order parent paths
     - natural: parse numbers as integers
     - os: sort similar to the OS File Explorer sorts. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
     - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
