@@ -565,7 +565,7 @@ def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
         "rank" if sort_list and "rank" in sort_list else None,
         "video_count > 0 desc" if "video_count" in columns and args.action == SC.watch else None,
         "audio_count > 0 desc" if "audio_count" in columns else None,
-        table_prefix + 'path like "http%"',
+        table_prefix + 'path like "http%"',  # prefer local videos
         "width < height desc" if "width" in columns and getattr(args, "portrait", False) else None,
         (
             f"subtitle_count {subtitle_count} desc"
