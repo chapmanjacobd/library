@@ -718,10 +718,19 @@ def torrents_info():
             else:
                 base_paths = [t.download_path, t.save_path]
 
+            invalid_state = t.state.startswith("checking") or t.state in ("missingFiles", "error")
+            if invalid_state:
+                continue
+
             for file in t.files:
                 for base_path in base_paths:
                     file_path = Path(base_path) / file.name
-                    if file_path.exists():
+                    if file_path.exists() and not file_path.is_dir():
+                        stat = file_path.stat()
+                        if stat.st_blocks and stat.st_blocks > 12 and file.progress == 0.0:
+                            log.warning("Skipping the rest of torrent because invalid state likely. Recheck first. %s", t.name)
+                            break  # invalid state likely
+
                         if 0.0 < file.progress < args.delete_incomplete:
                             print(f"Deleting incomplete file: {file_path}")
                             file_utils.trash(args, str(file_path), detach=False)
