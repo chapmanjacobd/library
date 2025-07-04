@@ -138,8 +138,17 @@ def load_subset(args):
         while len(args.subset) < 2:
             args.depth += 1
             args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
+            if args.folders_only:
+                args.subset = [d for d in args.subset if d.get("count")]
+            elif args.files_only:
+                args.subset = [d for d in args.subset if not d.get("count")]
     else:
         args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
+
+    if args.folders_only:
+        args.subset = [d for d in args.subset if d.get("count")]
+    elif args.files_only:
+        args.subset = [d for d in args.subset if not d.get("count")]
 
     if not args.subset:
         processes.no_media_found()
@@ -172,11 +181,6 @@ def disk_usage(defaults_override=None):
 
     num_folders = sum(1 for d in args.subset if d.get("count"))
     num_files = sum(1 for d in args.subset if not d.get("count"))
-
-    if args.folders_only:
-        args.subset = [d for d in args.subset if d.get("count")]
-    elif args.files_only:
-        args.subset = [d for d in args.subset if not d.get("count")]
 
     summary = iterables.list_dict_summary(args.subset)
     args.subset = args.subset[: args.limit]

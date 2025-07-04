@@ -351,6 +351,8 @@ def filter_total_size(media, max_size):
 
 
 def process_playqueue(args) -> None:
+    t = Timer()
+
     if args.database:
         db_history.create(args)
 
@@ -359,7 +361,6 @@ def process_playqueue(args) -> None:
         else:
             query, bindings = sqlgroups.media_sql(args)
 
-        t = Timer()
         if args.playlists:
             args.playlists = [p if p.startswith("http") else str(Path(p).resolve()) for p in args.playlists]
             media = db_media.get_playlist_media(args, args.playlists)
@@ -369,6 +370,7 @@ def process_playqueue(args) -> None:
         log.debug("query: %s", t.elapsed())
     else:
         media = file_or_folder_media(args, args.paths)
+        log.debug("file_or_folder_media: %s", t.elapsed())
 
     if args.fetch_siblings:
         media = db_media.get_sibling_media(args, media)
