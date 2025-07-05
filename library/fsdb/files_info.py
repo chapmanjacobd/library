@@ -25,37 +25,6 @@ def parse_args(defaults_override=None):
     return args
 
 
-def get_data(args) -> list[dict]:
-    if args.database:
-        files = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
-    else:
-        if args.hide_deleted:
-            args.paths = [p for p in args.paths if os.path.exists(p)]
-        files = file_utils.gen_d(args)
-        files = [d if "size" in d else file_utils.get_file_stats(d) for d in files]
-        files = [d if "type" in d else file_utils.get_file_type(d) for d in files]
-
-        if "sizes" not in args.defaults:
-            files = [d for d in files if args.sizes(d["size"])]
-
-        if "time_created" not in args.defaults:
-            files = [
-                d
-                for d in files
-                if d["time_created"] > 0 and args.time_created(consts.APPLICATION_START - d["time_created"])  # type: ignore
-            ]
-        if "time_modified" not in args.defaults:
-            files = [
-                d
-                for d in files
-                if d["time_modified"] > 0 and args.time_modified(consts.APPLICATION_START - d["time_modified"])  # type: ignore
-            ]
-
-    if not files:
-        processes.no_media_found()
-    return files
-
-
 def is_mime_match(types, mime_type):
     # exact match
     for type_ in types:
@@ -81,7 +50,9 @@ def is_mime_match(types, mime_type):
     return False
 
 
-def filter_files_by_criteria(args, files):
+def filter_mimetype(args, files):
+    if args.type or args.no_type:
+        files = [d if "type" in d else file_utils.get_file_type(d) for d in files]
     if args.no_type:
         files = [d for d in files if not is_mime_match(args.no_type, d["type"] or "None")]
     if args.type:
@@ -90,17 +61,59 @@ def filter_files_by_criteria(args, files):
     return files
 
 
+def filter_files_by_criteria(args, files):
+    if "sizes" not in args.defaults:
+        files = [d if "size" in d else file_utils.get_file_stats(d) for d in files]
+        files = [d for d in files if args.sizes(d["size"])]
+
+    files = filter_mimetype(args, files)
+
+    if "time_created" not in args.defaults:
+        files = [
+            d
+            for d in files
+            if d["time_created"] > 0 and args.time_created(consts.APPLICATION_START - d["time_created"])  # type: ignore
+        ]
+    if "time_modified" not in args.defaults:
+        files = [
+            d
+            for d in files
+            if d["time_modified"] > 0 and args.time_modified(consts.APPLICATION_START - d["time_modified"])  # type: ignore
+        ]
+
+    if args.to_json:
+        files = [d if "size" in d else file_utils.get_file_stats(d) for d in files]
+        files = [d if "type" in d else file_utils.get_file_type(d) for d in files]
+
+    return list(files)
+
+
+def get_data(args) -> list[dict]:
+    if args.database:
+        files = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
+        files = filter_mimetype(args, files)
+    else:
+        if args.hide_deleted:
+            args.paths = [p for p in args.paths if os.path.exists(p)]
+        files = file_utils.gen_d(args)
+
+        files = filter_files_by_criteria(args, files)
+
+    if not files:
+        processes.no_media_found()
+    return files
+
+
 def files_info(defaults_override=None):
     args = parse_args(defaults_override)
     files = get_data(args)
-
-    files = filter_files_by_criteria(args, files)
 
     if not files:
         processes.no_media_found()
 
     summary = iterables.list_dict_summary(files)
-    files = files[: args.limit]
+    if not "a" in args.print:
+        files = files[: args.limit]
 
     media_printer.media_printer(args, files, units="files")
     if not args.to_json:

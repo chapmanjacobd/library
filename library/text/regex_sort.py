@@ -143,9 +143,9 @@ def line_sorter(
             elif s == "sum":
                 val = sum(corpus_stats.get(word) or 0 for word in words)
             elif s == "dupmax":
-                val = max(corpus_stats.get(word) or 0 for word in words)
+                val = max((corpus_stats.get(word) or 0 for word in words), default=None)
             elif s == "dupmin":
-                val = min(corpus_stats.get(word) or 0 for word in words)
+                val = min((corpus_stats.get(word) or 0 for word in words), default=None)
             elif s in ("dupavg", "dupmean"):
                 val = statistics.mean(corpus_stats.get(word) or 0 for word in words)
             elif s == "dupmedian":

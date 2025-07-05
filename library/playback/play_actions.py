@@ -4,6 +4,7 @@ from pathlib import Path
 from library import usage
 from library.createdb import fs_add, tube_backend
 from library.folders import big_dirs
+from library.fsdb import files_info
 from library.mediadb import db_history, db_media
 from library.playback import media_player, media_printer
 from library.tablefiles import mcda
@@ -18,6 +19,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser = argparse_utils.ArgumentParser(usage=usage.play(action))
     arggroups.sql_fs(parser)
+    arggroups.files(parser)
     arggroups.playback(parser)
     arggroups.post_actions(parser)
     arggroups.multiple_playback(parser)
@@ -212,6 +214,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
     arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
+    arggroups.files_post(args)
     arggroups.playback_post(args)
     arggroups.post_actions_post(args)
     arggroups.multiple_playback_post(args)
@@ -371,6 +374,8 @@ def process_playqueue(args) -> None:
     else:
         media = file_or_folder_media(args, args.paths)
         log.debug("file_or_folder_media: %s", t.elapsed())
+
+        media = files_info.filter_files_by_criteria(args, media)
 
     if args.fetch_siblings:
         media = db_media.get_sibling_media(args, media)

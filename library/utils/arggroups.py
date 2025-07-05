@@ -619,10 +619,8 @@ def sql_fs_post(args, table_prefix="m.") -> None:
     m_columns = db_utils.columns(args, "media")
     args.sort, args.select = parse_args_sort(args, m_columns)
 
-    if args.sizes:
-        args.sizes = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.sizes)
-    if args.bitrates:
-        args.bitrates = sql_utils.parse_human_to_sql(nums.human_to_bits, "size*8/duration", args.bitrates)
+    if not args.database:
+        return
 
     args.filter_sql = []
     args.aggregate_filter_sql = []
@@ -647,9 +645,11 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             args.filter_sql.append("AND COALESCE(time_downloaded,0) = 0")
 
     if args.sizes:
-        args.filter_sql.append(" and size IS NOT NULL " + args.sizes)
+        sql_sizes = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.sizes)
+        args.filter_sql.append(" and size IS NOT NULL " + sql_sizes)
     if args.bitrates:
-        args.filter_sql.append(" and size IS NOT NULL " + args.bitrates)
+        sql_bitrates = sql_utils.parse_human_to_sql(nums.human_to_bits, "size*8/duration", args.bitrates)
+        args.filter_sql.append(" and size IS NOT NULL " + sql_bitrates)
 
     if args.created_within:
         args.filter_sql.append(
@@ -2281,16 +2281,17 @@ def files(parent_parser):
     parser.add_argument("--no-type", action=argparse_utils.ArgparseList, help="The type of files to exclude")
 
     parser.add_argument("--time-created", "--time-added", action="append", help="Include files with N time since added")
-    parser.add_argument(
-        "--time-modified", "--time-stalled", action="append", help="Include files with N time since last activity"
-    )
+    parser.add_argument("--time-modified", action="append", help="Include files with N time since last activity")
 
 
 def files_post(args):
-    if args.time_created:
-        args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
-    if args.time_modified:
-        args.time_modified = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_modified)
+    if not args.database:
+        if args.sizes:
+            args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
+        if args.time_created:
+            args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
+        if args.time_modified:
+            args.time_modified = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_modified)
 
     if args.type:
         args.type = set(args.type)
