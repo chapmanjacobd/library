@@ -1,12 +1,14 @@
 import os
 
 from library import usage
+from library.fsdb import files_info
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, file_utils, iterables, path_utils, processes, sqlgroups, strings
 
 
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.disk_usage)
+    arggroups.files(parser)
     arggroups.sql_fs(parser)
     parser.set_defaults(hide_deleted=True)
     arggroups.group_folders(parser)
@@ -28,6 +30,7 @@ def parse_args(defaults_override=None):
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    arggroups.files_post(args)
     arggroups.sql_fs_post(args)
     arggroups.group_folders_post(args)
 
@@ -129,6 +132,14 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
     )
 
 
+def filter_criteria(args, media):
+    if args.folders_only:
+        media = [d for d in media if d.get("count")]
+    elif args.files_only:
+        media = [d for d in media if not d.get("count")]
+    return media
+
+
 def load_subset(args):
     if any([args.group_by_extensions, args.group_by_mimetypes, args.group_by_size]):
         args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
@@ -138,17 +149,11 @@ def load_subset(args):
         while len(args.subset) < 2:
             args.depth += 1
             args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
-            if args.folders_only:
-                args.subset = [d for d in args.subset if d.get("count")]
-            elif args.files_only:
-                args.subset = [d for d in args.subset if not d.get("count")]
+            args.subset = filter_criteria(args, args.subset)  # check within loop to avoid "no media"
     else:
         args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
 
-    if args.folders_only:
-        args.subset = [d for d in args.subset if d.get("count")]
-    elif args.files_only:
-        args.subset = [d for d in args.subset if not d.get("count")]
+    args.subset = filter_criteria(args, args.subset)
 
     if not args.subset:
         processes.no_media_found()
@@ -164,7 +169,8 @@ def get_data(args) -> list[dict]:
         if args.hide_deleted:
             args.paths = [p for p in args.paths if os.path.exists(p)]
         media = file_utils.gen_d(args)
-        media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
+
+        media = files_info.filter_files_by_criteria(args, media)
 
     if not media:
         processes.no_media_found()
@@ -183,7 +189,8 @@ def disk_usage(defaults_override=None):
     num_files = sum(1 for d in args.subset if not d.get("count"))
 
     summary = iterables.list_dict_summary(args.subset)
-    args.subset = args.subset[: args.limit]
+    if args.limit and not "a" in args.print:
+        args.subset = args.subset[: args.limit]
 
     if args.group_by_extensions:
         units = "file extensions"

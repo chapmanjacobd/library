@@ -296,7 +296,7 @@ def filter_torrents(args, torrents):
     torrents = filter_torrents_by_activity(args, torrents)
     torrents = filter_torrents_by_criteria(args, torrents)
 
-    if args.limit:
+    if args.limit and not "a" in args.print:
         torrents = torrents[: args.limit]
 
     if not torrents:
@@ -728,7 +728,9 @@ def torrents_info():
                     if file_path.exists() and not file_path.is_dir():
                         stat = file_path.stat()
                         if stat.st_blocks and stat.st_blocks > 12 and file.progress == 0.0:
-                            log.warning("Skipping the rest of torrent because invalid state likely. Recheck first. %s", t.name)
+                            log.warning(
+                                "Skipping the rest of torrent because invalid state likely. Recheck first. %s", t.name
+                            )
                             break  # invalid state likely
 
                         if 0.0 < file.progress < args.delete_incomplete:
