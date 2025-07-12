@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup
+from bs4.element import NavigableString
 
 from library import usage
 from library.createdb import fs_add_metadata
