@@ -228,12 +228,15 @@ def scan_path(args, path_str: str) -> int:
 
     threadsafe = [DBType.audio, DBType.video, DBType.filesystem]
 
-    info = {
-        "extractor_key": "Local",
-        "extractor_config": args.extractor_config,
-        "time_deleted": 0,
-    }
-    args.playlists_id = db_playlists.add(args, str(path), info, check_subpath=True)
+    if path.is_dir():
+        info = {
+            "extractor_key": "Local",
+            "extractor_config": args.extractor_config,
+            "time_deleted": 0,
+        }
+        args.playlists_id = db_playlists.add(args, str(path), info, check_subpath=True)
+    else:
+        args.playlists_id = 0
 
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)
