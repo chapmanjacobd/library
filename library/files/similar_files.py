@@ -1,5 +1,6 @@
 from library import usage
 from library.folders.similar_folders import cluster_folders, map_and_name
+from library.fsdb import files_info
 from library.utils import arggroups, argparse_utils, file_utils, nums, printing, strings
 from library.utils.log_utils import log
 
@@ -8,6 +9,20 @@ def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.similar_files)
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
+    arggroups.files(parser)
+
+    parser.add_argument(
+        "--sizes",
+        "--size",
+        "-S",
+        action="append",
+        help="""Constrain media to file sizes (uses the same syntax as fd-find)
+-S 6           # 6 MB exactly (not likely)
+-S-6           # less than 6 MB
+-S+6           # more than 6 MB
+-S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-S+5GB -S-7GB  # between 5 and 7 GB""",
+    )
 
     parser.add_argument("--small", "--reverse", action="store_true")
     parser.add_argument("--only-duplicates", action="store_true")
@@ -28,6 +43,7 @@ def parse_args():
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    arggroups.files_post(args)
     arggroups.similar_files_post(args)
     if not args.filter_names and not args.filter_sizes and not args.filter_durations:
         print("Nothing to do")
@@ -98,10 +114,12 @@ def filter_groups_by_size(args, groups):
 def similar_files():
     args = parse_args()
     media = list(file_utils.gen_d(args))
-    media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
+    media = files_info.filter_files_by_criteria(args, media)
 
     groups: list[dict] = []
     if args.filter_sizes or args.filter_durations:
+        media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
+
         clusters = cluster_by_size(args, media)
         groups = map_and_name(media, clusters)
         log.info("file size/duration clustering sorted %s files into %s groups", len(media), len(groups))
