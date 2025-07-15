@@ -2285,7 +2285,7 @@ def files(parent_parser):
 
 
 def files_post(args):
-    if not args.database:
+    if not getattr(args, "database", None):
         if args.sizes:
             args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
         if args.time_created:
