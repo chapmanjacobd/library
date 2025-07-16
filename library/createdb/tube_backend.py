@@ -361,7 +361,7 @@ def download(args, m) -> None:
     if m.get("time_modified") and m.get("time_modified") > 0:
         ignoreerrors = True
 
-    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,album)s"
+    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id)s - %(album,playlist_title,playlist,playlist_id,webpage_url_basename)s"
 
     def out_dir(p):
         return str(Path(args.prefix, "%(extractor_key,extractor,ie_key)s", subdir_template, p))
