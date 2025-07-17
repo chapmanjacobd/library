@@ -66,7 +66,7 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
 
     if job_status & 1:
         errors.append("UnspecifiedError")
-        log.error("[%s]: gallery_dl gave an UnspecifiedError.", path)
+        log.error("[%s]: gallery_dl gave an UnspecifiedError", path)
 
     if job_status & 64:  # no extractor
         errors.append("NoExtractorError")
@@ -90,10 +90,8 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
         log.debug("[%s]: Unrecoverable error %s", path, strings.combine(errors))
 
     if job_status & 128:
-        errors.append("OSOrJSONDecodeError")
-        # https://github.com/mikf/gallery-dl/issues/4380
-        # if not ignore_errors:
-        # raise OSError
+        if not ignore_errors:
+            raise OSError
     if job_status & 2:
         raise ValueError("gallery_dl configuration error")
 

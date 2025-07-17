@@ -60,14 +60,6 @@ def parse_args():
     return args
 
 
-def gen_torrent_matches(downloaded_torrents, torrents, available_space):
-    for torrent in torrents:
-        if torrent["size"] < available_space and torrent["path"] not in downloaded_torrents:
-            available_space -= torrent["size"]
-            downloaded_torrents.add(torrent["path"])
-            yield torrent
-
-
 def get_disks(args, computer_db):
     try:
         disks_columns = computer_db["media"].columns_dict
@@ -232,7 +224,13 @@ def allocate_torrents():
     downloaded_torrents = set()
     for disk in disks:
         available_space = disk["free"] - args.min_free_space
-        disk["downloads"] = list(gen_torrent_matches(downloaded_torrents, torrents, available_space))
+
+        disk["downloads"] = []
+        for torrent in torrents:
+            if torrent["size"] < available_space and torrent["path"] not in downloaded_torrents:
+                downloaded_torrents.add(torrent["path"])
+                available_space -= torrent["size"]
+                disk["downloads"].append(torrent)
 
     # TODO: use nvme download_dir
     # but better to chunk one drive at a time because temp download _moving_ can occur
