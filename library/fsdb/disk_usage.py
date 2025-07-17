@@ -171,6 +171,7 @@ def get_data(args) -> list[dict]:
         media = file_utils.gen_d(args)
 
         media = files_info.filter_files_by_criteria(args, media)
+        media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
 
     if not media:
         processes.no_media_found()

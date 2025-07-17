@@ -123,6 +123,9 @@ def parse_human_to_sql(human_to_x, var, sizes) -> str:
 
 
 def human_to_lambda_part(var, human_to_x, size):
+    if var is None:
+        var = 0
+
     if size.startswith(">"):
         return var > human_to_x(size.lstrip(">"))
     elif size.startswith("<"):
