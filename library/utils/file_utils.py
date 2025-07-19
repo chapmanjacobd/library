@@ -392,34 +392,35 @@ fi
         print(rf"PARALLEL_SHELL=sh parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
 
 
-def get_file_encoding(path):
-    import chardet
+def get_file_encodings(path):
+    import charset_normalizer
 
+    MAX_BYTES_TO_ANALYZE = 1048576  # 1 MiB
+
+    detection_result = None
     if path.startswith("http"):
-        detector = chardet.UniversalDetector()
         response = web.session.get(path, stream=True)
         response.raw.decode_content = True
 
-        num_bytes = 0
+        sample_bytes = b""
         for chunk in response.iter_content(chunk_size=16_384):  # type: ignore
-            if num_bytes > 1048576:  # 1MiB
-                break
-            detector.feed(chunk)
-            if detector.done:
-                break
-            num_bytes += len(chunk)
-        detector.close()
+            sample_bytes += chunk
+            detection_result = charset_normalizer.from_bytes(sample_bytes)
 
-        encoding = detector.result["encoding"]
+            if len(sample_bytes) >= MAX_BYTES_TO_ANALYZE:
+                break
+            elif detection_result and detection_result[0].coherence > 0.8:
+                break
     else:
         with open(path, "rb") as f:
-            sample = f.read(1048576)  # 1 MiB
+            sample_bytes = f.read(MAX_BYTES_TO_ANALYZE)
 
-        encoding = chardet.detect(sample)["encoding"]
+        detection_result = charset_normalizer.from_bytes(sample_bytes)
 
-    if encoding:
-        log.info(f"The encoding of {path} is likely: {encoding}")
-    return encoding
+    if detection_result:
+        log.info(f"The encoding of {path} is likely: {detection_result[0].encoding}")
+        return [o.encoding for o in detection_result]
+    return None
 
 
 def head_stream(url, head_len):
@@ -532,7 +533,7 @@ def retry_with_different_encodings(func):
             original_exc = exc
 
         likely_encodings = []
-        detected_encoding = get_file_encoding(args[0])
+        detected_encoding = get_file_encodings(args[0])
         if detected_encoding:
             likely_encodings.append(detected_encoding)
 
