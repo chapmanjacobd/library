@@ -188,7 +188,7 @@ AUDIO_ONLY_EXTENSIONS = set(
 )
 VIDEO_EXTENSIONS = set(
     (
-        "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl|avifs|gif|gifv"
+        "str|aa|aax|acm|adf|adp|asf|dtk|ads|ss2|adx|aea|afc|aix|al|apl|avifs|gif|gifv"
         "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
         "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
         "|dif|divx|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco|heics"
@@ -213,15 +213,16 @@ TEXTRACT_EXTENSIONS = set(
 )
 IMAGE_EXTENSIONS = set(
     (
-        "ai|ait|png|jng|mng|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
+        "aai|ai|ait|avs|bpg|png|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
         "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mrw|nef|nrw|orf"
         "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif"
         "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|jpc|3fr|btf|dcr|k25"
         "|kdc|miff|mif|rwz|srf|xcf|bpg|doc|dot|fla|fpx|max|ppt|pps|pot|vsd|xls"
-        "|xlt|pict|pct|360|dvb|f4a|f4b|f4p|lrv|m4b"
+        "|xlt|pict|pct|360|dvb|f4a|f4b|f4p|lrv|m4b|bmp|bmp2|bmp3|jng|mng|emf|wmf"
         "|m4p|qt|mqv|qtif|qti|qif|cr3|crm|jxl|crw|ciff|ind|indd|indt"
-        "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|asf|djvu|djv|dvr-ms"
-        "|insv|inx|swf|wma|exif|eip|pspimage"
+        "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|djvu|djv|dvr-ms"
+        "|insv|inx|swf|exif|eip|pspimage|fax|farbfeld|fits|fl32|jbig"
+        "|pbm|pfm|pgm|phm|pnm|ppm|ptif|qoi|tga"
     ).split("|")
 )
 PIL_EXTENSIONS = set(
