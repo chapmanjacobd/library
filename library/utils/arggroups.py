@@ -379,45 +379,80 @@ Double spaces are equal to one space:
     parse_fs.add_argument(
         "--only-deleted", "--deleted", action="store_true", help="Include only deleted files in results"
     )
+
+    parse_fs.add_argument(
+        "--time-created",
+        action="append",
+        default=[],
+        help="""Constrain media by time_created
+    --time-created='-3 days' (newer than)
+    --time-created='+3 days' (older than)""",
+    )
     parse_fs.add_argument(
         "--created-within",
+        action="append",
+        default=[],
         help="""Constrain media by time_created (newer than)
 --created-within '3 days'""",
     )
     parse_fs.add_argument(
         "--created-before",
+        action="append",
+        default=[],
         help="""Constrain media by time_created (older than)
 --created-before '3 years'""",
     )
+
     parse_fs.add_argument(
-        "--changed-within",
+        "--time-modified",
+        action="append",
+        default=[],
+        help="""Constrain media by time_modified
+    --time-modified='-3 days' (newer than)
+    --time-modified='+3 days' (older than)""",
+    )
+    parse_fs.add_argument(
         "--modified-within",
+        "--changed-within",
+        action="append",
+        default=[],
         help="""Constrain media by time_modified (newer than)
---changed-within '3 days'""",
+--modified-within '3 days'""",
     )
     parse_fs.add_argument(
-        "--changed-before",
         "--modified-before",
+        "--changed-before",
+        action="append",
+        default=[],
         help="""Constrain media by time_modified (older than)
---changed-before '3 years'""",
+--modified-before '3 years'""",
     )
+
     parse_fs.add_argument(
         "--deleted-within",
+        action="append",
+        default=[],
         help="""Constrain media by time_deleted (newer than)
 --deleted-within '3 days'""",
     )
     parse_fs.add_argument(
         "--deleted-before",
+        action="append",
+        default=[],
         help="""Constrain media by time_deleted (older than)
 --deleted-before '3 years'""",
     )
     parse_fs.add_argument(
         "--downloaded-within",
+        action="append",
+        default=[],
         help="""Constrain media by time_downloaded (newer than)
 --downloaded-within '3 days'""",
     )
     parse_fs.add_argument(
         "--downloaded-before",
+        action="append",
+        default=[],
         help="""Constrain media by time_downloaded (older than)
 --downloaded-before '3 years'""",
     )
@@ -651,37 +686,49 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         sql_bitrates = sql_utils.parse_human_to_sql(nums.human_to_bits, "size*8/duration", args.bitrates)
         args.filter_sql.append(" and size IS NOT NULL " + sql_bitrates)
 
-    if args.created_within:
+    for s in args.time_created:
+        if s.startswith("+"):
+            args.created_before.append(s.lstrip("+"))
+        else:
+            args.created_within.append(s.lstrip("-"))
+
+    for s in args.time_modified:
+        if s.startswith("+"):
+            args.modified_before.append(s.lstrip("+"))
+        else:
+            args.modified_within.append(s.lstrip("-"))
+
+    for s in args.created_within:
         args.filter_sql.append(
-            f"and m.time_created >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.created_within)}')) as int)",
+            f"and m.time_created >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
-    if args.created_before:
+    for s in args.created_before:
         args.filter_sql.append(
-            f"and m.time_created < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.created_before)}')) as int)",
+            f"and m.time_created < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
-    if args.changed_within:
+    for s in args.modified_within:
         args.filter_sql.append(
-            f"and m.time_modified >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.changed_within)}')) as int)",
+            f"and m.time_modified >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
-    if args.changed_before:
+    for s in args.modified_before:
         args.filter_sql.append(
-            f"and m.time_modified < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.changed_before)}')) as int)",
+            f"and m.time_modified < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
-    if args.deleted_within:
+    for s in args.deleted_within:
         args.filter_sql.append(
-            f"and m.time_deleted >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.deleted_within)}')) as int)",
+            f"and m.time_deleted >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
-    if args.deleted_before:
+    for s in args.deleted_before:
         args.filter_sql.append(
-            f"and m.time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.deleted_before)}')) as int)",
+            f"and m.time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
-    if args.downloaded_within:
+    for s in args.downloaded_within:
         args.filter_sql.append(
-            f"and m.time_downloaded >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.downloaded_within)}')) as int)",
+            f"and m.time_downloaded >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
-    if args.downloaded_before:
+    for s in args.downloaded_before:
         args.filter_sql.append(
-            f"and m.time_downloaded < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.downloaded_before)}')) as int)",
+            f"and m.time_downloaded < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
 
     if getattr(args, "keep_dir", False):
@@ -2268,26 +2315,78 @@ def qBittorrent_torrents_post(args):
             args.inactive = False
 
 
-def files(parent_parser):
-    parser = parent_parser.add_argument_group("Files")
-    # parser.add_argument("--errored", action=argparse.BooleanOptionalAction, help="Include files with read errors")
-    # parser.add_argument(
+def files(parent_parser, no_db=False):
+    parse_fs = parent_parser.add_argument_group("Files")
+    # parse_fs.add_argument("--errored", action=argparse.BooleanOptionalAction, help="Include files with read errors")
+    # parse_fs.add_argument(
     #     "--opened",
     #     action=argparse.BooleanOptionalAction,
     #     help="Include files with files currently in use by other processes",
     # )
 
-    parser.add_argument("--type", action=argparse_utils.ArgparseList, help="The type of files to include")
-    parser.add_argument("--no-type", action=argparse_utils.ArgparseList, help="The type of files to exclude")
+    parse_fs.add_argument("--type", action=argparse_utils.ArgparseList, help="The type of files to include")
+    parse_fs.add_argument("--no-type", action=argparse_utils.ArgparseList, help="The type of files to exclude")
 
-    parser.add_argument("--time-created", "--time-added", action="append", help="Include files with N time since added")
-    parser.add_argument("--time-modified", action="append", help="Include files with N time since last activity")
+    if no_db:
+        parse_fs.add_argument(
+            "--time-created",
+            action="append",
+            default=[],
+            help="""Constrain media by time_created
+    --time-created='-3 days' (newer than)
+    --time-created='+3 days' (older than)""",
+        )
+        parse_fs.add_argument(
+            "--created-within",
+            action="append",
+            default=[],
+            help="""Constrain media by time_created (newer than)
+    --created-within '3 days'""",
+        )
+        parse_fs.add_argument(
+            "--created-before",
+            action="append",
+            default=[],
+            help="""Constrain media by time_created (older than)
+    --created-before '3 years'""",
+        )
+
+        parse_fs.add_argument(
+            "--time-modified",
+            action="append",
+            default=[],
+            help="""Constrain media by time_modified
+    --time-modified='-3 days' (newer than)
+    --time-modified='+3 days' (older than)""",
+        )
+        parse_fs.add_argument(
+            "--modified-within",
+            "--changed-within",
+            action="append",
+            default=[],
+            help="""Constrain media by time_modified (newer than)
+    --modified-within '3 days'""",
+        )
+        parse_fs.add_argument(
+            "--modified-before",
+            "--changed-before",
+            action="append",
+            default=[],
+            help="""Constrain media by time_modified (older than)
+    --modified-before '3 years'""",
+        )
 
 
 def files_post(args):
     if not getattr(args, "database", None):
         if args.sizes:
             args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
+
+        args.time_created.extend(["-" + s.lstrip("-").lstrip("+") for s in args.created_within])
+        args.time_created.extend(["+" + s.lstrip("+").lstrip("-") for s in args.created_before])
+        args.time_modified.extend(["-" + s.lstrip("-").lstrip("+") for s in args.modified_within])
+        args.time_modified.extend(["+" + s.lstrip("+").lstrip("-") for s in args.modified_before])
+
         if args.time_created:
             args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
         if args.time_modified:

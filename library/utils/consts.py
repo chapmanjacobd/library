@@ -76,7 +76,7 @@ REGEX_REDDITOR = re.compile(
 )
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()
-TERMINAL_SIZE = shutil.get_terminal_size(fallback=(240, 50))
+TERMINAL_SIZE = shutil.get_terminal_size(fallback=(600, 50))
 MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
 TABULATE_STYLE = "simple"
 DEFAULT_DIFFLIB_RATIO = 0.73
@@ -183,8 +183,9 @@ OCRMYPDF_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff|pdf".split("|"))
 HTML_SIDECAR_EXTENSIONS = set(
     "css|js|json|xml|woff|woff2|otf|ttf|svg|ico|icns|map|txt|md|yml|yaml|wasm|webmanifest|swf".split("|")
 )
+INSTRUMENT_EXTENSIONS = set('mid|midi|mod|it|xm|s3m|stm|med|mtm|okt'.split("|"))
 AUDIO_ONLY_EXTENSIONS = set(
-    "mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4b|flac|wav|aif|aiff|wma|aac|aa3|ac3|ape|mid|midi".split("|")
+    "mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4r|caf|m4b|flac|wav|pcm|aif|aiff|wma|aac|aa3|ac3|ape".split("|")
 )
 VIDEO_EXTENSIONS = set(
     (

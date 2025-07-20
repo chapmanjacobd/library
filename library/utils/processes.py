@@ -288,8 +288,6 @@ class FFProbe:
             "-hide_banner",
             "-rw_timeout",
             "100000000",
-            "-timeout",
-            "45000000",
             "-show_format",
             "-show_streams",
             "-show_chapters",
