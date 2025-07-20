@@ -68,13 +68,15 @@ def filter_files_by_criteria(args, files):
 
     files = filter_mimetype(args, files)
 
-    if "time_created" not in args.defaults:
+    if getattr(args, "time_created", []):
+        files = [d if "time_created" in d else file_utils.get_file_stats(d) for d in files]
         files = [
             d
             for d in files
             if d["time_created"] > 0 and args.time_created(consts.APPLICATION_START - d["time_created"])  # type: ignore
         ]
-    if "time_modified" not in args.defaults:
+    if getattr(args, "time_modified", []):
+        files = [d if "time_modified" in d else file_utils.get_file_stats(d) for d in files]
         files = [
             d
             for d in files

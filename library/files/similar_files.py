@@ -9,7 +9,7 @@ def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.similar_files)
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
-    arggroups.files(parser)
+    arggroups.files(parser, no_db=True)
 
     parser.add_argument(
         "--sizes",
