@@ -63,7 +63,8 @@ def filter_mimetype(args, files):
 
 def filter_files_by_criteria(args, files):
     if "sizes" not in args.defaults:
-        files = [d if "size" in d else file_utils.get_file_stats(d) for d in files]
+        if "size" not in files[0]:
+            files = file_utils.get_files_stats(files)
         files = [d for d in files if args.sizes(d["size"])]
 
     files = filter_mimetype(args, files)

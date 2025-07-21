@@ -126,8 +126,8 @@ def collect_codecs(streams):
     )
 
 
-def munge_av_tags(args, media) -> dict:
-    path = media["path"]
+def munge_av_tags(args, m) -> dict:
+    path = m["path"]
     try:
         probe = processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
@@ -147,14 +147,14 @@ def munge_av_tags(args, media) -> dict:
             and not file_utils.is_file_open(path)
         ):
             file_utils.trash(args, path, detach=False)
-            media["time_deleted"] = consts.APPLICATION_START
-        media["error"] = "Metadata check failed"
-        return media
+            m["time_deleted"] = consts.APPLICATION_START
+        m["error"] = "Metadata check failed"
+        return m
 
     if not probe.format:
         log.error(f"Failed reading format. {path}")
         log.warning(probe)
-        return media
+        return m
 
     format_ = probe.format
     size = format_.pop("size", None)
@@ -170,13 +170,13 @@ def munge_av_tags(args, media) -> dict:
     format_.pop("duration", None)
     duration = probe.duration
 
-    if not media.get("size"):
+    if not m.get("size"):
         if size:
-            media["size"] = int(size)
+            m["size"] = int(size)
         elif bitrate_bps and duration:
             total_bits = duration * float(bitrate_bps)
             total_bytes = math.ceil(total_bits / 8)
-            media["size"] = total_bytes
+            m["size"] = total_bytes
 
     corruption = None
     if getattr(args, "check_corrupt", False) and path_utils.ext(path) not in consts.SKIP_MEDIA_CHECK:
@@ -201,8 +201,8 @@ def munge_av_tags(args, media) -> dict:
             )
             log.warning("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str)
             file_utils.trash(args, path, detach=False)
-            media["time_deleted"] = consts.APPLICATION_START
-            media["error"] = "Media check failed"
+            m["time_deleted"] = consts.APPLICATION_START
+            m["error"] = "Media check failed"
 
     tags = format_.pop("tags", None)
     if tags:
@@ -246,8 +246,8 @@ def munge_av_tags(args, media) -> dict:
             if "tags" in d and "title" in d["tags"] and not strings.is_generic_title(d["tags"]["title"])
         ]
 
-    media = {
-        **media,
+    m = {
+        **m,
         "video_codecs": video_codecs,
         "audio_codecs": audio_codecs,
         "subtitle_codecs": subtitle_codecs,
@@ -267,15 +267,15 @@ def munge_av_tags(args, media) -> dict:
         "chapters": chapters,
     }
 
-    if media.get("time_deleted"):
-        return media
+    if m.get("time_deleted"):
+        return m
 
     if objects.is_profile(args, DBType.video):
         video_tags = get_subtitle_tags(path, streams, scan_subtitles=getattr(args, "scan_subtitles", False))
-        media = {**media, **video_tags}
+        m = {**m, **video_tags}
     elif objects.is_profile(args, DBType.audio) and not str(path).startswith("http"):
         stream_tags = get_audio_tags(path)
         stream_tags = {k: v for k, v in stream_tags.items() if v}
-        media = {**media, **stream_tags}
+        m = {**m, **stream_tags}
 
-    return media
+    return m

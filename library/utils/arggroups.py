@@ -1022,9 +1022,11 @@ For example in KDE:
     end""",
     )
     parser.add_argument("--screen-name", help="Playback on a specific display")
-    parser.add_argument("--hstack", action="store_true", help="Force videos to stack horizontally")
-    parser.add_argument("--vstack", action="store_true", help="Force videos to stack vertically")
-    parser.add_argument("--fstack", action="store_true", help="Force videos to stack on top of each other")
+    parser.add_argument("--hstack", action=argparse.BooleanOptionalAction, help="Force videos to stack horizontally")
+    parser.add_argument("--vstack", action=argparse.BooleanOptionalAction, help="Force videos to stack vertically")
+    parser.add_argument(
+        "--fstack", action=argparse.BooleanOptionalAction, help="Force videos to stack on top of each other"
+    )
 
 
 def multiple_playback_post(args):

@@ -1,8 +1,10 @@
 import argparse, os
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from pathlib import Path
 
 from library import usage
-from library.createdb import fs_add, tube_backend
+from library.createdb import fs_add, fs_add_metadata, tube_backend
 from library.folders import big_dirs
 from library.fsdb import files_info
 from library.mediadb import db_history, db_media
@@ -333,6 +335,18 @@ def file_or_folder_media(args, paths):
                 )
             else:
                 media.extend([{"path": s} for s in file_utils.rglob(str(p), exclude=args.exclude)[0]])
+
+    if any(s not in args.defaults for s in ["size", "time_modified", "time_created", "type", "no_type"]):
+        media = files_info.filter_files_by_criteria(args, media)
+
+    if any(s not in args.defaults for s in ["duration", "start", "end"]):
+        with ThreadPoolExecutor() as parallel:
+            mp_args = argparse.Namespace(
+                playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
+            )
+            media = parallel.map(partial(fs_add_metadata.extract_metadata, mp_args), [m["path"] for m in media])
+            media = list(filter(None, media))
+
     return media
 
 
