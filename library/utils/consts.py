@@ -183,7 +183,7 @@ OCRMYPDF_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff|pdf".split("|"))
 HTML_SIDECAR_EXTENSIONS = set(
     "css|js|json|xml|woff|woff2|otf|ttf|svg|ico|icns|map|txt|md|yml|yaml|wasm|webmanifest|swf".split("|")
 )
-INSTRUMENT_EXTENSIONS = set('mid|midi|mod|it|xm|s3m|stm|med|mtm|okt'.split("|"))
+INSTRUMENT_EXTENSIONS = set("mid|midi|mod|it|xm|s3m|stm|med|mtm|okt".split("|"))
 AUDIO_ONLY_EXTENSIONS = set(
     "mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4r|caf|m4b|flac|wav|pcm|aif|aiff|wma|aac|aa3|ac3|ape".split("|")
 )

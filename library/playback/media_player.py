@@ -64,7 +64,7 @@ def calculate_duration(args, m) -> tuple[int, int]:
         if args.start.isnumeric() and int(args.start) > 0:
             start = int(args.start)
         elif "%" in args.start:
-            start_percent = int(args.start[:-1])
+            start_percent = int(args.start.rstrip("%"))
             start = int(duration * start_percent / 100)
         elif playhead and any([end == 0, end > minimum_duration]):
             start = playhead
@@ -76,7 +76,7 @@ def calculate_duration(args, m) -> tuple[int, int]:
         if args.end == "dawsworth":
             end = duration * 0.65
         elif "%" in args.end:
-            end_percent = int(args.end[:-1])
+            end_percent = int(args.end.rstrip("%"))
             end = int(duration * end_percent / 100)
         elif "+" in args.end:
             end = int(args.start) + int(args.end)

@@ -57,7 +57,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         log.error(f"%s {path}", e)
         return None
 
-    media = {
+    m = {
         "path": path,
         "size": stat.st_size,
         "type": file_utils.detect_mimetype(path),
@@ -70,19 +70,19 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
     ext = path.rsplit(".", 1)[-1].lower()
     is_scan_all_files = getattr(mp_args, "scan_all_files", False)
 
-    if media["type"] == "directory":
+    if m["type"] == "directory":
         return None
 
-    if media["size"] == 0 or not Path(path).exists():
-        return media
+    if m["size"] == 0 or not Path(path).exists():
+        return m
 
     if objects.is_profile(mp_args, DBType.audio) and (ext in consts.AUDIO_ONLY_EXTENSIONS or is_scan_all_files):
-        media = av.munge_av_tags(mp_args, media)
+        m = av.munge_av_tags(mp_args, m)
     elif objects.is_profile(mp_args, DBType.video) and (ext in consts.VIDEO_EXTENSIONS or is_scan_all_files):
-        media = av.munge_av_tags(mp_args, media)
+        m = av.munge_av_tags(mp_args, m)
 
     if not Path(path).exists():  # av.munge_av_tags might delete if unplayable or corruption exceeds threshold
-        return media
+        return m
 
     text_exts = consts.TEXTRACT_EXTENSIONS
     if mp_args.ocr:
@@ -93,22 +93,22 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         try:
             start = timer()
             if any([mp_args.ocr, mp_args.speech_recognition]):
-                media |= munge_book_tags_slow(path)
+                m |= munge_book_tags_slow(path)
             else:
-                media |= munge_book_tags_fast(path)
+                m |= munge_book_tags_fast(path)
         except mp_TimeoutError:
             log.warning(f"Timed out trying to read file. {path}")
         else:
             log.debug(f"{timer()-start} {path}")
 
-    if getattr(mp_args, "hash", False) and media["type"] != "directory" and media["size"] > 0:
-        media["hash"] = sample_hash.sample_hash_file(path)
+    if getattr(mp_args, "hash", False) and m["type"] != "directory" and m["size"] > 0:
+        m["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "copy", False) and not file_utils.is_file_open(path):
-        path = media["path"] = file_utils.copy(mp_args, path, mp_args.copy)
+        path = m["path"] = file_utils.copy(mp_args, path, mp_args.copy)
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
-        path = media["path"] = file_utils.rel_move(mp_args, path, mp_args.move)
+        path = m["path"] = file_utils.rel_move(mp_args, path, mp_args.move)
 
     if getattr(mp_args, "process", False):
         if objects.is_profile(mp_args, DBType.audio) and Path(path).suffix not in [".opus", ".mka"]:
@@ -119,19 +119,19 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
             )
             if result is None:
                 return None
-            path = media["path"] = str(result)
+            path = m["path"] = str(result)
         elif objects.is_profile(mp_args, DBType.video) and Path(path).suffix not in [".av1.mkv"]:
             result = process_ffmpeg.process_path(mp_args, path)
             if result is None:
                 return None
-            path = media["path"] = str(result)
+            path = m["path"] = str(result)
         elif objects.is_profile(mp_args, DBType.image) and Path(path).suffix not in [".avif", ".avifs"]:
             result = process_image.process_path(mp_args, path)
             if result is None:
                 return None
-            path = media["path"] = str(result)
+            path = m["path"] = str(result)
 
-    return media
+    return m
 
 
 def munge_image_tags(m: dict, e: dict) -> dict:

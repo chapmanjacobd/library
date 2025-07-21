@@ -1,5 +1,6 @@
 import errno, mimetypes, os, shlex, shutil, subprocess, tempfile, time
 from collections import Counter, namedtuple
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from fnmatch import fnmatch
 from functools import wraps
@@ -794,6 +795,12 @@ def get_file_stats(d):
             d["time_deleted"] = consts.APPLICATION_START
 
     return d
+
+
+def get_files_stats(media):
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(get_file_stats, media))
+    return results
 
 
 def get_file_type(d):
