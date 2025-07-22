@@ -301,7 +301,7 @@ def filter_torrents(args, torrents):
 
     if not torrents:
         processes.no_media_found()
-    if args.torrent_search or args.file_search:
+    if (args.torrent_search or args.file_search) and not args.print:
         print(len(torrents), "matching torrents")
         print()
 
