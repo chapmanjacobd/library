@@ -213,6 +213,7 @@ def allocate_torrents():
             pd.DataFrame(torrents),
             {
                 "size": {"direction": "desc"},
+                "file_count": {},
                 "is_recent_and_small": {"direction": "desc", "weight": 2},
                 "time_created": {},
                 "time_modified": {},
