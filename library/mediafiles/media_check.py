@@ -64,7 +64,7 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
             "-v",
             "16",
             "-err_detect",
-            "explode",
+            "buffer+crccheck+explode",
             "-ss",
             f"{scan:.2f}",
             "-i",
