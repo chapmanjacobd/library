@@ -1,4 +1,4 @@
-import math
+import math, subprocess
 
 from library.createdb import subtitle
 from library.mediafiles import media_check
@@ -132,6 +132,10 @@ def munge_av_tags(args, m) -> dict:
         probe = processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
         raise SystemExit(130) from sys_exit
+    except (TimeoutError, subprocess.TimeoutExpired):
+        log.error(f"FFProbe timed out. {path}")
+        m["error"] = "FFProbe timed out"
+        return m
     except OSError as e:
         if e.errno == 23:  # Too many open files
             raise e

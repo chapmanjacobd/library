@@ -287,7 +287,7 @@ class FFProbe:
             "ffprobe",
             "-hide_banner",
             "-rw_timeout",
-            "100000000",
+            "100000000",  # 1m40s
             "-show_format",
             "-show_streams",
             "-show_chapters",
@@ -298,7 +298,7 @@ class FFProbe:
         ]
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        out, err = p.communicate()
+        out, err = p.communicate(timeout=120)  # 2 mins
         if p.returncode != 0:
             log.info("ffprobe %s out %s error %s", p.returncode, out, err)
             if p.returncode == -2:
