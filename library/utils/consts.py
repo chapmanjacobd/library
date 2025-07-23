@@ -185,7 +185,7 @@ HTML_SIDECAR_EXTENSIONS = set(
 )
 INSTRUMENT_EXTENSIONS = set("mid|midi|mod|it|xm|s3m|stm|med|mtm|okt".split("|"))
 AUDIO_ONLY_EXTENSIONS = set(
-    "mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4r|caf|m4b|flac|wav|pcm|aif|aiff|wma|aac|aa3|ac3|ape".split("|")
+    "mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4r|caf|m4b|flac|wav|pcm|aif|aiff|wma|aac|aa3|ac3|ape|dsf|dff".split("|")
 )
 VIDEO_EXTENSIONS = set(
     (
