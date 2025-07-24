@@ -103,7 +103,22 @@ def human_to_bits(input_str) -> int:
 def sql_human_time(s):
     if s.isdigit():
         return s + " minutes"
-    return s.replace("mins", "minutes").replace("secs", "seconds")
+
+    unit_mapping = {
+        "min": "minutes",
+        "mins": "minutes",
+        "s": "seconds",
+        "sec": "seconds",
+        "secs": "seconds",
+    }
+
+    match = re.match(r"(\d+\.?\d*)([a-zA-Z]+)", s)
+    if match:
+        value, unit = match.groups()
+        unit = unit.strip().lower()
+        unit = unit_mapping.get(unit, unit)
+        return f"{value} {unit}"  # space is important
+    return s
 
 
 def human_to_seconds(input_str):
