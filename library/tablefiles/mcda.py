@@ -270,7 +270,10 @@ def group_sort_by(args, folders):
     if args.sort_groups_by is None:
 
         def sort_func(x):
-            return (0, -x["size"] / x["exists"]) if x["exists"] else (1, -x["size"] / x["total"])
+            if not getattr(args, "hide_deleted", True):
+                return (0, -x["deleted_size"] / x["deleted"]) if x["deleted"] else (1, -x["deleted_size"] / x["total"])
+            else:
+                return (0, -x["size"] / x["exists"]) if x["exists"] else (1, -x["size"] / x["total"])
 
     elif args.sort_groups_by.startswith("mcda "):
         import pandas as pd

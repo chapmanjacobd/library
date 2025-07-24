@@ -23,10 +23,6 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
-    if not any([args.folders_counts, args.folder_counts, args.folder_sizes]):
-        args.folder_counts = ["+3", "-3000"]
-        args.folder_sizes = ["+30MiB"]
-
     arggroups.sql_fs_post(args)
     arggroups.group_folders_post(args)
 
@@ -127,15 +123,23 @@ def reaggregate_at_depth(args, folders) -> list[dict]:
 
 
 def process_big_dirs(args, folders) -> list[dict]:
-    folders = [d for d in folders if d["total"] != d["deleted"]]  # remove folders where all deleted
+    if args.hide_deleted:
+        folders = [d for d in folders if d["total"] != d["deleted"]]  # remove folders where all deleted
 
     if args.depth:
         folders = reaggregate_at_depth(args, folders)
 
-    if args.folder_sizes:
-        folders = [d for d in folders if args.folder_sizes(d["size"])]
-    if args.folder_counts:
-        folders = [d for d in folders if args.folder_counts(d["exists"])]
+    if args.only_deleted:
+        if args.folder_sizes:
+            folders = [d for d in folders if args.folder_sizes(d["deleted_size"])]
+        if args.folder_counts:
+            folders = [d for d in folders if args.folder_counts(d["deleted"])]
+    else:
+        if args.folder_sizes:
+            folders = [d for d in folders if args.folder_sizes(d["size"])]
+        if args.folder_counts:
+            folders = [d for d in folders if args.folder_counts(d["exists"])]
+
     if args.folders_counts:
         folders = [d for d in folders if args.folders_counts(d["folders"])]
 
