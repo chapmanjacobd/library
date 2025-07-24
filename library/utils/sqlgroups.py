@@ -428,7 +428,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         WHERE 1=1
             {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns and not dl_status else ''}
             {f'and COALESCE(m.download_attempts,0) <= {args.download_retries}' if 'download_attempts' in m_columns and not dl_status else ''}
-            {'and COALESCE(p.time_deleted, 0) = 0' if is_media_playlist and 'time_deleted' in pl_columns and not "time_deleted" in " ".join(args.filter_sql) else ''}
+            {'and COALESCE(p.time_deleted, 0) = 0' if is_media_playlist and 'time_deleted' in pl_columns and args.hide_deleted else ''}
             {'and m.path like "http%"' if not dl_status else ''}
             {same_subdomain if getattr(args, 'same_domain', False) else ''}
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}

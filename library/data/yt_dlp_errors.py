@@ -35,6 +35,8 @@ yt_recoverable_errors = re.compile(
 .*Upgrade now
 .*timed out
 .*Could not connect
+.*Unable to download webpage
+.*Network is unreachable
 .*restricted
 .*Media check failed
 .*Internal Server Error

@@ -620,11 +620,13 @@ big_dirs = """library big-dirs PATH ... [--limit (4000)] [--depth (0)] [--sort-g
 
     Filter folders by size
 
-        library big-dirs ./video/ -FS+10GB -FS-200GB
+        library big-dirs ./video/ --folder-sizes=+10GB --folder-sizes=-200GB
+        library big-dirs ./video/ -FS=+10GB -FS=-200GB
 
     Filter folders by count
 
-        library big-dirs ./video/ -FC+300 -FC-5000
+        library big-dirs ./video/ --folder-counts=+3 --folder-counts=-3000
+        library big-dirs ./video/ -FC=+3 -FC=-3000
 
     Filter folders by depth
 
