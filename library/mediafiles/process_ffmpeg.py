@@ -60,7 +60,7 @@ def is_animation_from_probe(probe) -> bool:
     return False
 
 
-def process_path(args, path, include_timecode=False, subtitle_streams_unsupported=False, **kwargs):
+def process_path(args, path, include_timecode=False, subtitle_streams_unsupported=False, **kwargs) -> str | None:
     if kwargs:
         args = args_override(args, kwargs)
 
@@ -77,7 +77,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
 
     if args.simulate and consts.PYTEST_RUNNING:
         print("ffmpeg", path, output_path)
-        return path
+        return str(path)
 
     try:
         original_stats = path.stat()
@@ -100,7 +100,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
             log.warning("Deleting unplayable: %s", path)
             path.unlink()
             return None
-        return path
+        return str(path)
 
     if path_utils.ext(path) in consts.IMAGE_ANIMATION_EXTENSIONS:
         is_animation = is_animation_from_probe(probe)
@@ -125,10 +125,10 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
 
     if video_stream and (video_stream.get("codec_name") or "") == "av1":
         log.info("Video is already AV1: %s", path)
-        return path
+        return str(path)
     elif (not video_stream or args.audio_only) and audio_stream and (audio_stream.get("codec_name") or "") == "opus":
         log.info("Audio is already Opus: %s", path)
-        return path
+        return str(path)
 
     if video_stream and not args.audio_only:
         output_suffix = ".av1.mkv"
@@ -327,7 +327,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
 
     if args.simulate:
         print(shlex.join(command))
-        return path
+        return str(path)
 
     is_file_error = False
     try:
@@ -350,7 +350,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
             )
         elif is_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
-            return path
+            return str(path)
         else:
             raise
 
@@ -363,9 +363,9 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
     delete_transcode = False
 
     if not output_path.exists():
-        return path if path.exists() else None
+        return str(path) if path.exists() else None
     elif not path.exists():
-        return output_path
+        return str(output_path)
 
     output_stats = output_path.stat()
 
@@ -403,12 +403,12 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
 
     if delete_transcode:
         output_path.unlink()
-        return path
+        return str(path)
     elif delete_larger:
         path.unlink()
 
     os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
-    return output_path
+    return str(output_path)
 
 
 def process_ffmpeg(defaults_override=None):

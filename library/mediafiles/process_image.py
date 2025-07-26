@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def process_path(args, path):
+def process_path(args, path) -> str | None:
     output_path = web.gen_output_path(args, path, target_extension=".avif")
 
     ext = path_utils.ext(path)
@@ -69,7 +69,7 @@ def process_path(args, path):
 
     if args.simulate:
         print(shlex.join(command))
-        return path
+        return str(path)
 
     try:
         original_stats = path.stat()
@@ -96,25 +96,25 @@ def process_path(args, path):
             raise
         elif is_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
-            return path
+            return str(path)
         elif is_file_error:
             if args.delete_unplayable:
                 path.unlink()
             return None
 
     if not output_path.exists():
-        return path if path.exists else None
+        return str(path) if path.exists else None
 
     output_stats = output_path.stat()
     if output_stats.st_size == 0 or (args.delete_larger and output_stats.st_size > original_stats.st_size):
         output_path.unlink()  # Remove transcode
-        return path
+        return str(path)
 
     if args.delete_larger:
         path.unlink()  # Remove original
     os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
-    return output_path
+    return str(output_path)
 
 
 def process_image():

@@ -54,13 +54,13 @@ def parse_args() -> argparse.Namespace:
         "--source-audio-bitrate",
         type=nums.human_to_bits,
         default="256kbps",
-        help="Used to estimate duration when files are invalid or inside of archives",
+        help="Used to estimate duration when files are inside of archives or invalid",
     )
     parser.add_argument(
         "--source-video-bitrate",
         type=nums.human_to_bits,
         default="1400kbps",
-        help="Used to estimate duration when files are invalid or inside of archives",
+        help="Used to estimate duration when files are inside of archives or invalid",
     )
 
     parser.add_argument("--target-audio-bitrate", type=nums.human_to_bits, default="128kbps")
@@ -408,6 +408,10 @@ def process_media() -> None:
                 if new_path is None:
                     m["time_deleted"] = consts.APPLICATION_START
                 elif new_path == m["path"]:
+                    if args.move:
+                        # move original file
+                        dest = path_utils.relative_from_mountpoint(m["path"], args.move)
+                        file_utils.rename_move_file(m["path"], dest)
                     continue
                 else:
                     if m["media_type"] in ("Audio", "Video", "Image"):
