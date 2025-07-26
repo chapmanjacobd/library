@@ -796,10 +796,15 @@ def torrents_info():
             if args.tracker_dirnames:
                 domain = t.tracker_domain()
                 if domain:
-                    if temp_path:
+                    if temp_path and domain not in temp_path:
                         temp_path /= domain
-                    if download_path:
+                    if download_path and domain not in download_path:
                         download_path /= domain
+            else:
+                if os.path.isfile(temp_path):
+                    temp_path = temp_path.parent
+                if os.path.isfile(download_path):
+                    download_path = download_path.parent
 
             log.debug("temp_path %s", temp_path)
             log.debug("download_path %s", download_path)
