@@ -63,7 +63,7 @@ def parse_args():
 -E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
     )
     arggroups.clobber(parser)
-    parser.set_defaults(parent=True, file_over_file="delete-src-smaller delete-dest")
+    parser.set_defaults(file_over_file="delete-src-smaller delete-dest")
     parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
     parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
     parser.add_argument("--download-limit", "--dl-limit", type=nums.human_to_bytes, help="Torrent download limit")
@@ -783,23 +783,37 @@ def torrents_info():
                 if not temp_path.is_absolute():  # --temp-drive or --move could be relative
                     mountpoint = path_utils.mountpoint(t.content_path)
                     temp_path = Path(mountpoint) / temp_path
-                if args.temp_prefix:
-                    temp_path /= args.temp_prefix
+
+                if os.path.isfile(temp_path):
+                    temp_path = temp_path.parent
+                elif (os.path.isdir(temp_path) and path_utils.parent(temp_path) == path_utils.parent(t.download_path or t.content_path)):
+                    pass
+                else:
+                    if args.temp_prefix and args.temp_prefix not in temp_path.parts:
+                        temp_path /= args.temp_prefix
+                    if args.tracker_dirnames:
+                        domain = t.tracker_domain()
+                        if domain:
+                            if temp_path and domain not in temp_path.parts:
+                                temp_path /= domain
 
             if download_path:
                 if not download_path.is_absolute():  # --download-drive or --move could be relative
                     mountpoint = path_utils.mountpoint(t.content_path)
                     download_path = Path(mountpoint) / download_path
-                if args.download_prefix:
-                    download_path /= args.download_prefix
 
-            if args.tracker_dirnames:
-                domain = t.tracker_domain()
-                if domain:
-                    if temp_path:
-                        temp_path /= domain
-                    if download_path:
-                        download_path /= domain
+                if os.path.isfile(download_path):
+                    download_path = download_path.parent
+                elif (os.path.isdir(download_path) and path_utils.parent(download_path) == path_utils.parent(t.save_path or t.content_path)):
+                    pass
+                else:
+                    if args.download_prefix and args.download_prefix not in download_path.parts:
+                        download_path /= args.download_prefix
+                    if args.tracker_dirnames:
+                        domain = t.tracker_domain()
+                        if domain:
+                            if download_path and domain not in download_path.parts:
+                                download_path /= domain
 
             log.debug("temp_path %s", temp_path)
             log.debug("download_path %s", download_path)
@@ -808,10 +822,15 @@ def torrents_info():
             if args.simulate:
                 print("Moving", t.content_path, "to", new_path)
                 continue
-            if os.path.exists(t.content_path):  # TODO: it would be more clean to iterate over t.files
-                print("Moving", t.content_path, "to", new_path)
-                if Path(t.content_path).parent != new_path:
-                    new_path.mkdir(parents=True, exist_ok=True)
+
+            content_path = Path(t.content_path) if t.content_path else None
+            if content_path and content_path.exists():
+                if content_path.is_file():
+                    print("Moving file", t.content_path, "to", new_path)
+                    merge_mv.move(args, [t.content_path], str(new_path))
+                else:
+                    new_path /= path_utils.parent(t.content_path)
+                    print("Moving folder", t.content_path, "to", new_path)
                     merge_mv.move(args, [t.content_path], str(new_path))
 
             if not (args.delete_files or args.delete_rows):
