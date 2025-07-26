@@ -106,7 +106,7 @@ def convert_to_text_pdf(args, path):
     return path
 
 
-def process_path(args, path):
+def process_path(args, path) -> str | None:
     if str(path).startswith("http"):
         if args.simulate:
             log.info("Downloading %s", path)
@@ -142,7 +142,7 @@ def process_path(args, path):
     ext = path_utils.ext(path)
 
     if ext not in consts.CALIBRE_EXTENSIONS:
-        return path
+        return str(path)
 
     p = Path(path)
     output_path = p.parent
@@ -189,7 +189,7 @@ def process_path(args, path):
 
     if args.simulate:
         print(shlex.join(command))
-        return path
+        return str(path)
 
     try:
         original_stats = path.stat()
@@ -201,12 +201,12 @@ def process_path(args, path):
         processes.cmd(*command)
     except subprocess.CalledProcessError:
         log.exception("[%s]: Calibre failed to process book. Skipping...", str(path))
-        return path
+        return str(path)
 
     if not output_path.exists() or path_utils.is_empty_folder(output_path):
         output_path.unlink()  # Remove transcode
         log.error("Could not transcode %s", path)
-        return path
+        return str(path)
 
     # replace CSS
     base_folder = Path(__file__).resolve().parent
@@ -235,13 +235,13 @@ def process_path(args, path):
     # compare final output size
     if args.delete_larger and path_utils.folder_size(output_path) > original_stats.st_size:
         devices.rmtree(args, output_path)  # Remove transcode
-        return path
+        return str(path)
 
     if args.delete_larger:
         path.unlink()  # Remove original
     path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
-    return output_path
+    return str(output_path)
 
 
 def process_text():
