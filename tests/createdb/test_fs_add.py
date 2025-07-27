@@ -37,6 +37,6 @@ def test_fsupdate_multi(mocked, temp_db):
     out = mocked.call_args[0][1]
     assert len(out) == 2
 
-    lb(["fs", db1, "-s", "tests/conftest.py"])
+    lb(["fs", db1, "-s", "conftest.py"])
     out = mocked.call_args[0][1]
     assert len(out) == 1

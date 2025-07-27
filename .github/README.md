@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.107; 101 subcommands)
+    library (v3.0.108; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1599,11 +1599,13 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Filter folders by size
 
-        library big-dirs ./video/ -FS+10GB -FS-200GB
+        library big-dirs ./video/ --folder-sizes=+10GB --folder-sizes=-200GB
+        library big-dirs ./video/ -FS=+10GB -FS=-200GB
 
     Filter folders by count
 
-        library big-dirs ./video/ -FC+300 -FC-5000
+        library big-dirs ./video/ --folder-counts=+3 --folder-counts=-3000
+        library big-dirs ./video/ -FC=+3 -FC=-3000
 
     Filter folders by depth
 
