@@ -14,6 +14,7 @@ from tests.utils import connect_db_args, v_db
 
 fs_flags = [
     ("--modified-within '1 second'", 0, ""),
+    ("--time-modified '-1 second'", 0, ""),
     ("--deleted-within '1 day'", 0, ""),
     ("--deleted", 0, ""),
     ("--downloaded-before '1 day'", 0, ""),
@@ -28,6 +29,8 @@ fs_flags = [
     ("-s tests -s 'tests AND data' -E 2 -s test -E 3", 4, "corrupt.mp4"),
     ("--created-within '30 years'", 5, "corrupt.mp4"),
     ("--created-before '1 second'", 5, "corrupt.mp4"),
+    ("--time-created '-30 years'", 5, "corrupt.mp4"),
+    ("--time-created '+1 second'", 5, "corrupt.mp4"),
     ("--downloaded-within '1 day'", 4, "corrupt.mp4"),
     ("--playlists tests/data/", 4, ""),
     ("--local-media-only", 4, "corrupt.mp4"),
@@ -42,6 +45,7 @@ fs_flags = [
     ("test --flex", 5, "corrupt.mp4"),
     ("test --no-fts", 5, "corrupt.mp4"),
     ("--modified-before '1 second'", 5, "corrupt.mp4"),
+    ("--time-modified '+1 second'", 5, "corrupt.mp4"),
     ("--deleted-before '1 day'", 5, "corrupt.mp4"),
     ("--hide-deleted", 5, "corrupt.mp4"),
     ("--no-hide-deleted", 5, "corrupt.mp4"),

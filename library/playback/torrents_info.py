@@ -786,7 +786,9 @@ def torrents_info():
 
                 if os.path.isfile(temp_path):
                     temp_path = temp_path.parent
-                elif (os.path.isdir(temp_path) and path_utils.parent(temp_path) == path_utils.parent(t.download_path or t.content_path)):
+                elif os.path.isdir(temp_path) and path_utils.parent(temp_path) == path_utils.parent(
+                    t.download_path or t.content_path
+                ):
                     pass
                 else:
                     if args.temp_prefix and args.temp_prefix not in temp_path.parts:
@@ -804,7 +806,9 @@ def torrents_info():
 
                 if os.path.isfile(download_path):
                     download_path = download_path.parent
-                elif (os.path.isdir(download_path) and path_utils.parent(download_path) == path_utils.parent(t.save_path or t.content_path)):
+                elif os.path.isdir(download_path) and path_utils.parent(download_path) == path_utils.parent(
+                    t.save_path or t.content_path
+                ):
                     pass
                 else:
                     if args.download_prefix and args.download_prefix not in download_path.parts:
