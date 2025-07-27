@@ -829,7 +829,7 @@ def torrents_info():
                     print("Moving file", t.content_path, "to", new_path)
                     merge_mv.move(args, [t.content_path], str(new_path))
                 else:
-                    new_path /= path_utils.parent(t.content_path)
+                    new_path /= os.path.basename(t.content_path)
                     print("Moving folder", t.content_path, "to", new_path)
                     merge_mv.move(args, [t.content_path], str(new_path))
 
