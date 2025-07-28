@@ -171,7 +171,7 @@ def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):
     destination = os.path.realpath(destination) + (os.sep if destination.endswith(os.sep) else "")
 
     sources = (
-        os.path.realpath(s) + (os.sep if s.endswith(os.sep) else "")  # preserve trailing slash for --bsd
+        os.path.realpath(s) + (os.sep if str(s).endswith(os.sep) else "")  # preserve trailing slash for --bsd
         for s in sources
     )
 
