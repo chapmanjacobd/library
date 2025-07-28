@@ -10,6 +10,9 @@ from library.utils.strings import duration, duration_short, file_size, relative_
 
 
 def print_overwrite(*text, **kwargs):
+    if "file" not in kwargs:
+        kwargs["file"] = sys.stderr
+
     if consts.PYTEST_RUNNING or not sys.stdout.isatty():
         pass
     elif consts.IS_LINUX or consts.IS_MAC:
