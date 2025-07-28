@@ -786,7 +786,7 @@ def torrents_info():
 
                 if os.path.isfile(temp_path):
                     temp_path = temp_path.parent
-                elif os.path.isdir(temp_path) and path_utils.parent(temp_path) == path_utils.parent(
+                elif os.path.isdir(temp_path) and path_utils.basename(temp_path) == path_utils.basename(
                     t.download_path or t.content_path
                 ):
                     pass
@@ -806,7 +806,7 @@ def torrents_info():
 
                 if os.path.isfile(download_path):
                     download_path = download_path.parent
-                elif os.path.isdir(download_path) and path_utils.parent(download_path) == path_utils.parent(
+                elif os.path.isdir(download_path) and path_utils.basename(download_path) == path_utils.basename(
                     t.save_path or t.content_path
                 ):
                     pass
@@ -830,12 +830,12 @@ def torrents_info():
             content_path = Path(t.content_path) if t.content_path else None
             if content_path and content_path.exists():
                 if content_path.is_file():
-                    print("Moving file", t.content_path, "to", new_path)
-                    merge_mv.move(args, [t.content_path], str(new_path))
+                    print("Moving file", content_path, "to", new_path)
+                    merge_mv.move(args, [str(content_path)], str(new_path))
                 else:
-                    new_path /= os.path.basename(t.content_path)
-                    print("Moving folder", t.content_path, "to", new_path)
-                    merge_mv.move(args, [t.content_path], str(new_path))
+                    new_path /= content_path.name
+                    print("Moving folder", content_path, "to", new_path)
+                    merge_mv.move(args, [str(content_path)], str(new_path))
 
             if not (args.delete_files or args.delete_rows):
                 # update metadata
