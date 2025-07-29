@@ -1,5 +1,6 @@
 import errno, mimetypes, os, shlex, shutil, subprocess, tempfile, time
 from collections import Counter, namedtuple
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from fnmatch import fnmatch
@@ -23,14 +24,11 @@ def scan_stats(files: int, filtered_files: int, folders: int, filtered_folders: 
 
 def rglob(
     base_dir: str | Path,
-    extensions=None,  # None | Iterable[str]
-    exclude=None,  # None | Iterable[str]
-    include=None,  # None | Iterable[str]
+    extensions: tuple[str] | None = None,
+    exclude: Iterable[str] | None = None,
+    include: Iterable[str] | None = None,
     quiet=False,
 ) -> tuple[set[str], set[str], set[str]]:
-    if extensions:
-        extensions = tuple(s if s.startswith(".") else f".{s}" for s in extensions)
-
     files = set()
     filtered_files = set()
     filtered_folders = set()
@@ -93,13 +91,10 @@ def rglob(
 
 def rglob_gen(
     base_dir: str | Path,
-    extensions=None,  # None | Iterable[str]
-    exclude=None,  # None | Iterable[str]
-    include=None,  # None | Iterable[str]
+    extensions: tuple[str] | None = None,
+    exclude: Iterable[str] | None = None,
+    include: Iterable[str] | None = None,
 ):
-    if extensions:
-        extensions = tuple(s if s.startswith(".") else f".{s}" for s in extensions)
-
     folders = set()
     stack = [base_dir]
     while stack:
@@ -141,9 +136,9 @@ def rglob_gen(
 
 def fd_rglob_gen(
     base_dir: str | Path,
-    extensions=None,
-    exclude=None,
-    include=None,
+    extensions: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
+    include: Iterable[str] | None = None,
 ):
     fd_command = ["fd", "-HI", "-tf", "--absolute-path", "-0"]
 
@@ -198,6 +193,10 @@ def file_temp_copy(src) -> str:
 
 def trash(args, path: Path | str, detach=True) -> None:
     if Path(path).exists():
+        if str(path).startswith("/net/"):
+            Path(path).unlink(missing_ok=True)
+            return
+
         trash_put = which(args.override_trash)
         if trash_put is not None:
             if not detach:

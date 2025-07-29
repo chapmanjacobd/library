@@ -98,9 +98,12 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
             if all(
                 [
                     shortcut_allowed,
+                    not args.ext,
                     not args.simulate,
                     not args.timeout_size,
                     not args.move_limit,
+                    not args.move_sizes,
+                    not args.move_exclude,
                     not args.modify_depth,
                     not os.path.exists(folder_dest),
                 ]

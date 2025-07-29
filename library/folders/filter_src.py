@@ -9,11 +9,16 @@ MOVED_SIZE = 0
 
 
 def filter_src(args, path):
+    # REMEMBER to exclude in merge-mv shortcut
+
     try:
         stat = os.stat(path)
     except FileNotFoundError:
         return False
     if args.move_sizes and not args.move_sizes(stat.st_size):
+        return False
+
+    if args.ext and not path.lower().endswith(args.ext):
         return False
 
     if any(fnmatch(path, s) for s in args.move_exclude):

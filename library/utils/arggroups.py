@@ -47,7 +47,7 @@ def get_argparse_defaults(parser):
 
 
 def args_post(args, parser, create_db=False):
-    args.ext = [s.lower() for s in args.ext]
+    args.ext = tuple(s.lstrip(".").lower() for s in args.ext)
 
     parser_defaults = get_argparse_defaults(parser)
     args.defaults = {k: v for k, v in args.__dict__.items() if parser_defaults.get(k, None) == v}
