@@ -137,10 +137,10 @@ def find_new_files(args, path) -> list[str]:
 
     exts = args.ext
     if not exts:
-        exts = set()
         if args.scan_all_files or DBType.filesystem in args.profiles:
             exts = None
         else:
+            exts = set()
             if DBType.audio in args.profiles:
                 exts |= consts.AUDIO_ONLY_EXTENSIONS
             if DBType.video in args.profiles:
@@ -155,6 +155,7 @@ def find_new_files(args, path) -> list[str]:
                 exts |= consts.OCR_EXTENSIONS
             if args.speech_recognition:
                 exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
+            exts = tuple(exts)
 
     scanned_set = file_utils.rglob(path, exts or None, args.exclude)[0]
 
