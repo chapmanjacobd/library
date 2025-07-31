@@ -58,7 +58,7 @@ def delete_media(args, paths) -> int:
 
 
 class Action:
-    KEEP = "KEEP"
+    NONE = "NONE"
     DELETE = "DELETE"
     DELETE_IF_AUDIOBOOK = "DELETE_IF_AUDIOBOOK"
     SOFTDELETE = "SOFTDELETE"
@@ -66,10 +66,9 @@ class Action:
 
 
 class AskAction:
-    ASK_KEEP = (Action.KEEP, Action.DELETE)
-    ASK_MOVE = (Action.MOVE, Action.KEEP)
-    ASK_DELETE = (Action.DELETE, Action.KEEP)
-    ASK_SOFTDELETE = (Action.SOFTDELETE, Action.KEEP)
+    ASK_MOVE = (Action.MOVE, Action.NONE)
+    ASK_DELETE = (Action.DELETE, Action.NONE)
+    ASK_SOFTDELETE = (Action.SOFTDELETE, Action.NONE)
     ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
 
 
@@ -86,10 +85,10 @@ def normal_action(args, media_file: str, action, handle_ask_action=None):
     action = action or args.post_action
     action = action.upper()
 
-    if action == "NONE":
-        action = Action.KEEP
+    if action == "KEEP":
+        action = Action.NONE
 
-    if action == Action.KEEP:
+    if action == Action.NONE:
         pass
     elif action == Action.DELETE:
         handle_delete_action()

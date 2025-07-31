@@ -165,7 +165,7 @@ download = r"""library download DATABASE [--prefix /mnt/d/] --video [--subs] [--
         Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
         using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
 
-        For example, here I bind "'" to "KEEP" and  "j" to "DELETE"
+        For example, here I bind "'" to "MOVE" and  "j" to "DELETE" when using -k ask_move_or_delete
 
             ' quit
             j quit 4

@@ -947,13 +947,12 @@ def post_actions(parent_parser):
         "--post-action",
         "--action",
         "-k",
-        default="keep",
+        default="none",
         help="""Post-actions -- choose what to do after playing
 --post-action keep    # do nothing after playing (default)
 -k delete             # delete file after playing
 -k softdelete         # mark deleted after playing
 
--k ask_keep           # ask whether to keep after playing
 -k ask_delete         # ask whether to delete after playing
 
 -k move               # move to "keep" dir after playing
