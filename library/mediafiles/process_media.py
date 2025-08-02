@@ -157,6 +157,9 @@ def check_shrink(args, m) -> list:
             try:
                 probe = processes.FFProbe(m["path"])
                 m["duration"] = probe.duration
+            except (TimeoutError, subprocess.TimeoutExpired):
+                log.error(f"FFProbe timed out. {m['path']}")
+                m["duration"] = None
             except processes.UnplayableFile:
                 m["duration"] = None
                 if args.delete_unplayable:
@@ -219,6 +222,9 @@ def check_shrink(args, m) -> list:
             try:
                 probe = processes.FFProbe(m["path"])
                 m["duration"] = probe.duration
+            except (TimeoutError, subprocess.TimeoutExpired):
+                log.error(f"FFProbe timed out. {m['path']}")
+                m["duration"] = None
             except processes.UnplayableFile:
                 m["duration"] = None
                 if args.delete_unplayable:
@@ -432,11 +438,14 @@ def process_media() -> None:
                     if m["media_type"] in ("Audio", "Video"):
                         try:
                             m["duration"] = processes.FFProbe(new_path).duration
+                        except (TimeoutError, subprocess.TimeoutExpired):
+                            log.error(f"FFProbe timed out. {new_path}")
+                            continue
                         except processes.UnplayableFile:
                             if args.delete_unplayable:
                                 log.warning("Deleting unplayable: %s", new_path)
                                 Path(new_path).unlink(missing_ok=True)
-                                continue
+                            continue
 
                     if not os.path.exists(m["path"]):
                         new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]

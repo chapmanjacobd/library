@@ -379,12 +379,15 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
     else:
         try:
             transcode_probe = processes.FFProbe(output_path)
+        except (TimeoutError, subprocess.TimeoutExpired):
+            log.error(f"FFProbe timed out. {output_path}")
+            transcode_invalid = True
         except processes.UnplayableFile:
             transcode_invalid = True
         else:
-            if not probe.streams:
+            if not transcode_probe.streams:
                 transcode_invalid = True
-            elif not probe.duration:
+            elif not transcode_probe.duration:
                 transcode_invalid = True
             elif args.delete_unplayable and is_file_error:
                 pass  # if the original file is broken but the transcode is somewhat valid, don't compare duration
