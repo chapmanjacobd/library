@@ -38,7 +38,6 @@ def is_animation_from_probe(probe) -> bool:
         if frames is None:
             r = processes.cmd(
                 "ffprobe",
-                "-nostdin",
                 "-v",
                 "error",
                 "-count_frames",
