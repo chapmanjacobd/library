@@ -46,6 +46,7 @@ def test_process_ffmpeg(path, duration, out_ext):
     args = objects.NoneSpace(**get_default_args(arggroups.clobber, arggroups.process_ffmpeg))
     output_path = process_path(args, input_path)
 
+    assert output_path is not None
     assert Path(output_path).suffix == out_ext
 
     out_probe = processes.FFProbe(output_path)

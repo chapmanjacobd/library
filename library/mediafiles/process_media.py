@@ -191,7 +191,8 @@ def check_shrink(args, m) -> list:
         else:
             log.debug("[%s]: Skipping small file", m["path"])
     elif (
-        (filetype and (filetype.startswith("image/") or " image" in filetype)) or m["ext"] in consts.IMAGE_EXTENSIONS
+        (filetype and (filetype.startswith("image/") or " image" in filetype))
+        or m["ext"] in consts.IMAGE_EXTENSIONS - consts.IMAGE_ANIMATION_EXTENSIONS
     ) and (m.get("duration") or 0) == 0:
         if m["ext"] == "avif":
             log.debug("Skipping existing AVIF")
@@ -210,7 +211,8 @@ def check_shrink(args, m) -> list:
             return [m]
         log.debug("[%s]: Skipping small file", m["path"])
     elif (
-        (filetype and (filetype.startswith("video/") or " video" in filetype)) or m["ext"] in consts.VIDEO_EXTENSIONS
+        (filetype and (filetype.startswith("video/") or " video" in filetype))
+        or m["ext"] in consts.VIDEO_EXTENSIONS | consts.IMAGE_ANIMATION_EXTENSIONS
     ) and (m.get("video_count") or 1) >= 1:
         is_invalid = False
         m["media_type"] = "Video"
