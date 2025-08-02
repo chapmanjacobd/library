@@ -24,11 +24,14 @@ def scan_stats(files: int, filtered_files: int, folders: int, filtered_folders: 
 
 def rglob(
     base_dir: str | Path,
-    extensions: tuple[str] | None = None,
+    extensions: Iterable[str] | None = None,
     exclude: Iterable[str] | None = None,
     include: Iterable[str] | None = None,
     quiet=False,
 ) -> tuple[set[str], set[str], set[str]]:
+    if extensions is not None and not isinstance(extensions, tuple):
+        extensions = tuple(extensions)
+
     files = set()
     filtered_files = set()
     filtered_folders = set()
@@ -91,10 +94,13 @@ def rglob(
 
 def rglob_gen(
     base_dir: str | Path,
-    extensions: tuple[str] | None = None,
+    extensions: Iterable[str] | None = None,
     exclude: Iterable[str] | None = None,
     include: Iterable[str] | None = None,
 ):
+    if extensions is not None and not isinstance(extensions, tuple):
+        extensions = tuple(extensions)
+
     folders = set()
     stack = [base_dir]
     while stack:

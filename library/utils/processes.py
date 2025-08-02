@@ -140,6 +140,8 @@ def os_bg_kwargs() -> dict:
 def cmd(
     *command, strict=True, cwd=None, quiet=True, error_verbosity=1, ignore_regexps=None, **kwargs
 ) -> subprocess.CompletedProcess:
+    command = [str(s) for s in command]
+
     def print_std(s, is_success):
         if ignore_regexps is not None:
             s = "\n".join(line for line in s.splitlines() if not any(r.match(line) for r in ignore_regexps))
