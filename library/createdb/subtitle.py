@@ -1,4 +1,4 @@
-import re, tempfile
+import re, subprocess, tempfile
 from pathlib import Path
 
 import ffmpeg
@@ -98,7 +98,11 @@ def is_text_subtitle_stream(s) -> bool:
 
 def externalize_internal_subtitles(path, streams=None) -> list[str]:
     if streams is None:
-        streams = processes.FFProbe(path).streams
+        try:
+            streams = processes.FFProbe(path).streams
+        except (TimeoutError, subprocess.TimeoutExpired):
+            log.error(f"FFProbe timed out. {path}")
+            return []
 
     external_paths = iterables.conform(
         [extract_from_video(path, s["index"]) for s in streams if is_text_subtitle_stream(s)],
@@ -130,10 +134,15 @@ def get_subtitle_paths(path) -> list[str]:
 
 
 def get_sub_index(args, path) -> int | None:
-    probe = processes.FFProbe(path)
+    try:
+        probe = processes.FFProbe(path)
+    except (TimeoutError, subprocess.TimeoutExpired):
+        log.error(f"FFProbe timed out. {path}")
+        return None
+
     temp_db = db_utils.connect(args, memory=True)
     temp_db["streams"].insert_all(probe.streams, pk="index")  # type: ignore
-    subtitle_index = temp_db.pop(
+    subtitle_index = temp_db.pop(  # type: ignore
         f"""select "index" from streams
             where codec_type = "subtitle"
               and codec_name not in ({",".join(['?'] * len(IMAGE_SUBTITLE_CODECS))})

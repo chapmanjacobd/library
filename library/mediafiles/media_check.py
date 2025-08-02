@@ -190,7 +190,8 @@ def calculate_corruption(
         else:
             corruption = decode_full_scan(path, audio_scan=audio_scan, threads=threads)
     else:
-        duration = nums.safe_int(processes.FFProbe(path).duration)
+        duration = processes.FFProbe(path).duration
+        duration = nums.safe_int(duration)
         if duration in [None, 0]:
             return 0.5
         corruption = decode_quick_scan(
@@ -233,7 +234,9 @@ def media_check() -> None:
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
-                if corruption_threshold_exceeded(args.delete_corrupt, corruption, processes.FFProbe(path).duration):
+                duration = processes.FFProbe(path).duration
+
+                if corruption_threshold_exceeded(args.delete_corrupt, corruption, duration):
                     threshold_str = (
                         strings.percent(args.delete_corrupt)
                         if 0 < args.delete_corrupt < 1
