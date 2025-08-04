@@ -70,7 +70,7 @@ def parse_args() -> argparse.Namespace:
         "--transcoding-video-rate", type=float, default=1.8, help="Ratio of duration eg. 4x realtime speed"
     )
     parser.add_argument(
-        "--transcoding-audio-rate", type=float, default=70, help="Ratio of duration eg. 100x realtime speed"
+        "--transcoding-audio-rate", type=float, default=150, help="Ratio of duration eg. 100x realtime speed"
     )
     parser.add_argument("--transcoding-image-time", type=float, default=1.5, metavar="SECONDS")
 
