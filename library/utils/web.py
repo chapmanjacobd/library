@@ -1,4 +1,4 @@
-import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -13,6 +13,8 @@ from library.data.http_errors import HTTPTooManyRequests, raise_for_status
 from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, processes, strings
 from library.utils.log_utils import clamp_index, log
 from library.utils.path_utils import path_tuple_from_url
+
+warnings.filterwarnings("ignore", category=bs4.XMLParsedAsHTMLWarning)
 
 session = None
 cookie_jar = None

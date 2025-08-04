@@ -939,7 +939,7 @@ def post_actions(parent_parser):
     parser.add_argument(
         "--exit-code-confirm",
         action="store_true",
-        help="Use exit code bifurcation (exit 0=yes vs exit 1=no) instead of asking confirmation for a post-action in the CLI or GUI",
+        help="Use exit code bifurcation (exit 0=yes vs exit 4=no) instead of asking confirmation for a post-action in the CLI or GUI",
     )
     parser.add_argument("--gui", action="store_true", help="Ask post-action confirmation in a GUI")
     parser.add_argument("--keep-dir", "--keepdir", help='ask_move: move "kept" files to this special folder')
@@ -972,8 +972,8 @@ When semicolon is pressed in mpv (it will exit with error code 5) then the appli
 will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
 The command will be daemonized if library exits before it completes.
 
-To prevent confusion, normal post-actions will be skipped if the exit-code is greater than 4.
-Exit-codes 0, 1, 2, 3, and 4: the external post-action will run after normal post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!""",
+Exit-codes 0, 1, 2, 3, and 4 are reserved for normal post-actions
+Exit-codes 5 to 255 can be used for external post-actions """,
     )
 
 

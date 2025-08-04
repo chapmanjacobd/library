@@ -72,66 +72,6 @@ class AskAction:
     ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
 
 
-def normal_action(args, media_file: str, action, handle_ask_action=None):
-    def handle_delete_action():
-        if media_file.startswith("http"):
-            db_media.mark_media_deleted(args, media_file)
-        else:
-            delete_media(args, media_file)
-
-    def handle_soft_delete_action():
-        db_media.mark_media_deleted(args, media_file)
-
-    action = action or args.post_action
-    action = action.upper()
-
-    if action == "KEEP":
-        action = Action.NONE
-
-    if action == Action.NONE:
-        pass
-    elif action == Action.DELETE:
-        handle_delete_action()
-    elif action == Action.DELETE_IF_AUDIOBOOK:
-        if "audiobook" in media_file.lower():
-            handle_delete_action()
-    elif action == Action.SOFTDELETE:
-        handle_soft_delete_action()
-    elif action == Action.MOVE:
-        if not media_file.startswith("http"):
-            media_file = mv_to_keep_folder(args, media_file)
-    elif action.startswith("ASK_"):
-        if handle_ask_action is None:
-            raise RuntimeError
-        handle_ask_action(action)
-    else:
-        raise ValueError("Unrecognized action:", action)
-
-
-def external_action(args, log_action, media_file, player_exit_code, player_process):
-    player_exit_code_cmd = f"cmd{player_exit_code}"
-    cmd = getattr(args, player_exit_code_cmd, None)
-    if cmd:
-        log_action(player_exit_code_cmd.upper() + " " + cmd)
-        if cmd in ["pass", "mark-watched"]:
-            pass
-        elif cmd in ["soft-delete", "mark-deleted"]:
-            db_media.mark_media_deleted(args, media_file)
-        elif cmd in ["delete", "delete-files", "delete-file"]:
-            if media_file.startswith("http"):
-                db_media.mark_media_deleted(args, media_file)
-            else:
-                delete_media(args, media_file)
-        elif cmd == "exit_multiple_playback":
-            processes.player_exit(player_process)
-        elif "{}" in cmd:
-            processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(cmd))
-        else:
-            processes.cmd_detach(*shlex.split(cmd), media_file)
-    elif player_exit_code > 0 and not args.ignore_errors and not (args.delete_unplayable and player_exit_code == 2):
-        processes.player_exit(player_process)
-
-
 def post_act(
     args, media_file: str, media_len=0, record_history=True, geom_data=None, player_process=None, action=None
 ) -> None:
@@ -145,12 +85,6 @@ def post_act(
 
     if record_history and player_exit_code == 0 and args.db:
         db_history.add(args, [media_file], mark_done=True)
-
-    if 0 < player_exit_code < 5 and not args.ignore_errors:
-        if args.delete_unplayable and player_exit_code == 2:  #  https://mpv.io/manual/master/#exit-codes
-            delete_media(args, [media_file])
-        else:
-            processes.player_exit(player_process)
 
     def handle_ask_action(ask_action: str):
         true_action, false_action = getattr(AskAction, ask_action)
@@ -168,9 +102,74 @@ def post_act(
             response = devices.confirm(true_action.title() + "?")
         confirmed_action = true_action if response else false_action
         log_action(confirmed_action)
-        normal_action(args, media_file, action=confirmed_action)  # answer the question
+        return confirmed_action
 
-    if player_exit_code < 5:
-        normal_action(args, media_file, action=action, handle_ask_action=handle_ask_action)
+    def normal_action(args, media_file: str, action):
+        def handle_delete_action():
+            if media_file.startswith("http"):
+                db_media.mark_media_deleted(args, media_file)
+            else:
+                delete_media(args, media_file)
 
-    external_action(args, log_action, media_file, player_exit_code=player_exit_code, player_process=player_process)
+        def handle_soft_delete_action():
+            db_media.mark_media_deleted(args, media_file)
+
+        action = action or args.post_action
+        action = action.upper()
+
+        if action == "KEEP":
+            action = Action.NONE
+
+        if action == Action.NONE:
+            pass
+        elif action == Action.DELETE:
+            handle_delete_action()
+        elif action == Action.DELETE_IF_AUDIOBOOK:
+            if "audiobook" in media_file.lower():
+                handle_delete_action()
+        elif action == Action.SOFTDELETE:
+            handle_soft_delete_action()
+        elif action == Action.MOVE:
+            if not media_file.startswith("http"):
+                media_file = mv_to_keep_folder(args, media_file)
+        elif action.startswith("ASK_"):
+            confirmed_action = handle_ask_action(action)
+            return normal_action(args, media_file, confirmed_action)
+        else:
+            raise ValueError("Unrecognized action:", action)
+
+    player_exit_code_cmd = f"cmd{player_exit_code}"
+    external_cmd = getattr(args, player_exit_code_cmd, None)
+
+    if player_exit_code <= 4:
+        if player_exit_code == 0:
+            pass
+        elif player_exit_code in (1, 2, 3) and args.ignore_errors:
+            pass
+        elif player_exit_code == 2 and args.delete_unplayable:  # https://mpv.io/manual/master/#exit-codes
+            delete_media(args, [media_file])
+        elif player_exit_code == 4 and args.exit_code_confirm:
+            log.debug("exit_code_confirm and exit_code 4")
+        else:
+            processes.player_exit(player_process)
+
+        normal_action(args, media_file, action)
+    elif external_cmd:
+        log_action(player_exit_code_cmd.upper() + " " + external_cmd)
+        if external_cmd in ["pass", "mark-watched"]:
+            pass
+        elif external_cmd in ["soft-delete", "mark-deleted"]:
+            db_media.mark_media_deleted(args, media_file)
+        elif external_cmd in ["delete", "delete-files", "delete-file"]:
+            if media_file.startswith("http"):
+                db_media.mark_media_deleted(args, media_file)
+            else:
+                delete_media(args, media_file)
+        elif external_cmd == "exit_multiple_playback":
+            processes.player_exit(player_process)
+        elif "{}" in external_cmd:
+            processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(external_cmd))
+        else:
+            processes.cmd_detach(*shlex.split(external_cmd), media_file)
+    else:
+        processes.player_exit(player_process)

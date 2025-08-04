@@ -395,7 +395,7 @@ class MediaPrefetcher:
                     self.ignore_paths.add(m["path"])
                     self.futures.append(future)
                     fill_count += 1
-                log.debug("prefetch full (inserted %s)", fill_count)
+                # log.debug("prefetch full (inserted %s)", fill_count)
         return self
 
     def infer_command(self, m) -> tuple[list[str], bool]:
@@ -603,7 +603,7 @@ def multiple_player(args, playlist) -> None:
                     if m:
                         players.append(_create_window_player(args, window_geometry, m))
                 else:
-                    log.debug("%s Check if still running", t_idx)
+                    # log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
                         player_process = processes.Pclose(m["process"])
 
@@ -621,7 +621,7 @@ def multiple_player(args, playlist) -> None:
                         else:
                             del players[t_idx]
 
-            log.debug("%s media", playlist.remaining)
+            # log.debug("%s media", playlist.remaining)
             sleep(0.02)  # may as well~~
     finally:
         for m in players:
