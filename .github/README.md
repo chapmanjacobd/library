@@ -42,7 +42,7 @@ new files will be read by `ffprobe`.
 
     library watch tv.db                           # the default post-action is to do nothing
     library watch tv.db --post-action delete      # delete file after playing
-    library listen finalists.db -k ask_keep       # ask whether to keep file after playing
+    library listen finalists.db -k ask_delete     # ask whether to delete file after playing
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.108; 101 subcommands)
+    library (v3.0.109; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -2501,7 +2501,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
         using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
 
-        For example, here I bind "'" to "KEEP" and  "j" to "DELETE"
+        For example, here I bind "'" to "MOVE" and  "j" to "DELETE" when using -k ask_move_or_delete
 
             ' quit
             j quit 4
