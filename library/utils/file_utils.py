@@ -29,8 +29,8 @@ def rglob(
     include: Iterable[str] | None = None,
     quiet=False,
 ) -> tuple[set[str], set[str], set[str]]:
-    if extensions is not None and not isinstance(extensions, tuple):
-        extensions = tuple(extensions)
+    if extensions is not None:
+        extensions = tuple(f".{ext.lstrip('.')}" for ext in extensions)
 
     files = set()
     filtered_files = set()
@@ -98,8 +98,8 @@ def rglob_gen(
     exclude: Iterable[str] | None = None,
     include: Iterable[str] | None = None,
 ):
-    if extensions is not None and not isinstance(extensions, tuple):
-        extensions = tuple(extensions)
+    if extensions is not None:
+        extensions = tuple(f".{ext.lstrip('.')}" for ext in extensions)
 
     folders = set()
     stack = [base_dir]
@@ -151,7 +151,7 @@ def fd_rglob_gen(
     if extensions:
         ext_args = []
         for ext in extensions:
-            ext_args.extend(["-e", ext if not ext.startswith(".") else ext[1:]])
+            ext_args.extend(["-e", ext.lstrip(".")])
         fd_command.extend(ext_args)
 
     if exclude:

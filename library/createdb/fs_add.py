@@ -145,10 +145,8 @@ def find_new_files(args, path) -> list[str]:
                 exts |= consts.AUDIO_ONLY_EXTENSIONS
             if DBType.video in args.profiles:
                 exts |= consts.VIDEO_EXTENSIONS
-
             if DBType.image in args.profiles:
                 exts |= consts.IMAGE_EXTENSIONS
-
             if DBType.text in args.profiles:
                 exts |= consts.TEXTRACT_EXTENSIONS
             if args.ocr:
