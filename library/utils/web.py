@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, parse_qsl, quote, urldefrag, urlencode, urljo
 from zoneinfo import ZoneInfo
 
 import bs4, requests, urllib3
+from bs4 import element
 from idna import encode as puny_encode
 
 from library.data.http_errors import HTTPTooManyRequests, raise_for_status
@@ -515,7 +516,7 @@ def get_elements_forward(start, end):
     elements = []
     current_tag = start.next_sibling
     while current_tag and current_tag != end:
-        if isinstance(current_tag, bs4.NavigableString):
+        if isinstance(current_tag, element.NavigableString):  # type: ignore
             elements.append(current_tag)
         current_tag = current_tag.next_element
     return elements
@@ -546,7 +547,7 @@ def tags_with_text(soup, delimit_fn):
         if i == 0:
             current_tag = tag.previous_element
             while current_tag and current_tag != tag:
-                if isinstance(current_tag, bs4.NavigableString):
+                if isinstance(current_tag, element.NavigableString):
                     text = strings.un_paragraph(current_tag.get_text()).strip()
                     if text and text not in before_text:
                         before_text.append(text)
@@ -555,7 +556,7 @@ def tags_with_text(soup, delimit_fn):
 
         current_tag = tag.next_sibling
         while current_tag and (i == len(tags) - 1 or current_tag != tags[i + 1]):  # end tag or until next tag
-            if isinstance(current_tag, bs4.NavigableString):
+            if isinstance(current_tag, element.NavigableString):
                 text = strings.un_paragraph(current_tag.get_text()).strip()
                 if text and text not in after_text:
                     after_text.append(text)
@@ -746,16 +747,11 @@ def construct_absolute_url(base_url, href):
     if up.scheme and up.scheme not in ("https", "http", "ftp"):
         return href
 
-    if not up.netloc:
-        base_parsed = urlparse(base_url)
-        path = base_parsed.path
-        if not path.endswith("/") and path != "":
-            path = path.rsplit("/", 1)[0] + "/"
-        base_url = base_parsed._replace(path=path).geturl()
-        href = urljoin(base_url, href)
-
     if href.startswith("//"):
-        href = "https:" + href
+        return "https:" + href
+
+    if not up.netloc:
+        href = urljoin(base_url, href)
 
     return href
 

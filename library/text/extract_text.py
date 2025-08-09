@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from bs4 import BeautifulSoup
-from bs4.element import NavigableString
+from bs4 import BeautifulSoup, element
 
 from library import usage
 from library.createdb import fs_add_metadata
@@ -37,7 +36,7 @@ def parse_text(args, html_content):
             continue
 
         for descendant in item.descendants:
-            if isinstance(descendant, NavigableString):
+            if isinstance(descendant, element.NavigableString):
                 parent = descendant.find_parent()
                 parent_name = parent.name if parent else None
 
