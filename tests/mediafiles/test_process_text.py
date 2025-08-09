@@ -11,13 +11,7 @@ from library.utils import nums, path_utils
 def test_process_text_too_small():
     temp_dir = tempfile.TemporaryDirectory()
 
-    lb(
-        [
-            "process-text",
-            f"--prefix={temp_dir.name}",
-            "https://www.globalgreyebooks.com/ebooks1/oscar-wilde/importance-of-being-earnest/importance-of-being-earnest.mobi",
-        ]
-    )
+    lb(["process-text", f"--prefix={temp_dir.name}", "https://www.gutenberg.org/cache/epub/844/pg844.txt"])
 
     assert path_utils.folder_size(temp_dir.name) < nums.human_to_bytes("163Ki")
     # TODO: add test for large enough source file
