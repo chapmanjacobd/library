@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urljoin
 
 from library import usage
 from library.utils import (
@@ -99,13 +100,23 @@ def is_desired_url(args, link, link_text, before, after) -> bool:
     return True
 
 
-def parse_inner_urls(args, url, markup):
+def parse_inner_urls(args, base_url, markup):
     from bs4 import BeautifulSoup
 
-    if url.endswith(".xml"):
+    if base_url.endswith(".xml"):
         soup = BeautifulSoup(markup, "xml")
     else:
         soup = BeautifulSoup(markup, "lxml")
+
+    if base_url.startswith("//"):
+        base_url = "https:" + base_url
+
+    # RFC 3986 is not enough... (mod_rewrite et al.)
+    base_tag = soup.find("base")
+    if base_tag:
+        base_href = base_tag.get("href")  # type: ignore
+        if base_href:
+            base_url = urljoin(base_url, base_href)  # type: ignore
 
     link_attrs = set()
     if args.href:
@@ -130,7 +141,7 @@ def parse_inner_urls(args, url, markup):
 
             attr_value = str(attr_value).strip()
             if attr_value and attr_value[0] != "#":
-                link = web.construct_absolute_url(url, attr_value)
+                link = web.construct_absolute_url(base_url, attr_value)
                 link_text = strings.remove_consecutive_whitespace(tag.text.strip())
 
                 if is_desired_url(args, link, link_text, tag.before_text, tag.after_text):

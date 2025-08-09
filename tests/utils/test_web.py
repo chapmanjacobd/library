@@ -252,12 +252,23 @@ def test_parent_property():
         ("https://unli.xyz/diskprices/index.html", "ch/", "https://unli.xyz/diskprices/ch/"),
         ("https://unli.xyz/diskprices/index.html", "/ch/", "https://unli.xyz/ch/"),
         ("https://unli.xyz/diskprices/", "ch/", "https://unli.xyz/diskprices/ch/"),
+        ("https://unli.xyz/diskprices/", "/ch/", "https://unli.xyz/ch/"),
         ("https://unli.xyz/diskprices", "ch/", "https://unli.xyz/ch/"),
-        ("https://unli.xyz", "diskprices/ch/", "https://unli.xyz/diskprices/ch/"),
+        ("https://unli.xyz/diskprices", "/ch/", "https://unli.xyz/ch/"),
+        ("https://unli.xyz/", "ch/", "https://unli.xyz/ch/"),
         ("https://unli.xyz", "/ch/", "https://unli.xyz/ch/"),
+        ("https://unli.xyz", "diskprices/ch/", "https://unli.xyz/diskprices/ch/"),
         ("https://unli.xyz/", "//example.com/ch/", "https://example.com/ch/"),
         ("https://unli.xyz/diskprices", "ftp://example.com/ch/", "ftp://example.com/ch/"),
         ("https://unli.xyz/diskprices", "ssh://example.com/ch/", "ssh://example.com/ch/"),
+        ("https://example.com/", "?q=url+query+string", "https://example.com/?q=url+query+string"),
+        ("https://example.com/", "#absolute-urls", "https://example.com/#absolute-urls"),
+        ("https://archive.org/download/test/", "test1.pdf", "https://archive.org/download/test/test1.pdf"),
+        (
+            "https://archive.org/download/test",
+            "test1.pdf",
+            "https://archive.org/download/test1.pdf",
+        ),  # broken, not RFC 3986 compliant
     ],
 )
 def test_construct_absolute_url(base_url, href, expected):
