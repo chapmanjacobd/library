@@ -86,20 +86,12 @@ library = "library.__main__:library"
 version = {source = "file", path = "library/__main__.py"}
 
 [build-system]
-build-backend = "hatchling.build"
-requires = ["hatchling"]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.hatch.version]
-path = "library/__main__.py"
-
-[tool.hatch.build]
-exclude = [
-  "tests/",
-  "example_dbs/",
-]
-
-[tool.hatch.build.force-include]
-"library/assets/" = "library/assets/"
+[tool.pdm.build]
+includes = ["library"]
+excludes = ["tests", "example_dbs"]
 
 [tool.black]
 line-length = 120
