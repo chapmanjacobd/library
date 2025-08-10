@@ -192,10 +192,10 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
             width = int(video_stream.get("width"))
             height = int(video_stream.get("height"))
 
-            if width > (args.max_width * (1 + args.max_width_buffer)):
-                video_filters.append(f"scale={args.max_width}:-2")
-            elif height > (args.max_height * (1 + args.max_height_buffer)):
-                video_filters.append(f"scale=-2:{args.max_height}")
+            if width > (args.max_video_width * (1 + args.max_width_buffer)):
+                video_filters.append(f"scale={args.max_video_width}:-2")
+            elif height > (args.max_video_height * (1 + args.max_height_buffer)):
+                video_filters.append(f"scale=-2:{args.max_video_height}")
             else:  # make sure input raster is even for YUV_420 colorspace
                 video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
 
