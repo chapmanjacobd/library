@@ -1487,8 +1487,8 @@ def process_ffmpeg(parent_parser):
         help="Delete larger of transcode or original files",
     )
 
-    parser.add_argument("--max-height", type=int, default=960)
-    parser.add_argument("--max-width", type=int, default=1440)
+    parser.add_argument("--max-video-height", "--max-height", type=int, default=960)
+    parser.add_argument("--max-video-width",  "--max-width", type=int, default=1440)
     parser.add_argument(
         "--max-width-buffer",
         type=float,
