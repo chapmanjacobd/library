@@ -95,6 +95,11 @@ def computer_add(args, hostnames):
 
                 computer_info["path"] = hostname
                 playlists_id = db_playlists._add(args, objects.dict_filter_bool(computer_info))
+
+                # remove ghost disks
+                with args.db.conn:
+                    args.db["media"].delete_where("playlists_id = ?", [playlists_id])
+
                 for disk in disks:
                     disk = disk | {"playlists_id": playlists_id}
                     args.db["media"].insert(disk, pk=["playlists_id", "path"], alter=True, replace=True)
