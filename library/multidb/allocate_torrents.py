@@ -125,7 +125,7 @@ def print_disks(args, disks):
             {
                 "host": d["host"],
                 "path": d["mountpoint"],
-                "disk_size": humanize.naturalsize(d["total"]),
+                "disk_size": humanize.naturalsize(d["total"], format="%.0f"),
                 "download_count": len(d["downloads"]),
                 "unique_trackers": len(set(t["tracker"] for t in d["downloads"])),
                 "before_free": strings.file_size(d["free"]),
