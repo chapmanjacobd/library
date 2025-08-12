@@ -215,7 +215,9 @@ def add(args, entry):
                 entry["time_created"] = existing_record["time_created"]
             if existing_record.get("download_attempts"):
                 entry.setdefault("download_attempts", 0)
-                entry["download_attempts"] += existing_record["download_attempts"]
+                entry["download_attempts"] = min(
+                    consts.SQLITE_INT2, existing_record["download_attempts"] + entry["download_attempts"]
+                )
         try:
             args.db["media"].insert(entry, pk=["playlists_id", "path"], alter=True, replace=True)
         except sqlite3.IntegrityError:

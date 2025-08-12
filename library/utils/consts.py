@@ -87,6 +87,16 @@ IS_WINDOWS = os.name == "nt" or sys.platform in ("win32", "cygwin", "msys")
 NOT_WINDOWS = os.name == "posix"
 REQUESTS_TIMEOUT = (8, 45)
 
+SQLITE_INT1 = 255
+SQLITE_INT2 = 65_535
+SQLITE_INT3 = 16_777_215
+SQLITE_INT4 = 4_294_967_295
+
+SQLITE_INTS1 = (-128, 127)
+SQLITE_INTS2 = (-32_768, 32_767)
+SQLITE_INTS3 = (-8_388_608, 8_388_607)
+SQLITE_INTS4 = (-2_147_483_648, 2_147_483_647)
+
 EPOCH_COLUMNS = (
     "time_downloaded",  # APPLICATION_START time local file known to exist / time scanned
     "time_deleted",  # APPLICATION_START time local file known to not exist

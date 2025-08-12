@@ -161,14 +161,13 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
             log.error("[%s] DownloadError skipping", playlist_path)
             return
         except ExistingPlaylistVideoReached:
+            if added_media_count > count_before_extract:
+                sys.stderr.write("\n")
             db_playlists.log_problem(args, playlist_path)
         else:
             if not pl and not args.safe:
                 log.warning("Logging undownloadable media")
                 db_playlists.save_undownloadable(args, playlist_path)
-
-        if added_media_count > count_before_extract:
-            sys.stdout.write("\n")
 
         if args.action == consts.SC.tube_update:
             if added_media_count > count_before_extract:
