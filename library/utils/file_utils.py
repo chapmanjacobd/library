@@ -848,11 +848,15 @@ def gen_paths(args, default_exts=None):
     else:
         for path in args.paths:
             if path.strip():
-                p = Path(path)
-                if p.is_dir():
-                    yield from rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]
-                else:
+                try:
+                    is_dir = os.path.isdir(path)
+                except OSError:
                     yield path
+                else:
+                    if is_dir:
+                        yield from rglob(path, args.ext or default_exts, getattr(args, "exclude", None))[0]
+                    else:
+                        yield path
 
 
 def gen_d(args, default_exts=None):
@@ -872,9 +876,13 @@ def gen_d(args, default_exts=None):
     else:
         for path in args.paths:
             if path.strip():
-                p = Path(path)
-                if p.is_dir():
-                    for sp in rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]:
-                        yield {"path": sp}
-                else:
+                try:
+                    is_dir = os.path.isdir(path)
+                except OSError:
                     yield {"path": path}
+                else:
+                    if is_dir:
+                        for sp in rglob(str(path), args.ext or default_exts, getattr(args, "exclude", None))[0]:
+                            yield {"path": sp}
+                    else:
+                        yield {"path": path}
