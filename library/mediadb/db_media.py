@@ -213,11 +213,11 @@ def add(args, entry):
             entry = existing_record | entry
             if existing_record.get("time_created"):
                 entry["time_created"] = existing_record["time_created"]
-            if existing_record.get("download_attempts"):
-                entry.setdefault("download_attempts", 0)
-                entry["download_attempts"] = min(
-                    consts.SQLITE_INT2, existing_record["download_attempts"] + entry["download_attempts"]
-                )
+        if "download_attempts" in entry:
+            attempts = entry["download_attempts"] or 0
+            if existing_record and "download_attempts" in existing_record:
+                attempts = max(attempts or 0, existing_record["download_attempts"] or 0)
+            entry["download_attempts"] = min(consts.SQLITE_INT2, attempts + 1)
         try:
             args.db["media"].insert(entry, pk=["playlists_id", "path"], alter=True, replace=True)
         except sqlite3.IntegrityError:
@@ -375,7 +375,7 @@ def download_add(
         "webpath": webpath,
         "error": error,
         "time_modified": consts.now(),
-        "download_attempts": (info.get("download_attempts") or 0) + 1,
+        "download_attempts": info.get("download_attempts") or 0,
     }
     add(args, entry)
 
