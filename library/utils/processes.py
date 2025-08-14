@@ -138,9 +138,31 @@ def os_bg_kwargs() -> dict:
 
 
 def cmd(
-    *command, strict=True, cwd=None, quiet=True, error_verbosity=1, ignore_regexps=None, **kwargs
+    *command, strict=True, cwd=None, quiet=True, error_verbosity=1, ignore_regexps=None, limit_ram=False, **kwargs
 ) -> subprocess.CompletedProcess:
     command = [str(s) for s in command]
+
+    if limit_ram:
+        cmd_prefix = []
+        if which("systemd-run"):
+            cmd_prefix += ["systemd-run"]
+            if not "SUDO_UID" in os.environ:
+                cmd_prefix += ["--user"]
+            cmd_prefix += [
+                "-p",
+                "MemoryMax=4G",
+                "-p",
+                "MemorySwapMax=1G",
+                "--pty",
+                "--pipe",
+                "--same-dir",
+                "--wait",
+                "--collect",
+                "--service-type=exec",
+                "--quiet",
+                "--",
+            ]
+        command = cmd_prefix + command
 
     def print_std(s, is_success):
         if ignore_regexps is not None:
