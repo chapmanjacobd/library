@@ -330,7 +330,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
 
     is_file_error = False
     try:
-        processes.cmd(*command)
+        processes.cmd(*command, limit_ram=True)
     except subprocess.CalledProcessError as e:
         error_log = e.stderr.splitlines()
         is_unsupported_subtitle = any(ffmpeg_errors.unsupported_subtitle_error.match(l) for l in error_log)

@@ -36,26 +36,7 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
                 "-1",
             ]
 
-        cmd = []
-        if which("systemd-run"):
-            cmd += ["systemd-run"]
-            if not "SUDO_UID" in os.environ:
-                cmd += ["--user"]
-            cmd += [
-                "-p",
-                "MemoryMax=4G",
-                "-p",
-                "MemorySwapMax=1G",
-                "--pty",
-                "--pipe",
-                "--same-dir",
-                "--wait",
-                "--collect",
-                "--service-type=exec",
-                "--quiet",
-                "--",
-            ]
-        cmd += [
+        cmd = [
             "ffmpeg",
             "-nostdin",
             "-hide_banner",
@@ -77,7 +58,7 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
             os.devnull,
         ]
 
-        proc = processes.cmd(*cmd)
+        proc = processes.cmd(*cmd, limit_ram=True)
         # I wonder if something like this would be faster: -map 0:v:0 -filter:v "select=eq(pict_type\,I)" -frames:v 1
         if proc.stderr != "":
             raise RuntimeError

@@ -198,7 +198,7 @@ def process_path(args, path) -> str | None:
         return None
 
     try:
-        processes.cmd(*command)
+        processes.cmd(*command, limit_ram=True)
     except subprocess.CalledProcessError:
         log.exception("[%s]: Calibre failed to process book. Skipping...", str(path))
         return str(path)

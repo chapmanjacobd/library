@@ -85,6 +85,7 @@ def process_path(args, path) -> str | None:
                 imagemagick_errors.unsupported_error,
                 imagemagick_errors.file_error,
             ],
+            limit_ram=True,
         )
     except subprocess.CalledProcessError as e:
         error_log = e.stderr.splitlines()
