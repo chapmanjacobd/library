@@ -2260,6 +2260,12 @@ def qBittorrent_torrents(parent_parser):
         action=argparse_utils.ArgparseList,
         help="The info_hash, name, or save_path substring to exclude",
     )
+    parser.add_argument(
+        "--torrent-include",
+        "-I",
+        action=argparse_utils.ArgparseList,
+        help="The info_hash, name, or save_path substring to include",
+    )
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
 
 

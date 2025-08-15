@@ -33,8 +33,17 @@ def parse_args(defaults_override=None):
         nargs="+",
         action="extend",
         default=[],
-        help="""Exclude files via search
--E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+        help="""Exclude files via fnmatch
+-E '*/.tmp/*' -E '*sad*'  # path must not match neither /.tmp/ nor sad """,
+    )
+    parser.add_argument(
+        "--move-include",
+        "-I",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Include files via fnmatch
+-I '*/.tmp/*' -I '*sad*'  # path must match either /.tmp/ or sad """,
     )
     parser.add_argument(
         "--clobber", "--overwrite", action="store_true", help="Shortcut for --file-over-file delete-dest"
@@ -104,6 +113,7 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
                     not args.move_limit,
                     not args.move_sizes,
                     not args.move_exclude,
+                    not args.move_include,
                     not args.modify_depth,
                     not os.path.exists(folder_dest),
                 ]
