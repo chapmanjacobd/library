@@ -47,8 +47,17 @@ def parse_args():
         nargs="+",
         action="extend",
         default=[],
-        help="""Exclude files via search
--E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+        help="""Exclude files via fnmatch
+-E '*/.tmp/*' -E '*sad*'  # path must not match neither /.tmp/ nor sad """,
+    )
+    parser.add_argument(
+        "--move-include",
+        "-I",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Include files via fnmatch
+-I '*/.tmp/*' -I '*sad*'  # path must match either /.tmp/ or sad """,
     )
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="skip-hash rename-dest")

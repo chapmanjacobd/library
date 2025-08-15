@@ -59,8 +59,16 @@ def parse_args():
         nargs="+",
         action="extend",
         default=[],
-        help="""Exclude files via search
--E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+        help="""Exclude files via fnmatch
+--move-exclude '*/.tmp/*' '*sad*'  # path must not match neither /.tmp/ nor sad """,
+    )
+    parser.add_argument(
+        "--move-include",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Include files via fnmatch
+--move-include '*/.tmp/*' '*sad*'  # path must match either /.tmp/ or sad """,
     )
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-src-smaller delete-dest")
@@ -243,6 +251,15 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if not strings.glob_match_any(
                 args.torrent_exclude,
+                [t.name, t.comment, t.save_path if t.state_enum.is_complete else t.download_path, t.hash],
+            )
+        ]
+    if args.torrent_include:
+        torrents = [
+            t
+            for t in torrents
+            if strings.glob_match_any(
+                args.torrent_include,
                 [t.name, t.comment, t.save_path if t.state_enum.is_complete else t.download_path, t.hash],
             )
         ]

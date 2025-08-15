@@ -24,6 +24,9 @@ def filter_src(args, path):
     if any(fnmatch(path, s) for s in args.move_exclude):
         return False
 
+    if not any(fnmatch(path, s) for s in args.move_include):
+        return False
+
     if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
         print(f"\nReached sizeout... ({args.timeout_size})")
         raise SystemExit(124)
