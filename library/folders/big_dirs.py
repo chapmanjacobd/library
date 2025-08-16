@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from library import usage
+from library.fsdb import files_info
 from library.playback import media_printer
 from library.tablefiles import mcda
 from library.utils import arggroups, argparse_utils, file_utils, iterables, nums, sqlgroups
@@ -11,6 +12,7 @@ from library.utils import arggroups, argparse_utils, file_utils, iterables, nums
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.big_dirs)
     arggroups.sql_fs(parser)
+    arggroups.files(parser)
 
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
@@ -23,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    arggroups.files_post(args)
     arggroups.sql_fs_post(args)
     arggroups.group_folders_post(args)
 
@@ -153,7 +156,10 @@ def collect_media(args) -> list[dict]:
         if args.hide_deleted:
             args.paths = [p for p in args.paths if os.path.exists(p)]
         media = file_utils.gen_d(args)
+
+        media = files_info.filter_files_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
+
     return media
 
 

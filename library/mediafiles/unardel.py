@@ -2,6 +2,7 @@ import argparse, concurrent.futures, os
 from shutil import which
 
 from library import usage
+from library.fsdb import files_info
 from library.utils import (
     arggroups,
     argparse_utils,
@@ -19,6 +20,7 @@ from library.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.unardel)
+    arggroups.files(parser, no_db=True)
 
     parser.add_argument("--continue-from", help="Skip media until specific file path is seen")
     parser.add_argument("--move", help="Directory to move successful files")
@@ -34,6 +36,8 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    arggroups.files_post(args)
+
     return args
 
 
@@ -44,6 +48,8 @@ def collect_media(args) -> list[dict]:
         processes.exit_error("unar not installed. Archives will not be extracted")
 
     media = file_utils.gen_d(args, consts.ARCHIVE_EXTENSIONS)
+
+    media = files_info.filter_files_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
     return media
 
@@ -79,14 +85,7 @@ def unardel() -> None:
     media = sorted(media, key=lambda d: d["compressed_size"])
 
     if args.continue_from:
-        seen_continue_from = False
-        new_media = []
-        for m in media:
-            if args.continue_from in m["path"]:
-                seen_continue_from = True
-            if seen_continue_from:
-                new_media.append(m)
-        media = new_media
+        media = iterables.tail_from(media, args.continue_from, key="path")
 
     if not media:
         processes.no_media_found()

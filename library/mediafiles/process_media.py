@@ -4,6 +4,7 @@ from pathlib import Path
 from shutil import which
 
 from library import usage
+from library.fsdb import files_info
 from library.mediadb import db_history
 from library.mediafiles import process_ffmpeg, process_image, process_text
 from library.utils import (
@@ -32,6 +33,8 @@ def parse_args() -> argparse.Namespace:
         cols=["path", "type", "duration", "size", "video_count", "video_codecs", "audio_codecs"],
     )
     arggroups.history(parser)
+
+    arggroups.files(parser)
 
     parser.add_argument(
         "--valid",
@@ -89,6 +92,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    arggroups.files_post(args)
     arggroups.sql_fs_post(args)
     arggroups.process_ffmpeg_post(args)
     arggroups.ocrmypdf_post(args)
@@ -132,6 +136,8 @@ def collect_media(args) -> list[dict]:
             media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
     else:
         media = file_utils.gen_d(args, default_exts)
+
+        media = files_info.filter_files_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
     return media
 
@@ -298,14 +304,7 @@ def process_media() -> None:
     )
 
     if args.continue_from:
-        seen_continue_from = False
-        new_media = []
-        for m in media:
-            if args.continue_from in m["path"]:
-                seen_continue_from = True
-            if seen_continue_from:
-                new_media.append(m)
-        media = new_media
+        media = iterables.tail_from(media, args.continue_from, key="path")
 
     if not media:
         processes.no_media_found()

@@ -2,6 +2,7 @@ import math, statistics
 from collections import Counter
 from collections.abc import Iterable, Iterator
 from functools import wraps
+from itertools import tee
 from typing import Any
 
 from library.utils import objects
@@ -221,6 +222,14 @@ def return_unique_set_items(gen_func):
     return wrapper
 
 
+def peek_value_exists(iterable: Iterator, key):
+    peek, main = tee(iterable, 2)
+
+    d = next(peek)
+    exists = key in d
+    return exists, main
+
+
 def multi_split(string, delimiters):
     delimiters = tuple(delimiters)
     stack = [
@@ -303,3 +312,18 @@ def list_dict_summary(l, stat_funcs={"Total": sum, "Median": statistics.median})
         summary_dicts.append({"path": stat_name, **stat_result})
 
     return summary_dicts
+
+
+def tail_from(media: list[Any], value: Any, key: str | None = None) -> list[Any]:
+    if key:
+        try:
+            start_index = next(i for i, d in enumerate(media) if d.get(key) == value)
+            return media[start_index:]
+        except StopIteration:
+            return []
+    else:
+        try:
+            start_index = media.index(value)
+            return media[start_index:]
+        except ValueError:
+            return []
