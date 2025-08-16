@@ -30,7 +30,7 @@ def parse_args(defaults_override=None) -> argparse.Namespace:
     return args
 
 
-def is_animation_from_probe(probe) -> bool:
+def is_animation_from_probe(probe) -> bool | None:
     if probe.audio_streams:
         return True
     for stream in probe.video_streams:
@@ -50,8 +50,8 @@ def is_animation_from_probe(probe) -> bool:
                 probe.path,
             )
             frames = nums.safe_int(r.stdout)
-            if frames is None:
-                raise RuntimeError
+            if frames is None:  # "N/A", corrupt file
+                return None
 
         if frames > 1:
             return True
@@ -88,7 +88,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         probe = processes.FFProbe(path)
     except processes.UnplayableFile:
         if args.delete_unplayable:
-            log.warning("Deleting unplayable: %s", path)
+            log.warning("Deleting unplayable (ffprobe): %s", path)
             path.unlink()
             return None
         raise
@@ -96,14 +96,20 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
     if not probe.streams:
         log.error("No media streams found: %s", path)
         if args.delete_unplayable:
-            log.warning("Deleting unplayable: %s", path)
+            log.warning("Deleting unplayable (no streams): %s", path)
             path.unlink()
             return None
         return str(path)
 
     if path_utils.ext(path) in consts.IMAGE_ANIMATION_EXTENSIONS:
         is_animation = is_animation_from_probe(probe)
-        if not is_animation:
+        if is_animation is None:
+            if args.delete_unplayable:
+                log.warning("Deleting unplayable (zero frames): %s", path)
+                path.unlink()
+                return None
+            return str(path)
+        elif not is_animation:
             return process_image.process_path(args, path)
 
     video_stream = next((s for s in probe.video_streams), None)
