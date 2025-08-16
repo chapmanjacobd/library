@@ -198,7 +198,7 @@ def file_temp_copy(src) -> str:
 
 
 def trash(args, path: Path | str, detach=True) -> None:
-    if Path(path).exists():
+    if path and Path(path).exists():
         if str(path).startswith("/net/"):
             Path(path).unlink(missing_ok=True)
             return

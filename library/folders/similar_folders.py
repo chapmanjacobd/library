@@ -2,6 +2,7 @@ from pathlib import Path
 
 from library import usage
 from library.folders import big_dirs
+from library.fsdb import files_info
 from library.text import cluster_sort
 from library.utils import arggroups, argparse_utils, file_utils, nums, path_utils, printing, strings
 from library.utils.log_utils import log
@@ -9,6 +10,7 @@ from library.utils.log_utils import log
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.similar_folders)
+    arggroups.files(parser, no_db=True)
     arggroups.group_folders(parser)
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
@@ -45,6 +47,7 @@ def parse_args():
     if args.filter_counts and not any([args.folders_counts, args.folder_counts, args.folder_sizes]):
         args.folder_counts = ["+2"]
 
+    arggroups.files_post(args)
     arggroups.group_folders_post(args)
     arggroups.similar_folders_post(args)
 
@@ -155,7 +158,10 @@ def filter_groups_by_numbers(args, groups):
 def similar_folders():
     args = parse_args()
     media = file_utils.gen_d(args)
+
+    media = files_info.filter_files_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
+
     media = big_dirs.group_files_by_parent(args, media)
     media = big_dirs.process_big_dirs(args, media)
 
