@@ -163,7 +163,7 @@ def check_shrink(args, m) -> list:
             except processes.UnplayableFile:
                 m["duration"] = None
                 if args.delete_unplayable:
-                    log.warning("Deleting unplayable: %s", m["path"])
+                    log.warning("Deleting unplayable (ffprobe): %s", m["path"])
                     Path(m["path"]).unlink(missing_ok=True)
                     return []
         if m["duration"] is None or not m["duration"] > 0:
@@ -230,7 +230,7 @@ def check_shrink(args, m) -> list:
             except processes.UnplayableFile:
                 m["duration"] = None
                 if args.delete_unplayable:
-                    log.warning("Deleting unplayable: %s", m["path"])
+                    log.warning("Deleting unplayable (ffprobe): %s", m["path"])
                     Path(m["path"]).unlink(missing_ok=True)
                     return []
         if m["duration"] is None or not m["duration"] > 0:
@@ -445,7 +445,7 @@ def process_media() -> None:
                             continue
                         except processes.UnplayableFile:
                             if args.delete_unplayable:
-                                log.warning("Deleting unplayable: %s", new_path)
+                                log.warning("Deleting unplayable (ffprobe): %s", new_path)
                                 Path(new_path).unlink(missing_ok=True)
                             continue
 
