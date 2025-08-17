@@ -80,7 +80,7 @@ def computer_add(args, hostnames):
             hostname = future_to_hostname[future]
             try:
                 computer_info = future.result()
-            except paramiko.ssh_exception.NoValidConnectionsError:
+            except (TimeoutError, paramiko.ssh_exception.NoValidConnectionsError):
                 log.error("Unable to connect to %s", hostname)
             except Exception:
                 log.exception(hostname)
