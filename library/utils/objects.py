@@ -1,4 +1,4 @@
-import difflib, itertools, json, types
+import collections.abc, difflib, itertools, json, types
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import wraps
@@ -277,3 +277,15 @@ def traverse_obj(obj, path):
         else:
             return None
     return obj
+
+
+def value(obj, keys):
+    if not isinstance(obj, collections.abc.Mapping):
+        return None
+
+    lower_keys = {key.lower() for key in keys}
+    for key, value in obj.items():
+        if isinstance(key, str) and key.lower() in lower_keys:
+            return value
+
+    return None
