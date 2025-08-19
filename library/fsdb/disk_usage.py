@@ -1,9 +1,11 @@
 import os
+from collections import defaultdict
+from pathlib import Path
 
 from library import usage
 from library.fsdb import files_info
 from library.playback import media_printer
-from library.utils import arggroups, argparse_utils, file_utils, iterables, path_utils, processes, sqlgroups, strings
+from library.utils import arggroups, argparse_utils, consts, file_utils, iterables, path_utils, processes, sqlgroups, strings
 
 
 def parse_args(defaults_override=None):
@@ -12,7 +14,6 @@ def parse_args(defaults_override=None):
     arggroups.sql_fs(parser)
     parser.set_defaults(hide_deleted=True)
     arggroups.group_folders(parser)
-    parser.set_defaults(limit="4000", depth=0)
 
     parser.add_argument("--folders-only", "-td", action="store_true", help="Only print folders")
     parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
@@ -44,92 +45,179 @@ def sort_by(args):
     return lambda x: (x.get("size") or 0 / (x.get("count") or 1), x.get("size") or 0, x.get("count") or 1)
 
 
-def get_subset(args, level=None, prefix=None) -> list[dict]:
-    d = {}
-    excluded_files = set()
+def check_depth(args, p):
+    if args.max_depth is not None:
+        return args.min_depth <= len(p) <= args.max_depth
+    else:
+        return args.min_depth <= len(p)
 
+
+def count_subfolders(path_list):
+    sorted_paths = sorted(set(os.path.dirname(p) for p in path_list), reverse=True)
+
+    recursive_counts = defaultdict(int)
+    for p in sorted_paths:
+        recursive_counts[p + os.sep] += 0
+
+        parts = p.split(os.sep)
+        while len(parts) > 1:
+            parts = parts[:-1]
+            if parts:
+                parent = os.sep.join(parts)
+                recursive_counts[parent + os.sep] += 1
+
+    return dict(recursive_counts)
+
+def count_nested_subfolders(path_list):
+    sorted_paths = sorted(list(set(path_list)), reverse=True)
+    recursive_counts = defaultdict(int)
+
+    for p in sorted_paths:
+        recursive_counts[p] += 1
+
+        current_path = os.path.dirname(p)
+
+        while current_path and current_path.count(os.sep) > 1:
+            recursive_counts[current_path] += recursive_counts[p]
+            current_path = os.path.dirname(current_path)
+
+    return dict(recursive_counts)
+
+def format_folder(p):
+    p = str(p)
+    if p != os.sep:
+        return p + os.sep
+    else:
+        return p
+
+
+def get_subset(args) -> list[dict]:
+    if args.parents:
+        parent_counts = count_subfolders(d["path"] for d in args.data)
+    else:
+        parent_counts = count_subfolders(d["path"] for d in args.data)
+
+    d = {}
     for m in args.data:
-        if prefix is not None and not m["path"].startswith(prefix):
+        if args.cwd is not None and not m["path"].startswith(args.cwd):
             continue
 
         p = m["path"].split(os.sep)
-        if level is not None and len(p) == level and not m["path"].endswith(os.sep):
-            d[m["path"]] = m
 
-        if args.group_by_extensions:
-            ext = path_utils.ext(m["path"])
-            if ext not in d:
-                d[ext] = {"size": 0, "duration": 0, "count": 0}
-            d[ext]["size"] += m.get("size") or 0
-            d[ext]["duration"] += m.get("duration") or 0
-            d[ext]["count"] += 1
-        elif args.group_by_mimetypes:
-            mimetype = file_utils.get_file_type(m)["type"]
-            if mimetype not in d:
-                d[mimetype] = {"size": 0, "duration": 0, "count": 0}
-            d[mimetype]["size"] += m.get("size") or 0
-            d[mimetype]["duration"] += m.get("duration") or 0
-            d[mimetype]["count"] += 1
-        elif args.group_by_size:
-            base_edges = [2, 5, 10]
-            multipliers = base_edges + [n * 10 for n in base_edges] + [n * 100 for n in base_edges]
+        is_depth = check_depth(args, p)
+        if is_depth:
+            d[m["path"]] = m  # add file
 
-            unit_multiplier = 1024
-            units = [
-                1,
-                unit_multiplier,
-                unit_multiplier**2,
-                unit_multiplier**3,
-                unit_multiplier**4,
-            ]  # Bytes, KB, MB, GB, TB
-
-            bin_edges = [0.0]
-            for unit in units:
-                for m_mult in multipliers:
-                    bin_edges.append(float(m_mult * unit))
-            bin_edges.append(float("inf"))
-
-            file_size = m.get("size") or 0
-            for i in range(len(bin_edges) - 1):
-                lower_bound = bin_edges[i]
-                upper_bound = bin_edges[i + 1]
-                bin_label = f"{strings.file_size(lower_bound)}-{strings.file_size(upper_bound)}"
-                if bin_label not in d:
-                    d[bin_label] = {"size": 0, "duration": 0, "count": 0}
-
-                if lower_bound <= file_size < upper_bound:
-                    d[bin_label]["size"] += file_size
-                    d[bin_label]["duration"] += m.get("duration") or 0
-                    d[bin_label]["count"] += 1
-                    break
-        else:
-            while len(p) >= 2:
+        if args.parents:
+            while p and check_depth(args, p):  # sum folder statistics
                 p.pop()
                 if p == [""]:
                     continue
 
                 parent = os.sep.join(p) + os.sep
-                if level is not None and len(p) != level:
-                    excluded_files.add(parent)
-
                 if parent not in d:
                     d[parent] = {"size": 0, "duration": 0, "count": 0}
+                    d[parent]["folders"] = parent_counts[parent]
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
-
-    if args.group_by_size:
-        return list(reversed([{"path": k, **v} for k, v in d.items() if v["count"] > 0]))
+        elif p and len(p) > 1:
+            p.pop()
+            if p != [""]:
+                parent = os.sep.join(p) + os.sep
+                if parent not in d:
+                    d[parent] = {"size": 0, "duration": 0, "count": 0}
+                    d[parent]["folders"] = parent_counts[parent]
+                d[parent]["size"] += m.get("size") or 0
+                d[parent]["duration"] += m.get("duration") or 0
+                d[parent]["count"] += 1
 
     reverse = True
     if args.sort_groups_by and " desc" in args.sort_groups_by:
         reverse = False
 
-    return sorted(
-        [{"path": k, **v} for k, v in d.items() if k not in excluded_files],
-        key=sort_by(args),
-        reverse=reverse,
-    )
+    return sorted([{"path": k, **v} for k, v in d.items()], key=sort_by(args), reverse=reverse)
+
+
+def get_subset_group_by_extensions(args) -> list[dict]:
+    d = {}
+    for m in args.data:
+        if args.cwd is not None and not m["path"].startswith(args.cwd):
+            continue
+
+        ext = path_utils.ext(m["path"])
+        if ext not in d:
+            d[ext] = {"size": 0, "duration": 0, "count": 0}
+        d[ext]["size"] += m.get("size") or 0
+        d[ext]["duration"] += m.get("duration") or 0
+        d[ext]["count"] += 1
+
+    reverse = True
+    if args.sort_groups_by and " desc" in args.sort_groups_by:
+        reverse = False
+
+    return sorted([{"path": k, **v} for k, v in d.items()], key=sort_by(args), reverse=reverse)
+
+
+def get_subset_group_by_mimetypes(args) -> list[dict]:
+    d = {}
+    for m in args.data:
+        if args.cwd is not None and not m["path"].startswith(args.cwd):
+            continue
+
+        mimetype = file_utils.get_file_type(m)["type"]
+        if mimetype not in d:
+            d[mimetype] = {"size": 0, "duration": 0, "count": 0}
+        d[mimetype]["size"] += m.get("size") or 0
+        d[mimetype]["duration"] += m.get("duration") or 0
+        d[mimetype]["count"] += 1
+
+    reverse = True
+    if args.sort_groups_by and " desc" in args.sort_groups_by:
+        reverse = False
+
+    return sorted([{"path": k, **v} for k, v in d.items()], key=sort_by(args), reverse=reverse)
+
+
+def get_subset_group_by_size(args) -> list[dict]:
+    d = {}
+    for m in args.data:
+        if args.cwd is not None and not m["path"].startswith(args.cwd):
+            continue
+
+        base_edges = [2, 5, 10]
+        multipliers = base_edges + [n * 10 for n in base_edges] + [n * 100 for n in base_edges]
+
+        unit_multiplier = 1024
+        units = [
+            1,
+            unit_multiplier,
+            unit_multiplier**2,
+            unit_multiplier**3,
+            unit_multiplier**4,
+        ]  # Bytes, KB, MB, GB, TB
+
+        bin_edges = [0.0]
+        for unit in units:
+            for m_mult in multipliers:
+                bin_edges.append(float(m_mult * unit))
+        bin_edges.append(float("inf"))
+
+        file_size = m.get("size") or 0
+        for i in range(len(bin_edges) - 1):
+            lower_bound = bin_edges[i]
+            upper_bound = bin_edges[i + 1]
+            bin_label = f"{strings.file_size(lower_bound)}-{strings.file_size(upper_bound)}"
+            if bin_label not in d:
+                d[bin_label] = {"size": 0, "duration": 0, "count": 0}
+
+            if lower_bound <= file_size < upper_bound:
+                d[bin_label]["size"] += file_size
+                d[bin_label]["duration"] += m.get("duration") or 0
+                d[bin_label]["count"] += 1
+                break
+
+    return list(reversed([{"path": k, **v} for k, v in d.items() if v["count"] > 0]))
 
 
 def filter_criteria(args, media):
@@ -137,28 +225,40 @@ def filter_criteria(args, media):
         media = [d for d in media if d.get("count")]
     elif args.files_only:
         media = [d for d in media if not d.get("count")]
+
+    if args.folder_sizes:
+        media = [d for d in media if args.folder_sizes(d.get("size"))]
+    if args.file_counts:
+        media = [d for d in media if args.file_counts(d.get("count"))]
+    if args.folder_counts:
+        media = [d for d in media if args.folder_counts(d.get("folders"))]
+
     return media
 
 
 def load_subset(args):
-    if any([args.group_by_extensions, args.group_by_mimetypes, args.group_by_size]):
-        args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
+    if args.group_by_size:
+        args.subset = get_subset_group_by_size(args)
+    elif args.group_by_extensions:
+        args.subset = get_subset_group_by_extensions(args)
+    elif args.group_by_mimetypes:
+        args.subset = get_subset_group_by_mimetypes(args)
     elif len(args.data) <= 2:
         args.subset = args.data
-    elif args.depth == 0:
+    elif not args.depth:
         while len(args.subset) < 2:
-            args.depth += 1
-            args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
+            args.min_depth += 1
+            args.subset = get_subset(args)
             args.subset = filter_criteria(args, args.subset)  # check within loop to avoid "no media"
     else:
-        args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
+        args.subset = get_subset(args)
 
     args.subset = filter_criteria(args, args.subset)
 
     if not args.subset:
         processes.no_media_found()
 
-    args.cwd = os.sep.join(args.subset[0]["path"].split(os.sep)[: args.depth - 1]) + os.sep
+    args.cwd = os.sep.join(args.subset[0]["path"].split(os.sep)[: args.min_depth - 1]) + os.sep
     return args.cwd, args.subset
 
 
@@ -200,7 +300,7 @@ def disk_usage(defaults_override=None):
     elif args.group_by_size:
         units = "file sizes"
     else:
-        units = f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)"
+        units = f"paths at depth {args.min_depth} ({num_folders} folders, {num_files} files)"
 
     media_printer.media_printer(args, args.subset, units=units)
     if not args.to_json:

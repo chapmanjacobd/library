@@ -529,19 +529,28 @@ def download(args, m) -> None:
     media_check_failed = False
     if info and local_path and Path(local_path).exists():
         log.info("[%s]: Downloaded to %s", webpath, local_path)
-        try:
-            if args.profile == DBType.audio:
-                dl_probe = FFProbe(local_path)
-                if not dl_probe.has_audio:
-                    raise RuntimeError
 
-            info["corruption"] = int(
-                media_check.calculate_corruption(local_path, threads=1, full_scan_if_corrupt=True) * 100
-            )
-        except (RuntimeError, CalledProcessError):
-            info["corruption"] = 50
-        if info["corruption"] > 7:
-            media_check_failed = True
+        if getattr(args, "check_corrupt", False) and path_utils.ext(local_path) not in consts.SKIP_MEDIA_CHECK:
+            try:
+                if args.profile == DBType.audio:
+                    dl_probe = FFProbe(local_path)
+                    if not dl_probe.has_audio:
+                        raise RuntimeError
+
+                corruption = media_check.calculate_corruption(
+                    local_path,
+                    chunk_size=args.chunk_size,
+                    gap=args.gap,
+                    full_scan=args.full_scan,
+                    full_scan_if_corrupt=args.full_scan_if_corrupt,
+                    audio_scan=args.audio_scan,
+                    threads=args.same_file_threads,
+                )
+                info["corruption"] = int(corruption * 100)
+            except (RuntimeError, CalledProcessError):
+                info["corruption"] = 50
+            if info["corruption"] > 7:
+                media_check_failed = True
 
     if not (info and local_path and Path(local_path).exists()) or media_check_failed:
         download_status, ydl_errors_txt = log_error(ydl_log, webpath)

@@ -245,6 +245,10 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     elif "n" in print_args:
         pass
     else:
+        total_media = media_len or len(media)
+        if args.print_limit:
+            media = media[: args.print_limit]
+
         tbl = deepcopy(media)
         tbl = [{k: f"{v:.4f}" if isinstance(v, float) else v for k, v in d.items()} for d in tbl]
         max_col_widths = printing.calculate_max_col_widths(tbl)
@@ -256,11 +260,24 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         printing.table(tbl, colalign=colalign)
 
         if units:
-            if len(media) > 1:
-                print(f"{media_len or len(media)} {units}")
+            if total_media > 1:
+                print(f"{total_media} {units}")
+
                 limit = getattr(args, "limit", None)
-                if limit and int(limit) <= len(media) and len(tbl) <= int(limit):
-                    print(f" (limited by --limit {limit})")
+                print_limit = getattr(args, "print_limit", None)
+                is_limited = limit and int(limit) < total_media
+                is_print_limited = print_limit and int(print_limit) < total_media
+
+                if is_limited or is_print_limited:
+                    limit_warning = ["  (limited by "]
+                    if is_limited:
+                        limit_warning.append(f"--limit {limit}")
+                    if is_print_limited:
+                        if is_limited:
+                            limit_warning.append(" and ")
+                        limit_warning.append(f"--print-limit {print_limit}")
+                    limit_warning.append(")")
+                    print(''.join(limit_warning))
 
             if total_duration > 0:
                 total_duration = strings.duration(total_duration)

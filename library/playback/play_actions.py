@@ -260,7 +260,7 @@ def filter_episodic(args, media: list[dict]) -> list[dict]:
 
         siblings = parent_dict[parent_path]
 
-        if not args.folder_counts(siblings):
+        if not args.file_counts(siblings):
             continue
         else:
             filtered_media.append(m)
@@ -394,7 +394,7 @@ def process_playqueue(args) -> None:
     if args.fetch_siblings:
         media = db_media.get_sibling_media(args, media)
 
-    if args.folder_counts:
+    if args.file_counts:
         media = filter_episodic(args, media)
         log.debug("utils.filter_episodic: %s", t.elapsed())
 

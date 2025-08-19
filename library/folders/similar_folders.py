@@ -44,8 +44,8 @@ def parse_args():
         print("Nothing to do")
         raise NotImplementedError
 
-    if args.filter_counts and not any([args.folders_counts, args.folder_counts, args.folder_sizes]):
-        args.folder_counts = ["+2"]
+    if args.filter_counts and not any([args.folder_counts, args.file_counts, args.folder_sizes]):
+        args.file_counts = ["+2"]
 
     arggroups.files_post(args)
     arggroups.group_folders_post(args)

@@ -1,7 +1,7 @@
 import sys
 
 from library.createdb import gallery_backend, tube_backend
-from library.utils import consts, db_utils, sql_utils
+from library.utils import consts, db_utils, processes, sql_utils
 from library.utils.consts import SC, DBType
 
 
@@ -21,6 +21,9 @@ def media_select_sql(args, m_columns):
         if "duration" in args.select:
             args.select.remove("duration")
         args.select += ["cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"]
+
+    if not args.select:
+        processes.exit_error("No columns to query. No table in sqlite file?")
 
     select_sql = "\n        , ".join(args.select)
     return select_sql

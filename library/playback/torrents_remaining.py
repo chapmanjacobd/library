@@ -32,8 +32,7 @@ def get_mountpoint(args, content_path):
             log.debug("%s does not exist", content_path)
             content_path = os.path.dirname(content_path)
         return path_utils.mountpoint(content_path)
-
-    if args.depth == 0:
+    elif args.depth == 0:
         if consts.IS_WINDOWS:
             return os.path.splitdrive(content_path)[0] or "\\"
         else:

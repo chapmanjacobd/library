@@ -623,10 +623,14 @@ big_dirs = """library big-dirs PATH ... [--limit (4000)] [--depth (0)] [--sort-g
         library big-dirs ./video/ --folder-sizes=+10GB --folder-sizes=-200GB
         library big-dirs ./video/ -FS=+10GB -FS=-200GB
 
-    Filter folders by count
+    Filter folders by file count
+
+        library big-dirs ./video/ --file-counts=+3 --file-counts=-3000
+        library big-dirs ./video/ -FC=+20000 -D-8  # Use --depth to cascade nested directories
+
+    Filter folders by sub-folder "bigdir" count
 
         library big-dirs ./video/ --folder-counts=+3 --folder-counts=-3000
-        library big-dirs ./video/ -FC=+3 -FC=-3000
 
     Filter folders by depth
 

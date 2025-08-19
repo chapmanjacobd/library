@@ -45,9 +45,9 @@ def group_by_folder(args, media) -> list[dict]:
                     "count": 1,
                 }
 
-    if args.folder_counts:
+    if args.file_counts:
         for path, pdict in list(d.items()):
-            if not args.folder_counts(pdict["count"]):
+            if not args.file_counts(pdict["count"]):
                 d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
