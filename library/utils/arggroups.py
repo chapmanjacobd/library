@@ -93,6 +93,12 @@ def args_post(args, parser, create_db=False):
     if getattr(args, "cols", False):
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
+    if getattr(args, "print_limit", False):
+        if args.print_limit.lower() in ("inf", "all"):
+            args.print_limit = None
+        else:
+            args.print_limit = int(args.print_limit)
+
 
 def printing(parser):
     printing = parser.add_argument_group("Printing")
@@ -119,6 +125,15 @@ When a printing mode is explicitly set then all rows will be fetched unless --li
 Some printing modes can be combined
 -p df  # print fields for piping into another program and mark as deleted
 -p bf  # print fields from big-dirs report""",
+    )
+    printing.add_argument(
+        "--print-limit",
+        "--preview-limit",
+        "--table-limit",
+        "-pL",
+        "-Lp",
+        default=str(consts.DEFAULT_TABLE_LIMIT),
+        help="Max rows to print for table"
     )
     printing.add_argument(
         "--no-url-decode",
@@ -557,7 +572,7 @@ def parse_args_limit(args):
             elif args.action in (SC.history,):
                 args.limit = 10
             elif args.action in (SC.links_open,):
-                args.limit = consts.MANY_LINKS - 1
+                args.limit = consts.DEFAULT_OPEN_LIMIT
             elif args.action in (SC.download,):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 60
             elif args.action in (SC.tabs_open,):
@@ -1079,8 +1094,8 @@ def group_folders(parent_parser):
 Recommended to use with -L inf and --duration or --depth filters; see `lb big-dirs -h` for more info""",
     )
 
-    parser.add_argument("--episode", "--episodic", action="store_true", help="Shorthand for --folder-counts '>1'")
-    parser.add_argument("--solo", action="store_true", help="Shorthand for --folder-counts=1")
+    parser.add_argument("--episode", "--episodic", action="store_true", help="Shorthand for --file-counts '>1'")
+    parser.add_argument("--solo", action="store_true", help="Shorthand for --file-counts=1")
 
     parser.add_argument(
         "--sort-groups-by",
@@ -1091,7 +1106,7 @@ Recommended to use with -L inf and --duration or --depth filters; see `lb big-di
 
 --sort-groups-by 'mcda median_size,-deleted'  # sort by auto-MCDA""",
     )
-    parser.add_argument("--depth", "-D", type=int, help="Folder depth of files")
+    parser.add_argument("--depth", "-D", action="append", help="Folder depth of files")
     parser.add_argument("--parents", action="store_true", help="Include recursive sub-files in folder statistics")
 
     parser.add_argument(
@@ -1102,9 +1117,8 @@ Recommended to use with -L inf and --duration or --depth filters; see `lb big-di
         help="Only include folders of specific sizes (uses the same syntax as fd-find)",
     )
     parser.add_argument(
-        "--folder-counts",
-        "--files-counts",
         "--file-counts",
+        "--files-counts",
         "--files",
         "--counts",
         "--episodes",
@@ -1121,25 +1135,42 @@ Recommended to use with -L inf and --duration or --depth filters; see `lb big-di
 -FC=+12 -FC=-25  # between 12 and 25 files
 -FC=5%%20  # 5 siblings ±20%% (4 to 6 siblings)""",
     )
-    parser.add_argument("--folders-counts", action="append", help="Number of folders per folder")
+    parser.add_argument("--folder-counts", "--folders-counts", action="append", help="Number of folders per folder")
 
 
 def group_folders_post(args) -> None:
     if args.solo:
-        args.folder_counts = ["1"]
+        args.file_counts = ["1"]
     if args.episode:
-        args.folder_counts = ["+2"]
+        args.file_counts = ["+2"]
 
     if args.folder_sizes:
         args.folder_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.folder_sizes)
+    if args.file_counts:
+        args.file_counts = sql_utils.parse_human_to_lambda(int, args.file_counts)
     if args.folder_counts:
         args.folder_counts = sql_utils.parse_human_to_lambda(int, args.folder_counts)
-    if args.folders_counts:
-        args.folders_counts = sql_utils.parse_human_to_lambda(int, args.folders_counts)
 
     if args.sort_groups_by:
         args.sort_groups_by = arg_utils.parse_ambiguous_sort(args.sort_groups_by)
         args.sort_groups_by = ",".join(args.sort_groups_by)
+
+    args.min_depth = 0
+    args.max_depth = None
+    if args.depth:
+        for s in args.depth:
+            match = re.match(r"([+-])?(\d+)", s)
+            if match:
+                sign, val_str = match.groups()
+                val = int(val_str)
+
+                if sign == "+":
+                    args.min_depth = val
+                elif sign == "-":
+                    args.max_depth = val
+                else:  # e.g. -D=2
+                    args.min_depth = val
+                    args.max_depth = val
 
 
 def similar_files(parent_parser):

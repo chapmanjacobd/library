@@ -1,9 +1,10 @@
 import argparse, os
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 from library import usage
 from library.fsdb import files_info
+from library.fsdb.disk_usage import check_depth, count_subfolders
 from library.playback import media_printer
 from library.tablefiles import mcda
 from library.utils import arggroups, argparse_utils, file_utils, iterables, nums, sqlgroups
@@ -17,7 +18,6 @@ def parse_args() -> argparse.Namespace:
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
     arggroups.group_folders(parser)
-    parser.set_defaults(depth=0)
     arggroups.debug(parser)
 
     arggroups.database_or_paths(parser, destination=True)
@@ -43,7 +43,7 @@ def group_files_by_parents(args, media) -> list[dict]:
             parent = os.sep.join(p) + os.sep
 
             if parent not in p_media:
-                p_media[parent] = []
+                p_media[parent] = [m]
             else:
                 p_media[parent].append(m)
 
@@ -66,7 +66,7 @@ def group_files_by_parents(args, media) -> list[dict]:
         if len(parent.split(os.sep)) < min_parts:
             d.pop(parent)
 
-    parent_counts = Counter(str(Path(p).parent) for p in d.keys())
+    parent_counts = count_subfolders(d.keys())
     for parent, data in d.items():
         data["folders"] = parent_counts[parent]
 
@@ -76,7 +76,7 @@ def group_files_by_parents(args, media) -> list[dict]:
 def group_files_by_parent(args, media) -> list[dict]:
     p_media = defaultdict(list)
     for m in media:
-        p_media[str(Path(m["path"]).parent)].append(m)
+        p_media[str(Path(m["path"]).parent) + os.sep].append(m)
 
     d = {}
     for parent, media in list(p_media.items()):
@@ -93,7 +93,7 @@ def group_files_by_parent(args, media) -> list[dict]:
             "deleted_duration": sum(m.get("duration") or 0 for m in media if bool(m.get("time_deleted"))),
         }
 
-    parent_counts = Counter(str(Path(p).parent) for p in d.keys())
+    parent_counts = count_subfolders(d.keys())
     for parent, data in d.items():
         data["folders"] = parent_counts[parent]
 
@@ -103,14 +103,14 @@ def group_files_by_parent(args, media) -> list[dict]:
 def reaggregate_at_depth(args, folders) -> list[dict]:
     d = {}
     for f in folders:
-        p = f["path"].split(os.sep)
-        p.pop()
+        p = f["path"].rstrip(os.sep).split(os.sep)
 
-        depth = 1 + args.depth
-        parent = os.sep.join(p[:depth]) + os.sep
-        if len(p) < depth:
+        if args.max_depth:
+            p = p[: args.max_depth]
+        if not check_depth(args, p):
             continue
 
+        parent = os.sep.join(p) + os.sep
         if d.get(parent):
             d[parent]["size"] += f["size"]
             d[parent]["duration"] += f["duration"]
@@ -135,16 +135,16 @@ def process_big_dirs(args, folders) -> list[dict]:
     if args.only_deleted:
         if args.folder_sizes:
             folders = [d for d in folders if args.folder_sizes(d["deleted_size"])]
-        if args.folder_counts:
-            folders = [d for d in folders if args.folder_counts(d["deleted"])]
+        if args.file_counts:
+            folders = [d for d in folders if args.file_counts(d["deleted"])]
     else:
         if args.folder_sizes:
             folders = [d for d in folders if args.folder_sizes(d["size"])]
-        if args.folder_counts:
-            folders = [d for d in folders if args.folder_counts(d["exists"])]
+        if args.file_counts:
+            folders = [d for d in folders if args.file_counts(d["exists"])]
 
-    if args.folders_counts:
-        folders = [d for d in folders if args.folders_counts(d["folders"])]
+    if args.folder_counts:
+        folders = [d for d in folders if args.folder_counts(d["folders"])]
 
     return folders
 

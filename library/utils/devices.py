@@ -496,7 +496,7 @@ def browse(browser, urls):
         else:
             processes.cmd_detach(*shlex.split(browser), url)
 
-        if len(urls) >= consts.MANY_LINKS:
+        if len(urls) >= consts.DEFAULT_OPEN_LIMIT:
             time.sleep(1.5)
 
 

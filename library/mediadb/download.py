@@ -51,6 +51,9 @@ def parse_args():
     parser.add_argument("--process", action="store_true", help="Transcode images to AVIF and video/audio to AV1/Opus")
     arggroups.clobber(parser)
     arggroups.process_ffmpeg(parser)
+    parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")
+    arggroups.media_check(parser)
+    parser.set_defaults(same_file_threads=1, full_scan_if_corrupt=True)
     arggroups.debug(parser)
 
     arggroups.database(parser)

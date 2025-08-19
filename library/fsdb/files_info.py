@@ -10,7 +10,6 @@ def parse_args(defaults_override=None):
     arggroups.files(parser)
     arggroups.sql_fs(parser)
     parser.set_defaults(hide_deleted=True)
-    parser.set_defaults(limit="4000", depth=0)
 
     arggroups.debug(parser)
 
@@ -116,8 +115,6 @@ def files_info(defaults_override=None):
         processes.no_media_found()
 
     summary = iterables.list_dict_summary(files)
-    if not "a" in args.print:
-        files = files[: args.limit]
 
     media_printer.media_printer(args, files, units="files")
     if not args.to_json:
