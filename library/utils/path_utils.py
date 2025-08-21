@@ -1,5 +1,5 @@
 import os.path
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, defaultdict
 from contextlib import suppress
 from pathlib import Path
 from urllib.parse import parse_qsl, quote, unquote, urlparse, urlunparse
@@ -409,3 +409,146 @@ def gen_rel_path(source, dest, relative_to):
     log.debug("source destination %s", source_destination)
 
     return source_destination
+
+
+import os
+from urllib.parse import urlparse
+from collections import defaultdict, deque
+from typing import List, Set, Dict, Optional
+
+class TrieNode:
+    def __init__(self):
+        self.children: Dict[str, 'TrieNode'] = defaultdict(TrieNode)
+        self.is_dir: bool = False
+        self.parent: Optional['TrieNode'] = None
+        self.name: Optional[str] = None
+
+class DirTree:
+    def __init__(self, paths: List[str]):
+        self.roots: Dict[str, TrieNode] = defaultdict(TrieNode)
+        for path in paths:
+            self._insert(path)
+
+    def _insert(self, path: str):
+        parts = self._split_path(path)
+        if not parts:
+            return
+
+        root_key = parts[0]
+        node = self.roots[root_key]
+        node.name = root_key
+
+        # Mark all parent nodes as directories
+        for part in parts[1:-1]:
+            child_node = node.children[part]
+            child_node.is_dir = True
+            child_node.parent = node
+            child_node.name = part
+            node = child_node
+
+        # Mark the final node as a directory if the path explicitly ends with a separator
+        if len(parts) > 1:
+            final_part = parts[-1]
+            final_node = node.children[final_part]
+            final_node.parent = node
+            final_node.name = final_part
+            final_node.is_dir = path.endswith(('/', os.sep))
+
+    def _split_path(self, path: str) -> List[str]:
+        if '://' in path:
+            parsed = urlparse(path)
+            parts = [f"{parsed.scheme}://"]
+            if parsed.netloc:
+                parts.append(parsed.netloc)
+            if parsed.path:
+                parts.extend(p for p in parsed.path.split('/') if p)
+            return parts
+        elif path.startswith('/'):
+            parts = [p for p in path.strip(os.sep).split(os.sep) if p]
+            return ['/'] + parts
+        else:
+            parts = [p for p in path.split(os.sep) if p]
+            return parts
+
+    def _find_node(self, path: str) -> Optional[TrieNode]:
+        if path == '/' or path.endswith('://'):
+            root_key = path
+            return self.roots.get(root_key)
+
+        parts = self._split_path(path)
+        if not parts:
+            return None
+
+        root_key = parts[0]
+        if root_key not in self.roots:
+            return None
+
+        node = self.roots[root_key]
+        for part in parts[1:]:
+            if part not in node.children:
+                return None
+            node = node.children[part]
+        return node
+
+    def immediate(self, dir_path: str) -> Set[str]:
+        node = self._find_node(dir_path)
+        if node is None:
+            return set()
+
+        results = set()
+        for child_name, child_node in node.children.items():
+            if child_node.is_dir:
+                results.add(self._join_path_from_node(child_node))
+        return results
+
+    def n_level(self, dir_path: str, n: int) -> Set[str]:
+        start_node = self._find_node(dir_path)
+        if not start_node:
+            return set()
+
+        q = deque([(start_node, 0)])
+        found_nodes = set()
+
+        while q:
+            current_node, current_level = q.popleft()
+
+            if current_level == n:
+                if current_node.is_dir:
+                    found_nodes.add(current_node)
+                continue
+
+            for child_node in current_node.children.values():
+                if child_node.is_dir:
+                    q.append((child_node, current_level + 1))
+
+        return {self._join_path_from_node(node) for node in found_nodes}
+
+    def recursive(self, dir_path: str) -> Set[str]:
+        start_node = self._find_node(dir_path)
+        if not start_node:
+            return set()
+
+        found_dirs = set()
+        q = deque([start_node])
+
+        while q:
+            node = q.popleft()
+            for child_node in node.children.values():
+                if child_node.is_dir:
+                    found_dirs.add(child_node)
+                    q.append(child_node)
+
+        return {self._join_path_from_node(node) for node in found_dirs}
+
+    def _join_path_from_node(self, node: TrieNode) -> str:
+        parts = []
+        current_node = node
+        while current_node.parent is not None:
+            parts.insert(0, current_node.name)
+            current_node = current_node.parent
+
+        root_key = current_node.name
+        if root_key == '/' or root_key.endswith('://'):
+            return f"{root_key}{'/'.join(parts)}"
+        else:
+            return os.path.join(root_key, *parts)
