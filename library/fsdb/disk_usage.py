@@ -52,37 +52,6 @@ def check_depth(args, p):
         return args.min_depth <= len(p)
 
 
-def count_subfolders(path_list):
-    sorted_paths = sorted(set(os.path.dirname(p) for p in path_list), reverse=True)
-
-    recursive_counts = defaultdict(int)
-    for p in sorted_paths:
-        recursive_counts[p + os.sep] += 0
-
-        parts = p.split(os.sep)
-        while len(parts) > 1:
-            parts = parts[:-1]
-            if parts:
-                parent = os.sep.join(parts)
-                recursive_counts[parent + os.sep] += 1
-
-    return dict(recursive_counts)
-
-def count_nested_subfolders(path_list):
-    sorted_paths = sorted(list(set(path_list)), reverse=True)
-    recursive_counts = defaultdict(int)
-
-    for p in sorted_paths:
-        recursive_counts[p] += 1
-
-        current_path = os.path.dirname(p)
-
-        while current_path and current_path.count(os.sep) > 1:
-            recursive_counts[current_path] += recursive_counts[p]
-            current_path = os.path.dirname(current_path)
-
-    return dict(recursive_counts)
-
 def format_folder(p):
     p = str(p)
     if p != os.sep:
@@ -90,12 +59,9 @@ def format_folder(p):
     else:
         return p
 
-
 def get_subset(args) -> list[dict]:
-    if args.parents:
-        parent_counts = count_subfolders(d["path"] for d in args.data)
-    else:
-        parent_counts = count_subfolders(d["path"] for d in args.data)
+    all_paths = [d["path"] for d in args.data]
+    tree = path_utils.DirTree(all_paths)
 
     d = {}
     for m in args.data:
@@ -114,20 +80,20 @@ def get_subset(args) -> list[dict]:
                 if p == [""]:
                     continue
 
-                parent = os.sep.join(p) + os.sep
+                parent = os.sep.join(p)
                 if parent not in d:
                     d[parent] = {"size": 0, "duration": 0, "count": 0}
-                    d[parent]["folders"] = parent_counts[parent]
+                    d[parent]["folders"] = len(tree.recursive(parent))
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
         elif p and len(p) > 1:
             p.pop()
             if p != [""]:
-                parent = os.sep.join(p) + os.sep
+                parent = os.sep.join(p)
                 if parent not in d:
                     d[parent] = {"size": 0, "duration": 0, "count": 0}
-                    d[parent]["folders"] = parent_counts[parent]
+                    d[parent]["folders"] = len(tree.immediate(parent))
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
@@ -136,7 +102,8 @@ def get_subset(args) -> list[dict]:
     if args.sort_groups_by and " desc" in args.sort_groups_by:
         reverse = False
 
-    return sorted([{"path": k, **v} for k, v in d.items()], key=sort_by(args), reverse=reverse)
+    return sorted([{"path": format_folder(k), **v} for k, v in d.items()], key=sort_by(args), reverse=reverse)
+
 
 
 def get_subset_group_by_extensions(args) -> list[dict]:
