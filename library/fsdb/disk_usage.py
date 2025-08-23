@@ -1,11 +1,9 @@
 import os
-from collections import defaultdict
-from pathlib import Path
 
 from library import usage
 from library.fsdb import files_info
 from library.playback import media_printer
-from library.utils import arggroups, argparse_utils, consts, file_utils, iterables, path_utils, processes, sqlgroups, strings
+from library.utils import arggroups, argparse_utils, file_utils, iterables, path_utils, processes, sqlgroups, strings
 
 
 def parse_args(defaults_override=None):
@@ -45,11 +43,11 @@ def sort_by(args):
     return lambda x: (x.get("size") or 0 / (x.get("count") or 1), x.get("size") or 0, x.get("count") or 1)
 
 
-def check_depth(args, p):
+def check_depth(args, n):
     if args.max_depth is not None:
-        return args.min_depth <= len(p) <= args.max_depth
+        return args.min_depth <= n <= args.max_depth
     else:
-        return args.min_depth <= len(p)
+        return args.min_depth <= n
 
 
 def format_folder(p):
@@ -59,41 +57,51 @@ def format_folder(p):
     else:
         return p
 
+
 def get_subset(args) -> list[dict]:
-    all_paths = [d["path"] for d in args.data]
-    tree = path_utils.DirTree(all_paths)
+    parents = set(os.path.dirname(d["path"]) for d in args.data)
+    # more accurate but a bit confusing, perhaps:
+    # if args.depth:
+    #     parents = set(s for s in parents if check_depth(args, s.count(os.sep) + 1))
 
     d = {}
     for m in args.data:
-        if args.cwd is not None and not m["path"].startswith(args.cwd):
+        file_path = m["path"]
+        if args.cwd is not None and not file_path.startswith(args.cwd):
             continue
 
-        p = m["path"].split(os.sep)
+        p = file_path.split(os.sep)
 
-        is_depth = check_depth(args, p)
-        if is_depth:
-            d[m["path"]] = m  # add file
+        is_depth = check_depth(args, len(p))
+        if not is_depth:
+            continue
 
+        # add file
+        d[file_path] = m
+
+        # add folder
         if args.parents:
-            while p and check_depth(args, p):  # sum folder statistics
-                p.pop()
+            while p and check_depth(args, len(p)):  # recursive folder statistics
+                p.pop()  # dirname
                 if p == [""]:
                     continue
 
                 parent = os.sep.join(p)
                 if parent not in d:
                     d[parent] = {"size": 0, "duration": 0, "count": 0}
-                    d[parent]["folders"] = len(tree.recursive(parent))
+                    d[parent]["folders"] = sum(1 for sp in parents if sp.startswith(parent + os.sep))
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
         elif p and len(p) > 1:
-            p.pop()
+            p.pop()  # dirname
             if p != [""]:
                 parent = os.sep.join(p)
                 if parent not in d:
                     d[parent] = {"size": 0, "duration": 0, "count": 0}
-                    d[parent]["folders"] = len(tree.immediate(parent))
+                    # more accurate but a bit confusing, perhaps:
+                    # d[parent]["folders"] = sum(1 for sp in parents if os.path.dirname(sp) == parent)
+                    d[parent]["folders"] = sum(1 for sp in parents if sp.startswith(parent + os.sep))
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
@@ -103,7 +111,6 @@ def get_subset(args) -> list[dict]:
         reverse = False
 
     return sorted([{"path": format_folder(k), **v} for k, v in d.items()], key=sort_by(args), reverse=reverse)
-
 
 
 def get_subset_group_by_extensions(args) -> list[dict]:
@@ -162,8 +169,7 @@ def get_subset_group_by_size(args) -> list[dict]:
             unit_multiplier**2,
             unit_multiplier**3,
             unit_multiplier**4,
-        ]  # Bytes, KB, MB, GB, TB
-
+        ]
         bin_edges = [0.0]
         for unit in units:
             for m_mult in multipliers:
@@ -213,10 +219,18 @@ def load_subset(args):
     elif len(args.data) <= 2:
         args.subset = args.data
     elif not args.depth:
+        if args.paths:
+            args.min_depth = min(s.count(os.sep) for s in args.paths)
+
+        tries = 50
         while len(args.subset) < 2:
             args.min_depth += 1
             args.subset = get_subset(args)
             args.subset = filter_criteria(args, args.subset)  # check within loop to avoid "no media"
+
+            tries -= 1
+            if not tries:
+                processes.exit_error("all files filtered out")
     else:
         args.subset = get_subset(args)
 
@@ -233,9 +247,9 @@ def get_data(args) -> list[dict]:
     if args.database:
         media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
     else:
-        if args.hide_deleted:
-            args.paths = [p for p in args.paths if os.path.exists(p)]
         media = file_utils.gen_d(args)
+        if args.hide_deleted:
+            args.paths = file_utils.filter_deleted(args.paths)
 
         media = files_info.filter_files_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
@@ -256,7 +270,7 @@ def disk_usage(defaults_override=None):
     num_folders = sum(1 for d in args.subset if d.get("count"))
     num_files = sum(1 for d in args.subset if not d.get("count"))
 
-    summary = iterables.list_dict_summary(args.subset)
+    summary = iterables.list_dict_summary(args.data if args.parents else args.subset)
     if args.limit and not "a" in args.print:
         args.subset = args.subset[: args.limit]
 
@@ -266,6 +280,8 @@ def disk_usage(defaults_override=None):
         units = "file types"
     elif args.group_by_size:
         units = "file sizes"
+    elif args.parents:
+        units = None  # folder duplication leads to aggregate inaccuracy
     else:
         units = f"paths at depth {args.min_depth} ({num_folders} folders, {num_files} files)"
 

@@ -1,4 +1,4 @@
-import csv, json, os, shlex, statistics
+import csv, json, os, shlex, statistics, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -107,9 +107,6 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
 
     if not media:
         processes.no_media_found()
-
-    if "f" not in print_args and "limit" in getattr(args, "defaults", []):
-        media.reverse()
 
     try:
         tables = args.db.table_names()
@@ -249,6 +246,9 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         if args.print_limit:
             media = media[: args.print_limit]
 
+        if sys.stdout.isatty():
+            media.reverse()  # long lists are usually read in reverse unless in a PAGER
+
         tbl = deepcopy(media)
         tbl = [{k: f"{v:.4f}" if isinstance(v, float) else v for k, v in d.items()} for d in tbl]
         max_col_widths = printing.calculate_max_col_widths(tbl)
@@ -277,7 +277,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
                             limit_warning.append(" and ")
                         limit_warning.append(f"--print-limit {print_limit}")
                     limit_warning.append(")")
-                    print(''.join(limit_warning))
+                    print("".join(limit_warning))
 
             if total_duration > 0:
                 total_duration = strings.duration(total_duration)
