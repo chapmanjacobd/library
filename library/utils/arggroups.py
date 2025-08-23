@@ -133,7 +133,7 @@ Some printing modes can be combined
         "-pL",
         "-Lp",
         default=str(consts.DEFAULT_TABLE_LIMIT),
-        help="Max rows to print for table"
+        help="Max rows to print for table",
     )
     printing.add_argument(
         "--no-url-decode",

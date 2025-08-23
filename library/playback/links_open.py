@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.database(parser)
     parser.add_argument("search", nargs="*")
 
-    parser.set_defaults(limit=consts.DEFAULT_OPEN_LIMIT, fts=False)
+    parser.set_defaults(limit=str(consts.DEFAULT_OPEN_LIMIT), fts=False)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 

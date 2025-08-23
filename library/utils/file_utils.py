@@ -784,6 +784,26 @@ def read_file_to_dataframes(
     return dfs
 
 
+def filter_deleted(paths):
+    deleted_paths = set()
+
+    existing_paths = []
+    for p in paths:
+        parent_path = os.path.dirname(p)
+
+        if parent_path in deleted_paths:
+            continue
+        if not os.path.exists(parent_path):
+            deleted_paths.add(parent_path)
+            continue
+        if not os.path.exists(p):
+            continue
+
+        existing_paths.append(p)
+
+    return existing_paths
+
+
 def get_file_stats(d):
     try:
         stat = Path(d["path"]).stat()
