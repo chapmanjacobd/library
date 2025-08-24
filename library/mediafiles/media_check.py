@@ -148,7 +148,7 @@ def corruption_threshold_exceeded(threshold: bool | float, corruption, duration)
         if threshold is True:
             threshold = 0.069
 
-        if 1 > threshold > 0:
+        if 0 < threshold < 1:
             if corruption >= threshold:
                 return True
         elif ((duration or 100) * corruption) >= threshold:

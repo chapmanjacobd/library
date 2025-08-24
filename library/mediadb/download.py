@@ -53,7 +53,7 @@ def parse_args():
     arggroups.process_ffmpeg(parser)
     parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")
     arggroups.media_check(parser)
-    parser.set_defaults(same_file_threads=1, full_scan_if_corrupt=True)
+    parser.set_defaults(same_file_threads=1, full_scan_if_corrupt="7%")
     arggroups.debug(parser)
 
     arggroups.database(parser)
