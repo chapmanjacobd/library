@@ -54,6 +54,7 @@ fs_flags = [
 media_flags = [
     ("--no-video", 0, ""),
     ("-B --solo", 0, ""),
+    ("-B --episode", 0, ""),
     ("--no-subtitles", 1, "test_frame.gif"),
     ("-w subtitle_count=1", 1, "corrupt.mp4"),
     ("--fetch-siblings=4", 4, "corrupt.mp4"),
@@ -69,7 +70,6 @@ media_flags = [
     ("-B --folder-counts=-4", 4, "corrupt.mp4"),
     ("-B --file-counts=-16", 4, "corrupt.mp4"),
     ("-B --folder-sizes=-5MB", 4, "corrupt.mp4"),
-    ("-B --episode", 4, "corrupt.mp4"),
     ("-R", 4, "corrupt.mp4"),
     ("-RC", 4, "test.gif"),
     ("-RR", 4, "corrupt.mp4"),
