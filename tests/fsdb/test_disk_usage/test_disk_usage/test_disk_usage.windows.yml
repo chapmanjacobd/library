@@ -1,7 +1,9 @@
-- duration: null
-  path: https://test/?tags%5B%5D=
-  size: null
 - count: 4
   duration: 24
+  folders: 1
   path: C:\
   size: 276010
+- duration: null
+  folders: 1
+  path: https://test/?tags%5B%5D=
+  size: null

@@ -21,10 +21,10 @@ def filter_src(args, path):
     if args.ext and not path.lower().endswith(args.ext):
         return False
 
-    if any(fnmatch(path, s) for s in args.move_exclude):
+    if args.move_exclude and any(fnmatch(path, s) for s in args.move_exclude):
         return False
 
-    if not any(fnmatch(path, s) for s in args.move_include):
+    if args.move_include and not any(fnmatch(path, s) for s in args.move_include):
         return False
 
     if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):

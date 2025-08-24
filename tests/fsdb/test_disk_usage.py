@@ -16,7 +16,7 @@ elif consts.IS_MAC:
 
 
 def test_disk_usage(assert_unchanged, capsys):
-    lb(["du", v_db, "--to-json"])
+    lb(["du", v_db, "-td", "--parents", "--depth=2", "--to-json"])
     captured = capsys.readouterr().out
     assert_unchanged(
         [json.loads(line) for line in captured.strip().split("\n")], basename=f"test_disk_usage.{platform}"
