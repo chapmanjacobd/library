@@ -1,9 +1,20 @@
 import os
+from collections import defaultdict
 
 from library import usage
 from library.fsdb import files_info
 from library.playback import media_printer
-from library.utils import arggroups, argparse_utils, file_utils, iterables, path_utils, processes, sqlgroups, strings
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    file_utils,
+    iterables,
+    objects,
+    path_utils,
+    processes,
+    sqlgroups,
+    strings,
+)
 
 
 def parse_args(defaults_override=None):
@@ -40,7 +51,12 @@ def sort_by(args):
     if args.sort_groups_by:
         return lambda x: x.get(args.sort_groups_by.replace(" desc", "")) or 0
 
-    return lambda x: (x.get("size") or 0 / (x.get("count") or 1), x.get("size") or 0, x.get("count") or 1)
+    return lambda x: (
+        x.get("size") or 0 / (x.get("count") or 1),
+        x.get("size") or 0,
+        x.get("count") or 1,
+        objects.Reverser(x.get("path")),
+    )
 
 
 def check_depth(args, n):
@@ -58,11 +74,32 @@ def format_folder(p):
         return p
 
 
+def count_folders(parents):
+    subdirectory_count = defaultdict(int)
+    for parent in parents:
+        parts = parent.rstrip(os.sep).split(os.sep)  # TODO handle URLs on Windows
+        while len(parts) >= 2:
+            parts.pop()
+            parent = os.sep.join(parts)
+            subdirectory_count[parent] += 1
+
+    return subdirectory_count
+
+
+def dirnames(paths):
+    parents = set()
+    for path in paths:
+        if path.startswith(("http://", "https://")) and path.endswith("/"):
+            parents.add(path)
+        else:
+            parents.add(os.path.dirname(path))
+
+    return parents
+
+
 def get_subset(args) -> list[dict]:
-    parents = set(os.path.dirname(d["path"]) for d in args.data)
-    # more accurate but a bit confusing, perhaps:
-    # if args.depth:
-    #     parents = set(s for s in parents if check_depth(args, s.count(os.sep) + 1))
+    parents = dirnames(d["path"] for d in args.data)
+    subdirectory_count = count_folders(parents)
 
     d = {}
     for m in args.data:
@@ -73,35 +110,31 @@ def get_subset(args) -> list[dict]:
         p = file_path.split(os.sep)
 
         is_depth = check_depth(args, len(p))
-        if not is_depth:
-            continue
-
-        # add file
-        d[file_path] = m
+        if is_depth:
+            d[file_path] = {"size": 0, "duration": 0, "count": 0, **m}  # add file
 
         # add folder
         if args.parents:
-            while p and check_depth(args, len(p)):  # recursive folder statistics
+            while len(p) >= 2:  # recursive folder statistics
                 p.pop()  # dirname
-                if p == [""]:
+
+                if not check_depth(args, len(p)):
                     continue
 
                 parent = os.sep.join(p)
                 if parent not in d:
                     d[parent] = {"size": 0, "duration": 0, "count": 0}
-                    d[parent]["folders"] = sum(1 for sp in parents if sp.startswith(parent + os.sep))
+                    d[parent]["folders"] = subdirectory_count[parent]
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
-        elif p and len(p) > 1:
+        elif p and len(p) >= 2 and check_depth(args, len(p)):
             p.pop()  # dirname
             if p != [""]:
                 parent = os.sep.join(p)
                 if parent not in d:
                     d[parent] = {"size": 0, "duration": 0, "count": 0}
-                    # more accurate but a bit confusing, perhaps:
-                    # d[parent]["folders"] = sum(1 for sp in parents if os.path.dirname(sp) == parent)
-                    d[parent]["folders"] = sum(1 for sp in parents if sp.startswith(parent + os.sep))
+                    d[parent]["folders"] = subdirectory_count[parent]
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
@@ -219,9 +252,6 @@ def load_subset(args):
     elif len(args.data) <= 2:
         args.subset = args.data
     elif not args.depth:
-        if args.paths:
-            args.min_depth = min(s.count(os.sep) for s in args.paths)
-
         tries = 50
         while len(args.subset) < 2:
             args.min_depth += 1

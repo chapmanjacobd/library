@@ -651,6 +651,18 @@ big_dirs = """library big-dirs PATH ... [--limit (4000)] [--depth (0)] [--sort-g
 
 disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
 
+    To aggregate to high level folders use --parents and --depth
+
+        library du d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
     Only include files smaller than 1kib
 
         library disk-usage du.db --size=-1Ki

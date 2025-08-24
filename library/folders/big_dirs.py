@@ -4,7 +4,7 @@ from pathlib import Path
 
 from library import usage
 from library.fsdb import files_info
-from library.fsdb.disk_usage import check_depth, format_folder
+from library.fsdb.disk_usage import check_depth, count_folders, format_folder
 from library.playback import media_printer
 from library.tablefiles import mcda
 from library.utils import arggroups, argparse_utils, file_utils, iterables, nums, sqlgroups
@@ -67,8 +67,9 @@ def group_files_by_parents(args, media) -> list[dict]:
             d.pop(parent)
 
     parents = set(d.keys())
+    subdirectory_count = count_folders(parents)
     for parent, data in d.items():
-        data["folders"] = sum(1 for sp in parents if sp.startswith(parent + os.sep))
+        data["folders"] = subdirectory_count[parent]
 
     return [{**v, "path": format_folder(k)} for k, v in d.items()]
 
