@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.113; 101 subcommands)
+    library (v3.0.114; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1602,10 +1602,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library big-dirs ./video/ --folder-sizes=+10GB --folder-sizes=-200GB
         library big-dirs ./video/ -FS=+10GB -FS=-200GB
 
-    Filter folders by count
+    Filter folders by file count
+
+        library big-dirs ./video/ --file-counts=+3 --file-counts=-3000
+        library big-dirs ./video/ -FC=+20000 -D-8  # Use --depth to cascade nested directories
+
+    Filter folders by sub-folder "bigdir" count
 
         library big-dirs ./video/ --folder-counts=+3 --folder-counts=-3000
-        library big-dirs ./video/ -FC=+3 -FC=-3000
 
     Filter folders by depth
 
@@ -2289,6 +2293,18 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     $ library disk-usage -h
     usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library du d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
 
     Only include files smaller than 1kib
 
