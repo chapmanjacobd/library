@@ -245,11 +245,11 @@ def scan_path(args, path_str: str) -> int:
 
         if len(new_files) > 2000 and not args.db["media"].detect_fts():
             args.playlist_path = path
-            p = new_files.pop()
-            while not os.path.exists(p):
-                p = new_files.pop()
+            m = extract_metadata(args, new_files.pop())
+            while m is None:
+                m = extract_metadata(args, new_files.pop())
 
-            extract_chunk(args, [extract_metadata(args, p)])
+            extract_chunk(args, [m])
             db_utils.optimize(args)
             del args.playlist_path
 
