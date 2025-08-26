@@ -243,6 +243,16 @@ def scan_path(args, path_str: str) -> int:
         print(f"[{path}] Adding {len(new_files)} new media")
         # log.debug(new_files)
 
+        if len(new_files) > 2000 and not args.db["media"].detect_fts():
+            args.playlist_path = path
+            p = new_files.pop()
+            while not os.path.exists(p):
+                p = new_files.pop()
+
+            extract_chunk(args, [extract_metadata(args, p)])
+            db_utils.optimize(args)
+            del args.playlist_path
+
         if getattr(args, "process", False) and n_jobs:
             batch_count = n_jobs
         elif DBType.text in args.profiles:
