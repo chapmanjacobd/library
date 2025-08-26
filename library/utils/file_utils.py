@@ -29,6 +29,7 @@ def rglob(
     include: Iterable[str] | None = None,
     quiet=False,
 ) -> tuple[set[str], set[str], set[str]]:
+    base_dir_print = base_dir.encode("utf-8", errors="replace").decode("utf-8")
     if extensions is not None:
         extensions = tuple(f".{ext.lstrip('.')}" for ext in extensions)
 
@@ -80,11 +81,11 @@ def rglob(
 
             if not quiet:
                 printing.print_overwrite(
-                    f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
+                    f"[{base_dir_print}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
                 )
 
     if not consts.PYTEST_RUNNING and not quiet:
-        print(f"\r[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
+        print(f"\r[{base_dir_print}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
 
     filtered_extensions = Counter(Path(s).suffix for s in filtered_files)
     log.info("Filtered extensions: %s", filtered_extensions)
