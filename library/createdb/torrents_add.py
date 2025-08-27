@@ -113,7 +113,7 @@ def torrents_add():
         paths = list(scanned_set - existing_set)
 
         deleted_files = list(existing_set - scanned_set)
-        if len(list(scanned_set)) > 1 and len(deleted_files) > 1:
+        if len(list(scanned_set)) >= 1 and len(deleted_files) >= 1:
             deleted_files = [p for p in deleted_files if not Path(p).exists()]
             deleted_count = db_playlists.mark_media_deleted(args, deleted_files)
             if deleted_count > 0:
