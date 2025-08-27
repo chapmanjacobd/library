@@ -85,7 +85,9 @@ def rglob(
                 )
 
     if not consts.PYTEST_RUNNING and not quiet:
-        print(f"\r[{base_dir_print}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
+        print(
+            f"\r[{base_dir_print}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
+        )
 
     filtered_extensions = Counter(Path(s).suffix for s in filtered_files)
     log.info("Filtered extensions: %s", filtered_extensions)
