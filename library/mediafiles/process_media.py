@@ -276,15 +276,16 @@ def check_shrink(args, m) -> list:
             return [m]
         else:
             log.debug("[%s]: Skipping small file", m["path"])
+    elif m.get("compressed_size"):  # TODO nested archives
+        log.warning("[%s]: Skipping shrink for unknown filetype %s from archive", m["path"], m["ext"])
+        # m["media_type"] = "Compressed"
+        # return [m]
     elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
         return [check_shrink(args, d) for d in contents]
     # TODO: csv, json => parquet
-
-    elif m.get("compressed_size"):
-        log.warning("[%s]: Skipping unknown filetype %s from archive", m["path"], m["ext"])
     else:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []

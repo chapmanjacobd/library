@@ -61,13 +61,13 @@ def check_shrink(args, m) -> list:
     if not m["size"]:  # empty or deleted file
         return []
 
-    if (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
+    if m.get("compressed_size"):  # TODO nested archives
+        return [m]
+    elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
-        return [check_shrink(args, d) for d in contents]
-    elif m.get("compressed_size"):
-        return [m]
+        return contents
     else:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []
