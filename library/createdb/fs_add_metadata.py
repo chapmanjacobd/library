@@ -57,10 +57,15 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         log.error(f"%s {path}", e)
         return None
 
+    try:
+        mimetype = file_utils.detect_mimetype(path)
+    except TimeoutError:
+        mimetype = None
+
     m = {
         "path": path,
         "size": stat.st_size,
-        "type": file_utils.detect_mimetype(path),
+        "type": mimetype,
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_downloaded": consts.APPLICATION_START,
@@ -96,7 +101,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
                 m |= munge_book_tags_slow(path)
             else:
                 m |= munge_book_tags_fast(path)
-        except mp_TimeoutError:
+        except (mp_TimeoutError, TimeoutError):
             log.warning(f"Timed out trying to read file. {path}")
         else:
             log.debug(f"{timer()-start} {path}")
@@ -241,7 +246,12 @@ def extract_image_metadata_chunk(metadata: list[dict]) -> list[dict]:
         with exiftool.ExifToolHelper() as et:
             exif = et.get_metadata(chunk_paths)
     except exiftool.exceptions.ExifToolExecuteError:
-        log.exception("exifTool failed executing get_metadata %s", metadata)
+        log.error(
+            "exifTool failed executing get_metadata on %s items starting %s ending %s",
+            len(metadata),
+            metadata[0]["path"],
+            metadata[-1]["path"],
+        )
         return metadata
 
     exif_enriched = []
