@@ -75,8 +75,18 @@ def parse_args(action, usage):
 
 
 def extract_chunk(args, media) -> None:
+    is_scan_all_files = getattr(args, "scan_all_files", False)
+
     if objects.is_profile(args, DBType.image):
-        media = extract_image_metadata_chunk(media)
+        image_media = [
+            m for m in media if m["path"].rsplit(".", 1)[-1].lower() in consts.IMAGE_EXTENSIONS or is_scan_all_files
+        ]
+        other_media = [
+            m for m in media if m["path"].rsplit(".", 1)[-1].lower() not in consts.IMAGE_EXTENSIONS or is_scan_all_files
+        ]
+
+        image_media = extract_image_metadata_chunk(image_media)
+        media = image_media + other_media
 
     if args.scan_subtitles:
         clean_up_temp_dirs()

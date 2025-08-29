@@ -29,7 +29,7 @@ def rglob(
     include: Iterable[str] | None = None,
     quiet=False,
 ) -> tuple[set[str], set[str], set[str]]:
-    base_dir_print = base_dir.encode("utf-8", errors="replace").decode("utf-8")
+    base_dir_print = str(base_dir).encode("utf-8", errors="replace").decode("utf-8")
     if extensions is not None:
         extensions = tuple(f".{ext.lstrip('.')}" for ext in extensions)
 
@@ -578,7 +578,8 @@ def read_file_to_dataframes(
     import pandas as pd
 
     if mimetype is None:
-        mimetype = detect_mimetype(path)
+        with suppress(TimeoutError):
+            mimetype = detect_mimetype(path)
     if mimetype is not None:
         mimetype = mimetype.strip().lower()
     log.info(mimetype)
@@ -833,9 +834,8 @@ def get_files_stats(media):
 
 def get_file_type(d):
     try:
-        with suppress(TimeoutError):
-            d["type"] = detect_mimetype(d["path"])
-    except FileNotFoundError:
+        d["type"] = detect_mimetype(d["path"])
+    except (FileNotFoundError, TimeoutError):
         d["type"] = None
         if "time_deleted" not in d:
             d["time_deleted"] = consts.APPLICATION_START
