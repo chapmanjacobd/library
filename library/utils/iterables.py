@@ -299,6 +299,8 @@ def list_dict_summary(l, stat_funcs={"Total": sum, "Median": statistics.median})
                 if key not in summary:
                     summary[key] = []
                 summary[key].append(value)
+    if not summary:
+        return []
 
     summary_dicts = []
     for stat_name, stat_func in stat_funcs.items():

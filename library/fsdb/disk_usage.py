@@ -297,10 +297,11 @@ def disk_usage(defaults_override=None):
 
     load_subset(args)
 
+    files = [d for d in args.subset if not d.get("count")]
     num_folders = sum(1 for d in args.subset if d.get("count"))
-    num_files = sum(1 for d in args.subset if not d.get("count"))
+    num_files = len(files)
 
-    summary = iterables.list_dict_summary(args.data if args.parents else args.subset)
+    summary = iterables.list_dict_summary(files)
     if args.limit and not "a" in args.print:
         args.subset = args.subset[: args.limit]
 
@@ -318,8 +319,17 @@ def disk_usage(defaults_override=None):
     media_printer.media_printer(args, args.subset, units=units)
     if not args.to_json:
         for d in summary:
-            if "count" in d:
-                print(f"{d['path']}={strings.file_size(d['size'])} count={d['count']}")
+            print(d["path"], end=" ")
+            parts = []
+            if d.get("size"):
+                parts.append(f"size={strings.file_size(d['size'])}")
+            if d.get("count"):
+                parts.append(f"count={d['count']}")
+            if d.get("duration"):
+                parts.append(f"duration={strings.duration(d['duration'])}")
+
+            if parts:
+                print(" ".join(parts))
 
 
 def extensions():
