@@ -13,12 +13,19 @@ def print_overwrite(*text, **kwargs):
     if "file" not in kwargs:
         kwargs["file"] = sys.stderr
 
+    text = kwargs.pop("sep", " ").join(map(str, text))
+    max_width = consts.TERMINAL_SIZE.columns - 1
+    if len(text) > max_width:
+        start_len = (max_width - len("...")) // 2
+        end_len = max_width - len("...") - start_len
+        text = f"{text[:start_len]}...{text[len(text)-end_len:]}"
+
     if consts.PYTEST_RUNNING or not sys.stdout.isatty():
         pass
     elif consts.IS_LINUX or consts.IS_MAC:
-        print("\r" + text[0], *text[1:], end="\033[K", **kwargs)
+        print("\r" + text, end="\033[K", **kwargs)
     elif consts.IS_WINDOWS:
-        print("\r" + text[0], *text[1:], end="", **kwargs)
+        print("\r" + text, end="", **kwargs)
     else:
         print(text, **kwargs)
 
