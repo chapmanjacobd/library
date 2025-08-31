@@ -67,7 +67,7 @@ def check_shrink(args, m) -> list:
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
-        return contents
+        return [check_shrink(args, d) for d in contents]
     else:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []
