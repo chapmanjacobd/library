@@ -11,19 +11,6 @@ def parse_args():
     arggroups.cluster_sort(parser)
     arggroups.files(parser, no_db=True)
 
-    parser.add_argument(
-        "--sizes",
-        "--size",
-        "-S",
-        action="append",
-        help="""Constrain media to file sizes (uses the same syntax as fd-find)
--S 6           # 6 MB exactly (not likely)
--S-6           # less than 6 MB
--S+6           # more than 6 MB
--S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
--S+5GB -S-7GB  # between 5 and 7 GB""",
-    )
-
     parser.add_argument("--small", "--reverse", action="store_true")
     parser.add_argument("--only-duplicates", action="store_true")
     parser.add_argument("--only-originals", action="store_true")
