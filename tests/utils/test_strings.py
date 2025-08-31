@@ -1,6 +1,8 @@
-import os, unittest
+import math, os, unittest
+from datetime import datetime, timedelta
 
 import pytest
+from dateutil import tz
 
 from library.utils import strings
 from tests.utils import take5
@@ -136,3 +138,52 @@ class TestFindUnambiguousMatch(unittest.TestCase):
 def test_human_time():
     assert strings.duration(0) == ""
     assert strings.duration(946684800) == "30 years and 7 days"
+
+
+@pytest.fixture
+def now():
+    return datetime.now(tz=tz.UTC).astimezone()
+
+
+def test_relative_datetime_today(now):
+    earlier_today = now.replace(hour=10, minute=30)
+    assert strings.relative_datetime(earlier_today.timestamp()) == earlier_today.strftime("today, %H:%M")
+
+
+def test_relative_datetime_yesterday(now):
+    yesterday = now - timedelta(days=1)
+    assert strings.relative_datetime(yesterday.timestamp()) == yesterday.strftime("yesterday, %H:%M")
+
+
+def test_relative_datetime_a_few_days_ago(now):
+    days_ago = now - timedelta(days=5)
+    assert strings.relative_datetime(days_ago.timestamp()) == days_ago.strftime("5 days ago, %H:%M")
+
+
+def test_relative_datetime_long_time_ago(now):
+    long_ago = now - timedelta(days=50)
+    assert strings.relative_datetime(long_ago.timestamp()) == long_ago.strftime("%Y-%m-%d %H:%M")
+
+
+def test_relative_datetime_tomorrow(now):
+    tomorrow = now + timedelta(days=1)
+    assert strings.relative_datetime(tomorrow.timestamp()) == tomorrow.strftime("tomorrow, %H:%M")
+
+
+def test_relative_datetime_in_a_few_days(now):
+    in_a_few_days = now + timedelta(days=5)
+    assert strings.relative_datetime(in_a_few_days.timestamp()) == in_a_few_days.strftime("in 5 days, %H:%M")
+
+
+def test_relative_datetime_long_future(now):
+    long_future = now + timedelta(days=50)
+    assert strings.relative_datetime(long_future.timestamp()) == long_future.strftime("%Y-%m-%d %H:%M")
+
+
+@pytest.mark.parametrize("invalid_input", [None, math.nan, 0, 1e200])
+def test_relative_datetime_invalid_inputs(invalid_input):
+    assert strings.relative_datetime(invalid_input) == ""
+
+
+def test_relative_datetime_negative_timestamp():
+    assert strings.relative_datetime(-1000) == "1969-12-31 17:43"

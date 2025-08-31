@@ -419,32 +419,37 @@ def duration_short(seconds, format_str="%0.1f") -> str:
         return ""
 
 
-def relative_datetime(seconds) -> str:
+def relative_datetime(seconds: float) -> str:
     if seconds is None or math.isnan(seconds) or seconds == 0:
         return ""
 
-    now = datetime.now(tz=tz.utc).astimezone()
-    midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
     try:
         dt = datetime.fromtimestamp(seconds, tz=tz.utc).astimezone()
-    except ValueError:
+    except (ValueError, OSError, OverflowError):
         return ""
-    delta = datetime.today().astimezone() - dt
-    delta_days = (abs(delta.days) - 1) if delta.days < 0 else delta.days
 
-    if dt >= midnight_today:
-        if delta_days == 0:
-            return dt.strftime("today, %H:%M")
-        elif delta_days == 1:
+    now = datetime.now(tz=tz.utc).astimezone()
+    delta = now - dt
+
+    delta_days = delta.days
+
+    if delta_days < 0:
+        # Tomorrow
+        if now.date() == (dt - timedelta(days=1)).date():
             return dt.strftime("tomorrow, %H:%M")
+        # In a few days
+        if abs(delta_days) < 46:
+            return dt.strftime(f"in {abs(delta_days)} days, %H:%M")
+    elif delta_days >= 0:
+        # Today
+        if now.date() == dt.date():
+            return dt.strftime("today, %H:%M")
+        # Yesterday
+        elif now.date() == (dt + timedelta(days=1)).date():
+            return dt.strftime("yesterday, %H:%M")
+        # A few days ago
         elif delta_days < 46:
-            return dt.strftime(f"in {delta_days} days, %H:%M")
-
-    elif dt >= midnight_today - timedelta(days=1):
-        return dt.strftime("yesterday, %H:%M")
-    elif delta_days < 46:
-        return dt.strftime(f"{delta_days} days ago, %H:%M")
+            return dt.strftime(f"{delta_days} days ago, %H:%M")
 
     return dt.strftime("%Y-%m-%d %H:%M")
 
