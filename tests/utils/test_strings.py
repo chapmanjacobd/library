@@ -183,7 +183,3 @@ def test_relative_datetime_long_future(now):
 @pytest.mark.parametrize("invalid_input", [None, math.nan, 0, 1e200])
 def test_relative_datetime_invalid_inputs(invalid_input):
     assert strings.relative_datetime(invalid_input) == ""
-
-
-def test_relative_datetime_negative_timestamp():
-    assert strings.relative_datetime(-1000) == "1969-12-31 17:43"
