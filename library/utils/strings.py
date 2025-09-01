@@ -430,26 +430,22 @@ def relative_datetime(seconds: float) -> str:
 
     now = datetime.now(tz=tz.utc).astimezone()
     delta = now - dt
-
-    delta_days = delta.days
-
-    if delta_days < 0:
-        # Tomorrow
-        if now.date() == (dt - timedelta(days=1)).date():
-            return dt.strftime("tomorrow, %H:%M")
-        # In a few days
-        if abs(delta_days) < 46:
-            return dt.strftime(f"in {abs(delta_days)} days, %H:%M")
-    elif delta_days >= 0:
+    if abs(delta.days) < 45:
         # Today
         if now.date() == dt.date():
             return dt.strftime("today, %H:%M")
-        # Yesterday
-        elif now.date() == (dt + timedelta(days=1)).date():
-            return dt.strftime("yesterday, %H:%M")
-        # A few days ago
-        elif delta_days < 46:
-            return dt.strftime(f"{delta_days} days ago, %H:%M")
+        elif now < dt:
+            # Tomorrow
+            if now.date() == (dt - timedelta(days=1)).date():
+                return dt.strftime("tomorrow, %H:%M")
+            # In a few days
+            return dt.strftime(f"in {abs(delta.days)} days, %H:%M")
+        else:
+            # Yesterday
+            if now.date() == (dt + timedelta(days=1)).date():
+                return dt.strftime("yesterday, %H:%M")
+            # A few days ago
+            return dt.strftime(f"{delta.days} days ago, %H:%M")
 
     return dt.strftime("%Y-%m-%d %H:%M")
 
