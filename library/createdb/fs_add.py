@@ -269,10 +269,12 @@ def scan_path(args, path_str: str) -> int:
             batch_count = n_jobs
         elif DBType.text in args.profiles:
             batch_count = int(os.cpu_count() or 4)
+        elif DBType.video in args.profiles:
+            batch_count = 500
         elif DBType.image in args.profiles:
-            batch_count = consts.SQLITE_PARAM_LIMIT // 20
+            batch_count = 1500
         else:
-            batch_count = consts.SQLITE_PARAM_LIMIT // 100
+            batch_count = 15000
         chunks_count = math.ceil(len(new_files) / batch_count)
         files_chunked = iterables.chunks(new_files, batch_count)
 
@@ -285,7 +287,7 @@ def scan_path(args, path_str: str) -> int:
         with pool_fn(n_jobs) as parallel:
             for idx, chunk_paths in enumerate(files_chunked):
                 percent = (idx + 1) / chunks_count * 100
-                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if chunks_count > 2 else ""
+                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if idx > 2 else ""
                 printing.print_overwrite(
                     f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
                 )
