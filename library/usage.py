@@ -1041,6 +1041,10 @@ merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
 
     Move files/folders without losing hierarchy metadata with --relative or relmv
 
+        Move smallest files first
+
+        lb fs /src/dir/ -u size -pf | lb mv - /dest/dir/ --relative-to=/src/dir/ --dry-run
+
         Move fresh music to your phone every Sunday
 
         # move last week music back to their source folders
