@@ -369,7 +369,11 @@ def library(args=None) -> None:
     if hasattr(args, "func"):
         if len(sys.argv) >= 2:
             del sys.argv[1]
-        return args.func()
+        try:
+            return args.func()
+        except Exception:
+            print(sys.argv, file=sys.stderr)
+            raise
     else:
         try:
             log.error("Subcommand %s not found", sys.argv[1])
