@@ -372,7 +372,7 @@ def library(args=None) -> None:
         try:
             return args.func()
         except Exception:
-            print(sys.argv, file=sys.stderr)
+            print("Bug found in", " ".join(sys.argv), file=sys.stderr)
             raise
     else:
         try:

@@ -1,8 +1,10 @@
 import os, re
+from random import random
 
 from library import usage
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, consts, file_utils, iterables, processes, sqlgroups, strings
+from library.utils.objects import Reverser
 
 
 def parse_args(defaults_override=None):
@@ -60,12 +62,76 @@ def filter_mimetype(args, files):
     return files
 
 
+def eval_sql_expr(key, op, val, item):
+    """Evaluate a simplified SQL-like operator expression on item"""
+    col_val = item.get(key)
+
+    if op == "LIKE":
+        # SQLite LIKE -> translate %/_ to regex
+        regex = "^" + re.escape(val.strip('"')).replace("%", ".*").replace("_", ".") + "$"
+        return bool(re.match(regex, str(col_val or "")))
+    elif op == "IS" and val.upper() == "NULL":
+        return col_val is None
+    elif op in ("=", "=="):
+        return col_val == val.strip('"')
+    elif op in ("!=", "<>"):
+        return col_val != val.strip('"')
+    elif op == ">":
+        return col_val > val.strip('"')
+    elif op == "<":
+        return col_val < val.strip('"')
+    elif op == ">=":
+        return col_val >= val.strip('"')
+    elif op == "<=":
+        return col_val <= val.strip('"')
+    else:
+        raise ValueError(f"Unsupported operator: {op}")
+
+
+def sort_files_by_criteria(args, files):
+    def normalize_key(key: str) -> str:
+        """Remove table prefixes like m.path -> path"""
+        return key.split(".")[-1]
+
+    def get_sort_key(item):
+        sort_values = []
+        for s in args.sort.split(","):
+            parts = s.strip().split()
+            reverse = parts[-1].lower() == "desc"
+            key = normalize_key(parts[0])
+
+            if len(parts) == 1 or (len(parts) == 2 and parts[1].lower() in ("asc", "desc")):
+                # simple column
+                if key.lower() == "random()":
+                    value = random()
+                else:
+                    value = item.get(key)
+            else:
+                # operator form: col OP val [ASC|DESC]
+                op = parts[1].upper()
+                val = " ".join(parts[2:-1]) if reverse else " ".join(parts[2:])
+                value = eval_sql_expr(key, op, val, item)
+
+            if value is None:
+                value = "" if isinstance(item.get("path"), str) else 0
+
+            sort_values.append(Reverser(value) if reverse else value)
+
+        return tuple(sort_values)
+
+    return sorted(files, key=get_sort_key)
+
+
 def filter_files_by_criteria(args, files):
     if "sizes" not in args.defaults:
         size_exists, files = iterables.peek_value_exists(files, "size")
         if not size_exists:
             files = file_utils.get_files_stats(files)
         files = [d for d in files if args.sizes(d["size"])]
+    elif "size" in getattr(args, "sort", []):
+        size_exists, files = iterables.peek_value_exists(files, "size")
+        if not size_exists:
+            files = file_utils.get_files_stats(files)
 
     files = filter_mimetype(args, files)
 
@@ -87,6 +153,12 @@ def filter_files_by_criteria(args, files):
     if args.to_json:
         files = [d if "size" in d else file_utils.get_file_stats(d) for d in files]
         files = [d if "type" in d else file_utils.get_file_type(d) for d in files]
+
+    if files and getattr(args, "sort", []):
+        files = sort_files_by_criteria(args, files)
+
+    if files and getattr(args, "limit", []):
+        files = files[: args.limit]
 
     return list(files)
 
