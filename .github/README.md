@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.118; 101 subcommands)
+    library (v3.0.119; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1340,6 +1340,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
 
     Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move smallest files first
+
+        lb fs /src/dir/ -u size -pf | lb mv - /dest/dir/ --relative-to=/src/dir/ --dry-run
 
         Move fresh music to your phone every Sunday
 
