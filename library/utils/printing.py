@@ -6,7 +6,7 @@ import humanize
 from tabulate import tabulate
 
 from library.utils import consts, path_utils
-from library.utils.strings import duration, duration_short, file_size, relative_datetime
+from library.utils.strings import duration, duration_short, file_size, relative_datetime, shorten_middle
 
 
 def print_overwrite(*text, **kwargs):
@@ -16,9 +16,7 @@ def print_overwrite(*text, **kwargs):
     text = kwargs.pop("sep", " ").join(map(str, text))
     max_width = consts.TERMINAL_SIZE.columns - 1
     if len(text) > max_width:
-        start_len = (max_width - len("...")) // 2
-        end_len = max_width - len("...") - start_len
-        text = f"{text[:start_len]}...{text[len(text)-end_len:]}"
+        text = shorten_middle(text, max_width)
 
     if consts.PYTEST_RUNNING or not sys.stdout.isatty():
         pass
