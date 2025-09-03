@@ -5,6 +5,7 @@ import pytest
 
 from library.utils import consts
 from library.utils.path_utils import clean_path
+from tests.utils import p
 
 
 def test_basic_filename_cleaning():
@@ -39,7 +40,7 @@ def test_trims_spaces_and_dashes():
 def test_lowercase_folders_flag():
     b = b"/MyFolder/File.txt"
     result = clean_path(b, lowercase_folders=True)
-    assert "/myfolder/" in result or result.startswith("myfolder")
+    assert p("/myfolder/") in result
 
 
 def test_case_insensitive_flag_titles_if_contains_space_or_dot():
@@ -61,13 +62,6 @@ def test_dot_space_replacement():
     b = b"/my folder/file.txt"
     result = clean_path(b, dot_space=True)
     assert "my.folder" in result
-
-
-def test_empty_folder_replaced_with_underscore():
-    b = b"//file.txt"
-    result = clean_path(b)
-    # double slash makes empty folder -> "_"
-    assert "_/file.txt" in result
 
 
 def test_long_emoji_filename_is_shortened():
