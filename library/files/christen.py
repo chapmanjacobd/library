@@ -60,8 +60,8 @@ def rename_path(args, base, b) -> None:
             else:
                 log.info(fixed)
         else:
-            log.warning(printable_p)
-            log.warning(fixed)
+            print(printable_p)
+            print(fixed)
             print()
 
 
