@@ -1,0 +1,101 @@
+import os
+from pathlib import Path
+
+import pytest
+
+from library.utils import consts
+from library.utils.path_utils import clean_path
+
+
+def test_basic_filename_cleaning():
+    b = b"example.txt"
+    result = clean_path(b)
+    assert result == "example.txt"
+
+
+def test_leading_slash_is_preserved():
+    b = b"/folder/file.txt"
+    result = clean_path(b)
+    assert result.startswith(os.sep)
+    assert result.endswith("file.txt")
+
+
+@pytest.mark.skipif(consts.NOT_WINDOWS, reason="Windows-only drive path test")
+def test_windows_drive_preserved():
+    b = b"C:\\Users\\Test\\file.txt"
+    result = clean_path(b)
+    assert result.startswith("C:")
+    assert result.endswith("file.txt")
+
+
+def test_trims_spaces_and_dashes():
+    b = b"/ -folder- / -file-.txt"
+    result = clean_path(b)
+    # prefixes and suffixes removed
+    assert "folder" in result
+    assert result.endswith("file.txt")
+
+
+def test_lowercase_folders_flag():
+    b = b"/MyFolder/File.txt"
+    result = clean_path(b, lowercase_folders=True)
+    assert "/myfolder/" in result or result.startswith("myfolder")
+
+
+def test_case_insensitive_flag_titles_if_contains_space_or_dot():
+    b = b"/my folder/File.txt"
+    result = clean_path(b, case_insensitive=True)
+    # folder name should be titlecased
+    assert "My Folder" in result
+
+
+def test_stem_too_long_shortened():
+    longname = "a" * 300
+    b = f"{longname}.txt".encode()
+    result = clean_path(b, max_name_len=50)
+    assert len(Path(result).stem.encode()) <= 50 - len(".txt".encode()) - 1
+    assert "..." in Path(result).stem
+
+
+def test_dot_space_replacement():
+    b = b"/my folder/file.txt"
+    result = clean_path(b, dot_space=True)
+    assert "my.folder" in result
+
+
+def test_empty_folder_replaced_with_underscore():
+    b = b"//file.txt"
+    result = clean_path(b)
+    # double slash makes empty folder -> "_"
+    assert "_/file.txt" in result
+
+
+def test_long_emoji_filename_is_shortened():
+    # 😀😃😄 repeated to exceed max length
+    emojis = "😀😃😄" * 100
+    b = f"{emojis}.txt".encode("utf-8")
+    result = clean_path(b, max_name_len=60)
+    stem = Path(result).stem
+    assert "..." in stem
+    assert len(stem.encode("utf-8")) <= 60 - len(".txt".encode()) - 1
+
+
+def test_folder_with_mixed_emoji_and_text():
+    b = "/docs/😀-project-😎/report.txt".encode("utf-8")
+    result = clean_path(b)
+    assert "😀-project-😎" in result
+    assert result.endswith("report.txt")
+
+
+def test_dot_space_with_emojis():
+    b = "/😀 cool 😎/file.txt".encode("utf-8")
+    result = clean_path(b, dot_space=True)
+    # spaces should be replaced with dots, emojis intact
+    assert "😀.cool.😎" in result
+
+
+def test_case_insensitive_with_emojis():
+    b = "/😀 Folder 😎/file.txt".encode("utf-8")
+    result = clean_path(b, case_insensitive=True)
+    assert "😀 Folder 😎" in result
+    assert result.endswith("file.txt")

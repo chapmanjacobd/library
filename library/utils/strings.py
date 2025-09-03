@@ -338,12 +338,15 @@ def shorten(text, max_width):
     return remove_suffixes(truncated_left, [" ", "-", "."]) + "…"
 
 
-def shorten_middle(text, max_width):
-    if wcswidth(text) <= max_width:
+def shorten_middle(text, max_width, len_fn=None):
+    if len_fn is None:
+        len_fn = wcswidth
+
+    if len_fn(text) <= max_width:
         return text
 
     ellipsis = "..."
-    ellipsis_width = wcswidth(ellipsis)
+    ellipsis_width = len_fn(ellipsis)
 
     if max_width < ellipsis_width:
         return ellipsis
@@ -361,7 +364,7 @@ def shorten_middle(text, max_width):
     truncated_left = ""
     current_width = 0
     for chunk in chunks:
-        chunk_width = wcswidth(chunk)
+        chunk_width = len_fn(chunk)
         if current_width + chunk_width > left_width:
             break
         truncated_left += chunk
@@ -370,7 +373,7 @@ def shorten_middle(text, max_width):
     truncated_right = ""
     current_width = 0
     for chunk in reversed(chunks):
-        chunk_width = wcswidth(chunk)
+        chunk_width = len_fn(chunk)
         if current_width + chunk_width > right_width:
             break
         truncated_right = chunk + truncated_right

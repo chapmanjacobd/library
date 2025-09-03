@@ -35,6 +35,10 @@ def trim_path_segments(path, desired_length):
     return str(Path(*segments))
 
 
+def bytes_len(s):
+    return len(s.encode("utf-8"))
+
+
 def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, lowercase_folders=False) -> str:
     import ftfy
 
@@ -85,15 +89,9 @@ def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, low
 
         parent = [case_insensitive_r(p) for p in parent]
 
-    fs_limit = max_name_len - len(ext.encode()) - len("...") - 1
+    fs_limit = max_name_len - len(ext.encode()) - 1
     if len(stem.encode()) > fs_limit:
-        start = stem[: fs_limit // 2]
-        end = stem[-fs_limit // 2 :]
-        while len(start.encode()) > fs_limit // 2:
-            start = start[:-1]
-        while len(end.encode()) > fs_limit // 2:
-            end = end[1:]
-        stem = start + "..." + end
+        stem = strings.shorten_middle(stem, fs_limit, len_fn=bytes_len)
 
     p = str(Path(*parent) / stem)
 
