@@ -1,4 +1,4 @@
-import functools, html, json, math, operator, re, sys, textwrap
+import functools, html, json, math, operator, re, sys, textwrap, unicodedata
 from ast import literal_eval
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -244,20 +244,139 @@ def combine(*list_) -> str | None:
     return ";".join(no_duplicates)
 
 
-def shorten(s, width):
-    if wcswidth(s) <= width:
-        return s
+def grapheme_iter(text):
+    if not text:
+        return
 
-    truncated = ""
+    # https://unicode.org/reports/tr29/
+    # TODO: maybe switch to https://github.com/timendum/grapheme/
+
+    i = 0
+    while i < len(text):
+        chunk = text[i]
+        next_char_index = i + 1
+
+        while next_char_index < len(text):
+            next_char = text[next_char_index]
+
+            # CRLF sequence
+            if chunk[-1] == "\r" and next_char == "\n":
+                chunk += next_char
+                next_char_index += 1
+                break
+
+            # Handle combining marks (accents, etc.)
+            if unicodedata.category(next_char) in ("Mn", "Mc", "Me", "Lm"):
+                chunk += next_char
+                next_char_index += 1
+                continue
+
+            # Zero Width Joiner sequences
+            if next_char == "\u200d":
+                # Only add ZWJ if there's a character after it to join to
+                if next_char_index + 1 < len(text):
+                    chunk += next_char + text[next_char_index + 1]
+                    next_char_index += 2
+                else:
+                    # ZWJ at the end, treat as separate cluster
+                    break
+                continue
+
+            # Emoji modifiers (skin tones)
+            if "\U0001F3FB" <= next_char <= "\U0001F3FF":
+                chunk += next_char
+                next_char_index += 1
+                continue
+
+            # Variation selectors
+            if next_char in ("\uFE0F", "\uFE0E"):  # VS16 and VS15
+                chunk += next_char
+                next_char_index += 1
+                continue
+
+            # Regional indicator pairs (flags)
+            if "\U0001F1E6" <= chunk[-1] <= "\U0001F1FF" and "\U0001F1E6" <= next_char <= "\U0001F1FF":
+                chunk += next_char
+                next_char_index += 1
+                continue
+
+            # Hangul jamo sequences (Korean)
+            if ("\u1100" <= chunk[-1] <= "\u11FF" or "\uA960" <= chunk[-1] <= "\uA97C") and (
+                "\u1160" <= next_char <= "\u11FF" or "\uD7B0" <= next_char <= "\uD7FB"
+            ):
+                chunk += next_char
+                next_char_index += 1
+                continue
+
+            break  # No extending rules apply
+
+        yield chunk
+        i = next_char_index
+
+
+def shorten(text, max_width):
+    if wcswidth(text) <= max_width:
+        return text
+
+    ellipsis = "…"
+    ellipsis_width = wcswidth(ellipsis)
+
+    if max_width < ellipsis_width:
+        return ellipsis
+
+    available = max_width - ellipsis_width
+
+    truncated_left = ""
     current_width = 0
-    for char in s:
-        char_width = wcswidth(char)
-        if current_width + char_width > width:
+    for chunk in grapheme_iter(text):
+        chunk_width = wcswidth(chunk)
+        if current_width + chunk_width > available:
             break
-        truncated += char
-        current_width += char_width
+        truncated_left += chunk
+        current_width += chunk_width
 
-    return remove_suffixes(truncated, [" ", "-", "."]) + "…"
+    return remove_suffixes(truncated_left, [" ", "-", "."]) + "…"
+
+
+def shorten_middle(text, max_width):
+    if wcswidth(text) <= max_width:
+        return text
+
+    ellipsis = "..."
+    ellipsis_width = wcswidth(ellipsis)
+
+    if max_width < ellipsis_width:
+        return ellipsis
+
+    available = max_width - ellipsis_width
+    if available < 4:
+        left_width = available
+        right_width = 0
+    else:
+        left_width = available // 2 + (available % 2)
+        right_width = available // 2
+
+    chunks = list(grapheme_iter(text))
+
+    truncated_left = ""
+    current_width = 0
+    for chunk in chunks:
+        chunk_width = wcswidth(chunk)
+        if current_width + chunk_width > left_width:
+            break
+        truncated_left += chunk
+        current_width += chunk_width
+
+    truncated_right = ""
+    current_width = 0
+    for chunk in reversed(chunks):
+        chunk_width = wcswidth(chunk)
+        if current_width + chunk_width > right_width:
+            break
+        truncated_right = chunk + truncated_right
+        current_width += chunk_width
+
+    return truncated_left + ellipsis + truncated_right
 
 
 def from_timestamp_seconds(s: str):
