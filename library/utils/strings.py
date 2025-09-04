@@ -321,7 +321,7 @@ def shorten(text, max_width):
     ellipsis = "…"
     ellipsis_width = wcswidth(ellipsis)
 
-    if max_width < ellipsis_width:
+    if max_width <= ellipsis_width:
         return ellipsis
 
     available = max_width - ellipsis_width
@@ -348,7 +348,7 @@ def shorten_middle(text, max_width, len_fn=None):
     ellipsis = "..."
     ellipsis_width = len_fn(ellipsis)
 
-    if max_width < ellipsis_width:
+    if max_width <= ellipsis_width:
         return ellipsis
 
     available = max_width - ellipsis_width
