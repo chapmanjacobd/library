@@ -36,6 +36,12 @@ def parse_args():
         help="Exclude specific mountpoints",
     )
     parser.add_argument(
+        "--include-disks",
+        metavar="host:/mount",
+        action=argparse_utils.ArgparseList,
+        help="Include only specific mountpoints",
+    )
+    parser.add_argument(
         "--min-free-space",
         type=nums.human_to_bytes,
         default="50GiB",
@@ -88,6 +94,12 @@ def get_disks(args, computer_db):
     )
     if args.hosts:
         disks = [d for d in disks if d["host"] in args.hosts]
+    if args.include_disks:
+        disks = [
+            d
+            for d in disks
+            if any(s == d["mountpoint"] or s == f"{d['host']}:{d['mountpoint']}" for s in args.include_disks)
+        ]
     if args.exclude_disks:
         disks = [
             d
