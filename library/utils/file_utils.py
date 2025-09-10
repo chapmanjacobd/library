@@ -507,7 +507,13 @@ def detect_mimetype(path):
                 max_foot = max([len(x.byte_match) + abs(x.offset) for x in puremagic.magic_footer_array])
                 info = puremagic.magic_stream(head_foot_stream(path, max_head, max_foot), path)
             else:
-                info = puremagic.magic_file(path)
+                try:
+                    info = puremagic.magic_file(path)
+                except OSError as e:
+                    if e.errno == 6:  # No such device or address
+                        raise puremagic.PureError("No such device or address")
+                    else:
+                        raise
             log.debug(info)
             file_type = info[0].name
         except (puremagic.PureError, IndexError, ValueError):
@@ -527,7 +533,7 @@ def detect_mimetype(path):
             except Exception:
                 return None
 
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError):
             return None
 
     return file_type
