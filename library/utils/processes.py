@@ -305,6 +305,18 @@ def is_album_art(s):
     return traverse_obj(s, ["disposition", "attached_pic"]) == 1
 
 
+def adjust_duration(duration, start, end):
+    if start is None:
+        start = 0
+
+    if 0 <= start < duration:
+        if end and start < end:
+            duration = end - start
+        else:
+            duration -= start
+    return duration
+
+
 class FFProbe:
     def __init__(self, path, *args):
         args = [
@@ -365,24 +377,22 @@ class FFProbe:
         self.has_video = len(self.video_streams) > 0
         self.has_audio = len(self.audio_streams) > 0
 
-        self.duration = None
+        duration = None
         with suppress(KeyError):
-            self.duration = float(self.format["duration"])
-        if self.duration is None:
+            duration = float(self.format["duration"])
+        if duration is None:
             with suppress(IndexError, KeyError):
-                self.duration = float(self.audio_streams[0]["duration"])
-        if self.duration is None:
+                duration = float(self.audio_streams[0]["duration"])
+        if duration is None:
             with suppress(IndexError, KeyError):
-                self.duration = float(self.video_streams[0]["duration"])
+                duration = float(self.video_streams[0]["duration"])
 
-        if self.duration and self.duration > 0:
-            start = nums.safe_float(self.format.get("start_time")) or 0
-            if start > 0:
-                end = nums.safe_float(self.format.get("end_time")) or 0
-                if end > 0:
-                    self.duration = start - end
-                else:
-                    self.duration -= start
+        if duration and duration > 0:
+            start_time = abs(nums.safe_float(self.format.get("start_time")) or 0)
+            end_time = abs(nums.safe_float(self.format.get("end_time")) or 0)
+            self.duration = adjust_duration(duration, start_time, end_time)
+        else:
+            self.duration = duration
 
         self.fps = iterables.safe_unpack(
             [
