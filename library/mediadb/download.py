@@ -61,7 +61,7 @@ def parse_args():
 
     parser.set_defaults(fts=False)
     args, unk = parser.parse_known_intermixed_args()
-    arggroups.args_post(args, parser, create_db=args.database and args.database.endswith((".db", ".sqlite")))
+    arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
 
     if unk and not args.profile in (DBType.video, DBType.audio):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")

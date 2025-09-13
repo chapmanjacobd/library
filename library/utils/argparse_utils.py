@@ -1,6 +1,7 @@
 import argparse, json, shlex, sys
 
 from library.utils import nums
+from library.utils.consts import SQLITE_EXTENSIONS
 from library.utils.iterables import flatten
 from library.utils.strings import format_two_columns, load_string
 
@@ -94,6 +95,9 @@ class ArgparseArgsOrStdinGen(argparse.Action):
 
 
 def is_sqlite(path):
+    if not path.lower().endswith(SQLITE_EXTENSIONS):
+        return False
+
     try:
         with open(path, "rb") as f:
             header = f.read(16)

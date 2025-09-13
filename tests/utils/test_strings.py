@@ -185,7 +185,7 @@ def test_relative_datetime_in_a_few_days(now):
 
 
 def test_relative_datetime_long_future(now):
-    long_future = now + timedelta(days=50)
+    long_future = (now + timedelta(days=50)).astimezone()
     assert strings.relative_datetime(long_future.timestamp()) == long_future.strftime("%Y-%m-%d %H:%M")
 
 

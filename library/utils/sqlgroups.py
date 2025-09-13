@@ -299,7 +299,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
             flexible=args.flexible_search,
         )
         args.filter_bindings = {**args.filter_bindings, **search_bindings}
-        c_columns = {**c_columns, "rank": int}
+        c_columns = {*c_columns, "rank"}
         cols.append("id")
         cols.append("rank")
         search_sql = []
@@ -313,7 +313,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
         )
         args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
-    args.select = [c for c in cols if c in {**c_columns, **m_columns, "*": "Any"}]
+    args.select = [c for c in cols if c in {*c_columns, *m_columns, "*"}]
 
     select_sql = "\n        , ".join(args.select)
     limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
