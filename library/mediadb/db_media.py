@@ -636,7 +636,7 @@ def get_sibling_media(args, media):
 
 def get_related_media(args, m: dict) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns.update(rank=int)
+    m_columns.add("rank")
 
     m = get(args, m["path"])
     words = set(

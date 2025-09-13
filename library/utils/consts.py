@@ -189,6 +189,7 @@ def reddit_frequency(frequency) -> str:
 
 SKIP_MEDIA_CHECK = ["iso", "img", "vob"]
 
+SQLITE_EXTENSIONS = (".sqlite", ".sqlite3", ".db", ".db3", ".s3db", ".sl3")
 SPEECH_RECOGNITION_EXTENSIONS = set("mp3|ogg|wav".split("|"))
 OCR_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff".split("|"))
 OCRMYPDF_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff|pdf".split("|"))

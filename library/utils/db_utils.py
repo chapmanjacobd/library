@@ -11,13 +11,16 @@ if TYPE_CHECKING:
     from sqlite_utils import Database
 
 
-def tracer(sql, params) -> None:
+def trace(sql, params) -> None:
     sql = strings.remove_consecutives(dedent(sql), "\n")
     log.info(f"SQL: {sql} - params: {params}")
 
 
 def connect(args, conn=None, **kwargs):
     from sqlite_utils import Database
+
+    LOG_SQL = args.verbose >= consts.LOG_DEBUG_SQL
+    tracer = trace if LOG_SQL else None
 
     sqlite3.enable_callback_tracebacks(True)  # noqa: FBT003
 
@@ -54,7 +57,7 @@ def connect(args, conn=None, **kwargs):
             return d
 
     if kwargs.get("memory"):
-        db = DB(tracer=tracer if args.verbose >= consts.LOG_DEBUG_SQL else None, **kwargs)  # type: ignore
+        db = DB(tracer=tracer, **kwargs)  # type: ignore
         return db
 
     db_override = getattr(args, "db", None)
@@ -67,7 +70,7 @@ def connect(args, conn=None, **kwargs):
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)
 
-    db = DB(conn or args.database, tracer=tracer if args.verbose >= consts.LOG_DEBUG_SQL else None, **kwargs)  # type: ignore
+    db = DB(conn or args.database, tracer=tracer, **kwargs)  # type: ignore
     with db.conn:  # type: ignore
         db.conn.execute("PRAGMA threads = 4")  # type: ignore
         db.conn.execute("PRAGMA main.cache_size = 8000")  # type: ignore
@@ -78,9 +81,13 @@ def connect(args, conn=None, **kwargs):
 
 def columns(args, table_name):
     try:
-        return args.db[table_name].columns_dict
-    except Exception:
-        return {}
+        if args.db is None or not args.db[table_name].exists():
+            return set()
+    except (ValueError, KeyError):
+        return set()
+
+    rows = args.db.execute(f"PRAGMA table_info([{table_name}])").fetchall()
+    return {row[1] for row in rows}
 
 
 config = {

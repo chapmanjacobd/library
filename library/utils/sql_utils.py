@@ -351,7 +351,7 @@ def search_filter(args, m_columns, table="media", table_prefix="m."):
             flexible=args.flexible_search,
         )
         args.filter_bindings = {**args.filter_bindings, **search_bindings}
-        m_columns = {**m_columns, "rank": int}
+        m_columns = {*m_columns, "rank"}
     else:  # only exclude or no-fts
         search_sql, search_bindings = construct_search_bindings(
             include=args.include,
