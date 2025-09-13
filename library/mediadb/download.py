@@ -4,7 +4,7 @@ import requests
 
 from library import usage
 from library.createdb import gallery_backend, tube_backend
-from library.mediadb import db_media
+from library.mediadb import db_media, db_playlists
 from library.mediafiles import process_ffmpeg, process_image
 from library.playback import media_printer
 from library.text import extract_links
@@ -84,6 +84,9 @@ def download(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args()
+
+    db_playlists.create(args)
+    db_media.create(args)
 
     m_columns = db_utils.columns(args, "media")
 
