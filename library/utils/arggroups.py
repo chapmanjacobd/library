@@ -825,12 +825,16 @@ library relmv /src/d1/ /mnt/d1/ /mnt/dest/
 /mnt/dest/src/d1/ /mnt/dest/         --relative-to=/mnt/d1""",
     )
     parser.add_argument("--bsd", "--rsync", action="store_true", help="BSD/rsync trailing slash behavior")
-    parser.add_argument("--parent", action="store_true", help="Include parent (dirname) when merging")
+    parser.add_argument("--parent", "-P", action="store_true", help="Include parent (dirname) when merging")
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--dest-bsd", "--bsd-dest", "--dest", action="store_true", help="Destination-is-a-dest mode")
+    group.add_argument("--dest-bsd", "--bsd-dest", "--dest", action="store_true", help="Destination match target mode")
     group.add_argument(
         "--dest-file",
+        "--file",
+        "-F",
+        "--file-dest",
+        "--file-destination",
         "--destination-file",
         "--no-target-directory",
         action="store_true",
@@ -838,7 +842,9 @@ library relmv /src/d1/ /mnt/d1/ /mnt/dest/
     )
     group.add_argument(
         "--dest-folder",
+        "--folder-dest",
         "--destination-folder",
+        "--folder-destination",
         "--target-directory",
         action="store_true",
         help="Destination-is-a-folder mode",
