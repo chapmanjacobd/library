@@ -64,7 +64,7 @@ def extended_view(iterable, **kwargs):
 
 def table(tbl, **kwargs) -> None:
     tabulate_kwargs = {}
-    for k in kwargs.keys():
+    for k in list(kwargs.keys()):
         if k in (
             "headers",
             "tablefmt",

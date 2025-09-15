@@ -86,7 +86,7 @@ stats = """library stats DATABASE TIME_COLUMN
 
     View watched stats
 
-        library stats video.db --completed
+        library stats video.db --completed --no-hide-deleted
 
     View download stats
 
@@ -96,7 +96,7 @@ stats = """library stats DATABASE TIME_COLUMN
 
     View deleted stats
 
-        library stats video.db time_deleted
+        library stats video.db time_deleted --deleted
 
     View time_modified stats
 

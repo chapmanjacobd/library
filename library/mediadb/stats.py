@@ -40,6 +40,9 @@ def stats() -> None:
     args = parse_args()
     db_history.create(args)
 
+    if args.facet == "time_deleted" and "hide_deleted" in args.defaults:
+        args.hide_deleted = False
+
     print(f"{args.facet.title()} media:")
     if args.facet == "time_played" or args.completed:
         tbl = sql_utils.historical_usage(args, args.frequency, args.facet, args.hide_deleted, args.only_deleted)
