@@ -8,7 +8,7 @@ dependencies = [
   "ipython>=9.0.0",
   "ffmpeg-python",
   "gallery-dl",
-  "yt-dlp[default]",
+  "yt-dlp[default,curl-cffi]",
   "natsort",
   "charset-normalizer",
   "puremagic",

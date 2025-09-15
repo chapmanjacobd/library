@@ -5,7 +5,7 @@
 groups = ["default", "deluxe", "test"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:288d8967d0208e94e0a7b30ee7ff28c69cbf0b7783bb5877c2348ca8fe2d9278"
+content_hash = "sha256:2c26d12a12a86d8df5f87b717bf676200048d631f7598bcb6404b094b632c9c4"
 
 [[metadata.targets]]
 requires_python = ">=3.11"
@@ -612,6 +612,28 @@ files = [
 ]
 
 [[package]]
+name = "curl-cffi"
+version = "0.13.0"
+requires_python = ">=3.9"
+summary = "libcurl ffi bindings for Python, with impersonation support."
+dependencies = [
+    "certifi>=2024.2.2",
+    "cffi>=1.12.0",
+]
+files = [
+    {file = "curl_cffi-0.13.0-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:434cadbe8df2f08b2fc2c16dff2779fb40b984af99c06aa700af898e185bb9db"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:59afa877a9ae09efa04646a7d068eeea48915a95d9add0a29854e7781679fcd7"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d06ed389e45a7ca97b17c275dbedd3d6524560270e675c720e93a2018a766076"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b4e0de45ab3b7a835c72bd53640c2347415111b43421b5c7a1a0b18deae2e541"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8eb4083371bbb94e9470d782de235fb5268bf43520de020c9e5e6be8f395443f"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:28911b526e8cd4aa0e5e38401bfe6887e8093907272f1f67ca22e6beb2933a51"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:6d433ffcb455ab01dd0d7bde47109083aa38b59863aa183d29c668ae4c96bf8e"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-win_amd64.whl", hash = "sha256:66a6b75ce971de9af64f1b6812e275f60b88880577bac47ef1fa19694fa21cd3"},
+    {file = "curl_cffi-0.13.0-cp39-abi3-win_arm64.whl", hash = "sha256:d438a3b45244e874794bc4081dc1e356d2bb926dcc7021e5a8fef2e2105ef1d8"},
+    {file = "curl_cffi-0.13.0.tar.gz", hash = "sha256:62ecd90a382bd5023750e3606e0aa7cb1a3a8ba41c14270b8e5e149ebf72c5ca"},
+]
+
+[[package]]
 name = "cycler"
 version = "0.12.1"
 requires_python = ">=3.8"
@@ -924,15 +946,15 @@ files = [
 
 [[package]]
 name = "gallery-dl"
-version = "1.30.6"
+version = "1.30.7"
 requires_python = ">=3.8"
 summary = "Command-line program to download image galleries and collections from several image hosting sites"
 dependencies = [
     "requests>=2.11.0",
 ]
 files = [
-    {file = "gallery_dl-1.30.6-py3-none-any.whl", hash = "sha256:a072c02db0fe61bd4ed40fe7d54b0354ba64efeb0aff4ead3e10f0c6a8cc0337"},
-    {file = "gallery_dl-1.30.6.tar.gz", hash = "sha256:6f354249c0653311234e282521973ba7f2a0022d08ae7c3a81905bb8349efe5a"},
+    {file = "gallery_dl-1.30.7-py3-none-any.whl", hash = "sha256:d9ba7615e534e17da202b7a026ceb645cf2d1afea05e7d1b89a7cd37f2c4ead0"},
+    {file = "gallery_dl-1.30.7.tar.gz", hash = "sha256:748cbb6a11e46a277a7253b2fc66470654425e42d2664d45205211dcf6ad8cbc"},
 ]
 
 [[package]]
@@ -981,7 +1003,7 @@ files = [
 
 [[package]]
 name = "huggingface-hub"
-version = "0.34.4"
+version = "0.34.5"
 requires_python = ">=3.8.0"
 summary = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 dependencies = [
@@ -995,8 +1017,8 @@ dependencies = [
     "typing-extensions>=3.7.4.3",
 ]
 files = [
-    {file = "huggingface_hub-0.34.4-py3-none-any.whl", hash = "sha256:9b365d781739c93ff90c359844221beef048403f1bc1f1c123c191257c3c890a"},
-    {file = "huggingface_hub-0.34.4.tar.gz", hash = "sha256:a4228daa6fb001be3f4f4bdaf9a0db00e1739235702848df00885c9b5742c85c"},
+    {file = "huggingface_hub-0.34.5-py3-none-any.whl", hash = "sha256:fea377adc6e9b6c239c1450e41a1409cbf2c6364d289c04c31d7dbaa222842e3"},
+    {file = "huggingface_hub-0.34.5.tar.gz", hash = "sha256:f676c6db41bc3fbd4020f520c842a0548f4c9a3f698dbfa6514bd8e41c3ab52a"},
 ]
 
 [[package]]
@@ -3567,13 +3589,14 @@ files = [
 [[package]]
 name = "yt-dlp"
 version = "2025.9.5"
-extras = ["default"]
+extras = ["curl-cffi", "default"]
 requires_python = ">=3.9"
 summary = "A feature-rich command-line audio/video downloader"
 dependencies = [
     "brotli; implementation_name == \"cpython\"",
     "brotlicffi; implementation_name != \"cpython\"",
     "certifi",
+    "curl-cffi!=0.6.*,!=0.7.*,!=0.8.*,!=0.9.*,<0.14,>=0.5.10; implementation_name == \"cpython\"",
     "mutagen",
     "pycryptodomex",
     "requests<3,>=2.32.2",
