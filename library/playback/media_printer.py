@@ -47,6 +47,9 @@ def cadence_adjusted_items(args, items: int, time_column=None):
         except IndexError:
             return None
 
+    if historical_daily <= 1:
+        historical_daily = 1.1
+
     return int(items / historical_daily * 24 * 60 * 60)
 
 
@@ -60,8 +63,8 @@ def cadence_adjusted_duration(args, duration):
         except IndexError:
             return None
 
-    if historical_hourly == 0:
-        return None
+    if historical_hourly <= 1:
+        historical_hourly = 1.1
 
     return int(duration / historical_hourly * 60 * 60)
 
@@ -238,7 +241,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     elif "j" in print_args:
         print(json.dumps(media, indent=3))
     elif "c" in print_args:
-        printing.write_csv_to_stdout(media)
+        printing.write_csv(media)
     elif "n" in print_args:
         pass
     else:

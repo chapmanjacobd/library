@@ -200,8 +200,9 @@ def historical_usage_items(
             {', AVG(size) AS avg_size' if 'size' in m_columns else ''}
             , count(*) as count
         FROM media m
-        WHERE coalesce({freq_label}, 0)>0
+        WHERE 1=1
             and {time_column}>0 {where or ''}
+            -- coalesce({freq_label}, 0)>0 -- not sure what my intention was here
             {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
             {"AND COALESCE(time_deleted, 0)>0" if only_deleted else ""}
         GROUP BY {freq_label}
