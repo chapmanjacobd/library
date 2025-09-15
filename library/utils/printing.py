@@ -36,7 +36,7 @@ def serialize_key(s):
     return str(s)
 
 
-def extended_view(iterable):
+def extended_view(iterable, **kwargs):
     print_index = True
     if isinstance(iterable, dict):
         print_index = False
@@ -54,33 +54,55 @@ def extended_view(iterable):
 
     for index, item in enumerate(iterable, start=1):
         if print_index:
-            print(f"-[ RECORD {index} ]-------------------------------------------------------------")
+            print(f"-[ RECORD {index} ]-------------------------------------------------------------", **kwargs)
         for key, value in item.items():
             formatted_key = f"{serialize_key(key).ljust(max_key_length)} |"
-            print(formatted_key, value)
+            print(formatted_key, value, **kwargs)
         if print_index:
-            print()
+            print(**kwargs)
 
 
 def table(tbl, **kwargs) -> None:
-    table_text = tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, **kwargs)
+    tabulate_kwargs = {}
+    for k in kwargs.keys():
+        if k in (
+            "headers",
+            "tablefmt",
+            "floatfmt",
+            "intfmt",
+            "numalign",
+            "stralign",
+            "missingval",
+            "showindex",
+            "disable_numparse",
+            "colalign",
+            "maxcolwidths",
+            "rowalign",
+            "maxheadercolwidths",
+        ):
+            tabulate_kwargs[k] = kwargs.pop(k)
+
+    table_text = tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, **tabulate_kwargs)
     if not table_text:
         return
 
     longest_line = max(len(s) for s in table_text.splitlines())
     try:
         if longest_line > consts.TERMINAL_SIZE.columns:
-            extended_view(tbl)
+            extended_view(tbl, **kwargs)
         else:
-            print(table_text)
+            print(table_text, **kwargs)
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)
 
 
-def pipe_print(*args) -> None:
+def pipe_print(*args, **kwargs) -> None:
+    if "flush" not in kwargs:
+        kwargs["flush"] = True
+
     try:
-        print(*args, flush=True)
+        print(*args, **kwargs)
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)
@@ -105,9 +127,9 @@ def eta(cur_iter, max_iter, start_time=None):
     return "ETA: " + relative_datetime(finish_time)
 
 
-def write_csv_to_stdout(data):
+def write_csv(data, file=sys.stdout):
     fieldnames = data[0].keys()
-    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(data)
 
