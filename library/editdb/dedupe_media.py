@@ -351,7 +351,7 @@ def get_fs_duplicates(args) -> list[dict]:
                 del path_media_map[path]
             else:
                 path_media_map[path]["hash"] = file_hash
-                args.db["media"].upsert(path_media_map[path], alter=True)  # save sample-hash back to db
+                args.db["media"].upsert(path_media_map[path], pk=["path"], alter=True)  # save sample-hash back to db
         media = [
             path_media_map[d["path"]] for d in media if d["path"] in path_media_map
         ]  # replace media with path_media_map in original order (args.sort)
@@ -389,6 +389,7 @@ def get_fs_duplicates(args) -> list[dict]:
         )
 
     # TODO: update false-positive sample-hash matches? probably no because then future sample-hash duplicates won't match
+    # but we could add another column for full hashes
 
     return dup_media
 
