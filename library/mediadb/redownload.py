@@ -36,7 +36,7 @@ def list_deletions(args) -> list[dict]:
         LIMIT ?
     """
     media = list(args.db.query(query, [args.limit]))
-    media = list(reversed(media))
+    media.reverse()
     return media
 
 

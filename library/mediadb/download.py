@@ -1,4 +1,5 @@
 import argparse, sys
+from http import HTTPStatus
 
 import requests
 
@@ -192,7 +193,7 @@ def download(args=None) -> None:
                             webpath=original_path,
                             info=m,
                             error=str(excinfo),
-                            mark_deleted=excinfo.response.status_code == 404,
+                            mark_deleted=excinfo.response.status_code == HTTPStatus.NOT_FOUND,
                             delete_webpath_entry=False,
                         )
                         web.post_download(args)

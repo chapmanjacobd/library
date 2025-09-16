@@ -1,4 +1,4 @@
-import math, subprocess
+import errno, math, subprocess
 
 from library.createdb import subtitle
 from library.mediafiles import media_check
@@ -137,10 +137,10 @@ def munge_av_tags(args, m) -> dict:
         m["error"] = "FFProbe timed out"
         return m
     except OSError as excinfo:
-        if excinfo.errno == 23:  # Too many open files
-            raise excinfo
-        elif excinfo.errno == 5:  # IO Error
-            raise excinfo
+        if excinfo.errno == errno.ENFILE:  # Too many open files
+            raise
+        elif excinfo.errno == errno.EIO:  # IO Error
+            raise
         raise
     except processes.UnplayableFile as excinfo:
         log.error(f"Failed reading header. {path}")

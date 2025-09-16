@@ -48,6 +48,7 @@ def wait_torrent_loaded(qbt_client, torrent):
         attempt += 1
         log.info("Waiting for torrent to load in qBittorrent")
         sleep(1)
+    return None
 
 
 def start_qBittorrent(args):

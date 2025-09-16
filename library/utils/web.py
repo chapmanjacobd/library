@@ -1,6 +1,7 @@
 import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
+from http import HTTPStatus
 from pathlib import Path
 from shutil import which
 from urllib.parse import parse_qs, parse_qsl, quote, urldefrag, urlencode, urljoin, urlparse, urlunparse
@@ -153,21 +154,28 @@ def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwarg
     ):
         raise
     else:
-        code = response.status_code
+        code = HTTPStatus(response.status_code)
 
-        if 200 <= code < 400:
+        if code.is_informational or code.is_success:
             return response
-        elif code == 404:
+        elif code == HTTPStatus.NOT_FOUND:
             if skip_404:
                 log.warning("404 Not Found: %s", url)
                 return None
             else:
                 raise FileNotFoundError
-        elif ignore_errors and (400 <= code < 429 or 431 <= code < 500):
-            return response
-        elif ignore_429 and (400 <= code < 500):
-            return response
-        else:
+        elif code.is_redirection:
+            # requests redirects exceeded
+            response.raise_for_status()
+        elif code.is_client_error:
+            if code == HTTPStatus.TOO_MANY_REQUESTS:
+                if ignore_429:
+                    return response
+            elif ignore_errors:  # ignore all except 429
+                return response
+
+            response.raise_for_status()
+        elif code.is_server_error:
             response.raise_for_status()
 
     log.info("Something weird is happening probably: %s", url)
@@ -425,7 +433,9 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
     log.debug("Downloading file %s retry %s", url, retry_num)
     try:
         r = session.get(url, stream=True)
-        if not 200 <= r.status_code < 400:
+
+        code = HTTPStatus(r.status_code)
+        if code.is_client_error or code.is_server_error:
             log.error(f"Error {r.status_code} {url}")
             raise_for_status(r.status_code)
 
@@ -1033,9 +1043,10 @@ class WebPath:
     def stat(self, follow_symlinks=True):
         r = self.head(follow_symlinks=follow_symlinks)
 
-        if 200 <= r.status_code < 400:
-            pass
-        elif r.status_code == 404:
+        code = HTTPStatus(r.status_code)
+        if code.is_informational or code.is_success or code.is_redirection:
+            return WebStatResult(r)
+        elif r.status_code == HTTPStatus.NOT_FOUND:
             raise FileNotFoundError
         else:
             r.raise_for_status()
@@ -1059,7 +1070,7 @@ class WebPath:
         return filename_from_content_disposition(self.head())
 
     def __truediv__(self, other):
-        return WebPath(f"{str(self)}/{str(other)}")
+        return WebPath(f"{self!s}/{other!s}")
 
     def __str__(self):
         return self._path
@@ -1074,9 +1085,10 @@ def stat(url, follow_symlinks=True):
 
     r = session.head(url, allow_redirects=follow_symlinks)
 
-    if 200 <= r.status_code < 400:
-        pass
-    elif r.status_code == 404:
+    code = HTTPStatus(r.status_code)
+    if code.is_informational or code.is_success or code.is_redirection:
+        return WebStatResult(r)
+    elif r.status_code == HTTPStatus.NOT_FOUND:
         raise FileNotFoundError
     else:
         r.raise_for_status()

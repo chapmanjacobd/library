@@ -182,7 +182,7 @@ def spider(args, paths: list):
 
             log.debug("%s urls found in %s", len(link_dicts), path)
             random.shuffle(link_dicts)
-            for link_idx, link_dict in enumerate(link_dicts):
+            for _link_idx, link_dict in enumerate(link_dicts):
                 link = web.remove_apache_sorting_params(link_dict.pop("link"))
 
                 if link in traversed_paths or link in paths:

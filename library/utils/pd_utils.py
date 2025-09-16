@@ -61,7 +61,7 @@ def rank_dataframe(original_df, column_weights=None):
             "progress": {"direction": "desc", "weight": 6},
             "size": {"direction": "asc", "weight": 3}
         }
-    )
+    ).
     """
     import pandas as pd
 

@@ -420,6 +420,6 @@ def split_uri(s):
         if not path.endswith("/"):
             path = os.path.dirname(path)
 
-        return [root, parsed.netloc] + path.split(os.sep)
+        return [root, parsed.netloc, *path.split(os.sep)]
     else:
         return s.split(os.sep)

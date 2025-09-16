@@ -98,7 +98,7 @@ def word_sorter(args, NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stat
 
         rank = mcda.mcda_sorted(args, keys=[gen_word_key(after_mcda, xs) for xs in l])
         log.debug("word_sorter mcda: %s", [l[i] for i in rank["original_index"]])
-        words = sorted(l, key=lambda word: gen_word_key(before_mcda, word) + (rank["original_index"][l.index(word)],))
+        words = sorted(l, key=lambda word: (*gen_word_key(before_mcda, word), rank["original_index"][l.index(word)]))
 
     log.debug(f"word_sorter: {words}")
     return words
@@ -314,7 +314,7 @@ def sort_dicts(args, media, search_columns=None):
     sentence_strings = list(
         strings.path_to_sentence(" ".join(str(v) for k, v in d.items() if v and k in search_columns)) for d in media
     )
-    media_keyed = {line: d for line, d in zip(sentence_strings, media, strict=True)}
+    media_keyed = dict(zip(sentence_strings, media, strict=True))
 
     lines = text_processor(args, sentence_strings)
 

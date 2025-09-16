@@ -34,6 +34,7 @@ def super_parser(date_str, fallback=False):
 
     if fallback:
         return date_str
+    return None
 
 
 def specific_date(*dates):

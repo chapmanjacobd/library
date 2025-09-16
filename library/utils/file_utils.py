@@ -45,9 +45,9 @@ def rglob(
         except (FileNotFoundError, PermissionError):
             pass
         except OSError as excinfo:
-            if excinfo.errno == 23:  # Too many open files
-                raise excinfo
-            elif excinfo.errno == 5:  # Input/output error
+            if excinfo.errno == errno.ENFILE:  # Too many open files
+                raise
+            elif excinfo.errno == errno.EIO:  # Input/output error
                 log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
             raise
         else:
@@ -113,9 +113,9 @@ def rglob_gen(
         except (FileNotFoundError, PermissionError):
             pass
         except OSError as excinfo:
-            if excinfo.errno == 23:  # Too many open files
-                raise excinfo
-            elif excinfo.errno == 5:  # Input/output error
+            if excinfo.errno == errno.ENFILE:  # errno.errorcode[23] Too many open files
+                raise
+            elif excinfo.errno == errno.EIO:
                 log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
             raise
         else:
@@ -174,9 +174,8 @@ def fd_rglob_gen(
             if path_bytes:  # empty bytes at the end
                 path = path_bytes.decode("utf-8")
 
-                if include:
-                    if not any(fnmatch(path, pattern) for pattern in include):
-                        continue
+                if include and not any(fnmatch(path, pattern) for pattern in include):
+                    continue
 
                 yield path
 
@@ -418,7 +417,7 @@ def get_file_encodings(path):
 
             if len(sample_bytes) >= MAX_BYTES_TO_ANALYZE:
                 break
-            elif detection_result and detection_result[0].coherence > 0.8:
+            if detection_result and detection_result[0].coherence > 0.8:
                 break
     else:
         with open(path, "rb") as f:
@@ -510,7 +509,7 @@ def detect_mimetype(path):
                 try:
                     info = puremagic.magic_file(path)
                 except OSError as excinfo:
-                    if excinfo.errno == 6:  # No such device or address
+                    if excinfo.errno == errno.ENXIO:
                         raise puremagic.PureError("No such device or address")
                     else:
                         raise
@@ -774,7 +773,7 @@ def read_file_to_dataframes(
         dfs = [dfs[table_index]]
 
     if skip_headers:
-        for df_name, df in dfs:
+        for _df_name, df in dfs:
             df.columns = [f"column{i}" for i in range(len(df.columns))]
 
     if join_tables:
@@ -896,8 +895,7 @@ def gen_d(args, default_exts=None):
         for path in args.paths:
             json_data = strings.safe_json_loads(path)
             if isinstance(json_data, list):
-                for json_item in json_data:
-                    yield json_item
+                yield from json_data
             elif isinstance(json_data, dict):
                 yield json_data
             else:

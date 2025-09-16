@@ -30,7 +30,7 @@ def filter_src(args, path):
     if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
         print(f"\nReached sizeout... ({args.timeout_size})")
         raise SystemExit(124)
-    elif args.move_limit and MOVED_COUNT >= args.move_limit:
+    elif args.move_limit and args.move_limit <= MOVED_COUNT:
         print(f"\nReached file move limit... ({args.move_limit})")
         raise SystemExit(124)
 
@@ -38,7 +38,9 @@ def filter_src(args, path):
 
 
 def print_stats(args, dest_path=None, file_size=None):
-    file_plural = lambda x: "files" if x > 1 else "file"
+    def file_plural(x):
+        return "files" if x > 1 else "file"
+
     pr = print if args.simulate else printing.print_overwrite
 
     msg = [

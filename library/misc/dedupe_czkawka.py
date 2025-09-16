@@ -358,19 +358,19 @@ def group_and_delete(args, groups):
                         kept_dups.append(left)
                         kept_dups.append(right)
                         break
-                    elif args.all_left or user_input in ("l", "left", ""):
+                    if args.all_left or user_input in ("l", "left", ""):
                         kept_dups.append(left)
                         delete_dupe(right, detach=is_next_iter_not_last)
                         break
-                    elif args.all_right or user_input in ("r", "right"):
+                    if args.all_right or user_input in ("r", "right"):
                         kept_dups.append(right)
                         delete_dupe(left, detach=is_next_iter_not_last)
                         break
-                    elif args.all_delete or user_input in ("d", "delete"):
+                    if args.all_delete or user_input in ("d", "delete"):
                         delete_dupe(right, detach=is_next_iter_not_last)
                         delete_dupe(left, detach=is_next_iter_not_last)
                         break
-                    elif user_input in ("q", "quit"):
+                    if user_input in ("q", "quit"):
                         truncate_file_before_match(args.file_path, left["path"])
                         sys.exit(0)
                     else:

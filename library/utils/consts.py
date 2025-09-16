@@ -65,16 +65,9 @@ DEFAULT_SUBTITLE_MIX = 0.35
 MANY_LINKS = 8
 VOLKSWAGEN = "CI" in os.environ
 REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
-REGEX_SUBREDDIT = re.compile("|".join([r".*reddit\.com/r/(.*?)/.*", r".*redd\.it/r/(.*?)/.*"]))
+REGEX_SUBREDDIT = re.compile(".*reddit\\.com/r/(.*?)/.*|.*redd\\.it/r/(.*?)/.*")
 REGEX_REDDITOR = re.compile(
-    "|".join(
-        [
-            r".*reddit\.com/u/(.*?)/.*",
-            r".*redd\.it/u/(.*?)/.*",
-            r".*reddit\.com/user/(.*?)/.*",
-            r".*redd\.it/user/(.*?)/.*",
-        ],
-    ),
+    ".*reddit\\.com/u/(.*?)/.*|.*redd\\.it/u/(.*?)/.*|.*reddit\\.com/user/(.*?)/.*|.*redd\\.it/user/(.*?)/.*",
 )
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()

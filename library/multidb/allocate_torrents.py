@@ -276,7 +276,7 @@ def allocate_torrents():
                     ssh.load_system_host_keys()
                     ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
                     ssh.connect(d["host"])
-                    setattr(ssh, "host", d["host"])
+                    ssh.host = d["host"]
 
                     torrent_files_chunks = iterables.chunks(torrent_files, 128)
                     for torrent_files_chunk in torrent_files_chunks:

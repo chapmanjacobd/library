@@ -54,7 +54,7 @@ def test_stem_too_long_shortened():
     longname = "a" * 300
     b = f"{longname}.txt".encode()
     result = clean_path(b, max_name_len=50)
-    assert len(Path(result).stem.encode()) <= 50 - len(".txt".encode()) - 1
+    assert len(Path(result).stem.encode()) <= 50 - len(b".txt") - 1
     assert "..." in Path(result).stem
 
 
@@ -67,29 +67,29 @@ def test_dot_space_replacement():
 def test_long_emoji_filename_is_shortened():
     # 😀😃😄 repeated to exceed max length
     emojis = "😀😃😄" * 100
-    b = f"{emojis}.txt".encode("utf-8")
+    b = f"{emojis}.txt".encode()
     result = clean_path(b, max_name_len=60)
     stem = Path(result).stem
     assert "..." in stem
-    assert len(stem.encode("utf-8")) <= 60 - len(".txt".encode()) - 1
+    assert len(stem.encode("utf-8")) <= 60 - len(b".txt") - 1
 
 
 def test_folder_with_mixed_emoji_and_text():
-    b = "/docs/😀-project-😎/report.txt".encode("utf-8")
+    b = "/docs/😀-project-😎/report.txt".encode()
     result = clean_path(b)
     assert "😀-project-😎" in result
     assert result.endswith("report.txt")
 
 
 def test_dot_space_with_emojis():
-    b = "/😀 cool 😎/file.txt".encode("utf-8")
+    b = "/😀 cool 😎/file.txt".encode()
     result = clean_path(b, dot_space=True)
     # spaces should be replaced with dots, emojis intact
     assert "😀.cool.😎" in result
 
 
 def test_case_insensitive_with_emojis():
-    b = "/😀 Folder 😎/file.txt".encode("utf-8")
+    b = "/😀 Folder 😎/file.txt".encode()
     result = clean_path(b, case_insensitive=True)
     assert "😀 Folder 😎" in result
     assert result.endswith("file.txt")

@@ -58,7 +58,7 @@ def cmd(
 
     host = getattr(ssh, "host", None)
     if host:  # for logging purposes
-        command = " ".join(["ssh", host, command])
+        command = f"ssh {host} {command}"
 
     r = subprocess.CompletedProcess(command, returncode, stdout.read().decode(), stderr.read().decode())
 
@@ -98,6 +98,7 @@ def ssh_tempdir(ssh):
     tempdir = r.stdout.strip()
     if tempdir:
         return tempdir
+    return None
 
 
 class PortForwardServer(socketserver.ThreadingTCPServer):

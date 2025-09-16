@@ -322,7 +322,7 @@ def modify_display_size_for_taskbar(display):
             dock_position = (
                 subprocess.check_output(["defaults", "read", "com.apple.dock", "orientation"]).decode().strip()
             )
-            if dock_position == "left" or dock_position == "right":
+            if dock_position in ("left", "right"):
                 display.width -= dock_height
             else:
                 display.height -= dock_height

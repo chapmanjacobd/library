@@ -33,7 +33,8 @@ def expand_links(args=None):
             encoded_query = urllib.parse.quote(" ".join(words))
 
             if "%s" not in search_url:
-                raise SystemExit(f"Error: No '%s' in provided search_url '{search_url}'")
+                msg = f"Error: No '%s' in provided search_url '{search_url}'"
+                raise SystemExit(msg)
 
             links.append(search_url.replace("%s", encoded_query))
 

@@ -310,7 +310,7 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
 
         if not target_mount:
             most_free = max(disk_free.values())
-            mount_point = [k for k, v in disk_free.items() if v == most_free][0]
+            mount_point = next(k for k, v in disk_free.items() if v == most_free)
             if disk_free[mount_point] >= total_folder_size:
                 target_mount = mount_point
 
