@@ -178,8 +178,8 @@ def get_inner_urls(args, url):
         else:
             try:
                 r = web.session.get(url, timeout=120)
-            except Exception as e:
-                if "too many 429 error" in str(e):
+            except Exception as excinfo:
+                if "too many 429 error" in str(excinfo):
                     raise
                 log.exception("Could not get a valid response from the server")
                 return None
@@ -203,8 +203,8 @@ def print_or_download(args, d):
     if args.download:
         try:
             web.download_url(args, url)
-        except RuntimeError as e:
-            log.error("[%s]: %s", url, e)
+        except RuntimeError as excinfo:
+            log.error("[%s]: %s", url, excinfo)
     else:
         if not args.no_url_decode:
             url = path_utils.url_decode(url).strip()
@@ -224,8 +224,8 @@ def extract_links() -> None:
             if args.download:
                 try:
                     web.download_url(args, url)
-                except RuntimeError as e:
-                    log.error("[%s]: %s", url, e)
+                except RuntimeError as excinfo:
+                    log.error("[%s]: %s", url, excinfo)
             else:
                 printing.pipe_print(url)
         return

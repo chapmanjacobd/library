@@ -54,5 +54,5 @@ def test_process_ffmpeg(path, duration, out_ext):
 
     try:
         temp_dir.cleanup()
-    except Exception as e:
-        print(e)
+    except Exception as excinfo:
+        print(excinfo)

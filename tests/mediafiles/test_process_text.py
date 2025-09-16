@@ -18,5 +18,5 @@ def test_process_text_too_small():
 
     try:
         temp_dir.cleanup()
-    except Exception as e:
-        print(e)
+    except Exception as excinfo:
+        print(excinfo)

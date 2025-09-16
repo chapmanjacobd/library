@@ -283,8 +283,8 @@ def extractor(args, playlist_path):
                 ):
                     end_of_playlist = True
                     break
-        except requests.HTTPError as e:
-            log.error(e)
+        except requests.HTTPError as excinfo:
+            log.error(excinfo)
 
         add_media(args, [{"path": k, **v} for k, v in page_new.items()])
 

@@ -38,8 +38,8 @@ def exists(args, path) -> bool:
             f"select 1 from media where path=? or {'webpath' if 'webpath' in m_columns else 'path'}=?",
             [str(path), str(path)],
         ).fetchone()
-    except sqlite3.OperationalError as e:
-        log.debug(e)
+    except sqlite3.OperationalError as excinfo:
+        log.debug(excinfo)
         return False
     if known is None:
         return False
@@ -282,8 +282,8 @@ def update_media(args, media, mark_deleted=True):
 
     try:
         deleted_set = {d["path"] for d in args.db.query("select path from media where time_deleted > 0")}
-    except Exception as e:
-        log.debug(e)
+    except Exception as excinfo:
+        log.debug(excinfo)
     else:
         undeleted_files = list(deleted_set.intersection(scanned_set))
         undeleted_count = mark_media_undeleted(args, undeleted_files)
@@ -293,8 +293,8 @@ def update_media(args, media, mark_deleted=True):
 
     try:
         existing_set = {d["path"] for d in args.db.query("select path from media WHERE coalesce(time_deleted, 0) = 0")}
-    except Exception as e:
-        log.debug(e)
+    except Exception as excinfo:
+        log.debug(excinfo)
         new_files = scanned_set
     else:
         new_files = scanned_set - existing_set

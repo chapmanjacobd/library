@@ -68,8 +68,8 @@ def run_llama_with_prompt(args, prompt):
         cmd = [args.exe, "--silent-prompt", *args.llama_args, "-p", prompt]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
-        print(f"Error running {cmd} for {prompt}: {e.stderr}")
+    except subprocess.CalledProcessError as excinfo:
+        print(f"Error running {cmd} for {prompt}: {excinfo.stderr}")
         return None
 
 

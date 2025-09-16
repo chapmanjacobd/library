@@ -20,12 +20,12 @@ def extract_from_video(path, stream_index) -> str | None:
 
     try:
         ffmpeg.input(path).output(temp_srt, map=stream_id).global_args("-nostdin").run(quiet=True)
-    except ffmpeg.Error as e:
+    except ffmpeg.Error as excinfo:
         log.info(
             f"Could not extract subtitle {stream_id} from video file. Likely incorrect subtitle character encoding set. %s",
             path,
         )
-        log.debug(e.stderr.decode())
+        log.debug(excinfo.stderr.decode())
         return None
 
     return temp_srt
@@ -36,10 +36,10 @@ def convert_to_srt(path) -> str:
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
     try:
         ffmpeg.input(path).output(temp_srt).global_args("-nostdin").run(quiet=True)
-    except ffmpeg.Error as e:
+    except ffmpeg.Error as excinfo:
         log.info("Could not convert subtitle")
-        log.info(e.stderr.decode())
-        raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!") from e
+        log.info(excinfo.stderr.decode())
+        raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!") from excinfo
 
     return temp_srt
 

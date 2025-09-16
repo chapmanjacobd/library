@@ -64,9 +64,9 @@ def parse_args(action, usage) -> argparse.Namespace:
         import praw
 
         args.reddit = praw.Reddit(args.praw_site, config_interpolation="basic")
-    except Exception as e:
+    except Exception as excinfo:
         print(PRAW_SETUP_INSTRUCTIONS)
-        raise SystemExit(e) from e
+        raise SystemExit(excinfo) from excinfo
 
     return args
 
@@ -323,8 +323,8 @@ def reddit_add(args=None) -> None:
                 elif extractor_key == "reddit_praw_subreddit":
                     subreddit_new(args, {"path": path, "name": name})
                     subreddit_top(args, {"path": path, "name": name})
-            except skip_errors as e:
-                log.error("[%s] skipping: %s", name, e)
+            except skip_errors as excinfo:
+                log.error("[%s] skipping: %s", name, excinfo)
 
         db_playlists._add(
             args,
@@ -368,7 +368,7 @@ def reddit_update(args=None) -> None:
                 redditor_new(args, {"path": path, "name": name})
 
             db_playlists.update_more_frequently(args, playlist["path"])
-        except skip_errors as e:
+        except skip_errors as excinfo:
             db_playlists.update_less_frequently(args, playlist["path"])
-            log.error("[%s] skipping: %s", name, e)
+            log.error("[%s] skipping: %s", name, excinfo)
             continue

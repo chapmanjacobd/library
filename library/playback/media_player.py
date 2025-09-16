@@ -467,8 +467,8 @@ class MediaPrefetcher:
                 if args.action in (SC.watch, SC.listen, SC.search):
                     try:
                         start, end = calculate_duration(args, m)
-                    except Exception as e:
-                        log.info(e)
+                    except Exception as excinfo:
+                        log.info(excinfo)
                     else:
                         if end != 0:
                             if start != 0:

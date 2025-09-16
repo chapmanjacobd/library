@@ -79,8 +79,8 @@ def start_qBittorrent(args):
             qbt_client.auth_log_in()
             log.debug("qBittorrent web UI ready")
             break
-        except qbittorrentapi.LoginFailed as e:
-            logging.warning(f"Authentication failed. Check your qBit settings, --username, and --password: {e}")
+        except qbittorrentapi.LoginFailed as excinfo:
+            logging.warning(f"Authentication failed. Check your qBit settings, --username, and --password: {excinfo}")
             break  # stop if authentication failing
         except (qbittorrentapi.APIConnectionError, ConnectionRefusedError):
             time.sleep(0.5)

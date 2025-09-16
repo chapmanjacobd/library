@@ -25,8 +25,8 @@ def exists(args, media_id) -> bool:
             "select 1 from history where media_id=?",
             [media_id],
         ).fetchone()
-    except sqlite3.OperationalError as e:
-        log.debug(e)
+    except sqlite3.OperationalError as excinfo:
+        log.debug(excinfo)
         return False
     if known is None:
         return False

@@ -87,8 +87,8 @@ def process_path(args, path) -> str | None:
             ],
             limit_ram=True,
         )
-    except subprocess.CalledProcessError as e:
-        error_log = e.stderr.splitlines()
+    except subprocess.CalledProcessError as excinfo:
+        error_log = excinfo.stderr.splitlines()
         is_unsupported = any(imagemagick_errors.unsupported_error.match(l) for l in error_log)
         is_file_error = any(imagemagick_errors.file_error.match(l) for l in error_log)
         is_env_error = any(imagemagick_errors.environment_error.match(l) for l in error_log)

@@ -58,8 +58,8 @@ def backup_and_read_file(file_path):
     if not os.path.exists(backup_filename):
         try:
             shutil.copy2(file_path, backup_filename)
-        except Exception as e:
-            print(f"Failed to create backup file: {e}")
+        except Exception as excinfo:
+            print(f"Failed to create backup file: {excinfo}")
 
     with open(file_path) as file:
         content = file.read()
@@ -180,9 +180,9 @@ def side_by_side_mpv(args, left_side, right_side):
         left_mpv.quit_callback = right_mpv.terminate
         right_mpv.quit_callback = right_quit_callback  # they can't both be the same
 
-        with ThreadPoolExecutor() as e:
-            e.submit(mpv_utils.auto_seek, left_mpv)
-            e.submit(mpv_utils.auto_seek, right_mpv, delay=0.4)
+        with ThreadPoolExecutor() as ex:
+            ex.submit(mpv_utils.auto_seek, left_mpv)
+            ex.submit(mpv_utils.auto_seek, right_mpv, delay=0.4)
 
     else:
         mpv_options = [
@@ -242,8 +242,8 @@ def mv_to_keep_folder(args, d) -> None:
         new_path = shutil.move(media_file, keep_path)
     except FileNotFoundError:
         return
-    except shutil.Error as e:
-        if "already exists" not in str(e):
+    except shutil.Error as excinfo:
+        if "already exists" not in str(excinfo):
             raise
         p = Path(media_file)
         new_path = Path(keep_path) / p.name

@@ -95,8 +95,8 @@ def convert_to_text_pdf(args, path):
         log.info("[%s]: Skipped PDF because it has a digital signature", path)
     except (ocrmypdf.exceptions.TaggedPDFError, ocrmypdf.exceptions.PriorOcrFoundError):
         log.info("[%s]: Skipped PDF because it already contained text", path)
-    except Exception as e:
-        log.warning("[%s]: Could not run OCR. %s", path, e)
+    except Exception as excinfo:
+        log.warning("[%s]: Could not run OCR. %s", path, excinfo)
     else:
         if os.path.exists(pdf_path):
             if args.delete_larger and not os.path.samefile(path, pdf_path):

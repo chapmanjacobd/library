@@ -28,8 +28,8 @@ def munge_book_tags(path) -> dict:
     try:
         tags = textract.process(path, language=os.getenv("TESSERACT_LANGUAGE"))
         tags = REGEX_SENTENCE_ENDS.split(tags.decode())
-    except Exception as e:
-        log.warning(e)
+    except Exception as excinfo:
+        log.warning(excinfo)
         log.error(f"Failed reading text. {path}")
         tags = []
     return {"tags": strings.combine(tags)}
@@ -53,8 +53,8 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
     except OSError:
         log.exception("OSError: possible disk error; check dmesg. %s", path)
         return None
-    except Exception as e:
-        log.error(f"%s {path}", e)
+    except Exception as excinfo:
+        log.error(f"%s {path}", excinfo)
         return None
 
     try:
@@ -260,8 +260,8 @@ def extract_image_metadata_chunk(metadata: list[dict]) -> list[dict]:
 
         try:
             m = munge_image_tags(m, e)
-        except Exception as e:
-            log.error("[%s]: %s", m["path"], e)
+        except Exception as excinfo:
+            log.error("[%s]: %s", m["path"], excinfo)
             # continue ?
         exif_enriched.append(m)
 

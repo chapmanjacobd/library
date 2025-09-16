@@ -44,10 +44,10 @@ def rglob(
             scanned_dir = os.scandir(current_dir)
         except (FileNotFoundError, PermissionError):
             pass
-        except OSError as e:
-            if e.errno == 23:  # Too many open files
-                raise e
-            elif e.errno == 5:  # Input/output error
+        except OSError as excinfo:
+            if excinfo.errno == 23:  # Too many open files
+                raise excinfo
+            elif excinfo.errno == 5:  # Input/output error
                 log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
             raise
         else:
@@ -112,10 +112,10 @@ def rglob_gen(
             scanned_dir = os.scandir(current_dir)
         except (FileNotFoundError, PermissionError):
             pass
-        except OSError as e:
-            if e.errno == 23:  # Too many open files
-                raise e
-            elif e.errno == 5:  # Input/output error
+        except OSError as excinfo:
+            if excinfo.errno == 23:  # Too many open files
+                raise excinfo
+            elif excinfo.errno == 5:  # Input/output error
                 log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
             raise
         else:
@@ -294,8 +294,8 @@ def copy_file(source_file, destination_file, simulate=False):
     else:
         try:
             shutil.copy2(source_file, destination_file)
-        except OSError as e:
-            if e.errno in (errno.ENOENT, errno.EXDEV):
+        except OSError as excinfo:
+            if excinfo.errno in (errno.ENOENT, errno.EXDEV):
                 os.makedirs(os.path.dirname(destination_file), exist_ok=True)
                 shutil.copy2(source_file, destination_file)  # try again
             else:
@@ -329,17 +329,17 @@ def rename_move_file(source_file, destination_file, simulate=False):
     else:
         try:
             os.rename(source_file, destination_file)  # performance
-        except OSError as e:
-            if e.errno == errno.ENOENT:
+        except OSError as excinfo:
+            if excinfo.errno == errno.ENOENT:
                 try:
                     os.makedirs(os.path.dirname(destination_file), exist_ok=True)
                     os.rename(source_file, destination_file)  # try again
-                except OSError as e:
-                    if e.errno == errno.EXDEV:  # Cross-device
+                except OSError as excinfo:
+                    if excinfo.errno == errno.EXDEV:  # Cross-device
                         shutil.move(source_file, destination_file)  # Fallback to shutil.move
                     else:
                         raise
-            elif e.errno == errno.EXDEV:  # Cross-device
+            elif excinfo.errno == errno.EXDEV:  # Cross-device
                 shutil.move(source_file, destination_file)  # Fallback to shutil.move
             else:
                 raise
@@ -509,8 +509,8 @@ def detect_mimetype(path):
             else:
                 try:
                     info = puremagic.magic_file(path)
-                except OSError as e:
-                    if e.errno == 6:  # No such device or address
+                except OSError as excinfo:
+                    if excinfo.errno == 6:  # No such device or address
                         raise puremagic.PureError("No such device or address")
                     else:
                         raise

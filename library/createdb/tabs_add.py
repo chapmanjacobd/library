@@ -47,8 +47,8 @@ def get_new_paths(args, paths) -> list[str]:
 
     try:
         existing = {d["path"] for d in args.db.query(*qb)}
-    except Exception as e:
-        log.debug(e)
+    except Exception as excinfo:
+        log.debug(excinfo)
     else:
         if existing:
             print(f"Updating frequency for {len(existing)} existing paths")

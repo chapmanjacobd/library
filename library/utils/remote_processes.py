@@ -111,8 +111,8 @@ class PortForwardHandler(socketserver.BaseRequestHandler):
             chan = self.ssh_transport.open_channel(  # type: ignore
                 "direct-tcpip", (self.chain_host, self.chain_port), self.request.getpeername()  # type: ignore
             )
-        except Exception as e:
-            log.error("Incoming request to %s:%d failed: %s", self.chain_host, self.chain_port, repr(e))  # type: ignore
+        except Exception as excinfo:
+            log.error("Incoming request to %s:%d failed: %s", self.chain_host, self.chain_port, repr(excinfo))  # type: ignore
             return
         if chan is None:
             log.error("Incoming request to %s:%d was rejected by the SSH server", self.chain_host, self.chain_port)  # type: ignore
