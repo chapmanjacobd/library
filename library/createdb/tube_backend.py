@@ -1,7 +1,6 @@
 import json, sys
 from copy import deepcopy
 from pathlib import Path
-from pprint import pprint
 from subprocess import CalledProcessError
 from types import ModuleType
 
@@ -331,7 +330,6 @@ def log_error(ydl_log, webpath):
         return DLStatus.UNRECOVERABLE_ERROR, matched_error
 
     log.error("[%s]: Unknown error. %s", webpath, ydl_errors_txt)
-    pprint(ydl_log)
     return DLStatus.UNKNOWN_ERROR, ydl_errors_txt
 
 

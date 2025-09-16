@@ -63,7 +63,7 @@ def filter_mimetype(args, files):
 
 
 def eval_sql_expr(key, op, val, item):
-    """Evaluate a simplified SQL-like operator expression on item"""
+    """Evaluate a simplified SQL-like operator expression on item."""
     col_val = item.get(key)
 
     if op == "LIKE":
@@ -85,12 +85,13 @@ def eval_sql_expr(key, op, val, item):
     elif op == "<=":
         return col_val <= val.strip('"')
     else:
-        raise ValueError(f"Unsupported operator: {op}")
+        msg = f"Unsupported operator: {op}"
+        raise ValueError(msg)
 
 
 def sort_files_by_criteria(args, files):
     def normalize_key(key: str) -> str:
-        """Remove table prefixes like m.path -> path"""
+        """Remove table prefixes like m.path -> path."""
         return key.split(".")[-1]
 
     def get_sort_key(item):

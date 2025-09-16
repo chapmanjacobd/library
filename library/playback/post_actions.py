@@ -121,17 +121,23 @@ def post_act(
             action = Action.NONE
 
         if action == Action.NONE:
-            pass
+            return None
         elif action == Action.DELETE:
             handle_delete_action()
+            return None
         elif action == Action.DELETE_IF_AUDIOBOOK:
             if "audiobook" in media_file.lower():
                 handle_delete_action()
+                return None
+            return None
         elif action == Action.SOFTDELETE:
             handle_soft_delete_action()
+            return None
         elif action == Action.MOVE:
             if not media_file.startswith("http"):
                 media_file = mv_to_keep_folder(args, media_file)
+                return None
+            return None
         elif action.startswith("ASK_"):
             confirmed_action = handle_ask_action(action)
             return normal_action(args, media_file, confirmed_action)

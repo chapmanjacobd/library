@@ -7,7 +7,7 @@ from tests import utils
 
 
 @pytest.mark.parametrize(
-    "mock_mountpoint, src, dest, expected",
+    ("mock_mountpoint", "src", "dest", "expected"),
     [
         ("/home/user", "/home/user/project/a/b/c", "../../../x/y/z", "/home/user/x/y/z/c/"),
         ("/var/home/user", "/var/home/user/project/a/b/c", "../../../x/y/z", "/var/home/user/x/y/z/c/"),
@@ -84,7 +84,7 @@ def test_trim_path_segments():
 
 
 @pytest.mark.parametrize(
-    "user_path, expected",
+    ("user_path", "expected"),
     [
         ("etc/passwd", "/path/to/fakeroot/etc/passwd"),
         ("var/log/app.log", "/path/to/fakeroot/var/log/app.log"),
@@ -103,7 +103,7 @@ def test_safe_join(user_path, expected):
 
 
 @pytest.mark.parametrize(
-    "url, expected_parent_path, expected_filename",
+    ("url", "expected_parent_path", "expected_filename"),
     [
         ("http://example.com/path/to/file.txt", "example.com/path/to", "file.txt"),
         ("http://example.com/.././../../path/to/file.txt", "example.com/path/to", "file.txt"),

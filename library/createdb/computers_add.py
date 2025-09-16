@@ -47,7 +47,7 @@ def gather_system_info(hostname):
 def log_warning_if_same_free_space(computer_info, disks):
     seen_free_spaces = set()
     seen_devices = set()
-    for i, disk in enumerate(disks):
+    for _i, disk in enumerate(disks):
         device = disk["device"]
         if device in seen_devices:
             log.warning(

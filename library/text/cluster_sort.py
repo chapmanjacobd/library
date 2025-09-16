@@ -177,6 +177,7 @@ def find_clusters(args, sentence_strings):
                 log.info(f"Cluster {i+1}: {sentence_strings[idx]}")
 
         return clusters
+    return None
 
 
 def cluster_paths(args, paths):

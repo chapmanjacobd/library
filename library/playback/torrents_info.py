@@ -816,9 +816,8 @@ def torrents_info():
                         temp_path /= args.temp_prefix
                     if args.tracker_dirnames:
                         domain = t.tracker_domain()
-                        if domain:
-                            if temp_path and domain not in temp_path.parts:
-                                temp_path /= domain
+                        if domain and temp_path and domain not in temp_path.parts:
+                            temp_path /= domain
 
             if download_path:
                 if not download_path.is_absolute():  # --download-drive or --move could be relative
@@ -836,9 +835,8 @@ def torrents_info():
                         download_path /= args.download_prefix
                     if args.tracker_dirnames:
                         domain = t.tracker_domain()
-                        if domain:
-                            if download_path and domain not in download_path.parts:
-                                download_path /= domain
+                        if domain and download_path and domain not in download_path.parts:
+                            download_path /= domain
 
             log.debug("temp_path %s", temp_path)
             log.debug("download_path %s", download_path)

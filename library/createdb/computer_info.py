@@ -117,6 +117,7 @@ def computer_info():
             bios_date_path = Path("/sys/class/dmi/id/bios_date")
             if bios_date_path.exists():
                 return bios_date_path.read_text().strip()
+            return None
         elif IS_WINDOWS:
             import winreg
 
@@ -133,6 +134,8 @@ def computer_info():
                         # Extract the date from the line
                         bios_date = line.split('"')[1].strip()
                         return bios_date
+                return None
+        return None
 
     def get_processor():
         if IS_WINDOWS:
@@ -146,11 +149,13 @@ def computer_info():
                 for line in f:
                     if "model name" in line:
                         return line.split(":")[1].strip()
+                return None
+        return None
 
     def get_scaling_governors():
         if IS_LINUX:
             governors = []
-            for root, dirs, files in os.walk("/sys/devices/system/cpu/"):
+            for root, dirs, _files in os.walk("/sys/devices/system/cpu/"):
                 for dir_name in dirs:
                     if re.match(r"cpu\d+", dir_name):
                         governor_path = os.path.join(root, dir_name, "cpufreq", "scaling_governor")
@@ -166,6 +171,7 @@ def computer_info():
                 if active_scheme_line:
                     active_scheme = active_scheme_line[0].split(":")[-1].strip()
                     return active_scheme
+                return None
 
         elif IS_MAC:
             with suppress(subprocess.CalledProcessError):
@@ -174,6 +180,8 @@ def computer_info():
                 if cpu_freq_line:
                     cpu_freq = cpu_freq_line[0].split(":")[-1].strip()
                     return cpu_freq
+                return None
+        return None
 
     def get_loadavg():
         if IS_LINUX:

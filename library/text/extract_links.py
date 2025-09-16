@@ -1,4 +1,5 @@
 import json
+from http import HTTPStatus
 from urllib.parse import urljoin
 
 from library import usage
@@ -183,7 +184,7 @@ def get_inner_urls(args, url):
                     raise
                 log.exception("Could not get a valid response from the server")
                 return None
-            if r.status_code == 404:
+            if r.status_code == HTTPStatus.NOT_FOUND:
                 log.warning("404 Not Found Error: %s", url)
                 is_error = True
             else:

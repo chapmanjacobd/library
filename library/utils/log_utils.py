@@ -16,7 +16,7 @@ def check_stdio():
 
 def format_args(pargs, kwargs):
     args_str = ", ".join(repr(arg) for arg in pargs)
-    kwargs_str = ", ".join(f"{key}={repr(value)}" for key, value in kwargs.items())
+    kwargs_str = ", ".join(f"{key}={value!r}" for key, value in kwargs.items())
 
     if args_str and kwargs_str:
         return f"{args_str}, {kwargs_str}"

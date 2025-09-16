@@ -121,10 +121,10 @@ class ArgparseDBOrPaths(argparse.Action):
             database = values[0]
             paths = None
             if len(values) > 1:
-                setattr(namespace, "include", values[1:])
+                namespace.include = values[1:]
         else:
             paths = values
-        setattr(namespace, "database", database)
+        namespace.database = database
         setattr(namespace, self.dest, paths)
 
 
@@ -310,7 +310,7 @@ def forward_arggroups(args, *arggroups, **overrides):
             forward_args.append(f"--{key.replace('_', '-')}")
             forward_args.append(str(argv))
 
-    for key, value in overrides.items():
+    for key in overrides.keys():
         if key not in destinations:
             msg = f"Override {key} not found in provided arggroups"
             raise ValueError(msg)

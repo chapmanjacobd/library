@@ -291,7 +291,9 @@ def similarity(list1, list2) -> float:
     return common_elements / total_unique_elements
 
 
-def list_dict_summary(l, stat_funcs={"Total": sum, "Median": statistics.median}):
+def list_dict_summary(l, stat_funcs=None):
+    if stat_funcs is None:
+        stat_funcs = {"Total": sum, "Median": statistics.median}
     summary = {}
     for d in l:
         for key, value in d.items():

@@ -89,9 +89,8 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
         errors.append(error)
         log.debug("[%s]: Unrecoverable error %s", path, strings.combine(errors))
 
-    if job_status & 128:
-        if not ignore_errors:
-            raise OSError
+    if job_status & 128 and not ignore_errors:
+        raise OSError
     if job_status & 2:
         raise ValueError("gallery_dl configuration error")
 

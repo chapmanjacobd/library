@@ -507,3 +507,4 @@ def cb(data=None):
     else:
         process = subprocess.Popen(["cb"], stdin=subprocess.PIPE)
         process.communicate(input=data.encode("utf-8"))
+        return None

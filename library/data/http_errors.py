@@ -1,3 +1,6 @@
+from http import HTTPStatus
+
+
 class HTTPTooManyRequests(EnvironmentError):
     pass
 
@@ -11,13 +14,17 @@ class UnrecoverableError(RuntimeError):
 
 
 def raise_for_status(status_code):
-    if status_code == 429:
+    code = HTTPStatus(status_code)
+    if status_code == HTTPStatus.TOO_MANY_REQUESTS:
         raise HTTPTooManyRequests
-    elif status_code in (404,):
+
+    elif status_code == HTTPStatus.NOT_FOUND:
         raise UnrecoverableError("HTTP404: HTTPNotFound")
-    elif 400 <= status_code < 500:
+
+    elif code.is_client_error:
         msg = f"HTTP{status_code}"
         raise RecoverableError(msg)
-    elif 500 <= status_code < 600:
+
+    elif code.is_server_error:
         msg = f"HTTP{status_code}"
         raise RecoverableError(msg)

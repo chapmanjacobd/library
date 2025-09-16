@@ -191,6 +191,7 @@ def cmd(
             errors=sys.getfilesystemencodeerrors(),
             **os_bg_kwargs(),
             **kwargs,
+            check=False,
         )
     except UnicodeDecodeError:
         print(repr(command))

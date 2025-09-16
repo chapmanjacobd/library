@@ -246,7 +246,7 @@ def test_parent_property():
 
 
 @pytest.mark.parametrize(
-    "base_url, href, expected",
+    ("base_url", "href", "expected"),
     [
         ("https://unli.xyz/diskprices/index.html", "./ch/", "https://unli.xyz/diskprices/ch/"),
         ("https://unli.xyz/diskprices/index.html", "ch/", "https://unli.xyz/diskprices/ch/"),
@@ -277,7 +277,7 @@ def test_construct_absolute_url(base_url, href, expected):
 
 
 @pytest.mark.parametrize(
-    "parent_url, child_url, expected",
+    ("parent_url", "child_url", "expected"),
     [
         ("http://example.com", "http://example.com", False),
         ("http://example.com/", "http://example.com", False),
@@ -304,7 +304,7 @@ def test_is_subpath(parent_url, child_url, expected):
 
 
 @pytest.mark.parametrize(
-    "content_disposition, expected_filename",
+    ("content_disposition", "expected_filename"),
     [
         ("", None),
         ("attachment; filename=test.txt", "test.txt"),

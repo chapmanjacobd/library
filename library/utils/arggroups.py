@@ -1226,7 +1226,7 @@ def cluster_sort(parent_parser):
         "--wordllama",
         metavar="KEY=VALUE",
         action=argparse_utils.ArgparseDict,
-        default=dict(config="l3_supercat", dim=64),
+        default={"config": "l3_supercat", "dim": 64},
         help="Configure wordllama",
     )
     parser.add_argument("--tfidf", action="store_true", help="Use TF-IDF+kmeans instead of wordllama")
@@ -1324,15 +1324,13 @@ def regex_sort_post(args):
 
     for option in args.word_sorts:
         if option.lstrip("-") not in WORD_SORTS_OPTS:
-            raise ValueError(
-                f"--word-sort option '{option}' does not exist. Choose one or more: {', '.join(WORD_SORTS_OPTS)}"
-            )
+            msg = f"--word-sort option '{option}' does not exist. Choose one or more: {', '.join(WORD_SORTS_OPTS)}"
+            raise ValueError(msg)
 
     for option in args.line_sorts:
         if option.lstrip("-") not in LINE_SORTS_OPTS:
-            raise ValueError(
-                f"--line-sort option '{option}' does not exist. Choose one or more: {', '.join(LINE_SORTS_OPTS)}"
-            )
+            msg = f"--line-sort option '{option}' does not exist. Choose one or more: {', '.join(LINE_SORTS_OPTS)}"
+            raise ValueError(msg)
 
 
 def related(parser):
@@ -2353,10 +2351,9 @@ def qBittorrent_torrents_post(args):
     if args.progress:
         args.progress = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.progress)
 
-    if set(["active", "inactive"]).issubset(args.defaults.keys()):
-        if args.torrent_search or args.file_search:
-            args.active = False
-            args.inactive = False
+    if set(["active", "inactive"]).issubset(args.defaults.keys()) and (args.torrent_search or args.file_search):
+        args.active = False
+        args.inactive = False
 
 
 def files(parent_parser, no_db=False):
