@@ -106,8 +106,8 @@ def torrents_add():
                 """,
             )
         }
-    except Exception as e:
-        log.debug(e)
+    except Exception as excinfo:
+        log.debug(excinfo)
         paths = list(scanned_set)
     else:
         paths = list(scanned_set - existing_set)

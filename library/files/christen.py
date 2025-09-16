@@ -55,8 +55,8 @@ def rename_path(args, base, b) -> None:
                 log.warning("FileNotFound: %s", printable_p)
             except FileExistsError:
                 log.warning("Destination file already exists: %s", fixed)
-            except shutil.Error as e:
-                log.warning("[%s]: %s", e, printable_p)
+            except shutil.Error as excinfo:
+                log.warning("[%s]: %s", excinfo, printable_p)
             else:
                 log.info(fixed)
         else:

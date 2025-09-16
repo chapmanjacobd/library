@@ -155,5 +155,5 @@ class TestFs(unittest.TestCase):
 
         try:
             temp_dir.cleanup()
-        except Exception as e:
-            log.debug(e)
+        except Exception as excinfo:
+            log.debug(excinfo)

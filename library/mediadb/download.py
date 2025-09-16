@@ -183,16 +183,16 @@ def download(args=None) -> None:
                     try:
                         for link_dict in get_inner_urls(args, original_path):
                             dl_paths.append(link_dict["link"])
-                    except requests.HTTPError as e:
+                    except requests.HTTPError as excinfo:
                         log.warning(
-                            "HTTPError %s. Recording download attempt: %s", e.response.status_code, original_path
+                            "HTTPError %s. Recording download attempt: %s", excinfo.response.status_code, original_path
                         )
                         db_media.download_add(
                             args,
                             webpath=original_path,
                             info=m,
-                            error=str(e),
-                            mark_deleted=e.response.status_code == 404,
+                            error=str(excinfo),
+                            mark_deleted=excinfo.response.status_code == 404,
                             delete_webpath_entry=False,
                         )
                         web.post_download(args)
@@ -209,9 +209,9 @@ def download(args=None) -> None:
                     error = None
                     try:
                         local_path = web.download_url(args, dl_path)
-                    except RuntimeError as e:
+                    except RuntimeError as excinfo:
                         local_path = None
-                        error = str(e)
+                        error = str(excinfo)
 
                     if local_path and args.process:
                         extension = local_path.rsplit(".", 1)[-1].lower()

@@ -176,8 +176,8 @@ def spider(args, paths: list):
         elif path in original_paths or web.is_index(path) or web.is_html(args, path):
             try:
                 link_dicts = list(get_inner_urls(args, path))
-            except requests.HTTPError as e:
-                log.error(e)
+            except requests.HTTPError as excinfo:
+                log.error(excinfo)
                 continue
 
             log.debug("%s urls found in %s", len(link_dicts), path)

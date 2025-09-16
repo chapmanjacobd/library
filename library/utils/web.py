@@ -143,8 +143,8 @@ def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwarg
     s = requests_session(args)
     try:
         response = s.get(url, **kwargs)
-    except (ConnectionError, requests.exceptions.SSLError) as e:
-        log.error("%s %s", url, e)
+    except (ConnectionError, requests.exceptions.SSLError) as excinfo:
+        log.error("%s %s", url, excinfo)
     except (
         requests.exceptions.Timeout,
         requests.exceptions.ChunkedEncodingError,
@@ -479,11 +479,11 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
                 if downloaded_size < remote_size:
                     msg = f"Incomplete download ({strings.percent(downloaded_size/remote_size)}) {output_path}"
                     raise RuntimeError(msg)
-        except Exception as e:
+        except Exception as excinfo:
             r.close()
-            if isinstance(e, HTTPTooManyRequests):
+            if isinstance(excinfo, HTTPTooManyRequests):
                 raise
-            if isinstance(e, OSError) and e.errno in consts.EnvironmentErrors:
+            if isinstance(excinfo, OSError) and excinfo.errno in consts.EnvironmentErrors:
                 raise
             retry_num += 1
             log.debug("Retry #%s %s", retry_num, url)
@@ -491,17 +491,17 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
             return download_url(args, url, output_path, retry_num)
 
         set_timestamp(r.headers, output_path)
-    except requests.exceptions.SSLError:
+    except requests.exceptions.SSLError as excinfo:
         if args.allow_insecure and url.startswith("https://"):
             return download_url(args, url.replace("https://", "http://", 1), output_path, retry_num)
-        log.error("%s %s", url, e)
+        log.error("%s %s", url, excinfo)
     except (
         requests.exceptions.ConnectionError,
         urllib3.exceptions.MaxRetryError,
         urllib3.exceptions.NameResolutionError,
         socket.gaierror,
-    ) as e:
-        log.error("%s %s", url, e)
+    ) as excinfo:
+        log.error("%s %s", url, excinfo)
     finally:
         if "r" in locals():  # prevent UnboundLocalError
             r.close()
@@ -936,7 +936,7 @@ def get_title(args, url):
 
         soup = BeautifulSoup(html_text, "lxml")
         title = soup.title.text.strip() if soup.title else url
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         title = fake_title(url)
 
     sleep(args)

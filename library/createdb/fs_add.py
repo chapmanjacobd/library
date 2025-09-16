@@ -133,8 +133,8 @@ def find_new_files(args, path) -> list[str]:
                     """select time_deleted from media where path = ?""",
                     [path],
                 )
-            except Exception as e:
-                log.debug(e)
+            except Exception as excinfo:
+                log.debug(excinfo)
             else:
                 if time_deleted > 0:
                     undeleted_count = db_media.mark_media_undeleted(args, [path])
@@ -184,8 +184,8 @@ def find_new_files(args, path) -> list[str]:
                 [str(path) + os.sep + "%"],
             )
         }
-    except Exception as e:
-        log.debug(e)
+    except Exception as excinfo:
+        log.debug(excinfo)
     else:
         undeleted_files = list(deleted_set.intersection(scanned_set))
         undeleted_count = db_media.mark_media_undeleted(args, undeleted_files)
@@ -205,8 +205,8 @@ def find_new_files(args, path) -> list[str]:
                 [str(path) + os.sep + "%"],
             )
         }
-    except Exception as e:
-        log.debug(e)
+    except Exception as excinfo:
+        log.debug(excinfo)
         new_files = list(scanned_set)
     else:
         new_files = list(scanned_set - existing_set)

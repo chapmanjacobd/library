@@ -33,8 +33,8 @@ def test_process_image():
 
     try:
         temp_dir.cleanup()
-    except Exception as e:
-        print(e)
+    except Exception as excinfo:
+        print(excinfo)
 
 
 @pytest.mark.skipif(not which("magick"), reason="requires magick")

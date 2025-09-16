@@ -11,9 +11,9 @@ mock_webpath = "https://test/"
 
 def test_get_video_download_environment_error():
     ydl_log = {"error": ["No space left on device"], "warning": [], "info": []}
-    with pytest.raises(SystemExit) as e:
+    with pytest.raises(SystemExit) as excinfo:
         tube_backend.log_error(ydl_log, mock_webpath)
-    assert e.value.code == 28
+    assert excinfo.value.code == 28
 
 
 def test_get_video_download_ure():

@@ -50,8 +50,8 @@ def connect(args, conn=None, **kwargs):
             try:
                 dg = self.query(sql, params)
                 d = next(dg, None)
-            except sqlite3.OperationalError as e:
-                if any(ignore_error in str(e) for ignore_error in ignore_errors):
+            except sqlite3.OperationalError as excinfo:
+                if any(ignore_error in str(excinfo) for ignore_error in ignore_errors):
                     return None
                 raise
             return d
@@ -73,7 +73,7 @@ def connect(args, conn=None, **kwargs):
     db = DB(conn or args.database, tracer=tracer, **kwargs)  # type: ignore
     with db.conn:  # type: ignore
         db.conn.execute("PRAGMA threads = 4")  # type: ignore
-        db.conn.execute("PRAGMA main.cache_size = 8000")  # type: ignore
+        db.conn.execute("PRAGMA main.cache_size = -8000")  # type: ignore
 
     db.enable_wal()
     return db
@@ -152,8 +152,8 @@ def optimize(args) -> None:
         if getattr(args, "force", False):
             try:
                 db[table].disable_fts()  # type: ignore
-            except Exception as e:
-                log.debug(e)
+            except Exception as excinfo:
+                log.debug(excinfo)
 
         log.info("Processing table: %s", table)
         table_columns = db[table].columns_dict

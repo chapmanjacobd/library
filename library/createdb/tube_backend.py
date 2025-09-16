@@ -481,16 +481,16 @@ def download(args, m) -> None:
             IndexError,
             RecursionError,
             TypeError,
-        ) as e:
-            error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
+        ) as excinfo:
+            error = consts.REGEX_ANSI_ESCAPE.sub("", str(excinfo))
             ydl_log["error"].append(error)
             info = None
             log.debug("[%s]: yt-dlp %s", webpath, error)
             # media.download_add(args, webpath, error=error)
             # return
-        except Exception as e:
+        except Exception as excinfo:
             if args.ignore_errors:
-                error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
+                error = consts.REGEX_ANSI_ESCAPE.sub("", str(excinfo))
                 ydl_log["error"].append(error)
                 info = None
                 log.debug("[%s]: yt-dlp %s", webpath, error)

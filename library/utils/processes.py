@@ -256,8 +256,8 @@ def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
         else:
             process.wait()
         raise
-    except Exception as e:
-        log.debug(e)
+    except Exception as excinfo:
+        log.debug(excinfo)
         process.kill()
         raise
     return_code = process.poll()
@@ -482,8 +482,8 @@ def unar_delete(archive_path):
 
     try:
         cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path)
-    except subprocess.CalledProcessError as e:
-        error_log = e.stderr.splitlines()
+    except subprocess.CalledProcessError as excinfo:
+        error_log = excinfo.stderr.splitlines()
         is_unsupported = any(unar_errors.unsupported_error.match(l) for l in error_log)
         is_file_error = any(unar_errors.file_error.match(l) for l in error_log)
         is_env_error = any(unar_errors.environment_error.match(l) for l in error_log)
@@ -494,7 +494,7 @@ def unar_delete(archive_path):
             log.error(
                 "[%s]: Skipping unsupported archive. %s",
                 archive_path,
-                e.stderr.replace("Use the -p option to provide one.", "Use unar -p to extract."),
+                excinfo.stderr.replace("Use the -p option to provide one.", "Use unar -p to extract."),
             )
             return None
         elif is_file_error:
@@ -509,8 +509,8 @@ def unar_delete(archive_path):
             if not os.path.abspath(part_file):
                 part_file = path_utils.safe_join(os.path.dirname(archive_path), part_file)
             os.unlink(part_file)
-    except Exception as e:
-        log.warning("Error deleting files: %s %s", e, part_files)
+    except Exception as excinfo:
+        log.warning("Error deleting files: %s %s", excinfo, part_files)
 
     return output_path
 
@@ -524,8 +524,8 @@ def fzf_select(items, multi=True):
 
     try:
         result = subprocess.run(fzf_command, input=input_text, text=True, capture_output=True, check=True)
-    except subprocess.CalledProcessError as e:
-        if e.returncode == 130:  # no selection
+    except subprocess.CalledProcessError as excinfo:
+        if excinfo.returncode == 130:  # no selection
             return []
         raise
 

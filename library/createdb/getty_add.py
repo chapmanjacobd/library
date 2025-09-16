@@ -25,8 +25,8 @@ def getty_fetch(url):
 
     try:
         r = web.session.get(url, timeout=120)
-    except Exception as e:
-        if "too many 429 error" in str(e):
+    except Exception as excinfo:
+        if "too many 429 error" in str(excinfo):
             raise
         log.exception("Could not get a valid response from the server")
         return None

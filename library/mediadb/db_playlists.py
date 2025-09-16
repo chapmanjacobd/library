@@ -102,8 +102,8 @@ def _add(args, entry):
 def exists(args, playlist_path) -> bool:
     try:
         known = args.db.pop("select 1 from playlists where path=?", [str(playlist_path)])
-    except sqlite3.OperationalError as e:
-        log.debug(e)
+    except sqlite3.OperationalError as excinfo:
+        log.debug(excinfo)
         return False
     if known is None:
         return False
@@ -116,8 +116,8 @@ def get_parentpath_playlists_id(args, playlist_path) -> int | None:
             "SELECT id FROM playlists WHERE ? LIKE path || '%' AND path != ?",
             [str(playlist_path), str(playlist_path)],
         )
-    except sqlite3.OperationalError as e:
-        log.debug(e)
+    except sqlite3.OperationalError as excinfo:
+        log.debug(excinfo)
         return None
     return known
 
@@ -205,8 +205,8 @@ def media_exists(args, path, playlist_path) -> bool:
             f"select 1 from media where playlists_id in (select id from playlists where path = ?) and (path=? or {'webpath' if 'webpath' in m_columns else 'path'}=?)",
             [str(playlist_path), str(path), str(path)],
         ).fetchone()
-    except sqlite3.OperationalError as e:
-        log.debug(e)
+    except sqlite3.OperationalError as excinfo:
+        log.debug(excinfo)
         return False
 
     if known is None:
@@ -234,12 +234,12 @@ def update_more_frequently(args, playlist_path) -> None:
                 """,
                 [playlist_path],
             )
-    except sqlite3.OperationalError as e:
+    except sqlite3.OperationalError:
         try:
             with args.db.conn:
                 args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
         except Exception:
-            raise e
+            raise
 
 
 def update_less_frequently(args, playlist_path) -> None:
@@ -262,12 +262,12 @@ def update_less_frequently(args, playlist_path) -> None:
                 """,
                 [playlist_path],
             )
-    except sqlite3.OperationalError as e:
+    except sqlite3.OperationalError:
         try:
             with args.db.conn:
                 args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
         except Exception:
-            raise e
+            raise
 
 
 def get_all(args, cols="path, extractor_config", sql_filters=None, order_by="random()") -> list[dict]:

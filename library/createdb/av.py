@@ -136,15 +136,15 @@ def munge_av_tags(args, m) -> dict:
         log.error(f"FFProbe timed out. {path}")
         m["error"] = "FFProbe timed out"
         return m
-    except OSError as e:
-        if e.errno == 23:  # Too many open files
-            raise e
-        elif e.errno == 5:  # IO Error
-            raise e
+    except OSError as excinfo:
+        if excinfo.errno == 23:  # Too many open files
+            raise excinfo
+        elif excinfo.errno == 5:  # IO Error
+            raise excinfo
         raise
-    except processes.UnplayableFile as e:
+    except processes.UnplayableFile as excinfo:
         log.error(f"Failed reading header. {path}")
-        log.debug(e)
+        log.debug(excinfo)
         if (
             getattr(args, "delete_unplayable", False)
             and not path.startswith("http")
