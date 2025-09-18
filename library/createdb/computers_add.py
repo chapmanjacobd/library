@@ -58,10 +58,14 @@ def log_warning_if_same_free_space(computer_info, disks):
             continue
         seen_devices.add(device)
 
+        if disk["fstype"] in ('squashfs',):
+            log.info("Skipping %s device %s:%s...", disk["fstype"], computer_info["node"], disk["path"])
+            continue
+
         free_space = disk["free"]
         if free_space in seen_free_spaces:
             log.warning(
-                "%s mount %s has the same free space as another disk! You are lucky! Or not and you should open a ticket with this info: %s",
+                "%s:%s has the same free space as another disk! You are lucky! Or not and you should open a ticket with this info: %s",
                 computer_info["node"],
                 disk["path"],
                 [d for d in disks if d["free"] == free_space],
