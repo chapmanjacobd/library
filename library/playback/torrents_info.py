@@ -230,6 +230,8 @@ def filter_torrents_by_criteria(args, torrents):
     if "remaining" not in args.defaults:
         torrents = [t for t in torrents if args.remaining(t.amount_left)]
 
+    if args.private is not None:
+        torrents = [t for t in torrents if args.private is t.private]
     if args.no_tagged:
         tags = set(args.no_tagged)
         torrents = [t for t in torrents if tags.isdisjoint(t.tags.split(", "))]
@@ -284,13 +286,21 @@ def filter_torrents_by_criteria(args, torrents):
                 (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists() for f in t.files
             )
         ]
-    if args.all_exists is not None:
+    if args.all_exists is True:
         torrents = [
             t
             for t in torrents
-            if args.all_exists
-            is all(
+            if all(
                 (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists() for f in t.files
+            )
+        ]
+    elif args.all_exists is False:
+        torrents = [
+            t
+            for t in torrents
+            if any(
+                not (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
+                for f in t.files
             )
         ]
     if args.opened is not None:

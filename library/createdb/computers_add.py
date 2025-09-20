@@ -58,7 +58,7 @@ def log_warning_if_same_free_space(computer_info, disks):
             continue
         seen_devices.add(device)
 
-        if disk["fstype"] in ('squashfs',):
+        if disk["fstype"] in ("squashfs",):
             log.info("Skipping %s device %s:%s...", disk["fstype"], computer_info["node"], disk["path"])
             continue
 
