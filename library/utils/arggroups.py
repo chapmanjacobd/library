@@ -2216,6 +2216,7 @@ def qBittorrent_torrents(parent_parser):
         action=argparse.BooleanOptionalAction,
         help="Include torrents with files currently in use by processes",
     )
+    parser.add_argument("--private", action=argparse.BooleanOptionalAction, help="Match only private torrents")
 
     parser.add_argument(
         "--sizes",
