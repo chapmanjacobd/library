@@ -1,7 +1,7 @@
 import sqlite3
-from http import HTTPStatus
 
 from library import usage
+from library.data.http_errors import HTTPStatus
 from library.utils import arggroups, argparse_utils, iterables, web
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj

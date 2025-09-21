@@ -1,7 +1,6 @@
 import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
-from http import HTTPStatus
 from pathlib import Path
 from shutil import which
 from urllib.parse import parse_qs, parse_qsl, quote, urldefrag, urlencode, urljoin, urlparse, urlunparse
@@ -11,7 +10,7 @@ import bs4, requests, urllib3
 from bs4 import element
 from idna import encode as puny_encode
 
-from library.data.http_errors import HTTPTooManyRequests, raise_for_status
+from library.data.http_errors import HTTPStatus, HTTPTooManyRequests, raise_for_status
 from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, processes, strings
 from library.utils.log_utils import clamp_index, log
 from library.utils.path_utils import path_tuple_from_url
