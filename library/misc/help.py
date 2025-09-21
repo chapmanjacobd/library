@@ -1,7 +1,7 @@
 import argparse
 
 from library import __main__, usage
-from library.utils import arggroups, argparse_utils
+from library.utils import arggroups, argparse_utils, processes
 
 
 def parse_args() -> argparse.Namespace:
@@ -24,6 +24,17 @@ def c(s):
     return s.lower().replace("-", "").replace("_", "")
 
 
+def args_help(subcommand, text):
+    args_usage = processes.cmd("lb", subcommand, "--help").stdout
+    if text:
+        for l in args_usage.splitlines():
+            for t in text:
+                if t in l.lower():
+                    print(l)
+    else:
+        print(args_usage)
+
+
 def help():
     args = parse_args()
 
@@ -39,14 +50,7 @@ def help():
         subcommand, text = text[0].replace("_", "-"), text[1:]
 
     if subcommand:  # Search within a specific subcommand's help text
-        prog_usage = all_commands[subcommand]
-        if not text:
-            print(prog_usage)
-            return
-        for l in prog_usage.splitlines():
-            for t in text:
-                if t in l.lower():
-                    print(l)
+        args_help(subcommand, text)
         return
 
     for category, commands in __main__.progs.items():
@@ -72,14 +76,7 @@ def help():
             if print_category or print_prog:
                 print(prog_usage)
             else:
-                print_prog = True
-                for l in prog_usage.splitlines():
-                    for t in text:
-                        if t in l.lower():
-                            print_prog = False
-                            print(l)
-                if print_prog:
-                    print(prog_usage)
+                args_help(prog, text)
 
             print()
             print(symbol * size)
