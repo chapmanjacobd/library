@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.123; 103 subcommands)
+    library (v3.0.124; 103 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -3367,7 +3367,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>search_help</summary>
 
     $ library search-help -h
-    usage: library search-help [subcommand] QUERY ...
+    usage: library help [subcommand] QUERY ...
 
     Search library functionality and help text
 

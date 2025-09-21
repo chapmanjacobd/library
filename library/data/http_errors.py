@@ -1,6 +1,38 @@
 from http import HTTPStatus
 
 
+# TODO: remove after min py3.11
+def _is_informational(self):
+    return 100 <= self.value <= 199
+
+
+def _is_success(self):
+    return 200 <= self.value <= 299
+
+
+def _is_redirection(self):
+    return 300 <= self.value <= 399
+
+
+def _is_client_error(self):
+    return 400 <= self.value <= 499
+
+
+def _is_server_error(self):
+    return 500 <= self.value <= 599
+
+
+for name, func in {
+    "is_informational": _is_informational,
+    "is_success": _is_success,
+    "is_redirection": _is_redirection,
+    "is_client_error": _is_client_error,
+    "is_server_error": _is_server_error,
+}.items():
+    if not hasattr(HTTPStatus, name):
+        setattr(HTTPStatus, name, property(func))
+
+
 class HTTPTooManyRequests(EnvironmentError):
     pass
 

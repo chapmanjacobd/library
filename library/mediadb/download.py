@@ -1,10 +1,10 @@
 import argparse, sys
-from http import HTTPStatus
 
 import requests
 
 from library import usage
 from library.createdb import gallery_backend, tube_backend
+from library.data.http_errors import HTTPStatus
 from library.mediadb import db_media, db_playlists
 from library.mediafiles import process_ffmpeg, process_image
 from library.playback import media_printer

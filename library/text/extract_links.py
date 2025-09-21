@@ -1,8 +1,8 @@
 import json
-from http import HTTPStatus
 from urllib.parse import urljoin
 
 from library import usage
+from library.data.http_errors import HTTPStatus
 from library.utils import (
     arggroups,
     argparse_utils,
