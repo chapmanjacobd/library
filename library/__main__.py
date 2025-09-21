@@ -5,7 +5,7 @@ from tabulate import tabulate
 from library.utils import argparse_utils, iterables
 from library.utils.log_utils import log
 
-__version__ = "3.0.122"
+__version__ = "3.0.123"
 
 progs = {
     "Create database subcommands": {
@@ -238,7 +238,7 @@ modules = {
     "library.mediafiles.torrents_start.torrents_start": ["torrent-start"],
     "library.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "library.misc.export_text.export_text": [],
-    "library.misc.help.help": ["h"],
+    "library.misc.search_help.search_help": ["h", "help"],
     "library.multidb.copy_play_counts.copy_play_counts": [],
     "library.multidb.merge_dbs.merge_dbs": ["merge-db"],
     "library.multidb.allocate_torrents.allocate_torrents": [],
