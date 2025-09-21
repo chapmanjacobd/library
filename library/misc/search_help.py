@@ -5,7 +5,7 @@ from library.utils import arggroups, argparse_utils, processes
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.help)
+    parser = argparse_utils.ArgumentParser(usage=usage.search_help)
     arggroups.debug(parser)
 
     parser.add_argument(
@@ -35,7 +35,7 @@ def args_help(subcommand, text):
         print(args_usage)
 
 
-def help():
+def search_help():
     args = parse_args()
 
     all_commands = {

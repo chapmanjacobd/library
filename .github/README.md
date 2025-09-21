@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.122; 101 subcommands)
+    library (v3.0.123; 103 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -340,7 +340,14 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ export-text    │ Export HTML files from SQLite databases │
     ├────────────────┼─────────────────────────────────────────┤
     │ dedupe-czkawka │ Process czkawka diff output             │
+    ├────────────────┼─────────────────────────────────────────┤
+    │ help           │ Search subcommands and help text        │
     ╰────────────────┴─────────────────────────────────────────╯
+
+    Other subcommands:
+    ╭─────────────┬─────────────╮
+    │ search-help │ search_help │
+    ╰─────────────┴─────────────╯
 
 
 </details>
@@ -2662,7 +2669,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View watched stats
 
-        library stats video.db --completed
+        library stats video.db --completed --no-hide-deleted
 
     View download stats
 
@@ -2672,7 +2679,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View deleted stats
 
-        library stats video.db time_deleted
+        library stats video.db time_deleted --deleted
 
     View time_modified stats
 
@@ -3350,6 +3357,19 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Choose which duplicate to keep by opening both side-by-side in mpv
 
+
+</details>
+
+### Other subcommands
+
+###### search-help
+
+<details><summary>search_help</summary>
+
+    $ library search-help -h
+    usage: library search-help [subcommand] QUERY ...
+
+    Search library functionality and help text
 
 </details>
 
