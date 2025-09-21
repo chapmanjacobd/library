@@ -2041,3 +2041,7 @@ getty_add = """library getty-add DATABASE
 
         library download --fs getty.db --prefix ~/images/ -v
 """
+
+help = """library help [subcommand] QUERY ...
+
+    Search library functionality and help text"""
