@@ -82,6 +82,7 @@ yt_meaningless_errors = re.compile(
 .*Extract.* cookies
 .*File .*, line .*,
 .*Requested format is not available
+.*Video unavailable. This content
 .*info.* Testing format
 .*This channel does not have
 .*fragment_filename_sanitized
@@ -190,7 +191,6 @@ yt_unrecoverable_errors = re.compile(
 .*policy on harassment and bullying
 .*Can't find object userchannel
 .*is offline
-.*: Video unavailable
 .*does not exist
 .*has been removed
 .*no video on the webpage
