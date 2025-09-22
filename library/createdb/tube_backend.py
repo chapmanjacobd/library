@@ -49,8 +49,6 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
         "noplaylist": False,
         "extract_flat": True,
         "dynamic_mpd": False,
-        "youtube_include_dash_manifest": False,
-        "youtube_include_hls_manifest": False,
         "no_check_certificate": True,
         "skip_playlist_after_errors": 21,
         "clean_infojson": False,
@@ -365,7 +363,7 @@ def download(args, m) -> None:
 
     func_opts = {
         "ignoreerrors": ignoreerrors,
-        "extractor_args": {"youtube": {"skip": ["authcheck"]}},
+        "extractor_args": {"youtubetab": {"skip": ["authcheck"]}, "youtube":{"skip": ["hls", "dash"]}},
         "check_formats": "selected",
         "logger": DictLogger(),
         "skip_download": False,
