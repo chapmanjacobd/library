@@ -7,7 +7,18 @@ import library.utils.file_utils
 from library import usage
 from library.mediadb import db_media, db_playlists
 from library.text import extract_links
-from library.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, objects, printing, strings, web
+from library.utils import (
+    arg_utils,
+    arggroups,
+    argparse_utils,
+    consts,
+    db_utils,
+    devices,
+    objects,
+    printing,
+    strings,
+    web,
+)
 from library.utils.log_utils import log
 
 
@@ -109,6 +120,9 @@ To compensate for this the script will only continue fetching pages until there 
         "--stop-known", type=int, help="Stop fetching pages when encountering more than N known links"
     )
     paging_parser.add_argument("--stop-link", help="Stop fetching pages when hitting a specific link")
+    paging_parser.add_argument(
+        "--confirm-ready", "--confirm-start", action="store_true", help="Hold the browser open until ready to start"
+    )
 
     arggroups.filter_links(parser)
 
@@ -235,6 +249,12 @@ def extractor(args, playlist_path):
     new_media = set()
     end_of_playlist = False
     page_limit = args.backfill_pages or args.fixed_pages or args.max_pages
+
+    if args.confirm_ready:
+        if args.selenium:
+            web.selenium_get_page(args, playlist_path)
+        while not devices.confirm("Ready to start?"):
+            pass
 
     page_count = 0
     page_count_since_match = 0
