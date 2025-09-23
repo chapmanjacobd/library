@@ -719,7 +719,28 @@ def extract_html(url) -> str:
 def selenium_extract_html(driver) -> str:
     # trigger rollover events
     driver.execute_script(
-        "(function(){function k(x) { if (x.onmouseover) { x.onmouseover(); x.backupmouseover = x.onmouseover; x.backupmouseout = x.onmouseout; x.onmouseover = null; x.onmouseout = null; } else if (x.backupmouseover) { x.onmouseover = x.backupmouseover; x.onmouseout = x.backupmouseout; x.onmouseover(); x.onmouseout(); } } var i,x; for(i=0; x=document.links[i]; ++i) k(x); for (i=0; x=document.images[i]; ++i) k(x); })()"
+        """
+            (function(){
+            function k(x) {
+                if (typeof x.onmouseover === "function") {
+                x.onmouseover();
+                x.backupmouseover = x.onmouseover;
+                x.backupmouseout = x.onmouseout;
+                x.onmouseover = null;
+                x.onmouseout = null;
+                } else if (typeof x.backupmouseover === "function") {
+                x.onmouseover = x.backupmouseover;
+                x.onmouseout = x.backupmouseout;
+                if (typeof x.onmouseover === "function") x.onmouseover();
+                if (typeof x.onmouseout === "function") x.onmouseout();
+                }
+            }
+
+            var i, x;
+            for (i = 0; (x = document.links[i]); ++i) k(x);
+            for (i = 0; (x = document.images[i]); ++i) k(x);
+        })();
+        """
     )
 
     # include Shadow DOM
