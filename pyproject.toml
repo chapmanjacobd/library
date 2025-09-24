@@ -57,7 +57,7 @@ deluxe = [
   "qbittorrent-api",
   "scikit-learn",
   "selenium",
-  "torrentool",
+  "libtorrent",
   "tqdm",
   "wordllama>=0.2.7.post0",
   "xattr",

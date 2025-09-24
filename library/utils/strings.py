@@ -1,4 +1,4 @@
-import functools, html, json, math, operator, re, sys, textwrap, unicodedata
+import functools, html, json, operator, re, sys, textwrap, unicodedata
 from ast import literal_eval
 from copy import deepcopy
 from datetime import datetime, timedelta
