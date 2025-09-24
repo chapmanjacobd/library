@@ -491,7 +491,8 @@ def file_size(n):
 
 
 def duration(seconds) -> str:
-    if seconds is None or math.isnan(seconds) or seconds == 0:
+    seconds = nums.safe_int(seconds)
+    if not seconds:
         return ""
 
     try:
@@ -514,7 +515,8 @@ def duration(seconds) -> str:
 
 
 def duration_short(seconds, format_str="%0.1f") -> str:
-    if seconds is None or math.isnan(seconds) or seconds == 0:
+    seconds = nums.safe_int(seconds)
+    if not seconds:
         return ""
 
     try:
@@ -541,8 +543,9 @@ def duration_short(seconds, format_str="%0.1f") -> str:
         return ""
 
 
-def relative_datetime(seconds: float) -> str:
-    if seconds is None or math.isnan(seconds) or seconds == 0:
+def relative_datetime(seconds) -> str:
+    seconds = nums.safe_float(seconds)
+    if not seconds:
         return ""
 
     try:
