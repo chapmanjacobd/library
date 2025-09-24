@@ -1,10 +1,10 @@
-import getpass, hashlib, logging, shutil, time
+import getpass, logging, shutil, time
 from contextlib import suppress
 from pathlib import Path
 from time import sleep
 
 from library import usage
-from library.createdb.torrents_add import get_tracker
+from library.createdb.torrents_add import get_tracker, torrent_decode
 from library.utils import arggroups, argparse_utils, processes
 from library.utils.file_utils import trash
 from library.utils.log_utils import log
@@ -27,23 +27,21 @@ def parse_args():
 
 def wait_torrent_loaded(qbt_client, torrent):
     import qbittorrentapi
-    from torrentool.api import Bencode
 
-    v1_info_hash = hashlib.sha1(Bencode.encode(torrent._struct.get("info"))).hexdigest()
-    v2_info_hash = hashlib.sha256(Bencode.encode(torrent._struct.get("info"))).hexdigest()
-
-    # TODO: sometimes torrentool and qBittorrent come up with different info_hashes...
+    hashes = []
+    info_hashes_obj = torrent.info_hashes()
+    if info_hashes_obj.has_v1():
+        hashes.append(str(info_hashes_obj.v1))
+    if info_hashes_obj.has_v2():
+        hashes.append(str(info_hashes_obj.v2))
 
     attempts = 10
     attempt = 0
     while attempt < attempts:
-        with suppress(qbittorrentapi.NotFound404Error):
-            qbt_client.torrents_properties(v1_info_hash)
-            return v1_info_hash
-
-        with suppress(qbittorrentapi.NotFound404Error):
-            qbt_client.torrents_properties(v2_info_hash)
-            return v2_info_hash
+        for hash in hashes:
+            with suppress(qbittorrentapi.NotFound404Error):
+                qbt_client.torrents_properties(hash)
+                return hash
 
         attempt += 1
         log.info("Waiting for torrent to load in qBittorrent")
@@ -96,8 +94,6 @@ def start_qBittorrent(args):
 def torrents_start():
     args = parse_args()
 
-    from torrentool.api import Torrent
-
     qbt_client = start_qBittorrent(args)
 
     if args.temp_drive and Path(args.temp_drive).is_absolute():
@@ -108,7 +104,7 @@ def torrents_start():
     download_prefix = Path(args.download_drive) / args.download_prefix
 
     for path in args.paths:
-        torrent = Torrent.from_file(path)
+        torrent = torrent_decode(path)
 
         download_path = download_prefix
         temp_path = temp_prefix

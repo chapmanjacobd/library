@@ -1,4 +1,5 @@
 import concurrent.futures, os, statistics
+from contextlib import suppress
 from pathlib import Path
 
 from library import usage
@@ -26,12 +27,14 @@ def parse_args():
 
 
 def get_tracker(torrent):
-    if torrent.announce_urls is None:
+    trackers = torrent.trackers()
+    if not trackers:
         return torrent.source
 
-    log.debug(torrent.announce_urls)
+    announce_urls = [t.url for t in trackers]
+    log.debug(announce_urls)
 
-    for tracker in iterables.flatten(torrent.announce_urls):
+    for tracker in iterables.flatten(announce_urls):
         domain = tld_from_url(tracker)
         if domain:
             return domain
@@ -39,26 +42,48 @@ def get_tracker(torrent):
     return torrent.source
 
 
-def extract_metadata(path):
-    from torrentool.api import Torrent
+def torrent_decode(path):
+    import libtorrent as lt
 
-    try:
-        torrent = Torrent.from_file(path)
-        assert torrent.files
-    except Exception:
-        log.error("[%s]: corrupt or empty torrent", path)
-        raise
+    limits = {
+        "max_buffer_size": 55_000_000,  # max .torrent size in bytes
+        "max_pieces": 2_000_000,
+        "max_decode_tokens": 5_000_000,  # max tokens in bdecode
+    }
 
-    file_sizes = [f.length for f in torrent.files]
+    torrent = lt.torrent_info(str(path), limits)  # type: ignore
+    metadata = lt.bdecode(torrent.metadata())  # type: ignore
+
+    torrent.private = bool(metadata.get(b"private"))
+
+    src = metadata.get(b"source")
+    torrent.source = os.fsdecode(src) if src else None
+
+    return torrent
+
+
+def _extract_metadata(path):
+    torrent = torrent_decode(path)
+    assert torrent.num_files() > 0
+
+    files = [{"path": f.path, "size": f.size, "time_deleted": 0} for f in torrent.files()]
+    file_sizes = [f["size"] for f in files]
 
     stat = os.stat(path, follow_symlinks=False)
 
+    web_seeds = []
+    for ws in torrent.web_seeds():
+        with suppress(Exception):
+            url = ws["url"]
+            if url:
+                web_seeds.append(url)
+
     return {
         "path": path,
-        "webpath": iterables.safe_unpack(*torrent.webseeds, *torrent.httpseeds),
-        "title": torrent.name,
+        "webpath": iterables.safe_unpack(sorted(web_seeds, key=len, reverse=True)),
+        "title": torrent.name(),
         "tracker": get_tracker(torrent),
-        "time_uploaded": nums.safe_int(torrent._struct.get("creation date")),
+        "time_uploaded": nums.safe_int(torrent.creation_date()),
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_deleted": 0,
@@ -66,21 +91,22 @@ def extract_metadata(path):
         "size": sum(file_sizes),
         "size_avg": statistics.mean(file_sizes),
         "size_median": statistics.median(file_sizes),
-        "file_count": len(torrent.files),
+        "file_count": len(files),
         "src": torrent.source,
         "is_private": torrent.private,
-        "comment": torrent.comment,
-        "author": torrent.created_by,
-        "info_hash": torrent.info_hash,
-        "files": [
-            {
-                "path": f.name,
-                "size": f.length,
-                "time_deleted": 0,
-            }
-            for f in torrent.files
-        ],
+        "comment": torrent.comment(),
+        "author": torrent.creator(),
+        "info_hash": str(torrent.info_hash()),
+        "files": files,
     }
+
+
+def extract_metadata(path):
+    try:
+        return _extract_metadata(path)
+    except Exception:
+        log.error("[%s]: corrupt or empty torrent", path)
+        raise
 
 
 def torrents_add():
@@ -121,7 +147,7 @@ def torrents_add():
 
     num_paths = len(paths)
     start_time = consts.now()
-    with concurrent.futures.ProcessPoolExecutor() as ex:
+    with concurrent.futures.ThreadPoolExecutor() as ex:
         futures = [ex.submit(extract_metadata, path) for path in paths]
 
         for idx, future in enumerate(concurrent.futures.as_completed(futures)):
