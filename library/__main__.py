@@ -5,7 +5,7 @@ from tabulate import tabulate
 from library.utils import argparse_utils, iterables
 from library.utils.log_utils import log
 
-__version__ = "3.0.124"
+__version__ = "3.0.125"
 
 progs = {
     "Create database subcommands": {
