@@ -28,20 +28,20 @@ def parse_args():
 def wait_torrent_loaded(qbt_client, torrent):
     import qbittorrentapi
 
-    hashes = []
+    info_hashes = []
     info_hashes_obj = torrent.info_hashes()
     if info_hashes_obj.has_v1():
-        hashes.append(str(info_hashes_obj.v1))
+        info_hashes.append(str(info_hashes_obj.v1))
     if info_hashes_obj.has_v2():
-        hashes.append(str(info_hashes_obj.v2))
+        info_hashes.append(str(info_hashes_obj.v2))
 
     attempts = 10
     attempt = 0
     while attempt < attempts:
-        for hash in hashes:
+        for info_hash in info_hashes:
             with suppress(qbittorrentapi.NotFound404Error):
-                qbt_client.torrents_properties(hash)
-                return hash
+                qbt_client.torrents_properties(info_hash)
+                return info_hash
 
         attempt += 1
         log.info("Waiting for torrent to load in qBittorrent")
