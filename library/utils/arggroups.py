@@ -685,12 +685,12 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
 
     if args.local_media_only:
-        args.filter_sql.append('AND path not LIKE "http%"')
+        args.filter_sql.append('AND m.path not LIKE "http%"')
         if args.db and "time_downloaded" in m_columns:
             args.filter_sql.append("AND COALESCE(time_downloaded,1) != 0")
 
     if args.online_media_only:
-        args.filter_sql.append('AND path LIKE "http%"')
+        args.filter_sql.append('AND m.path LIKE "http%"')
         if args.db and "time_downloaded" in m_columns:
             args.filter_sql.append("AND COALESCE(time_downloaded,0) = 0")
 
@@ -1557,6 +1557,7 @@ def process_ffmpeg(parent_parser):
     )
 
     parser.add_argument("--keyframes", action="store_true", help="Only keep keyframes")
+    parser.add_argument("--video-only", action="store_true", help="Only extract video")
     parser.add_argument("--audio-only", action="store_true", help="Only extract audio")
     parser.add_argument(
         "--no-preserve-video",

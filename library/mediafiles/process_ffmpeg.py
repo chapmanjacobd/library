@@ -117,16 +117,24 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
     subtitle_stream = next((s for s in probe.subtitle_streams), None)
     album_art_stream = next((s for s in probe.album_art_streams), None)
     if not video_stream:
-        if not args.audio_only:
-            log.warning("No video stream found: %s", path)
         if args.delete_no_video:
             path.unlink()
             return None
+        if args.video_only:
+            return str(path)
+
+        if not args.audio_only and path_utils.ext(path) not in consts.AUDIO_ONLY_EXTENSIONS:
+            log.warning("No video stream found: %s", path)
+
     if not audio_stream:
-        log.warning("No audio stream found: %s", path)
         if args.delete_no_audio:
             path.unlink()
             return None
+        if args.audio_only:
+            return str(path)
+
+        if not args.video_only and path_utils.ext(path) not in consts.IMAGE_ANIMATION_EXTENSIONS:
+            log.warning("No audio stream found: %s", path)
 
     if video_stream and (video_stream.get("codec_name") or "") == "av1":
         log.info("Video is already AV1: %s", path)
