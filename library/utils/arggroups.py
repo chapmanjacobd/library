@@ -1557,6 +1557,7 @@ def process_ffmpeg(parent_parser):
     )
 
     parser.add_argument("--keyframes", action="store_true", help="Only keep keyframes")
+    parser.add_argument("--video-only", action="store_true", help="Only extract video")
     parser.add_argument("--audio-only", action="store_true", help="Only extract audio")
     parser.add_argument(
         "--no-preserve-video",

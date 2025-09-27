@@ -277,6 +277,9 @@ def get_data(args) -> list[dict]:
     if args.database:
         media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
     else:
+        if any([args.group_by_size, args.group_by_extensions, args.group_by_mimetypes]):
+            args.paths = [os.path.realpath(s) for s in args.paths]
+
         media = file_utils.gen_d(args)
         if args.hide_deleted:
             args.paths = file_utils.filter_deleted(args.paths)
