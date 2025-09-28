@@ -32,15 +32,13 @@ def get_tracker(torrent):
     if not trackers:
         return torrent.source
 
-    def safe_url(t):
+    announce_urls = []
+    for t in sorted(trackers, key=lambda t: (t.source, t.tier)):
         try:
-            return t.url
+            if (url := t.url):
+                announce_urls.append(url)
         except UnicodeDecodeError:
-            return None
-
-    announce_urls = [
-        url for t in sorted(trackers, key=lambda t: (t.source, t.tier)) if (url := safe_url(t)) is not None
-    ]
+            continue
     log.debug(announce_urls)
 
     for tracker in iterables.flatten(announce_urls):
