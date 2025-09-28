@@ -7,6 +7,7 @@ from typing import NoReturn
 from library.data import unar_errors
 from library.utils import consts, iterables, nums, path_utils, strings
 from library.utils.log_utils import log
+from library.utils.objects import traverse_obj
 
 
 def exit_nicely(_signal, _frame) -> NoReturn:
@@ -301,8 +302,6 @@ class UnplayableFile(RuntimeError):
 
 
 def is_album_art(s):
-    from yt_dlp.utils import traverse_obj
-
     return traverse_obj(s, ["disposition", "attached_pic"]) == 1
 
 
