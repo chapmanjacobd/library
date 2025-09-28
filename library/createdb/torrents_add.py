@@ -28,10 +28,19 @@ def parse_args():
 
 def get_tracker(torrent):
     trackers = torrent.trackers()
+    trackers = [t for t in trackers]
     if not trackers:
         return torrent.source
 
-    announce_urls = [t.url for t in trackers]
+    def safe_url(t):
+        try:
+            return t.url
+        except UnicodeDecodeError:
+            return None
+
+    announce_urls = [
+        url for t in sorted(trackers, key=lambda t: (t.source, t.tier)) if (url := safe_url(t)) is not None
+    ]
     log.debug(announce_urls)
 
     for tracker in iterables.flatten(announce_urls):
