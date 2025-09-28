@@ -117,11 +117,9 @@ def get_audio_tags(f) -> dict:
 
 
 def collect_codecs(streams):
-    from yt_dlp.utils import traverse_obj
-
     return ",".join(
         iterables.ordered_set(
-            iterables.conform(s.get("codec_name") or traverse_obj(s, ["tags", "mimetype"]) for s in streams)
+            iterables.conform(s.get("codec_name") or objects.traverse_obj(s, ["tags", "mimetype"]) for s in streams)
         )
     )
 

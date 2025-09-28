@@ -35,7 +35,7 @@ def get_tracker(torrent):
     announce_urls = []
     for t in sorted(trackers, key=lambda t: (t.source, t.tier)):
         try:
-            if (url := t.url):
+            if url := t.url:
                 announce_urls.append(url)
         except UnicodeDecodeError:
             continue
