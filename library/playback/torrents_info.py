@@ -557,7 +557,17 @@ def torrents_info():
             print_torrents_by_tracker(args, torrents)
 
     elif args.print:
+        ignore_trackers = ("** [DHT] **", "** [PeX] **", "** [LSD] **")
         for t in torrents:
+            if "tr" in args.print:
+                for tr in qbt_client.torrents_trackers(t.hash):
+                    try:
+                        if tr.url not in ignore_trackers:
+                            print(tr.url)
+                    except UnicodeDecodeError:
+                        pass
+                continue
+
             if t.state_enum.is_complete:
                 base_paths = [t.save_path, t.content_path, t.download_path]
             else:
