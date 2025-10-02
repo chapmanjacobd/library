@@ -2176,7 +2176,31 @@ def qBittorrent_torrents(parent_parser):
     parser = parent_parser.add_argument_group("qBittorrent Torrents")
     parser.add_argument("--active", action="store_true", help="Include active torrents")
     parser.add_argument("--inactive", "--dead", action="store_true", help="Include inactive torrents")
-    parser.add_argument("--now", action="store_true", help="Include currently UL/DL torrents")
+    parser.add_argument("--now", action=argparse.BooleanOptionalAction, help="Include currently UL/DL torrents")
+    parser.add_argument("--fast", action=argparse.BooleanOptionalAction, help="Include currently fast UL/DL torrents")
+    parser.add_argument(
+        "--dl-speed",
+        "-D",
+        action="append",
+        help="""Constrain torrents to bitrates
+-D 6           # 6 Mbps exactly (not likely)
+-D-6           # less than 6 Mbps
+-D+6           # more than 6 Mbps
+-D 6%%10       # 6 Mbps ±10 percent (between 5 and 7 Mbps)
+-D+50KB -b-700KB  # between 50 and 700 kbit/s""",
+    )
+    parser.add_argument(
+        "--ul-speed",
+        "--up-speed",
+        "-U",
+        action="append",
+        help="""Constrain torrents to bitrates
+-U 6           # 6 Mbps exactly (not likely)
+-U-6           # less than 6 Mbps
+-U+6           # more than 6 Mbps
+-U 6%%10       # 6 Mbps ±10 percent (between 5 and 7 Mbps)
+-U+50KB -b-700KB  # between 50 and 700 kbit/s""",
+    )
 
     parser.add_argument("--stopped", "--paused", action=argparse.BooleanOptionalAction, help="Include stopped torrents")
     parser.add_argument("--missing", action=argparse.BooleanOptionalAction, help="Include missing torrents")
@@ -2309,6 +2333,11 @@ def qBittorrent_torrents(parent_parser):
 def qBittorrent_torrents_post(args):
     if args.sizes:
         args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
+    if args.dl_speed:
+        args.dl_speed = sql_utils.parse_human_to_lambda(nums.human_to_bits, args.dl_speed * 8)
+    if args.ul_speed:
+        args.ul_speed = sql_utils.parse_human_to_lambda(nums.human_to_bits, args.ul_speed * 8)
+
     if args.remaining:
         args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
     if args.downloaded:

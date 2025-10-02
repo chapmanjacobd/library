@@ -145,17 +145,32 @@ def filter_torrents_by_activity(args, torrents):
         torrents = [t for t in torrents if t.is_active]
     if args.inactive:
         torrents = [t for t in torrents if t.is_inactive]
-    if args.now:
+    if args.now is not None:
         torrents = [
             t
             for t in torrents
-            if (not t.state_enum.is_complete and t.dlspeed > 500) or (t.state_enum.is_complete and t.upspeed > 500)
+            if args.now
+            is ((not t.state_enum.is_complete and t.dlspeed > 500) or (t.state_enum.is_complete and t.upspeed > 500))
+        ]
+    if args.fast is not None:
+        torrents = [
+            t
+            for t in torrents
+            if args.fast
+            is (
+                (not t.state_enum.is_complete and t.dlspeed > 5 * 1000 * 1000)
+                or (t.state_enum.is_complete and t.upspeed > 2 * 1000 * 1000)
+            )
         ]
 
     return torrents
 
 
 def filter_torrents_by_criteria(args, torrents):
+    if "dl_speed" not in args.defaults:
+        torrents = [t for t in torrents if args.dl_speed(t.dlspeed)]
+    if "ul_speed" not in args.defaults:
+        torrents = [t for t in torrents if args.ul_speed(t.upspeed)]
     if "sizes" not in args.defaults:
         torrents = [t for t in torrents if args.sizes(t.total_size)]
     if "file_count" not in args.defaults:
