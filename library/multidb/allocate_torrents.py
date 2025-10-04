@@ -167,7 +167,7 @@ def print_torrents_by_tracker(torrents):
             }
         )
 
-    trackers = sorted(trackers, key=lambda d: (d["count"] // 10, d["tracker"]))
+    trackers = sorted(trackers, key=lambda d: (d["count"] // 10, d["tracker"] or ""))
     printing.table(
         iterables.list_dict_filter_bool(
             [

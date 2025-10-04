@@ -110,8 +110,9 @@ def torrents_start():
         temp_path = temp_prefix
         if args.tracker_dirnames:
             tracker = get_tracker(torrent)
-            download_path /= tracker
-            temp_path /= tracker
+            if tracker:
+                download_path /= tracker
+                temp_path /= tracker
 
         qbt_client.torrents_add(
             torrent_files=path,
