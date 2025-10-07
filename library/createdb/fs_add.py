@@ -271,6 +271,8 @@ def scan_path(args, path_str: str) -> int:
             batch_count = int(os.cpu_count() or 4)
         elif DBType.video in args.profiles:
             batch_count = 500
+        elif DBType.audio in args.profiles:
+            batch_count = 1000
         elif DBType.image in args.profiles:
             batch_count = 1500
         else:
