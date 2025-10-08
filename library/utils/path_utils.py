@@ -309,13 +309,13 @@ def safe_unquote(url):
 
     try:
         parsed_url = urlparse(url)
-    except UnicodeDecodeError:
+    except Exception:  # (UnicodeDecodeError, ValueError, ...)
         return url
 
     def selective_unquote(component, restricted_chars):
         try:
             unquoted = unquote(component, errors="strict")
-        except UnicodeDecodeError:
+        except Exception:  # (UnicodeDecodeError, ...)
             return component
         # re-quote restricted chars
         return "".join(quote(char, safe="") if char in restricted_chars else char for char in unquoted)
