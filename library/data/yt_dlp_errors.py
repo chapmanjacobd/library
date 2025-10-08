@@ -23,6 +23,8 @@ yt_recoverable_errors = re.compile(
 .*HTTP Error 429
 .*HTTP Error 400
 .*HTTP Error 503
+.*No title found in player responses
+.*opening play-av tag not found
 .*Origin Error
 .*Failed to resolve
 .*API is not granting access
