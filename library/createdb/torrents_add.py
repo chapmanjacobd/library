@@ -103,7 +103,7 @@ def _extract_metadata(path):
         "comment": torrent.comment(),
         "author": torrent.creator(),
         "info_hash": str(torrent.info_hash()),
-        "webpaths": web_seeds,
+        "web_seeds": web_seeds,
         "files": files,
     }
 
@@ -186,7 +186,7 @@ def torrents_add():
 
                 files = torrent_info.pop("files")
                 log.debug(torrent_info)
-                torrent_info["webpath"] = iterables.safe_unpack(sorted(torrent_info.pop("webpaths"), key=len, reverse=True))
+                torrent_info["webpath"] = iterables.safe_unpack(sorted(torrent_info.pop("web_seeds"), key=len, reverse=True))
 
                 playlists_id = db_playlists._add(args, objects.dict_filter_bool(torrent_info))
                 files = [file | {"playlists_id": playlists_id} for file in files]

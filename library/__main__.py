@@ -78,6 +78,7 @@ progs = {
         "unardel": "Extract from archives and delete all associated multi-part archive files",
         "images_to_pdf": "Convert folders of images into image PDFs",
         "pdf_edit": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
+        "torrents_dump": "Print torrent file info",
         "torrents_start": "Start torrents (qBittorrent-nox)",
     },
     "Multi-database subcommands": {
@@ -235,6 +236,7 @@ modules = {
     "library.mediafiles.process_text.process_text": ["text-process"],
     "library.mediafiles.images_to_pdf.images_to_pdf": ["images2pdf"],
     "library.mediafiles.pdf_edit.pdf_edit": [],
+    "library.mediafiles.torrents_dump.torrents_dump": ["torrent-dump"],
     "library.mediafiles.torrents_start.torrents_start": ["torrent-start"],
     "library.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "library.misc.export_text.export_text": [],
