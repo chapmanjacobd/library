@@ -4,7 +4,7 @@ from pathlib import Path
 from time import sleep
 
 from library import usage
-from library.createdb.torrents_add import get_tracker, torrent_decode
+from library.createdb.torrents_add import get_tracker_domain, torrent_decode
 from library.utils import arggroups, argparse_utils, processes
 from library.utils.file_utils import trash
 from library.utils.log_utils import log
@@ -109,7 +109,7 @@ def torrents_start():
         download_path = download_prefix
         temp_path = temp_prefix
         if args.tracker_dirnames:
-            tracker = get_tracker(torrent)
+            tracker = get_tracker_domain(torrent)
             if tracker:
                 download_path /= tracker
                 temp_path /= tracker
