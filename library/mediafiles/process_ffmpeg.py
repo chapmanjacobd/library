@@ -205,13 +205,50 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
 
             width = int(video_stream.get("width"))
             height = int(video_stream.get("height"))
+            aspect_ratio = width / height if height else 0
 
-            if width > (args.max_video_width * (1 + args.max_width_buffer)):
-                video_filters.append(f"scale={args.max_video_width}:-2")
-            elif height > (args.max_video_height * (1 + args.max_height_buffer)):
-                video_filters.append(f"scale=-2:{args.max_video_height}")
-            else:  # make sure input raster is even for YUV_420 colorspace
-                video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
+            stereo_mode = None
+            tags = video_stream.get("tags") or {}
+            stereo_tag = (tags.get("stereo_mode") or tags.get("StereoMode") or "").lower()
+            if stereo_tag in {"left_right", "side_by_side", "sbs"}:
+                stereo_mode = "sbs"
+            elif stereo_tag in {"top_bottom", "over_under", "tb", "ou"}:
+                stereo_mode = "ou"
+            else:  # fallback to aspect ratio
+                if 1.9 <= aspect_ratio <= 2.1 and width >= 4500:
+                    stereo_mode = "sbs"
+                elif 0.9 <= aspect_ratio <= 1.1 and height >= 2600:
+                    stereo_mode = "ou"
+
+            if stereo_mode == "sbs":
+                per_eye_width = width // 2
+                target_eye_width = args.max_video_width
+                target_total_width = target_eye_width * 2
+
+                if per_eye_width > target_eye_width * (1 + args.max_width_buffer):
+                    video_filters.append(f"scale={target_total_width}:-2")
+                elif height > args.max_video_height * (1 + args.max_height_buffer):
+                    video_filters.append(f"scale=-2:{args.max_video_height}")
+                else:
+                    video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
+            elif stereo_mode == "ou":
+                per_eye_height = height // 2
+                target_eye_height = args.max_video_height
+                target_total_height = target_eye_height * 2
+
+                if per_eye_height > target_eye_height * (1 + args.max_height_buffer):
+                    video_filters.append(f"scale=-2:{target_total_height}")
+                elif width > args.max_video_width * (1 + args.max_width_buffer):
+                    video_filters.append(f"scale={args.max_video_width}:-2")
+                else:
+                    video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
+            else:  # non-VR
+                if width > (args.max_video_width * (1 + args.max_width_buffer)):
+                    video_filters.append(f"scale={args.max_video_width}:-2")
+                elif height > (args.max_video_height * (1 + args.max_height_buffer)):
+                    video_filters.append(f"scale=-2:{args.max_video_height}")
+                else:  # make sure input raster is even for YUV_420 colorspace
+                    video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
 
             ff_opts.extend(["-vf", ",".join(video_filters)])
 
