@@ -59,7 +59,7 @@ def is_animation_from_probe(probe) -> bool | None:
     return False
 
 
-def process_path(args, path, include_timecode=False, subtitle_streams_unsupported=False, **kwargs) -> str | None:
+def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
     if kwargs:
         args = args_override(args, kwargs)
 
@@ -301,10 +301,55 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
                     is_split = False
 
     if subtitle_stream:
-        if subtitle_streams_unsupported:
-            ff_opts.extend(["-map", "0:s"])
-        else:
-            ff_opts.extend(["-map", "0:s", "-c:s", "copy"])
+        TEXT_SUBS = {
+            "ass",
+            "ssa",
+            "subrip",
+            "srt",
+            "mov_text",
+            "webvtt",
+            "text",
+            "utf8",
+            "arib_caption",
+            "libaribcaption",
+            "libaribb24",
+            "libzvbi_teletextdec",
+            "dvb_teletext",
+            "cc_dec",
+            "jacosub",
+            "microdvd",
+            "mpl2",
+            "pjs",
+            "realtext",
+            "sami",
+            "stl",
+            "subviewer",
+            "subviewer1",
+            "text",
+            "vplayer",
+            "webvtt",
+        }
+        IMAGE_SUBS = {"dvd_subtitle", "dvdsub", "pgssub", "hdmv_pgs_subtitle", "xsub", "dvb_subtitle", "dvbsub"}
+
+        MKV_TEXT_SUBS = {"subrip", "srt", "ass", "ssa", "webvtt"}
+        MKV_IMAGE_SUBS = {"pgssub", "hdmv_pgs_subtitle", "dvd_subtitle", "vobsub"}
+        for s in probe.subtitle_streams:
+            codec = s.get("codec_name", "").lower()
+            idx = s.get("index")
+
+            if not codec:
+                log.warning("%s: Subtitle codec not found %s", path, s)
+                continue
+
+            if codec in MKV_TEXT_SUBS or codec in MKV_IMAGE_SUBS:
+                ff_opts.extend(["-map", f"0:{idx}", "-c:s", "copy"])
+            elif codec in TEXT_SUBS:
+                ff_opts.extend(["-map", f"0:{idx}", "-c:s", "srt"])
+            elif codec in IMAGE_SUBS:
+                ff_opts.extend(["-map", f"0:{idx}", "-c:s", "pgssub"])
+            else:  # unknown
+                log.warning("%s: Subtitle codec unknown %s", path, s)
+                return str(path)
 
     if include_timecode:
         ff_opts.extend(["-map", "0:t"])
@@ -347,7 +392,6 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         processes.cmd(*command, limit_ram=True)
     except subprocess.CalledProcessError as excinfo:
         error_log = excinfo.stderr.splitlines()
-        is_unsupported_subtitle = any(ffmpeg_errors.unsupported_subtitle_error.match(l) for l in error_log)
         is_unsupported = any(ffmpeg_errors.unsupported_error.match(l) for l in error_log)
         is_file_error = any(ffmpeg_errors.file_error.match(l) for l in error_log)
         is_env_error = any(ffmpeg_errors.environment_error.match(l) for l in error_log)
@@ -356,11 +400,6 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
             raise
         elif is_file_error:
             pass
-        elif is_unsupported_subtitle and not subtitle_streams_unsupported:
-            output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
-            return process_path(
-                args, path, include_timecode=include_timecode, subtitle_streams_unsupported=True, **kwargs
-            )
         elif is_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
             return str(path)

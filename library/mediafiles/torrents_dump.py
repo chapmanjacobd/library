@@ -9,18 +9,18 @@ from library.utils import argparse_utils, printing, strings
 
 def gen_torrents(l):
     for s in l:
-        for file in Path(s).rglob('*.torrent'):
+        for file in Path(s).rglob("*.torrent"):
             if not file.is_dir():
                 yield file
         else:
             file = Path(s)
-            if file.is_file() and file.suffix == '.torrent':
+            if file.is_file() and file.suffix == ".torrent":
                 yield file
 
 
 def torrents_dump():
     parser = argparse_utils.ArgumentParser()
-    parser.add_argument('paths', nargs='+', help='Path(s) to torrent files')
+    parser.add_argument("paths", nargs="+", help="Path(s) to torrent files")
     args = parser.parse_args()
 
     torrent_files = list(gen_torrents(args.paths))
