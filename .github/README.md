@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.127; 103 subcommands)
+    library (v3.0.128; 104 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -235,6 +235,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ images-to-pdf  │ Convert folders of images into image PDFs                                 │
     ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ pdf-edit       │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ torrents-dump  │ Print torrent file info                                                   │
     ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ torrents-start │ Start torrents (qBittorrent-nox)                                          │
     ╰────────────────┴───────────────────────────────────────────────────────────────────────────╯
@@ -2208,6 +2210,18 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library pdfedit --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
         library pdfedit -b 105 -c 120 -C 80 -s 110 scan001.pdf
+
+
+</details>
+
+###### torrents-dump
+
+<details><summary>Print torrent file info</summary>
+
+    $ library torrents-dump -h
+    usage: library torrents-dump PATH ...
+
+    View torrent file metadata via libtorrent
 
 
 </details>
