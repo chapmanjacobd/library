@@ -1964,6 +1964,11 @@ torrents_start = """library torrents-start [--prefix /mnt/d/] PATH ...
     Start torrent files in qBittorrent-nox
 """
 
+torrents_dump = """library torrents-dump PATH ...
+
+    View torrent file metadata via libtorrent
+"""
+
 torrents_info = """library torrents-info
 
     List torrents in qBittorrent-nox

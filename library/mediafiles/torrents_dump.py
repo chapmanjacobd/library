@@ -3,8 +3,19 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from library import usage
 from library.createdb import torrents_add
-from library.utils import argparse_utils, printing, strings
+from library.utils import arggroups, argparse_utils, printing, strings
+
+
+def parse_args():
+    parser = argparse_utils.ArgumentParser(usage=usage.torrents_dump)
+    arggroups.debug(parser)
+
+    arggroups.paths_or_stdin(parser)
+    args = parser.parse_args()
+    arggroups.args_post(args, parser)
+    return args
 
 
 def gen_torrents(l):
@@ -19,9 +30,7 @@ def gen_torrents(l):
 
 
 def torrents_dump():
-    parser = argparse_utils.ArgumentParser()
-    parser.add_argument("paths", nargs="+", help="Path(s) to torrent files")
-    args = parser.parse_args()
+    args = parse_args()
 
     torrent_files = list(gen_torrents(args.paths))
     with ThreadPoolExecutor() as executor:
