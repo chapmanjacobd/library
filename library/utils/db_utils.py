@@ -157,7 +157,9 @@ def optimize(args) -> None:
 
             trigger_suffixes = ["_au", "_ad", "_ai"]
             for suffix in trigger_suffixes:
-                triggers = db.query(f"SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE '{table}%{suffix}';")
+                triggers = db.query(
+                    f"SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE '{table}%{suffix}';"
+                )
                 for (name,) in triggers:
                     db.execute(f"DROP TRIGGER IF EXISTS {name};")
 
