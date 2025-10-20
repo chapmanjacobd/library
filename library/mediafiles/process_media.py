@@ -1,4 +1,4 @@
-import argparse, concurrent.futures, math, os, sqlite3, subprocess
+import argparse, concurrent.futures, json, math, os, sqlite3, subprocess
 from contextlib import suppress
 from pathlib import Path
 from shutil import which
@@ -277,20 +277,28 @@ def check_shrink(args, m) -> list:
         else:
             log.debug("[%s]: Skipping small file", m["path"])
     elif m.get("compressed_size"):  # TODO nested archives
-        log.warning("[%s]: Skipping shrink for unknown filetype %s from archive", m["path"], m["ext"])
+        log.info("[%s]: Skipping unknown filetype %s from archive", m["path"], m["ext"])
         # m["media_type"] = "Compressed"
         # return [m]
     elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
-        if args.move_broken and not contents:
-            dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
-            file_utils.rename_move_file(m["path"], dest)
-        return [check_shrink(args, d) for d in contents]
-    # TODO?: csv, json => parquet
+        if contents:
+            return [check_shrink(args, d) for d in contents]
+        elif args.move_broken:
+            part_files = [m["path"]]
+            with suppress(subprocess.CalledProcessError, json.JSONDecodeError):
+                lsar_output = processes.cmd("lsar", "-json", m["path"], error_verbosity=2)
+                lsar_json = strings.safe_json_loads(lsar_output.stdout)
+                part_files = lsar_json["lsarProperties"]["XADVolumes"]
+
+            for p in part_files:
+                dest = path_utils.relative_from_mountpoint(p, args.move_broken)
+                file_utils.rename_move_file(p, dest)
     else:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
+    # TODO?: csv, json => parquet
     return []
 
 
