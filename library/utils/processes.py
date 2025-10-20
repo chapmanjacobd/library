@@ -450,6 +450,7 @@ def lsar(archive_path):
         return []
 
     ar_size = os.stat(archive_path).st_size
+    ar_len = len(lsar_contents)
     unar_out = unar_out_path(archive_path)
     archive_info_list = []
     for entry in lsar_contents:
@@ -457,7 +458,7 @@ def lsar(archive_path):
             {
                 "archive_path": archive_path,
                 "path": path_utils.safe_join(unar_out, entry.get("XADFileName")),
-                "compressed_size": entry.get("XADCompressedSize") or ar_size // len(lsar_contents),
+                "compressed_size": entry.get("XADCompressedSize") or ar_size // ar_len,
                 "size": entry.get("XADFileSize"),
             }
         )
