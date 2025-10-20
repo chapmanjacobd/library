@@ -284,8 +284,11 @@ def check_shrink(args, m) -> list:
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
+        if args.move_broken and not contents:
+            dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
+            file_utils.rename_move_file(m["path"], dest)
         return [check_shrink(args, d) for d in contents]
-    # TODO: csv, json => parquet
+    # TODO?: csv, json => parquet
     else:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []
