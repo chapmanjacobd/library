@@ -330,6 +330,8 @@ def rename_move_file(source_file, destination_file, simulate=False):
             os.rename(source_file, destination_file)  # performance
         except PermissionError:
             log.warning("PermissionError. Could not rename %s into %s", source_file, os.path.dirname(destination_file))
+        except FileNotFoundError:
+            log.error("FileNotFoundError. %s", source_file)
         except OSError as excinfo:
             if excinfo.errno == errno.ENOENT:
                 try:
