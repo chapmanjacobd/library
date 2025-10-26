@@ -71,7 +71,7 @@ def start_qBittorrent(args):
 
     log.info("Waiting for qBittorrent web UI to load")
 
-    max_attempts = 2500  # ~20 minutes
+    max_attempts = 1000  # ~15 minutes
     attempt = 0
     while attempt < max_attempts:
         try:
@@ -82,7 +82,7 @@ def start_qBittorrent(args):
             logging.warning(f"Authentication failed. Check your qBit settings, --username, and --password: {excinfo}")
             break  # stop if authentication failing
         except (qbittorrentapi.APIConnectionError, ConnectionRefusedError):
-            time.sleep(0.5)
+            time.sleep(1)
             attempt += 1
     else:
         logging.error("Failed to connect to qBittorrent web UI")
