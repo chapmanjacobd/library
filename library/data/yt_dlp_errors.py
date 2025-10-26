@@ -80,6 +80,7 @@ yt_meaningless_errors = re.compile(
 .*Invalid argument
 .*KeyboardInterrupt
 .*Fatal Python error
+.*Downloading info JSON
 .*list index out of range
 .*Extract.* cookies
 .*File .*, line .*,
