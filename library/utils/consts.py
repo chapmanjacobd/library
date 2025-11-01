@@ -225,7 +225,7 @@ IMAGE_EXTENSIONS = set(
         "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif"
         "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|jpc|3fr|btf|dcr|k25"
         "|kdc|miff|mif|rwz|srf|xcf|bpg|doc|dot|fla|fpx|max|ppt|pps|pot|vsd|xls"
-        "|xlt|pict|pct|360|dvb|f4a|f4b|f4p|lrv|m4b|bmp|bmp2|bmp3|jng|mng|emf|wmf"
+        "|xlt|pict|pct|360|dvb|f4a|f4b|f4p|lrv|bmp|bmp2|bmp3|jng|mng|emf|wmf"
         "|m4p|qt|mqv|qtif|qti|qif|cr3|crm|jxl|crw|ciff|ind|indd|indt"
         "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|djvu|djv|dvr-ms"
         "|insv|inx|swf|exif|eip|pspimage|fax|farbfeld|fits|fl32|jbig"

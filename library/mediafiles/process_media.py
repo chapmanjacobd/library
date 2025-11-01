@@ -195,7 +195,7 @@ def check_shrink(args, m) -> list:
         elif args.valid and can_shrink:
             return [m]
         else:
-            log.debug("[%s]: Skipping small file", m["path"])
+            log.debug("[%s]: skipping; future file size estimated to be larger than source file", m["path"])
     elif (
         (filetype and (filetype.startswith("image/") or " image" in filetype))
         or m["ext"] in consts.IMAGE_EXTENSIONS - consts.IMAGE_ANIMATION_EXTENSIONS
@@ -215,7 +215,7 @@ def check_shrink(args, m) -> list:
 
         if can_shrink:
             return [m]
-        log.debug("[%s]: Skipping small file", m["path"])
+        log.debug("[%s]: skipping; future file size estimated to be larger than source file", m["path"])
     elif (
         (filetype and (filetype.startswith("video/") or " video" in filetype))
         or m["ext"] in consts.VIDEO_EXTENSIONS | consts.IMAGE_ANIMATION_EXTENSIONS
@@ -262,7 +262,7 @@ def check_shrink(args, m) -> list:
         elif args.valid and can_shrink:
             return [m]
         else:
-            log.debug("[%s]: Skipping small file", m["path"])
+            log.debug("[%s]: skipping; future file size estimated to be larger than source file", m["path"])
     elif m["ext"] in consts.CALIBRE_EXTENSIONS:
         future_size = args.target_image_size * 50
         should_shrink_buffer = int(future_size * args.min_savings_image)
@@ -275,7 +275,7 @@ def check_shrink(args, m) -> list:
         if can_shrink:
             return [m]
         else:
-            log.debug("[%s]: Skipping small file", m["path"])
+            log.debug("[%s]: skipping; future file size estimated to be larger than source file", m["path"])
     elif m.get("compressed_size"):  # TODO nested archives
         log.info("[%s]: Skipping unknown filetype %s from archive", m["path"], m["ext"])
         # m["media_type"] = "Compressed"

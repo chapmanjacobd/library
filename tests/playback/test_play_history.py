@@ -6,11 +6,11 @@ from unittest import mock
 import pytest
 
 from library.__main__ import library as lb
-from tests.utils import v_db
+from tests.utils import p, v_db
 
-history_db = "tests/data/history.db"
+history_db = p("tests/data/history.db")
 shutil.copy(v_db, history_db)
-lb(["history-add", history_db, str(Path("tests/data/corrupt.mp4"))])
+lb(["history-add", history_db, p("tests/data/corrupt.mp4")])
 
 history_flags = [
     ("--played-before '10 years'", 0, ""),

@@ -151,7 +151,7 @@ def hacker_news_add() -> None:
         db_thread = threading.Thread(target=db_worker, args=(args, db_queue))
         db_thread.start()
 
-        asyncio.get_event_loop().run_until_complete(run(args, db_queue))
+        asyncio.run(run(args, db_queue))
         db_queue.put(None)
         db_thread.join()
 

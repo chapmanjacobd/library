@@ -333,9 +333,9 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
 
                 if final_splits:
                     output_path = path.with_suffix(".%03d" + output_suffix)
-                    final_splits = ",".join(final_splits)
-                    print(f"Splitting {path} at points: {final_splits}")
-                    ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
+                    segment_times = ",".join(final_splits)
+                    log.info("Splitting %s into %s segments: %s", path, len(final_splits) + 1, segment_times)
+                    ff_opts.extend(["-f", "segment", "-segment_times", segment_times])
                 else:
                     is_split = False
 

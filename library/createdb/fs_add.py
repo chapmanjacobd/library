@@ -236,6 +236,8 @@ def scan_path(args, path_str: str) -> int:
         n_jobs = 1
     elif args.threads != -1:
         n_jobs = args.threads
+    elif getattr(args, "process", False):
+        n_jobs = max(1, int(os.cpu_count() or 4) // 2)
 
     threadsafe = [DBType.audio, DBType.video, DBType.filesystem]
 
