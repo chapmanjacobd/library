@@ -45,6 +45,7 @@ deluxe = [
   "annoy",
   "catt",
   "geopandas",
+  "pikepdf!=10.0.0",
   "img2pdf",
   "ocrmypdf",
   "openpyxl",
