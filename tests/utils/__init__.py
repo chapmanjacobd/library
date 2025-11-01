@@ -69,7 +69,7 @@ if not Path(links_db).exists():
 
 v_db = p("tests/data/video.db")
 if not Path(v_db).exists():
-    lb(["fs-add", v_db, "--scan-subtitles", "tests/data/", "-E", "Youtube"])
+    lb(["fs-add", v_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
     lb(["links-db", v_db, "--insert-only", "https://test/?tags%5B%5D="])
 
 

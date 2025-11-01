@@ -142,7 +142,6 @@ ignore = [
   "I001",
   "ICN001",
   "N806",
-  "PD901",
   "PGH003",
   "PGH004",
   "PLR0913",
@@ -185,7 +184,6 @@ ignore = [
   "UP015",
   "UP017",
   "UP031",
-  "UP038",
 ]
 select = ["ALL"]
 # Allow unused variables when underscore-prefixed.
