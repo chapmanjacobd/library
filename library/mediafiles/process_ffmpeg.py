@@ -48,6 +48,7 @@ def is_animation_from_probe(probe) -> bool | None:
                 "-of",
                 "default=nokey=1:noprint_wrappers=1",
                 probe.path,
+                nice=6,
             )
             frames = nums.safe_int(r.stdout)
             if frames is None:  # "N/A", corrupt file
@@ -197,6 +198,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
                         "-of",
                         "default=noprint_wrappers=1:nokey=1",
                         path,
+                        nice=5,
                     ).stdout
                 )
                 if frames and probe.duration:
@@ -426,7 +428,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
 
     is_file_error = False
     try:
-        processes.cmd(*command, limit_ram=True)
+        processes.cmd(*command, limit_ram=True, nice=10)
     except subprocess.CalledProcessError as excinfo:
         error_log = excinfo.stderr.splitlines()
         is_unsupported = any(ffmpeg_errors.unsupported_error.match(l) for l in error_log)

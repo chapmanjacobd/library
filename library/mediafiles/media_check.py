@@ -58,7 +58,7 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
             os.devnull,
         ]
 
-        proc = processes.cmd(*cmd, limit_ram=True)
+        proc = processes.cmd(*cmd, limit_ram=True, nice=5)
         # I wonder if something like this would be faster: -map 0:v:0 -filter:v "select=eq(pict_type\,I)" -frames:v 1
         if proc.stderr != "":
             raise RuntimeError
@@ -100,6 +100,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
                     "-1",
                     "-y",
                     temp_output.name,
+                    nice=3,
                 )
                 actual_duration = processes.FFProbe(temp_output.name).duration or 0
         except subprocess.CalledProcessError:
@@ -121,7 +122,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
             path,
         ]
 
-        r_frames = processes.cmd(*ffprobe_cmd)
+        r_frames = processes.cmd(*ffprobe_cmd, nice=3)
         data = strings.safe_json_loads(r_frames.stdout)["streams"][0]
 
         r_frame_rate = fractions.Fraction(data["r_frame_rate"])

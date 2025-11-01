@@ -18,7 +18,7 @@ def test_combine():
     assert strings.combine(take5()) == "1;2;3;4"
     assert strings.combine("") is None
     assert strings.combine([""]) is None
-    assert strings.combine(b"hello \xF0\x9F\x98\x81", 1) == "hello 😁;1"
+    assert strings.combine(b"hello \xf0\x9f\x98\x81", 1) == "hello 😁;1"
     assert strings.combine("[[[[1]]]]") == "[[[[1]]]]"
 
 

@@ -283,26 +283,26 @@ def grapheme_iter(text):
                 continue
 
             # Emoji modifiers (skin tones)
-            if "\U0001F3FB" <= next_char <= "\U0001F3FF":
+            if "\U0001f3fb" <= next_char <= "\U0001f3ff":
                 chunk += next_char
                 next_char_index += 1
                 continue
 
             # Variation selectors
-            if next_char in ("\uFE0F", "\uFE0E"):  # VS16 and VS15
+            if next_char in ("\ufe0f", "\ufe0e"):  # VS16 and VS15
                 chunk += next_char
                 next_char_index += 1
                 continue
 
             # Regional indicator pairs (flags)
-            if "\U0001F1E6" <= chunk[-1] <= "\U0001F1FF" and "\U0001F1E6" <= next_char <= "\U0001F1FF":
+            if "\U0001f1e6" <= chunk[-1] <= "\U0001f1ff" and "\U0001f1e6" <= next_char <= "\U0001f1ff":
                 chunk += next_char
                 next_char_index += 1
                 continue
 
             # Hangul jamo sequences (Korean)
-            if ("\u1100" <= chunk[-1] <= "\u11FF" or "\uA960" <= chunk[-1] <= "\uA97C") and (
-                "\u1160" <= next_char <= "\u11FF" or "\uD7B0" <= next_char <= "\uD7FB"
+            if ("\u1100" <= chunk[-1] <= "\u11ff" or "\ua960" <= chunk[-1] <= "\ua97c") and (
+                "\u1160" <= next_char <= "\u11ff" or "\ud7b0" <= next_char <= "\ud7fb"
             ):
                 chunk += next_char
                 next_char_index += 1

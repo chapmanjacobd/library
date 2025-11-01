@@ -289,7 +289,7 @@ def check_shrink(args, m) -> list:
         elif args.move_broken:
             part_files = [m["path"]]
             with suppress(subprocess.CalledProcessError, json.JSONDecodeError):
-                lsar_output = processes.cmd("lsar", "-json", m["path"], error_verbosity=2)
+                lsar_output = processes.cmd("lsar", "-json", m["path"], error_verbosity=2, nice=7)
                 lsar_json = strings.safe_json_loads(lsar_output.stdout)
                 part_files = lsar_json["lsarProperties"]["XADVolumes"]
 

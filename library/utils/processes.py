@@ -139,7 +139,15 @@ def os_bg_kwargs() -> dict:
 
 
 def cmd(
-    *command, strict=True, cwd=None, quiet=True, error_verbosity=1, ignore_regexps=None, limit_ram=False, **kwargs
+    *command,
+    strict=True,
+    cwd=None,
+    quiet=True,
+    error_verbosity=1,
+    ignore_regexps=None,
+    limit_ram=False,
+    nice=0,
+    **kwargs,
 ) -> subprocess.CompletedProcess:
     command = [str(s) for s in command]
 
@@ -149,6 +157,8 @@ def cmd(
             cmd_prefix += ["systemd-run"]
             if not "SUDO_UID" in os.environ:
                 cmd_prefix += ["--user"]
+            if nice != 0:
+                cmd_prefix += [f"--nice={nice}"]
             cmd_prefix += [
                 "-p",
                 "MemoryMax=4G",
@@ -471,7 +481,7 @@ def unar_delete(archive_path):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    lsar_output = cmd("lsar", "-json", archive_path)
+    lsar_output = cmd("lsar", "-json", archive_path, nice=6)
     try:
         lsar_json = strings.safe_json_loads(lsar_output.stdout)
     except json.JSONDecodeError:
@@ -482,7 +492,7 @@ def unar_delete(archive_path):
     original_stats = os.stat(archive_path)
 
     try:
-        cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path)
+        cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path, nice=9)
     except subprocess.CalledProcessError as excinfo:
         error_log = excinfo.stderr.splitlines()
         is_unsupported = any(unar_errors.unsupported_error.match(l) for l in error_log)
