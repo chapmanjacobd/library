@@ -47,7 +47,7 @@ def get_default_args(*funcs):
     return defaults
 
 
-links_db = "tests/data/links.db"
+links_db = p("tests/data/links.db")
 if not Path(links_db).exists():
     lb(
         [
@@ -67,13 +67,13 @@ if not Path(links_db).exists():
         ],
     )
 
-v_db = "tests/data/video.db"
+v_db = p("tests/data/video.db")
 if not Path(v_db).exists():
     lb(["fs-add", v_db, "--scan-subtitles", "tests/data/", "-E", "Youtube"])
     lb(["links-db", v_db, "--insert-only", "https://test/?tags%5B%5D="])
 
 
-tube_db = "tests/data/tube.db"
+tube_db = p("tests/data/tube.db")
 if not consts.VOLKSWAGEN and not Path(tube_db).exists():
     lb(
         [
