@@ -9,7 +9,7 @@ def test_flatten():
     assert list(iterables.flatten(take5())) == [0, 1, 2, 3, 4]
     assert list(iterables.flatten("")) == []
     assert list(iterables.flatten([""])) == [""]
-    assert list(iterables.flatten([b"hello \xF0\x9F\x98\x81"])) == ["hello 😁"]
+    assert list(iterables.flatten([b"hello \xf0\x9f\x98\x81"])) == ["hello 😁"]
     assert list(iterables.flatten("[[[[1]]]]")) == ["[", "[", "[", "[", "1", "]", "]", "]", "]"]
     assert list(iterables.flatten(["[[[[1]]]]"])) == ["[[[[1]]]]"]
 
@@ -21,7 +21,7 @@ def test_conform():
     assert iterables.conform(take5()) == [1, 2, 3, 4]
     assert iterables.conform("") == []
     assert iterables.conform([""]) == []
-    assert iterables.conform(b"hello \xF0\x9F\x98\x81") == ["hello 😁"]
+    assert iterables.conform(b"hello \xf0\x9f\x98\x81") == ["hello 😁"]
     assert iterables.conform("[[[[1]]]]") == ["[[[[1]]]]"]
 
 
