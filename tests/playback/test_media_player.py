@@ -136,7 +136,7 @@ class TestFs(unittest.TestCase):
 
     @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
-        lb(["wt", v_db, "--size", "-1"])  # less than 1MB
+        lb(["wt", v_db, "--size=-1"])  # less than 1MB
         out = play_mocked.call_args[0][1]
         assert out is not None
 

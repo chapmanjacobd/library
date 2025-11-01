@@ -147,41 +147,42 @@ def now():
 
 
 def test_relative_datetime_today(now):
-    today = now + timedelta(minutes=5)
+    today = (now + timedelta(minutes=5)).astimezone()
     assert strings.relative_datetime(today.timestamp()) == today.strftime("today, %H:%M")
 
     assert strings.relative_datetime(now.timestamp()) == now.strftime("today, %H:%M")
 
-    today = now - timedelta(minutes=5)
+    today = (now - timedelta(minutes=5)).astimezone()
     assert strings.relative_datetime(today.timestamp()) == today.strftime("today, %H:%M")
 
-    earlier_today = now.replace(hour=10, minute=30)
+    earlier_today = (now.replace(hour=10, minute=30)).astimezone()
     assert strings.relative_datetime(earlier_today.timestamp()) == earlier_today.strftime("today, %H:%M")
 
 
 def test_relative_datetime_yesterday(now):
-    yesterday = now - timedelta(days=1)
+    yesterday = (now - timedelta(days=1)).astimezone()
     assert strings.relative_datetime(yesterday.timestamp()) == yesterday.strftime("yesterday, %H:%M")
 
 
 def test_relative_datetime_a_few_days_ago(now):
-    days_ago = now - timedelta(days=5)
+    days_ago = (now - timedelta(days=5)).astimezone()
     assert strings.relative_datetime(days_ago.timestamp()) == days_ago.strftime("5 days ago, %H:%M")
 
 
 def test_relative_datetime_long_time_ago(now):
-    long_ago = now - timedelta(days=50)
+    long_ago = (now - timedelta(days=50)).astimezone()
     assert strings.relative_datetime(long_ago.timestamp()) == long_ago.strftime("%Y-%m-%d %H:%M")
 
 
 def test_relative_datetime_tomorrow(now):
-    tomorrow = now + timedelta(days=1)
+    tomorrow = (now + timedelta(days=1)).astimezone()
     assert strings.relative_datetime(tomorrow.timestamp()) == tomorrow.strftime("tomorrow, %H:%M")
 
 
 def test_relative_datetime_in_a_few_days(now):
-    in_a_few_days = now + timedelta(days=5)
-    assert strings.relative_datetime(in_a_few_days.timestamp()) == in_a_few_days.strftime("in 5 days, %H:%M")
+    in_a_few_days = (now + timedelta(days=5)).astimezone()
+    result = strings.relative_datetime(in_a_few_days.timestamp())
+    assert result == in_a_few_days.strftime("in 5 days, %H:%M")
 
 
 def test_relative_datetime_long_future(now):

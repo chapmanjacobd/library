@@ -1,5 +1,6 @@
 import json, os, sqlite3
 
+from library.editdb.dedupe_db import dedupe_rows
 from library.utils import consts, date_utils, db_utils, iterables, objects
 from library.utils.log_utils import log
 
@@ -29,7 +30,15 @@ def create(args):
         );
         """
     )
-    args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS playlists_uniq_path_idx ON playlists (path, extractor_config);")
+    try:
+        args.db.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS playlists_uniq_path_idx ON playlists (path, extractor_config);"
+        )
+    except sqlite3.IntegrityError:
+        dedupe_rows(args, "playlists", ["rowid"], ["path", "extractor_config"])
+        args.db.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS playlists_uniq_path_idx ON playlists (path, extractor_config);"
+        )
 
 
 def consolidate(args, v: dict) -> dict:
