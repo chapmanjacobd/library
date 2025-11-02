@@ -235,7 +235,7 @@ def test_nulls(many_df):
         },
     )
 
-    expected_order = ["E", "C", "D", "A", "B"]
+    expected_order = ["E", "C", "A", "D", "B"]
     expected_df = many_df.set_index("item").loc[expected_order].reset_index()
     pd.testing.assert_frame_equal(ranked_df, expected_df)
 
@@ -254,7 +254,7 @@ def test_partitioned_ranking_single_column(sample_df):
     }
     ranked_df = pd_utils.rank_dataframe(sample_df.copy(), column_weights)
 
-    expected_order = ["D", "E", "C", "B", "A"]  # 'size' ranked within each 'category'
+    expected_order = ["D", "E", "B", "C", "A"]  # 'size' ranked within each 'category'
     expected_df = sample_df.set_index("item").loc[expected_order].reset_index()
     pd.testing.assert_frame_equal(ranked_df, expected_df)
 
@@ -265,7 +265,7 @@ def test_partitioned_ranking_single_column2(sample_df):
     }
     ranked_df = pd_utils.rank_dataframe(sample_df.copy(), column_weights)
 
-    expected_order = ["B", "E", "D", "A", "C"]  # 'size' ranked within each 'category2'
+    expected_order = ["B", "E", "A", "D", "C"]  # 'size' ranked within each 'category2'
     expected_df = sample_df.set_index("item").loc[expected_order].reset_index()
     pd.testing.assert_frame_equal(ranked_df, expected_df)
 
@@ -300,14 +300,14 @@ def test_partition_column_not_found(sample_df, sample_column_weights_normal):
 def test_rank_dataframe_qcut():
     df = pd.DataFrame({"value": [5, 12, 8, 25, 15, 2, 9]})
     ranked_df = pd_utils.rank_dataframe(df, column_weights={"value": {"bins": 4}})
-    expected = [5, 2, 9, 8, 12, 25, 15]
+    expected = [5, 2, 8, 9, 12, 25, 15]
     assert list(ranked_df["value"].values) == expected
 
 
 def test_rank_dataframe_cut():
     df = pd.DataFrame({"value": [5, 12, 8, 25, 15, 2, 9]})
     ranked_df = pd_utils.rank_dataframe(df, column_weights={"value": {"quantize_method": "cut", "bins": 4}})
-    expected = [5, 2, 8, 12, 9, 15, 25]
+    expected = [5, 2, 12, 8, 9, 15, 25]
     assert list(ranked_df["value"].values) == expected
 
 
@@ -316,5 +316,5 @@ def test_rank_dataframe_cut_list():
     ranked_df = pd_utils.rank_dataframe(
         df, column_weights={"value": {"quantize_method": "cut", "bins": [0, 10, 20, 30]}}
     )
-    expected = [5, 8, 9, 2, 15, 12, 25]
+    expected = [5, 8, 2, 9, 12, 15, 25]
     assert list(ranked_df["value"].values) == expected

@@ -108,7 +108,7 @@ def rank_dataframe(original_df, column_weights=None):
             + "\n".join([f"""    "{s}": {{ 'direction': 'desc' }}, """ for s in unranked_columns]),
         )
 
-    sorted_df = original_df.iloc[ranks.sum(axis=1).sort_values().index]
+    sorted_df = original_df.iloc[ranks.sum(axis=1).sort_values(kind="stable").index]
     return sorted_df.reset_index(drop=True)
 
 
