@@ -285,9 +285,7 @@ def load_selenium(args, wire=False):
             args.driver_display.start()
             xvfb = True
 
-    if (which("firefox") or which("firefox.exe") or getattr(args, "firefox", False)) and not getattr(
-        args, "chrome", False
-    ):
+    if (which("firefox") or getattr(args, "firefox", False)) and not getattr(args, "chrome", False):
         from selenium.webdriver.firefox.options import Options
         from selenium.webdriver.firefox.service import Service
 

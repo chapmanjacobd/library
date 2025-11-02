@@ -101,7 +101,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def collect_media(args) -> list[dict]:
-    FFMPEG_INSTALLED = which("ffmpeg") or which("ffmpeg.exe")
+    FFMPEG_INSTALLED = which("ffmpeg")
     IM7_INSTALLED = which("magick")
     CALIBRE_INSTALLED = which("ebook-convert")
     UNAR_INSTALLED = which("lsar")
