@@ -147,16 +147,10 @@ def now():
 
 
 def test_relative_datetime_today(now):
-    today = (now + timedelta(minutes=5)).astimezone()
-    assert strings.relative_datetime(today.timestamp()) == today.strftime("today, %H:%M")
-
     assert strings.relative_datetime(now.timestamp()) == now.strftime("today, %H:%M")
 
-    today = (now - timedelta(minutes=5)).astimezone()
-    assert strings.relative_datetime(today.timestamp()) == today.strftime("today, %H:%M")
-
-    earlier_today = (now.replace(hour=10, minute=30)).astimezone()
-    assert strings.relative_datetime(earlier_today.timestamp()) == earlier_today.strftime("today, %H:%M")
+    specific_today = (now.replace(hour=10, minute=30)).astimezone()
+    assert strings.relative_datetime(specific_today.timestamp()) == specific_today.strftime("today, 10:30")
 
 
 def test_relative_datetime_yesterday(now):

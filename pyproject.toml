@@ -45,7 +45,7 @@ deluxe = [
   "annoy",
   "catt",
   "geopandas",
-  "pikepdf!=10.0.0",
+  "pikepdf<10",  # transitive dependency
   "img2pdf",
   "ocrmypdf",
   "openpyxl",
