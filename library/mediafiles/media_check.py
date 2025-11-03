@@ -101,6 +101,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
                     "-y",
                     temp_output.name,
                     nice=3,
+                    journald=False,
                 )
                 actual_duration = processes.FFProbe(temp_output.name).duration or 0
         except subprocess.CalledProcessError:
@@ -122,7 +123,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
             path,
         ]
 
-        r_frames = processes.cmd(*ffprobe_cmd, nice=3)
+        r_frames = processes.cmd(*ffprobe_cmd, nice=3, journald=False)
         data = strings.safe_json_loads(r_frames.stdout)["streams"][0]
 
         r_frame_rate = fractions.Fraction(data["r_frame_rate"])

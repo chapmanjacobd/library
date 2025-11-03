@@ -49,6 +49,7 @@ def is_animation_from_probe(probe) -> bool | None:
                 "default=nokey=1:noprint_wrappers=1",
                 probe.path,
                 nice=6,
+                journald=False,
             )
             frames = nums.safe_int(r.stdout)
             if frames is None:  # "N/A", corrupt file
@@ -199,6 +200,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
                         "default=noprint_wrappers=1:nokey=1",
                         path,
                         nice=5,
+                        journald=False,
                     ).stdout
                 )
                 if frames and probe.duration:
