@@ -58,7 +58,7 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
             os.devnull,
         ]
 
-        proc = processes.cmd(*cmd, limit_ram=True, nice=5)
+        proc = processes.cmd(*cmd, limit_ram=True, nice=5, journald=False)
         # I wonder if something like this would be faster: -map 0:v:0 -filter:v "select=eq(pict_type\,I)" -frames:v 1
         if proc.stderr != "":
             raise RuntimeError

@@ -147,6 +147,7 @@ def cmd(
     ignore_regexps=None,
     limit_ram=False,
     nice=0,
+    journald=True,
     **kwargs,
 ) -> subprocess.CompletedProcess:
     command = [str(s) for s in command]
@@ -159,17 +160,19 @@ def cmd(
                 cmd_prefix += ["--user"]
             if nice != 0:
                 cmd_prefix += [f"--nice={nice}"]
+
+            if journald:
+                cmd_prefix += ["--service-type=exec", "--wait", "--pty", "--pipe"]
+            else:
+                cmd_prefix += ["--scope"]
+
             cmd_prefix += [
                 "-p",
                 "MemoryMax=4G",
                 "-p",
                 "MemorySwapMax=1G",
-                "--pty",
-                "--pipe",
                 "--same-dir",
-                "--wait",
                 "--collect",
-                "--service-type=exec",
                 "--quiet",
                 "--",
             ]
