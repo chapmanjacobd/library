@@ -70,16 +70,16 @@ def torrent_decode(path):
 
 
 def _extract_metadata(path):
-    torrent = torrent_decode(path)
-    assert torrent.num_files() > 0
+    ltt = torrent_decode(path)
+    assert ltt.num_files() > 0
 
-    files = [{"path": f.path, "size": f.size, "time_deleted": 0} for f in torrent.files()]
+    files = [{"path": f.path, "size": f.size, "time_deleted": 0} for f in ltt.files()]
     file_sizes = [f["size"] for f in files]
 
     stat = os.stat(path, follow_symlinks=False)
 
     web_seeds = []
-    for ws in torrent.web_seeds():
+    for ws in ltt.web_seeds():
         with suppress(Exception):
             url = ws["url"]
             if url:
@@ -87,9 +87,9 @@ def _extract_metadata(path):
 
     return {
         "path": path,
-        "title": torrent.name(),
-        "tracker": get_tracker_domain(torrent),
-        "time_uploaded": nums.safe_int(torrent.creation_date()),
+        "title": ltt.name(),
+        "tracker": get_tracker_domain(ltt),
+        "time_uploaded": nums.safe_int(ltt.creation_date()),
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_deleted": 0,
@@ -98,11 +98,11 @@ def _extract_metadata(path):
         "size_avg": statistics.mean(file_sizes),
         "size_median": statistics.median(file_sizes),
         "file_count": len(files),
-        "src": torrent.source,
-        "is_private": torrent.private,
-        "comment": torrent.comment(),
-        "author": torrent.creator(),
-        "info_hash": str(torrent.info_hash()),
+        "src": ltt.source,
+        "is_private": ltt.private,
+        "comment": ltt.comment(),
+        "author": ltt.creator(),
+        "info_hash": str(ltt.info_hash()),
         "web_seeds": web_seeds,
         "files": files,
     }
