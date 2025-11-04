@@ -367,8 +367,8 @@ def library(args=None) -> None:
     if args.version:
         return print(__version__)
 
-    log.info("library v%s :: %s", __version__, os.path.realpath(sys.path[0]))
-    log.info(sys.argv)
+    log.debug("library v%s :: %s", __version__, os.path.realpath(sys.path[0]))
+    log.debug(sys.argv)
 
     if hasattr(args, "func"):
         if len(sys.argv) >= 2:
