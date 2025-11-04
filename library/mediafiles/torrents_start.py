@@ -39,9 +39,13 @@ def wait_torrent_loaded(qbt_client, torrent):
     attempt = 0
     while attempt < attempts:
         for info_hash in info_hashes:
-            with suppress(qbittorrentapi.NotFound404Error):
+            try:
                 qbt_client.torrents_properties(info_hash)
                 return info_hash
+            except qbittorrentapi.NotFound404Error:
+                sleep(0.2)
+            except (qbittorrentapi.APIConnectionError, ConnectionRefusedError):
+                sleep(20)
 
         attempt += 1
         log.info("Waiting for torrent to load in qBittorrent")
@@ -71,7 +75,7 @@ def start_qBittorrent(args):
 
     log.info("Waiting for qBittorrent web UI to load")
 
-    max_attempts = 1000  # ~15 minutes
+    max_attempts = 500  # ~15 minutes
     attempt = 0
     while attempt < max_attempts:
         try:
@@ -82,7 +86,7 @@ def start_qBittorrent(args):
             logging.warning(f"Authentication failed. Check your qBit settings, --username, and --password: {excinfo}")
             break  # stop if authentication failing
         except (qbittorrentapi.APIConnectionError, ConnectionRefusedError):
-            time.sleep(1)
+            time.sleep(2)
             attempt += 1
     else:
         logging.error("Failed to connect to qBittorrent web UI")
