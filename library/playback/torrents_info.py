@@ -1,7 +1,9 @@
-#!/usr/bin/python3
 import argparse, os, statistics
 from collections import defaultdict
 from pathlib import Path
+
+#!/usr/bin/python3
+from random import randint
 from statistics import mean, median
 from time import sleep
 
@@ -99,15 +101,44 @@ def parse_args():
     return args
 
 
+def torrent_files(t):
+    import qbittorrentapi
+
+    attempts = 10
+    attempt = 0
+    while attempt < attempts:
+        attempt += 1
+
+        try:
+            return t.files
+        except (qbittorrentapi.APIConnectionError, ConnectionRefusedError, TimeoutError):
+            sleep(randint(1, 10))
+
+    return []
+
+
 def qbt_get_tracker(qbt_client, torrent):
-    tracker = torrent.tracker
-    if not tracker:
-        tracker = iterables.safe_unpack(
-            sorted(
-                (tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")), reverse=True
-            )
-        )
-    return tld_from_url(tracker)
+    import qbittorrentapi
+
+    attempts = 10
+    attempt = 0
+    while attempt < attempts:
+        attempt += 1
+
+        try:
+            tracker = torrent.tracker
+            if not tracker:
+                tracker = iterables.safe_unpack(
+                    sorted(
+                        (tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")),
+                        reverse=True,
+                    )
+                )
+            return tld_from_url(tracker)
+        except (qbittorrentapi.APIConnectionError, ConnectionRefusedError, TimeoutError):
+            sleep(randint(1, 10))
+
+    return None
 
 
 def qbt_enhance_torrents(qbt_client, qbt_torrents):
@@ -174,9 +205,9 @@ def filter_torrents_by_criteria(args, torrents):
     if "sizes" not in args.defaults:
         torrents = [t for t in torrents if args.sizes(t.total_size)]
     if "file_count" not in args.defaults:
-        torrents = [t for t in torrents if args.file_count(len(t.files))]
+        torrents = [t for t in torrents if args.file_count(len(torrent_files(t)))]
     if "avg_sizes" not in args.defaults:
-        torrents = [t for t in torrents if args.avg_sizes(median([f.size for f in t.files]))]
+        torrents = [t for t in torrents if args.avg_sizes(median([f.size for f in torrent_files(t)]))]
     if "ratio" not in args.defaults:
         torrents = [t for t in torrents if args.ratio(t.ratio)]
     if "seeders" not in args.defaults:
@@ -281,9 +312,11 @@ def filter_torrents_by_criteria(args, torrents):
             )
         ]
     if args.file_search:
-        torrents = [t for t in torrents if strings.glob_match_all(args.file_search, [f.name for f in t.files])]
+        torrents = [t for t in torrents if strings.glob_match_all(args.file_search, [f.name for f in torrent_files(t)])]
     if args.file_exclude:
-        torrents = [t for t in torrents if not strings.glob_match_any(args.file_exclude, [f.name for f in t.files])]
+        torrents = [
+            t for t in torrents if not strings.glob_match_any(args.file_exclude, [f.name for f in torrent_files(t)])
+        ]
 
     if args.tracker:
         trackers = set(args.tracker)
@@ -298,7 +331,8 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if args.any_exists
             is any(
-                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists() for f in t.files
+                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
+                for f in torrent_files(t)
             )
         ]
     if args.all_exists is True:
@@ -306,7 +340,8 @@ def filter_torrents_by_criteria(args, torrents):
             t
             for t in torrents
             if all(
-                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists() for f in t.files
+                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
+                for f in torrent_files(t)
             )
         ]
     elif args.all_exists is False:
@@ -315,7 +350,7 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if any(
                 not (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
-                for f in t.files
+                for f in torrent_files(t)
             )
         ]
     if args.opened is not None:
@@ -325,7 +360,7 @@ def filter_torrents_by_criteria(args, torrents):
             if args.opened
             is any(
                 file_utils.is_file_open(Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name)
-                for f in t.files
+                for f in torrent_files(t)
             )
         ]
 
@@ -380,7 +415,9 @@ def print_torrents_by_tracker(args, torrents):
                 "count": len(tracker_torrents),
                 "size": sum(t.total_size for t in tracker_torrents),
                 "remaining": remaining,
-                "files": (sum(len(t.files) for t in tracker_torrents) if args.file_counts else None),  # a bit slow
+                "files": (
+                    sum(len(torrent_files(t)) for t in tracker_torrents) if args.file_counts else None
+                ),  # a bit slow
             }
         )
     if trackers:
@@ -416,7 +453,7 @@ def agg_torrents_state(args, state, state_torrents):
     return {
         "state": state,
         "count": len(state_torrents),
-        "files": (sum(len(t.files) for t in state_torrents) if args.file_counts else None),
+        "files": (sum(len(torrent_files(t)) for t in state_torrents) if args.file_counts else None),
         "size": strings.file_size(sum(t.total_size for t in state_torrents)),
         "downloaded": strings.file_size(downloaded) if downloaded else None,
         "uploaded": strings.file_size(uploaded) if uploaded else None,
@@ -488,11 +525,11 @@ def torrents_info():
     elif args.sort == "remaining":
         torrents = sorted(torrents, key=lambda t: t.amount_left, reverse=reverse_sort)
     elif args.sort in ["counts", "count"]:
-        torrents = sorted(torrents, key=lambda t: len(t.files), reverse=reverse_sort)
+        torrents = sorted(torrents, key=lambda t: len(torrent_files(t)), reverse=reverse_sort)
     elif args.sort in ["size", "total_size"]:
         torrents = sorted(torrents, key=lambda t: t.total_size, reverse=reverse_sort)
     elif args.sort in ["avg_size"]:
-        torrents = sorted(torrents, key=lambda t: mean([f.size for f in t.files]), reverse=reverse_sort)
+        torrents = sorted(torrents, key=lambda t: mean([f.size for f in torrent_files(t)]), reverse=reverse_sort)
     elif args.sort in ["network", "download+upload", "ingress+egress"]:
         torrents = sorted(
             torrents,
@@ -590,7 +627,9 @@ def torrents_info():
 
             base_path = None
             for test_path in base_paths:
-                if test_path and ((Path(test_path) / t.name).exists() or (Path(test_path) / t.files[0].name).exists()):
+                if test_path and (
+                    (Path(test_path) / t.name).exists() or (Path(test_path) / torrent_files(t)[0].name).exists()
+                ):
                     base_path = test_path
                     break
 
@@ -603,7 +642,7 @@ def torrents_info():
                 continue
 
             if "f" in args.print:
-                for f in t.files:
+                for f in torrent_files(t):
                     file_path = Path(base_path) / f.name
                     print(file_path)
             else:
@@ -646,16 +685,16 @@ def torrents_info():
                     d |= {"tracker": t.tracker_domain()}
 
                 if args.file_search:
-                    files = t.files
-                    files = [f for f in t.files if strings.glob_match_all(args.file_search, [f.name])]
+                    files = torrent_files(t)
+                    files = [f for f in torrent_files(t) if strings.glob_match_all(args.file_search, [f.name])]
 
                     print(t.name)
                     printing.extended_view(files)
                     print()
 
-                    d |= {"files": f"{len(files)} ({len(t.files)})"}
+                    d |= {"files": f"{len(files)} ({len(torrent_files(t))})"}
                 elif args.file_counts:
-                    d |= {"files": len(t.files)}
+                    d |= {"files": len(torrent_files(t))}
 
                 if args.paths:
                     if t.state_enum.is_complete:
@@ -719,16 +758,16 @@ def torrents_info():
                     d |= {"tracker": t.tracker_domain()}
 
                 if args.file_search:
-                    files = t.files
-                    files = [f for f in t.files if strings.glob_match_all(args.file_search, [f.name])]
+                    files = torrent_files(t)
+                    files = [f for f in torrent_files(t) if strings.glob_match_all(args.file_search, [f.name])]
 
                     print(t.name)
                     printing.extended_view(files)
                     print()
 
-                    d |= {"files": f"{len(files)} ({len(t.files)})"}
+                    d |= {"files": f"{len(files)} ({len(torrent_files(t))})"}
                 elif args.file_counts:
-                    d |= {"files": len(t.files)}
+                    d |= {"files": len(torrent_files(t))}
 
                 if args.paths:
                     if t.state_enum.is_complete:
@@ -778,7 +817,7 @@ def torrents_info():
             if invalid_state:
                 continue
 
-            for file in t.files:
+            for file in torrent_files(t):
                 for base_path in base_paths:
                     file_path = Path(base_path) / file.name
                     if file_path.exists() and not file_path.is_dir():
