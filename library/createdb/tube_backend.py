@@ -307,9 +307,15 @@ def get_video_metadata(args, playlist_path) -> dict | None:
 
 def log_error(ydl_log, webpath):
     ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
-    ydl_errors = [
-        line for log_entry in ydl_full_log for line in log_entry.splitlines() if not yt_meaningless_errors.match(line)
-    ]
+
+    ydl_errors = []
+    for log_entry in ydl_full_log:
+        for line in log_entry.splitlines():
+            match = yt_meaningless_errors.match(line)
+            if match:
+                log.debug("Removed line: '%s' | Match: '%s'", line, match.group(0))
+            else:
+                ydl_errors.append(line)
     ydl_errors_txt = "\n".join(ydl_errors)
 
     matched_error = strings.combine([line for line in ydl_errors if environment_errors.match(line)])
@@ -549,6 +555,7 @@ def download(args, m) -> None:
                 media_check_failed = True
 
     if not (info and local_path and Path(local_path).exists()) or media_check_failed:
+        log.debug(ydl_log)
         download_status, ydl_errors_txt = log_error(ydl_log, webpath)
 
     if media_check_failed:

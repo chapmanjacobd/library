@@ -82,7 +82,7 @@ yt_meaningless_errors = re.compile(
 .*Fatal Python error
 .*Downloading info JSON
 .*list index out of range
-.*Extract.* cookies
+.*Extracting cookies
 .*File .*, line .*,
 .*Requested format is not available
 .*Video unavailable. This content
@@ -208,6 +208,7 @@ yt_unrecoverable_errors = re.compile(
 .*\[youtube:truncated_url\]
 .*: This video is not available.
 .*Video unavailable. This video is not available
+.*Video unavailable
 .*This article does not contain a video
 .*Resource temporarily unavailable
 .*This video is unavailable
