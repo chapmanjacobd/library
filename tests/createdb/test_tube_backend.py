@@ -16,10 +16,39 @@ def test_get_video_download_environment_error():
     assert excinfo.value.code == 28
 
 
-def test_get_video_download_ure():
-    error_msg = "[download] x: has already been recorded in the archive"
-    ydl_log = {"error": [], "warning": ["Unrelated warning"], "info": [error_msg]}
-    assert tube_backend.log_error(ydl_log, mock_webpath) == (DLStatus.UNRECOVERABLE_ERROR, error_msg)
+@pytest.mark.parametrize(
+    "ydl_log, saved_error",
+    [
+        (
+            {
+                "error": [],
+                "warning": ["Unrelated warning"],
+                "info": ["[download] x: has already been recorded in the archive"],
+            },
+            "[download] x: has already been recorded in the archive",
+        ),
+        (
+            {
+                'error': [
+                    "\x1b[0;31mERROR:\x1b[0m [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
+                    "ERROR: [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
+                ],
+                'warning': [],
+                'info': [
+                    '[youtube] Extracting URL: https://youtube.com/watch?v=x',
+                    '[youtube] x: Downloading webpage',
+                    '[youtube] x: Downloading tv client config',
+                    '[youtube] x: Downloading player 7b9b4e02-main',
+                    '[youtube] x: Downloading tv player API JSON',
+                    '[youtube] x: Downloading android sdkless player API JSON',
+                ],
+            },
+            "\x1b[0;31mERROR:\x1b[0m [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies;ERROR: [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
+        ),
+    ],
+)
+def test_log_error_ure(ydl_log, saved_error):
+    assert tube_backend.log_error(ydl_log, mock_webpath) == (DLStatus.UNRECOVERABLE_ERROR, saved_error)
 
 
 def test_get_video_download_re():
