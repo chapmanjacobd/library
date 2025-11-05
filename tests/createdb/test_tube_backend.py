@@ -29,18 +29,18 @@ def test_get_video_download_environment_error():
         ),
         (
             {
-                'error': [
+                "error": [
                     "\x1b[0;31mERROR:\x1b[0m [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
                     "ERROR: [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
                 ],
-                'warning': [],
-                'info': [
-                    '[youtube] Extracting URL: https://youtube.com/watch?v=x',
-                    '[youtube] x: Downloading webpage',
-                    '[youtube] x: Downloading tv client config',
-                    '[youtube] x: Downloading player 7b9b4e02-main',
-                    '[youtube] x: Downloading tv player API JSON',
-                    '[youtube] x: Downloading android sdkless player API JSON',
+                "warning": [],
+                "info": [
+                    "[youtube] Extracting URL: https://youtube.com/watch?v=x",
+                    "[youtube] x: Downloading webpage",
+                    "[youtube] x: Downloading tv client config",
+                    "[youtube] x: Downloading player 7b9b4e02-main",
+                    "[youtube] x: Downloading tv player API JSON",
+                    "[youtube] x: Downloading android sdkless player API JSON",
                 ],
             },
             "\x1b[0;31mERROR:\x1b[0m [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies;ERROR: [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
