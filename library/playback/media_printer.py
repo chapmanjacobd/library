@@ -182,6 +182,8 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         and "history" in tables
         and action == SC.download_status
         and "time_downloaded" in m_columns
+        and "never_attempted" in media[0]
+        and "retry_queued" in media[0]
     ):
         for m in media:
             m["download_duration"] = cadence_adjusted_items(

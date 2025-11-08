@@ -45,7 +45,7 @@ def download_status() -> None:
     for m in media:
         extractor_key = m.get("extractor_key", "Playlist-less media")
 
-        if "download_attempts" in m and (m["download_attempts"] or 0) > args.download_retries:
+        if "download_attempts" in m and (m["download_attempts"] or 0) >= args.download_retries:
             extractor_stats[extractor_key]["retries_exceeded"] += 1
         elif (m.get("time_downloaded") or 0) > 0 or (
             not m["path"].startswith("http") and (m.get("webpath") or "").startswith("http")
@@ -64,7 +64,7 @@ def download_status() -> None:
                 extractor_stats[extractor_key]["never_attempted"] += 1
 
     media = [{"extractor_key": extractor_key, **d} for extractor_key, d in extractor_stats.items()]
-    media = sorted(media, key=lambda x: (-x["never_attempted"], -x["retry_queued"], x["extractor_key"] or 0))
+    media = sorted(media, key=lambda x: (-x["never_attempted"], -x["retry_queued"], x["extractor_key"] or ""))
 
     media_printer.media_printer(args, media, units="extractors")
 
