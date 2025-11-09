@@ -1,5 +1,6 @@
 from pathlib import Path
-from unittest import skip
+
+from pytest import skip
 
 from library.createdb import gallery_backend
 from library.mediadb import db_media, db_playlists

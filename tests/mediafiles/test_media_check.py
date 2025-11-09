@@ -1,4 +1,4 @@
-from unittest import skip
+from pytest import skip
 
 from library.mediafiles import media_check
 from library.utils import nums
