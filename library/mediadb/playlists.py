@@ -1,6 +1,7 @@
 import argparse, os, sqlite3
 
 from library import usage
+from library.mediadb import db_playlists
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, db_utils
 from library.utils.sqlgroups import construct_playlists_query
@@ -26,15 +27,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def delete_playlists(args, playlists) -> None:
-    deleted_playlist_count = 0
-    with args.db.conn:
-        playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
-        cursor = args.db.conn.execute(
-            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")",
-            playlist_paths,
-        )
-        deleted_playlist_count = cursor.rowcount
-
     deleted_media_count = 0
     try:
         online_media = [p for p in playlists if p.startswith("http")]
@@ -52,6 +44,15 @@ def delete_playlists(args, playlists) -> None:
                 deleted_media_count += cursor.rowcount
     except sqlite3.OperationalError:  # no such column: playlists_id
         pass
+
+    deleted_playlist_count = 0
+    with args.db.conn:
+        playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
+        cursor = args.db.conn.execute(
+            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")",
+            playlist_paths,
+        )
+        deleted_playlist_count = cursor.rowcount
 
     local_media = [p.rstrip(os.sep) for p in playlists if not p.startswith("http")]
     for folder in local_media:
@@ -102,6 +103,11 @@ def playlists() -> None:
 
     playlists = list(args.db.query(query, bindings))
     media_printer.media_printer(args, playlists, units="playlists")
+
+    if args.mark_deleted:
+        deleted_count = db_playlists.mark_media_deleted(args, [d["path"] for d in playlists])
+        if deleted_count > 0:
+            print("Marked", deleted_count, "playlists as deleted")
 
     if args.delete_rows:
         delete_playlists(args, [d["path"] for d in playlists])
