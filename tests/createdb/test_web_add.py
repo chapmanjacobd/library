@@ -1,10 +1,10 @@
-from pytest import skip
+import pytest
 
 from library.__main__ import library as lb
 from tests.utils import connect_db_args
 
 
-@skip("CloudFlare bot blocking...")
+@pytest.mark.skip("CloudFlare bot blocking...")
 def test_web_add(temp_db):
     db1 = temp_db()
     lb(["web-add", "--fs", db1, "https://unli.xyz/proliferation/"])

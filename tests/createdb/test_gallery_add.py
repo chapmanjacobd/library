@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pytest import skip
+import pytest
 
 from library.createdb import gallery_backend
 from library.mediadb import db_media, db_playlists
@@ -21,7 +21,7 @@ def create_args(test_name):
     return args
 
 
-@skip("inconsistent between gallery-dl versions")
+@pytest.mark.skip("inconsistent between gallery-dl versions")
 def test_safe_mode():
     args = NoneSpace()
     assert gallery_backend.is_supported(args, "https://i.redd.it/gdlcqo5xvpwa1.png")
@@ -31,7 +31,7 @@ def test_safe_mode():
     assert gallery_backend.is_supported(args, "https://youtu.be/HoY5RbzRcmo") is False
 
 
-@skip("imgur is 429")
+@pytest.mark.skip("imgur is 429")
 def test_get_playlist_metadata_imgur_single():
     args = create_args("playlist_metadata_imgur_single")
     out = gallery_backend.get_playlist_metadata(args, "https://imgur.com/0gybAXR")

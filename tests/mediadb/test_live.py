@@ -1,6 +1,6 @@
 import os
 
-from pytest import skip
+import pytest
 
 from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
@@ -12,7 +12,7 @@ STORAGE_PREFIX = "tests/data"
 dl_db = "tests/data/live.db"
 
 
-@skip("network")
+@pytest.mark.skip("network")
 def test_live_skip():
     tube_add([dl_db, URL])
     lb(
@@ -32,7 +32,7 @@ def test_live_skip():
     assert not os.path.exists(video_path), "Video file exists"
 
 
-@skip("network")
+@pytest.mark.skip("network")
 def test_live():
     tube_add([dl_db, URL])
     lb(
