@@ -40,6 +40,8 @@ def test_clean_path():
     assert path_utils.clean_path(b"3_seconds_ago___/ Mike.webm") == utils.p("3_seconds_ago/Mike.webm")
     assert path_utils.clean_path(b"test") == utils.p("test")
     assert path_utils.clean_path(b"test./t") == utils.p("test/t")
+    assert path_utils.clean_path(b"test//t") == utils.p("test/t")
+    assert path_utils.clean_path(b"test/''/t") == utils.p("test/_/t")
     assert path_utils.clean_path(b".test") == utils.p(".test")
     assert path_utils.clean_path(b".test/t") == utils.p(".test/t")
     assert path_utils.clean_path(b"_test/t") == utils.p("_test/t")

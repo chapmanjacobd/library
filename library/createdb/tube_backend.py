@@ -53,6 +53,7 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
         "skip_playlist_after_errors": 21,
         "clean_infojson": False,
         "playlistend": consts.DEFAULT_PLAYLIST_LIMIT,
+        "compat_opts": ["no-live-chat"],
     }
 
     all_opts = {
@@ -363,7 +364,7 @@ def download(args, m) -> None:
     if m.get("time_modified") and m.get("time_modified") > 0:
         ignoreerrors = True
 
-    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id,webpage_url_basename)s - %(album,playlist_title,playlist,playlist_id).220B"
+    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id,webpage_url_basename).220B - %(album,playlist_title,playlist,playlist_id|'').220B"
 
     def out_dir(p):
         return str(Path(args.prefix, "%(extractor_key,extractor,ie_key).220B", subdir_template, p))
@@ -391,6 +392,7 @@ def download(args, m) -> None:
             "default": out_dir("%(id).220B.%(ext)s"),
             "chapter": out_dir("%(id).220B.%(section_number)03d.%(ext)s"),
         },
+        "outtmpl_na_placeholder": "",
     }
 
     if args.verbose >= consts.LOG_DEBUG:
