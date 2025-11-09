@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
 import pytest
-import pytest
 
 from library.createdb import tube_backend
 from library.utils.consts import DLStatus
