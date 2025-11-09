@@ -1,7 +1,7 @@
 import unittest
 from argparse import Namespace
 from types import SimpleNamespace
-from unittest import mock, skip
+from unittest import mock
 
 from library.__main__ import library as lb
 from library.utils.db_utils import connect
@@ -9,7 +9,7 @@ from library.utils.db_utils import connect
 reddit_db = "tests/data/reddit.db"
 
 
-@skip("Requires reddit auth")
+@pytest.mark.skip("Requires reddit auth")
 class TestReddit(unittest.TestCase):
     def setUp(self):
         lb(["reddit_add", reddit_db, "https://old.reddit.com/user/BuonaparteII/", "--limit", "10"])

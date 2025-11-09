@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
-from pytest import skip
+import pytest
 
 from library.createdb import tube_backend
 from library.utils.consts import DLStatus
@@ -70,13 +70,13 @@ def test_safe_mode():
     assert tube_backend.is_supported("www.com") is False
 
 
-@skip("network")
+@pytest.mark.skip("network")
 def test_get_video_metadata():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(args, "https://www.youtube.com/watch?v=hRVgC7eE-Ow")
 
 
-@skip("network")
+@pytest.mark.skip("network")
 def test_get_video_metadata_playlist():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(
