@@ -107,6 +107,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     iterables.safe_unpack(info.get("ie_key"), info.get("extractor_key"), info.get("extractor")) or ""
                 )
 
+                # TODO: webpage_url_basename seems like a weird property to check
                 if webpath != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if playlist_root:
                         if not info.get("playlist_id") or webpath == playlist_path:
@@ -362,7 +363,7 @@ def download(args, m) -> None:
     if m.get("time_modified") and m.get("time_modified") > 0:
         ignoreerrors = True
 
-    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id)s - %(album,playlist_title,playlist,playlist_id,webpage_url_basename).220B"
+    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id,webpage_url_basename)s - %(album,playlist_title,playlist,playlist_id).220B"
 
     def out_dir(p):
         return str(Path(args.prefix, "%(extractor_key,extractor,ie_key).220B", subdir_template, p))
