@@ -3,6 +3,8 @@ from argparse import Namespace
 from types import SimpleNamespace
 from unittest import mock
 
+import pytest
+
 from library.__main__ import library as lb
 from library.utils.db_utils import connect
 
@@ -24,6 +26,7 @@ class TestReddit(unittest.TestCase):
     def test_redditupdate(self):
         lb(["reddit_update", reddit_db, "--lookback", "2", "--limit", "2"])
         db = connect(Namespace(database=reddit_db, verbose=2))
+        assert db
 
         playlists = list(db["playlists"].rows)
         assert playlists[0]["time_deleted"] == 0
