@@ -84,6 +84,7 @@ yt_meaningless_errors = re.compile(
 .*list index out of range
 .*Extracting cookies
 .*File .*, line .*,
+.*Unable to download video subtitles
 .*Requested format is not available
 .*Video unavailable. This content
 .*info.* Testing format
