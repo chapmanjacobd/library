@@ -1,4 +1,4 @@
-from unittest import skip
+from pytest import skip
 
 from library.__main__ import library as lb
 from tests.utils import connect_db_args

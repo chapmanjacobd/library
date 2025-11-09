@@ -1,5 +1,6 @@
 import os
-from unittest import skip
+
+from pytest import skip
 
 from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
