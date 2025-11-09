@@ -246,8 +246,8 @@ ARCHIVE_EXTENSIONS = set(
     (
         "0|1|01|001|0001|7z|ace|alz|alzip|arc|arj|b5i|b6i|bin|bz2|cab|ccd|cdr|cif"
         "|cpio|daa|deb|dmg|exe|gi|gz|img|iso|lha|lzh|lzma|lzo|mdf|msi|nrg|nsi|nsis"
-        "|p01|pak|pdi|r00|rar|rpm|sit|sitx|tar|bz2|gz|xz|Z|taz|tbz2|tgz|toast|txz"
-        "|tz|udf|uif|vcd|wim|xar|xz|z|zip|zipx|zoo|zst|cb7|cbr|cbz|cbt|cba"
+        "|p01|pak|pdi|rar|r00|r01|rpm|sit|sitx|tar|bz2|gz|xz|Z|taz|tbz2|tgz|toast|txz"
+        "|tz|udf|uif|vcd|wim|xar|xz|z|zip|z00|z01|zipx|zoo|zst|cb7|cbr|cbz|cbt|cba"
     ).split("|")
 )
 CALIBRE_EXTENSIONS = set(

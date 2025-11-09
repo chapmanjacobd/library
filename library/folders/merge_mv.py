@@ -168,9 +168,19 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
                 elif args.dest_folder:
                     append_basename = True
                 else:  # args.dest_bsd
-                    append_basename = (
-                        destination.endswith(os.sep) or os.path.isdir(destination) or not os.path.exists(destination)
-                    )
+                    if destination.endswith(os.sep):
+                        append_basename = True
+                    elif os.path.isdir(destination):
+                        append_basename = True
+                    else:  # destination is not an existing directory
+                        same_basename = path_utils.basename(source) == path_utils.basename(destination)
+                        if same_basename:
+                            append_basename = False
+                        elif os.path.exists(destination):  # exists: file or file-like
+                            append_basename = False
+                        else:
+                            append_basename = True
+
                 if append_basename:
                     file_dest = os.path.join(file_dest, path_utils.basename(source))
                     log.debug("file append basename %s", file_dest)
