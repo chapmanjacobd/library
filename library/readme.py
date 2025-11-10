@@ -272,25 +272,6 @@ Recently, this functionality has also been integrated into watch/listen subcomma
 
 </details>
 
-### Backfill data
-
-<details><summary>Backfill missing YouTube videos from the Internet Archive</summary>
-
-```fish
-for base in https://youtu.be/ http://youtu.be/ http://youtube.com/watch?v= https://youtube.com/watch?v= https://m.youtube.com/watch?v= http://www.youtube.com/watch?v= https://www.youtube.com/watch?v=
-    sqlite3 video.db "
-        update or ignore media
-            set path = replace(path, '$base', 'https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/')
-              , time_deleted = 0
-        where time_deleted > 0
-        and (path = webpath or path not in (select webpath from media))
-        and path like '$base%'
-    "
-end
-```
-
-</details>
-
 <details><summary>Backfill reddit databases with pushshift data</summary>
 
 [https://github.com/chapmanjacobd/reddit_mining/](https://github.com/chapmanjacobd/reddit_mining/)

@@ -14,7 +14,7 @@ from library.data.yt_dlp_errors import (
 from library.mediadb import db_media, db_playlists
 from library.mediafiles import media_check
 from library.utils import consts, db_utils, file_utils, iterables, objects, path_utils, printing, sql_utils, strings
-from library.utils.consts import VideoArchiveError, DBType, DLStatus
+from library.utils.consts import DBType, DLStatus, VideoArchiveError
 from library.utils.log_utils import Timer, log
 from library.utils.processes import FFProbe
 
@@ -594,21 +594,22 @@ def download(args, m) -> None:
         )
         if webpath.startswith(archives):
             raise VideoArchiveError
-        else:  # log original error only
-            log.debug(ydl_log)
-            download_status, ydl_errors_txt = log_error(ydl_log, webpath)
+        # else: log original error only
+        log.debug(ydl_log)
+        download_status, ydl_errors_txt = log_error(ydl_log, webpath)
 
-        vid = coerce_to_yt_id(webpath)
-        if vid:  # try archives
-            for prefix in archives:
-                try:
-                    download(args, m | {"path": prefix + vid})
-                except VideoArchiveError:
-                    continue
-                else:
-                    download_status = DLStatus.SUCCESS
-                    media_check_failed = False
-                    break
+        if not "has already been recorded in the archive" in ydl_errors_txt:
+            vid = coerce_to_yt_id(webpath)
+            if vid:  # try archives
+                for prefix in archives:
+                    try:
+                        download(args, m | {"path": prefix + vid})
+                    except VideoArchiveError:
+                        continue
+                    else:
+                        download_status = DLStatus.SUCCESS
+                        media_check_failed = False
+                        break
 
     if media_check_failed:
         log.info("[%s]: Media check failed", local_path)
