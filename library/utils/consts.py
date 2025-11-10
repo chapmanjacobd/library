@@ -168,6 +168,10 @@ class DLStatus:
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 
 
+class VideoArchiveError(Exception):
+    pass
+
+
 def reddit_frequency(frequency) -> str:
     mapper = {
         "daily": "day",

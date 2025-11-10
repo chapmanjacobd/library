@@ -1,4 +1,4 @@
-import json, sys
+import json, re, sys
 from copy import deepcopy
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -14,7 +14,7 @@ from library.data.yt_dlp_errors import (
 from library.mediadb import db_media, db_playlists
 from library.mediafiles import media_check
 from library.utils import consts, db_utils, file_utils, iterables, objects, path_utils, printing, sql_utils, strings
-from library.utils.consts import DBType, DLStatus
+from library.utils.consts import VideoArchiveError, DBType, DLStatus
 from library.utils.log_utils import Timer, log
 from library.utils.processes import FFProbe
 
@@ -28,6 +28,35 @@ def load_module_level_yt_dlp() -> ModuleType:
     if yt_dlp is None:
         import yt_dlp
     return yt_dlp
+
+
+ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{10}[AEIMQUYcgkosw048]$")
+PATTERNS = [
+    re.compile(
+        r"(?:https?://)?(?:\w+\.)?youtube\.com/watch/?\?v=([A-Za-z0-9_-]{10}[AEIMQUYcgkosw048])(?:[\/&].*)?",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?:https?://)?(?:\w+\.)?youtube.com/(?:v|embed|shorts|video)/([A-Za-z0-9_-]{10}[AEIMQUYcgkosw048])(?:[\/&].*)?",
+        re.IGNORECASE,
+    ),
+    re.compile(r"(?:https?://)?youtu.be/([A-Za-z0-9_-]{10}[AEIMQUYcgkosw048])(?:\?.*)?", re.IGNORECASE),
+]
+
+
+def coerce_to_yt_id(s):
+    if not s:
+        return None
+
+    if re.match(ID_PATTERN, s):
+        return s
+
+    for pattern in PATTERNS:
+        vid = re.sub(pattern, lambda match: match.group(1), s)
+        if re.match(ID_PATTERN, vid):
+            return vid
+
+    return None
 
 
 def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
@@ -558,8 +587,28 @@ def download(args, m) -> None:
                 media_check_failed = True
 
     if not (info and local_path and Path(local_path).exists()) or media_check_failed:
-        log.debug(ydl_log)
-        download_status, ydl_errors_txt = log_error(ydl_log, webpath)
+        archives = (
+            "https://web.archive.org/web/0id_/http://wayback-fakeurl.archive.org/yt/",
+            "https://ghostarchive.org/varchive/",
+            "https://preservetube.com/watch?v=",
+        )
+        if webpath.startswith(archives):
+            raise VideoArchiveError
+        else:  # log original error only
+            log.debug(ydl_log)
+            download_status, ydl_errors_txt = log_error(ydl_log, webpath)
+
+        vid = coerce_to_yt_id(webpath)
+        if vid:  # try archives
+            for prefix in archives:
+                try:
+                    download(args, m | {"path": prefix + vid})
+                except VideoArchiveError:
+                    continue
+                else:
+                    download_status = DLStatus.SUCCESS
+                    media_check_failed = False
+                    break
 
     if media_check_failed:
         log.info("[%s]: Media check failed", local_path)
