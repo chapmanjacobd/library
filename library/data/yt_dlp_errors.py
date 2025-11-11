@@ -140,13 +140,18 @@ yt_meaningless_errors = re.compile(
     ),
 )
 
+yt_filtered = re.compile(
+    "|".join(
+        r""".*does not pass filter
+.*has already been recorded in the archive""".splitlines(),
+    ),
+)
+
 yt_unrecoverable_errors = re.compile(
     "|".join(
         r""".*repetitive or misleading metadata
 .*got player responses for video.*instead of
 .*It is not available
-.*does not pass filter
-.*has already been recorded in the archive
 .*ideo.*is private
 .*already ended
 .*id.*was not found
