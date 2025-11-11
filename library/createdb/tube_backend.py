@@ -631,7 +631,11 @@ def download(args, m) -> None:
     if download_status == DLStatus.SUCCESS and len(yt_archive) > 0 and info is not None:
         archive_id = ydl._make_archive_id(info)
         if archive_id is None:
-            log.info("archive_id not found %s", info)
+            vid = coerce_to_yt_id(m["path"])
+            if vid:
+                archive_id = f"youtube {vid}"
+            else:
+                log.info("archive_id not found %s", info)
         else:
             yt_archive.add(archive_id)
             with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
