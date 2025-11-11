@@ -128,7 +128,7 @@ def download(args=None) -> None:
             if (args.profile in (DBType.audio, DBType.video) and not tube_backend.is_supported(m["path"])) or (
                 args.profile in (DBType.image,) and not gallery_backend.is_supported(args, m["path"])
             ):
-                log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
+                log.info("Skipping unsupported URL (safe_mode) %s", m["path"])
                 continue
 
         # check if download already attempted recently by another process
@@ -149,23 +149,20 @@ def download(args=None) -> None:
             if d:
                 if d["time_deleted"]:
                     log.info(
-                        "[%s]: Download was marked as deleted %s ago. Skipping!",
-                        m["path"],
+                        "Download was marked as deleted %s ago. Skipping %s",
                         strings.duration(consts.now() - d["time_deleted"]),
+                        m["path"],
                     )
                     continue
                 elif d.get("time_modified") and d["time_modified"] > int(previous_time_attempted):
                     log.info(
-                        "[%s]: Download already attempted %s ago. Skipping!",
-                        m["path"],
+                        "Download already attempted %s ago. Skipping %s",
                         strings.duration(consts.now() - d["time_modified"]),
+                        m["path"],
                     )
                     continue
                 elif d.get("download_attempts") and d["download_attempts"] >= args.download_retries:
-                    log.info(
-                        "[%s]: Download attempts exceed download retries limit. Skipping!",
-                        m["path"],
-                    )
+                    log.info("Download attempts exceed download retries limit. Skipping %s", m["path"])
                     continue
 
         try:  # attempt to download
