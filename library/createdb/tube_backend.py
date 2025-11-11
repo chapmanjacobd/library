@@ -393,10 +393,16 @@ def download(args, m) -> None:
     if m.get("time_modified") and m.get("time_modified") > 0:
         ignoreerrors = True
 
-    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id,webpage_url_basename).220B - %(album,playlist_title,playlist,playlist_id|'').220B"
-
     def out_dir(p):
-        return str(Path(args.prefix, "%(extractor_key,extractor,ie_key).220B", subdir_template, p))
+        return str(
+            Path(
+                args.prefix,
+                "%(extractor_key,extractor,ie_key).220B",
+                "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id,webpage_url_basename).220B",
+                "%(album,playlist_title,playlist,playlist_id).220B",
+                p,
+            )
+        )
 
     func_opts = {
         "ignoreerrors": ignoreerrors,
