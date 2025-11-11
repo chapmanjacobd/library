@@ -7,6 +7,7 @@ from types import ModuleType
 from library.createdb import subtitle
 from library.data.yt_dlp_errors import (
     environment_errors,
+    yt_filtered,
     yt_meaningless_errors,
     yt_recoverable_errors,
     yt_unrecoverable_errors,
@@ -354,6 +355,11 @@ def log_error(ydl_log, webpath):
         log.warning("[%s]: Environment error. %s", webpath, matched_error)
         raise SystemExit(28)
 
+    matched_error = strings.combine([line for line in ydl_errors if yt_filtered.match(line)])
+    if matched_error:
+        log.info("[%s]: Blocked %s", webpath, matched_error)
+        return DLStatus.BLOCKED, matched_error
+
     matched_error = strings.combine([line for line in ydl_errors if yt_recoverable_errors.match(line)])
     if matched_error:
         log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, matched_error)
@@ -604,7 +610,7 @@ def download(args, m) -> None:
         log.debug(ydl_log)
         download_status, ydl_errors_txt = log_error(ydl_log, webpath)
 
-        if not "has already been recorded in the archive" in ydl_errors_txt:
+        if download_status != DLStatus.BLOCKED:
             vid = coerce_to_yt_id(webpath)
             if vid:  # try archives
                 for prefix in archives:

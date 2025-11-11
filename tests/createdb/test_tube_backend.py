@@ -20,14 +20,6 @@ def test_get_video_download_environment_error():
     [
         (
             {
-                "error": [],
-                "warning": ["Unrelated warning"],
-                "info": ["[download] x: has already been recorded in the archive"],
-            },
-            "[download] x: has already been recorded in the archive",
-        ),
-        (
-            {
                 "error": [
                     "\x1b[0;31mERROR:\x1b[0m [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
                     "ERROR: [youtube] x: Private video. Sign in if you've been granted access to this video. Use --cookies-from-browser or --cookies for the authentication. See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies. Also see https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies for tips on effectively exporting YouTube cookies",
@@ -54,6 +46,33 @@ def test_get_video_download_re():
     error_msg = "HTTP Error 429"
     ydl_log = {"error": [], "warning": [error_msg], "info": []}
     assert tube_backend.log_error(ydl_log, mock_webpath) == (DLStatus.RECOVERABLE_ERROR, error_msg)
+
+
+@pytest.mark.parametrize(
+    "ydl_log, saved_error",
+    [
+        (
+            {
+                "error": [],
+                "warning": ["Unrelated warning"],
+                "info": ["[download] x: has already been recorded in the archive"],
+            },
+            "[download] x: has already been recorded in the archive",
+        ),
+        (
+            {
+                "error": [
+                    "improvements that will save relationships does not pass filter (live_status=?not_live & duration >? 59 & duration <? 14399), skipping .."
+                ],
+                "warning": [],
+                "info": [],
+            },
+            "improvements that will save relationships does not pass filter (live_status=?not_live & duration >? 59 & duration <? 14399), skipping ..",
+        ),
+    ],
+)
+def test_log_error_download_blocked(ydl_log, saved_error):
+    assert tube_backend.log_error(ydl_log, mock_webpath) == (DLStatus.BLOCKED, saved_error)
 
 
 def test_get_video_download_unknown():
