@@ -59,11 +59,11 @@ def gallery_add(args=None) -> None:
 
         for path in paths:
             if path in known_playlists:
-                log.info("[%s]: Known already. Skipping!", path)
+                log.info("Known already. Skipping %s", path)
                 continue
 
             if args.safe and not gallery_backend.is_supported(args, path):
-                log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
+                log.info("Skipping unsupported playlist (safe_mode) %s", path)
                 continue
 
             gallery_backend.get_playlist_metadata(args, path)

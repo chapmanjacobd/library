@@ -66,18 +66,18 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
 
     if job_status & 1:
         errors.append("UnspecifiedError")
-        log.error("[%s]: gallery_dl gave an UnspecifiedError", path)
+        log.error("gallery_dl gave an UnspecifiedError %s", path)
 
     if job_status & 64:  # no extractor
         errors.append("NoExtractorError")
-        log.info("[%s]: NoExtractorError", path)
+        log.info("NoExtractorError %s", path)
 
     if job_status & 16 or job_status & 32:
         if job_status & 16:
             errors.append("AuthorizationError")
         if job_status & 32:
             errors.append("FilterError")
-        log.info("[%s]: Recoverable error(s) matched (will try again later)", path)
+        log.info("Recoverable error(s) matched (will try again later) %s", path)
 
     if job_status & 4 or job_status & 8:  # HTTPError; not found / 404
         # TODO: distinguish between 429 and other errors
@@ -87,7 +87,7 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
         if job_status & 8:
             error = "HTTPNotFound"
         errors.append(error)
-        log.debug("[%s]: Unrecoverable error %s", path, strings.combine(errors))
+        log.debug("Unrecoverable error %s %s", strings.combine(errors), path)
 
     if job_status & 128 and not ignore_errors:
         raise OSError
@@ -118,7 +118,7 @@ def download(args, m):
     try:
         job = gallery_dl.job.DownloadJob(webpath)
     except gallery_dl.exception.NoExtractorError:
-        log.info("[%s]: NoExtractorError", webpath)  # RecoverableError
+        log.info("NoExtractorError %s", webpath)  # RecoverableError
         db_media.download_add(args, webpath, m, error="NoExtractorError")
         return
 

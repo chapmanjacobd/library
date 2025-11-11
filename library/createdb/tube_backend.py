@@ -187,7 +187,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
             pl = ydl.extract_info(playlist_path, download=False, process=True)
             log.debug("ydl.extract_info done %s", t.elapsed())
         except yt_dlp.DownloadError:
-            log.error("[%s] DownloadError skipping", playlist_path)
+            log.error("DownloadError skipping %s", playlist_path)
             return
         except ExistingPlaylistVideoReached:
             if added_media_count > count_before_extract:
@@ -352,25 +352,25 @@ def log_error(ydl_log, webpath):
 
     matched_error = strings.combine([line for line in ydl_errors if environment_errors.match(line)])
     if matched_error:
-        log.warning("[%s]: Environment error. %s", webpath, matched_error)
+        log.warning("Environment error %s %s", matched_error, webpath)
         raise SystemExit(28)
 
     matched_error = strings.combine([line for line in ydl_errors if yt_filtered.match(line)])
     if matched_error:
-        log.info("[%s]: Blocked %s", webpath, matched_error)
+        log.info("Blocked %s %s", matched_error, webpath)
         return DLStatus.BLOCKED, matched_error
 
     matched_error = strings.combine([line for line in ydl_errors if yt_recoverable_errors.match(line)])
     if matched_error:
-        log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, matched_error)
+        log.info("Recoverable error matched (will try again later) %s %s", matched_error, webpath)
         return DLStatus.RECOVERABLE_ERROR, matched_error
 
     matched_error = strings.combine([line for line in ydl_errors if yt_unrecoverable_errors.match(line)])
     if matched_error:
-        log.info("[%s]: Unrecoverable error matched. %s", webpath, matched_error)
+        log.info("Unrecoverable error matched %s %s", matched_error, webpath)
         return DLStatus.UNRECOVERABLE_ERROR, matched_error
 
-    log.error("[%s]: Unknown error. %s", webpath, ydl_errors_txt)
+    log.error("Unknown error. %s %s", ydl_errors_txt, webpath)
     return DLStatus.UNKNOWN_ERROR, ydl_errors_txt
 
 
@@ -531,7 +531,7 @@ def download(args, m) -> None:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(excinfo))
             ydl_log["error"].append(error)
             info = None
-            log.debug("[%s]: yt-dlp %s", webpath, error)
+            log.debug("yt-dlp %s %s", error, webpath)
             # media.download_add(args, webpath, error=error)
             # return
         except Exception as excinfo:
@@ -539,13 +539,13 @@ def download(args, m) -> None:
                 error = consts.REGEX_ANSI_ESCAPE.sub("", str(excinfo))
                 ydl_log["error"].append(error)
                 info = None
-                log.debug("[%s]: yt-dlp %s", webpath, error)
+                log.debug("yt-dlp %s %s", error, webpath)
             else:
                 log.warning(webpath)
                 raise
 
         if info is None:
-            log.debug("[%s]: yt-dlp returned no info", webpath)
+            log.debug("yt-dlp returned no info %s", webpath)
             info = m
         else:
             info = {**m, **info}
@@ -568,13 +568,14 @@ def download(args, m) -> None:
                 local_path = path_utils.clean_path(local_path.encode())
                 if Path(temp_path).exists():  # may be download error
                     file_utils.rename_move_file(temp_path, local_path)
+                # TODO: wtf is this doing...
                 elif Path(local_path).exists():  # media might already be in download archive
                     local_path = temp_path
 
     download_status = DLStatus.SUCCESS
     media_check_failed = False
     if info and local_path and Path(local_path).exists():
-        log.info("[%s]: Downloaded to %s", webpath, local_path)
+        log.info("Downloaded to %s %s", local_path, webpath)
 
         if getattr(args, "check_corrupt", False) and path_utils.ext(local_path) not in consts.SKIP_MEDIA_CHECK:
             try:
@@ -624,7 +625,7 @@ def download(args, m) -> None:
                         break
 
     if media_check_failed:
-        log.info("[%s]: Media check failed", local_path)
+        log.info("Media check failed %s", local_path)
         download_status = DLStatus.RECOVERABLE_ERROR
         ydl_errors_txt = "Media check failed\n" + ydl_errors_txt
 
