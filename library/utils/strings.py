@@ -177,20 +177,13 @@ def clean_string(p) -> str:
     return p
 
 
+REGEX_PATH_SENTENCE = re.compile(
+    r"[/\\.\[\]\-\+(){}_&]|%20|%25|%26|%28|%29|%2B|%2C|%2D|%2E|%2F|%3F|%3D|%5B|%5C|%5D|%5F|%7B|%7C|%7D|%7E|%C2"
+)
+
+
 def path_to_sentence(s):
-    return remove_consecutive_whitespace(
-        s.replace("/", " ")
-        .replace("\\", " ")
-        .replace(".", " ")
-        .replace("[", " ")
-        .replace("(", " ")
-        .replace("]", " ")
-        .replace(")", " ")
-        .replace("{", " ")
-        .replace("}", " ")
-        .replace("_", " ")
-        .replace("-", " "),
-    )
+    return remove_consecutive_whitespace(REGEX_PATH_SENTENCE.sub(" ", s))
 
 
 def extract_words(string):

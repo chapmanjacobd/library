@@ -1310,6 +1310,7 @@ Choose ONE OR MORE of the following options:
     )
     parser.add_argument("--compat", action="store_true", help="Use natsort compat mode. Treats characters like ⑦ as 7")
     # parser.add_argument("--mcda", action=argparse.BooleanOptionalAction, help="Use MCDA for multi-sort")
+    parser.add_argument("--preprocess", action=argparse.BooleanOptionalAction, default=True, help="Remove junk common to filenames and URLs, eg. %20")
 
 
 def regex_sort_post(args):

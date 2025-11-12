@@ -329,8 +329,16 @@ def regex_sort() -> None:
     args.input_path.close()
 
     lines = list(s.rstrip("\n") for s in lines if s.strip())
-    lines = text_processor(args, lines)
-    lines = (p + "\n" for p in lines)
+
+    if args.preprocess:
+        sentence_strings = [strings.path_to_sentence(s) for s in lines]
+        lines_keyed = dict(zip(sentence_strings, lines, strict=True))
+        sorted_sentence_strings = text_processor(args, sentence_strings)
+        lines = [lines_keyed[p] + "\n" for p in sorted_sentence_strings]
+    else:
+        lines = text_processor(args, lines)
+        lines = (p + "\n" for p in lines)
+
     if args.output_path:
         with open(args.output_path, "w") as output_fd:
             output_fd.writelines(lines)
