@@ -61,6 +61,8 @@ def start_qBittorrent(args):
         port=args.port,
         username=args.username,
         password=args.password,
+        REQUESTS_ARGS={"timeout": (5, 45)},
+        HTTPADAPTER_ARGS={"pool_connections": 32, "pool_maxsize": 32},
     )
 
     with suppress(Exception):

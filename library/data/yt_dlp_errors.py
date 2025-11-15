@@ -135,6 +135,7 @@ yt_meaningless_errors = re.compile(
 .*list indices must be integers
 .*Ignoring playliststart and playlistend because playlistitems was given
 .*Unable to download JSON metadata
+.*Downloading JSON metadata
 .*Unable to recognize playlist.
 .*Premieres in""".splitlines(),
     ),
