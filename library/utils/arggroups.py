@@ -1310,7 +1310,12 @@ Choose ONE OR MORE of the following options:
     )
     parser.add_argument("--compat", action="store_true", help="Use natsort compat mode. Treats characters like ⑦ as 7")
     # parser.add_argument("--mcda", action=argparse.BooleanOptionalAction, help="Use MCDA for multi-sort")
-    parser.add_argument("--preprocess", action=argparse.BooleanOptionalAction, default=True, help="Remove junk common to filenames and URLs, eg. %20")
+    parser.add_argument(
+        "--preprocess",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Remove junk common to filenames and URLs, eg. %20",
+    )
 
 
 def regex_sort_post(args):
@@ -2292,6 +2297,7 @@ def qBittorrent_torrents(parent_parser):
         help="Include torrents with N bytes uploaded during the current session",
     )
     parser.add_argument("--ratio", action="append", help="Include torrents with N ratio")
+    parser.add_argument("--tracker-count", action="append", help="Include only torrents with N number of trackers")
 
     parser.add_argument("--file-counts", action="store_true", help="Include file counts column (a bit slow)")
     parser.add_argument("--trackers", action="store_true", help="Include tracker column")
@@ -2353,6 +2359,8 @@ def qBittorrent_torrents_post(args):
         args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
     if args.file_count:
         args.file_count = sql_utils.parse_human_to_lambda(int, args.file_count)
+    if args.tracker_count:
+        args.tracker_count = sql_utils.parse_human_to_lambda(int, args.tracker_count)
 
     if args.priority:
         args.priority = sql_utils.parse_human_to_lambda(int, args.priority)

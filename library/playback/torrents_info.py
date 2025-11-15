@@ -141,6 +141,25 @@ def qbt_get_tracker(qbt_client, torrent):
     return None
 
 
+def qbt_get_tracker_count(qbt_client, torrent):
+    import qbittorrentapi
+
+    attempts = 10
+    attempt = 0
+    while attempt < attempts:
+        attempt += 1
+
+        try:
+            tracker_count = len(
+                set(tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http"))
+            )
+            return tracker_count
+        except (qbittorrentapi.APIConnectionError, ConnectionRefusedError, TimeoutError):
+            sleep(randint(1, 10))
+
+    return None
+
+
 def qbt_enhance_torrents(qbt_client, qbt_torrents):
     for t in qbt_torrents:
         t.is_active = (not t.state_enum.is_complete and t.downloaded_session > 0) or (
@@ -151,6 +170,7 @@ def qbt_enhance_torrents(qbt_client, qbt_torrents):
         )
         t.downloading_time = t.time_active - t.seeding_time
         t.tracker_domain = lambda self=t: qbt_get_tracker(qbt_client, self)
+        t.tracker_count = lambda self=t: qbt_get_tracker_count(qbt_client, self)
 
 
 def filter_torrents_by_activity(args, torrents):
@@ -324,6 +344,8 @@ def filter_torrents_by_criteria(args, torrents):
     if args.no_tracker:
         trackers = set(args.no_tracker)
         torrents = [t for t in torrents if t.tracker_domain() not in trackers]
+    if "tracker_count" not in args.defaults:
+        torrents = [t for t in torrents if args.tracker_count(t.tracker_count())]
 
     if args.any_exists is not None:
         torrents = [
@@ -831,6 +853,10 @@ def torrents_info():
                         if 0.0 < file.progress < args.delete_incomplete:
                             print(f"Deleting incomplete file: {file_path}")
                             file_utils.trash(args, str(file_path), detach=False)
+                        elif file.progress == 100.0:
+                            print(f"Keeping complete file: {file_path}")
+                        else:
+                            print(f"Keeping {strings.percent(100.0 - file.progress)} incomplete file: {file_path}")
                         break  # Stop after deleting first valid path
 
     alt_move_syntax = any(
