@@ -12,11 +12,25 @@ from library.utils.log_utils import log
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.extract_text)
     arggroups.requests(parser)
-    arggroups.selenium(parser)
-
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
+    arggroups.selenium(parser)
     parser.add_argument("--skip-links", action="store_true")
+
     parser.add_argument("--download", "--save", "--write", action="store_true")
+
+    parser.add_argument(
+        '--selectors',
+        '--select',
+        default=[],
+        action=argparse_utils.ArgparseList,
+        help='CSS selectors to search for (e.g., ".album-artist" ".album-title" "div.info > span").',
+    )
+    parser.add_argument(
+        '--separator',
+        '--sep',
+        default='\t',
+        help='The string used to separate the extracted elements on the output line',
+    )
 
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)
@@ -29,7 +43,7 @@ def parse_args():
     return args
 
 
-def parse_text(args, html_content):
+def select_all(args, html_content):
     soup = BeautifulSoup(html_content, "lxml")
 
     for item in soup.find_all():
@@ -48,6 +62,24 @@ def parse_text(args, html_content):
                     yield strings.un_paragraph(descendant.get_text(strip=True))
 
 
+def select_grouped_info(args, html_content):
+    soup = BeautifulSoup(html_content, "lxml")
+
+    all_target_elements = []
+    for selector in args.selectors:
+        all_target_elements.extend(soup.select(selector))
+
+    grouped_by_parent = {}
+    for element in all_target_elements:
+        parent = element.parent
+        if parent:
+            grouped_by_parent.setdefault(parent, []).append(element)
+
+    for parent, elements in grouped_by_parent.items():
+        texts = [e.get_text(strip=True) for e in elements]
+        yield args.separator.join(texts)
+
+
 def get_text(args, url):
     is_error = False
     if not args.local_html and not url.startswith("http") and Path(url).is_file():
@@ -58,16 +90,18 @@ def get_text(args, url):
                 yield tags.replace(";", "\n")
         return None
 
+    select_fn = select_grouped_info if args.selectors else select_all
+
     if args.selenium:
         web.selenium_get_page(args, url)
 
         if args.manual:
             while devices.confirm("Extract HTML from browser?"):
                 markup = web.selenium_extract_html(args.driver)
-                yield from parse_text(args, markup)
+                yield from select_fn(args, markup)
         else:
             for markup in web.infinite_scroll(args.driver):
-                yield from parse_text(args, markup)
+                yield from select_fn(args, markup)
     else:
         if args.local_html:
             with open(url) as f:
@@ -86,7 +120,7 @@ def get_text(args, url):
                 r.raise_for_status()
             markup = r.content
 
-        yield from parse_text(args, markup)
+        yield from select_fn(args, markup)
 
     web.sleep(args)
 

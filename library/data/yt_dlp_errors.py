@@ -144,7 +144,9 @@ yt_meaningless_errors = re.compile(
 yt_filtered = re.compile(
     "|".join(
         r""".*does not pass filter
-.*has already been recorded in the archive""".splitlines(),
+.*has already been recorded in the archive
+.*stopping due to --break-match-filter
+.*match filter""".splitlines(),
     ),
 )
 
@@ -255,8 +257,7 @@ yt_unrecoverable_errors = re.compile(
 .*HTTP Error 404
 .*HTTPError 404
 .*HTTP Error 410
-.*HTTPError 410
-.*stopping due to --break-match-filter""".splitlines(),
+.*HTTPError 410""".splitlines(),
     ),
 )
 

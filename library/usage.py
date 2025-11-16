@@ -1439,6 +1439,11 @@ extract_text = r"""library extract-text PATH ... [--skip-links]
     Sorting suggestions
 
         library extract-text --skip-links --local-html (cb -t text/html | psub) | library cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+
+    Select text by CSS selector
+
+        library text --selenium https://aaronson.org/full-moon-albums/ --select .album-artist,.album-title --sep ' - ' | \
+            library links-db ~/mc/music.db -c p1 --skip-extract -
 """
 
 site_add = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
