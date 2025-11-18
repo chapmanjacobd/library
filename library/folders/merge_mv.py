@@ -4,7 +4,8 @@ from pathlib import Path
 from library import usage
 from library.folders import filter_src
 from library.folders.filter_src import track_moved
-from library.utils import arggroups, argparse_utils, devices, file_utils, path_utils
+from library.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils
+from library.utils.consts import DBType
 from library.utils.file_utils import rglob_gen
 from library.utils.log_utils import log
 
@@ -49,6 +50,37 @@ def parse_args(defaults_override=None):
         "--clobber", "--overwrite", action="store_true", help="Shortcut for --file-over-file delete-dest"
     )
     arggroups.clobber(parser)
+
+    profiles = parser.add_argument_group("File Extension Profiles")
+    profiles.add_argument(
+        "--audio",
+        action="append_const",
+        dest="profiles",
+        const=DBType.audio,
+        help="Only include audio files",
+    )
+    profiles.add_argument(
+        "--video",
+        action="append_const",
+        dest="profiles",
+        const=DBType.video,
+        help="Only include video files",
+    )
+    profiles.add_argument(
+        "--text",
+        action="append_const",
+        dest="profiles",
+        const=DBType.text,
+        help="Only include document files",
+    )
+    profiles.add_argument(
+        "--images",
+        "--image",
+        action="append_const",
+        dest="profiles",
+        const=DBType.image,
+        help="Only include image files",
+    )
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser, destination=True)
@@ -65,6 +97,17 @@ def parse_args(defaults_override=None):
             args.file_over_file[-1] = "delete-dest"
         else:
             args.file_over_file = arggroups.file_over_file("delete-dest")
+
+    exts = set(args.ext or [])
+    if DBType.audio in args.profiles:
+        exts |= consts.AUDIO_ONLY_EXTENSIONS
+    if DBType.video in args.profiles:
+        exts |= consts.VIDEO_EXTENSIONS
+    if DBType.image in args.profiles:
+        exts |= consts.IMAGE_EXTENSIONS
+    if DBType.text in args.profiles:
+        exts |= consts.TEXTRACT_EXTENSIONS
+    args.ext = tuple(exts)
 
     return args
 

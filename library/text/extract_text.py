@@ -19,17 +19,17 @@ def parse_args():
     parser.add_argument("--download", "--save", "--write", action="store_true")
 
     parser.add_argument(
-        '--selectors',
-        '--select',
+        "--selectors",
+        "--select",
         default=[],
         action=argparse_utils.ArgparseList,
         help='CSS selectors to search for (e.g., ".album-artist" ".album-title" "div.info > span").',
     )
     parser.add_argument(
-        '--separator',
-        '--sep',
-        default='\t',
-        help='The string used to separate the extracted elements on the output line',
+        "--separator",
+        "--sep",
+        default="\t",
+        help="The string used to separate the extracted elements on the output line",
     )
 
     arggroups.debug(parser)
