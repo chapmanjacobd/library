@@ -23,7 +23,7 @@ def parse_args():
         "--select",
         default=[],
         action=argparse_utils.ArgparseList,
-        help='CSS selectors to search for (e.g., ".album-artist" ".album-title" "div.info > span").',
+        help='CSS selectors to search for (e.g., ".album-artist, .album-title, div.info > span").',
     )
     parser.add_argument(
         "--separator",
