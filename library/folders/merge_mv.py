@@ -98,16 +98,17 @@ def parse_args(defaults_override=None):
         else:
             args.file_over_file = arggroups.file_over_file("delete-dest")
 
-    exts = set(args.ext or [])
-    if DBType.audio in args.profiles:
-        exts |= consts.AUDIO_ONLY_EXTENSIONS
-    if DBType.video in args.profiles:
-        exts |= consts.VIDEO_EXTENSIONS
-    if DBType.image in args.profiles:
-        exts |= consts.IMAGE_EXTENSIONS
-    if DBType.text in args.profiles:
-        exts |= consts.TEXTRACT_EXTENSIONS
-    args.ext = tuple(exts)
+    if args.profiles:
+        exts = set(args.ext or [])
+        if DBType.audio in args.profiles:
+            exts |= consts.AUDIO_ONLY_EXTENSIONS
+        if DBType.video in args.profiles:
+            exts |= consts.VIDEO_EXTENSIONS
+        if DBType.image in args.profiles:
+            exts |= consts.IMAGE_EXTENSIONS
+        if DBType.text in args.profiles:
+            exts |= consts.TEXTRACT_EXTENSIONS
+        args.ext = tuple(exts)
 
     return args
 
