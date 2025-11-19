@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.148; 104 subcommands)
+    library (v3.0.149; 104 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1158,6 +1158,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Sorting suggestions
 
         library extract-text --skip-links --local-html (cb -t text/html | psub) | library cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+
+    Select text by CSS selector
+
+        library text --selenium https://aaronson.org/full-moon-albums/ --select .album-artist,.album-title --sep ' - ' | \
+            library links-db ~/mc/music.db -c p1 --skip-extract -
 
 
 </details>
