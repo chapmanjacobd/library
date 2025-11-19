@@ -15,6 +15,7 @@ yt_recoverable_errors = re.compile(
 .*geo-restricted
 .*geolocation
 .*your country
+.*try again later
 .*No such file or directory
 .*The downloaded file is empty
 .*Invalid data found
