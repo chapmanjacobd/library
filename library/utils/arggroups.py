@@ -1314,7 +1314,7 @@ Choose ONE OR MORE of the following options:
         "--preprocess",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Remove junk common to filenames and URLs, eg. %20",
+        help="Remove junk common to filenames and URLs, eg. %%20",
     )
 
 
