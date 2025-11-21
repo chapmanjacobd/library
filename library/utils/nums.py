@@ -1,5 +1,7 @@
 import math, re, statistics
 
+from library.utils import consts
+
 
 def percent(value, total):
     if total == 0:
@@ -26,7 +28,10 @@ def percentage_difference(value1, value2):
 
 
 def to_timestamp(dt_object):
-    return int(dt_object.timestamp())
+    try:
+        return int(dt_object.timestamp())
+    except ValueError:
+        return consts.APPLICATION_START
 
 
 def safe_int(s) -> int | None:

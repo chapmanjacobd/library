@@ -1,4 +1,4 @@
-import json, re, sys
+import json, re, subprocess, sys
 from copy import deepcopy
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -594,7 +594,7 @@ def download(args, m) -> None:
                     threads=args.same_file_threads,
                 )
                 info["corruption"] = int(corruption * 100)
-            except (RuntimeError, CalledProcessError):
+            except (RuntimeError, CalledProcessError, TimeoutError, subprocess.TimeoutExpired):
                 info["corruption"] = 50
             if info["corruption"] > 7:
                 media_check_failed = True

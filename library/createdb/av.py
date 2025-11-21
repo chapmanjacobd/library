@@ -191,20 +191,25 @@ def munge_av_tags(args, m) -> dict:
                 full_scan_if_corrupt=args.full_scan_if_corrupt,
                 threads=1,
             )
+        except (TimeoutError, subprocess.TimeoutExpired):
+            log.error(f"FFProbe timed out. {path}")
+            m["error"] = "FFProbe timed out"
         except Exception:
             print(path)
             raise
-
-        if media_check.corruption_threshold_exceeded(
-            args.delete_corrupt, corruption, duration
-        ) and not file_utils.is_file_open(path):
-            threshold_str = (
-                strings.percent(args.delete_corrupt) if 0 < args.delete_corrupt < 1 else (args.delete_corrupt + "s")
-            )
-            log.warning("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str)
-            file_utils.trash(args, path, detach=False)
-            m["time_deleted"] = consts.APPLICATION_START
-            m["error"] = "Media check failed"
+        else:
+            if media_check.corruption_threshold_exceeded(
+                args.delete_corrupt, corruption, duration
+            ) and not file_utils.is_file_open(path):
+                threshold_str = (
+                    strings.percent(args.delete_corrupt) if 0 < args.delete_corrupt < 1 else (args.delete_corrupt + "s")
+                )
+                log.warning(
+                    "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str
+                )
+                file_utils.trash(args, path, detach=False)
+                m["time_deleted"] = consts.APPLICATION_START
+                m["error"] = "Media check failed"
 
     tags = format_.pop("tags", None)
     if tags:

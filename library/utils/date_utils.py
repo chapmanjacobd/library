@@ -3,7 +3,7 @@ from datetime import timezone as tz
 
 import dateutil.parser
 
-from library.utils import iterables, nums
+from library.utils import consts, iterables, nums
 
 
 def is_tz_aware(dt: datetime.datetime) -> bool:
@@ -37,15 +37,26 @@ def super_parser(date_str, fallback=False):
     return None
 
 
+def date_specificity_sort_key(d):
+    month_flag = bool(getattr(d, "month", None))
+    day_flag = bool(getattr(d, "day", None))
+
+    try:
+        ts = d.timestamp()
+        ts_key = -ts
+    except Exception:  # fallback for invalid year/timestamp
+        ts_key = consts.APPLICATION_START
+
+    return (month_flag, day_flag, ts_key)
+
+
 def specific_date(*dates):
     valid_dates = [super_parser(s) for s in dates if s]
     past_dates = [d for d in valid_dates if d and d < maybe_tz_now(d)]
     if not past_dates:
         return None
 
-    earliest_specific_date = sorted(
-        past_dates, key=lambda d: (bool(d.month), bool(d.day), -d.timestamp()), reverse=True
-    )[0]
+    earliest_specific_date = sorted(past_dates, key=date_specificity_sort_key, reverse=True)[0]
     return nums.to_timestamp(earliest_specific_date)
 
 
