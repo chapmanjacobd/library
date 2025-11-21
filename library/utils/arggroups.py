@@ -2297,7 +2297,9 @@ def qBittorrent_torrents(parent_parser):
         help="Include torrents with N bytes uploaded during the current session",
     )
     parser.add_argument("--ratio", action="append", help="Include torrents with N ratio")
-    parser.add_argument("--tracker-count", action="append", help="Include only torrents with N number of trackers")
+    parser.add_argument(
+        "--tracker-count", "--trackers-count", action="append", help="Include only torrents with N number of trackers"
+    )
 
     parser.add_argument("--file-counts", action="store_true", help="Include file counts column (a bit slow)")
     parser.add_argument("--trackers", action="store_true", help="Include tracker column")
