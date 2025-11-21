@@ -213,7 +213,7 @@ def media_check() -> None:
                 corruption = future.result()
                 print(strings.percent(corruption), shlex.quote(path), sep="\t")
             except Exception as excinfo:
-                print(f"Error hashing {path}: {excinfo}")
+                print(f"Error checking {path}: {excinfo}")
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
