@@ -549,7 +549,7 @@ def torrents_info():
     elif args.sort == "remaining":
         torrents = sorted(torrents, key=lambda t: t.amount_left, reverse=reverse_sort)
     elif args.sort == "random":
-        torrents = shuffle(torrents)
+        shuffle(torrents)
     elif args.sort == "seeders":
         torrents = sorted(torrents, key=lambda t: t.num_complete, reverse=reverse_sort)
     elif args.sort == "leechers":
@@ -898,7 +898,7 @@ def torrents_info():
                         elif file.progress == 100.0:
                             print(f"Keeping complete file: {file_path}")
                         else:
-                            print(f"Keeping {strings.percent(100.0 - file.progress)} incomplete file: {file_path}")
+                            print(f"Keeping {strings.percent(1 - (file.progress / 100))} incomplete file: {file_path}")
                         break  # Stop after deleting first valid path
 
     alt_move_syntax = any(
