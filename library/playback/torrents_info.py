@@ -563,9 +563,15 @@ def torrents_info():
     elif args.sort == "time_completed":
         torrents = sorted(torrents, key=lambda t: t.completion_on, reverse=reverse_sort)
     elif args.sort == "time_remaining":
-        torrents = sorted(torrents, key=lambda t: (not t.state_enum.is_complete and t.eta and t.eta < 8640000, t.eta), reverse=reverse_sort)
+        torrents = sorted(
+            torrents,
+            key=lambda t: (not t.state_enum.is_complete and t.eta and t.eta < 8640000, t.eta),
+            reverse=reverse_sort,
+        )
     elif args.sort == "time_unseeded":
-        torrents = sorted(torrents, key=lambda t: (t.num_complete == 0 and t.seen_complete > 0, t.seen_complete), reverse=reverse_sort)
+        torrents = sorted(
+            torrents, key=lambda t: (t.num_complete == 0 and t.seen_complete > 0, t.seen_complete), reverse=reverse_sort
+        )
     elif args.sort == "time_downloading":
         torrents = sorted(torrents, key=lambda t: t.downloading_time, reverse=reverse_sort)
     elif args.sort == "time_seeding":
