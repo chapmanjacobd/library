@@ -3,7 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 
 #!/usr/bin/python3
-from random import randint
+from random import randint, shuffle
 from statistics import mean, median
 from time import sleep
 
@@ -542,10 +542,46 @@ def torrents_info():
 
     if args.sort == "priority":
         torrents = sorted(torrents, key=lambda t: t.priority, reverse=reverse_sort)
+    elif args.sort == "progress":
+        torrents = sorted(torrents, key=lambda t: t.progress, reverse=reverse_sort)
     elif args.sort == "ratio":
         torrents = sorted(torrents, key=lambda t: t.ratio, reverse=reverse_sort)
     elif args.sort == "remaining":
         torrents = sorted(torrents, key=lambda t: t.amount_left, reverse=reverse_sort)
+    elif args.sort == "random":
+        torrents = shuffle(torrents)
+    elif args.sort == "seeders":
+        torrents = sorted(torrents, key=lambda t: t.num_complete, reverse=reverse_sort)
+    elif args.sort == "leechers":
+        torrents = sorted(torrents, key=lambda t: t.num_incomplete, reverse=reverse_sort)
+    elif args.sort == "time_active":
+        torrents = sorted(torrents, key=lambda t: t.time_active, reverse=reverse_sort)
+    elif args.sort == "time_added":
+        torrents = sorted(torrents, key=lambda t: t.added_on, reverse=reverse_sort)
+    elif args.sort == "time_stalled":
+        torrents = sorted(torrents, key=lambda t: t.last_activity, reverse=reverse_sort)
+    elif args.sort == "time_completed":
+        torrents = sorted(torrents, key=lambda t: t.completion_on, reverse=reverse_sort)
+    elif args.sort == "time_remaining":
+        torrents = sorted(torrents, key=lambda t: (not t.state_enum.is_complete and t.eta and t.eta < 8640000, t.eta), reverse=reverse_sort)
+    elif args.sort == "time_unseeded":
+        torrents = sorted(torrents, key=lambda t: (t.num_complete == 0 and t.seen_complete > 0, t.seen_complete), reverse=reverse_sort)
+    elif args.sort == "time_downloading":
+        torrents = sorted(torrents, key=lambda t: t.downloading_time, reverse=reverse_sort)
+    elif args.sort == "time_seeding":
+        torrents = sorted(torrents, key=lambda t: t.seeding_time, reverse=reverse_sort)
+    elif args.sort in ["downloaded_session", "download_session"]:
+        torrents = sorted(torrents, key=lambda t: t.downloaded_session, reverse=reverse_sort)
+    elif args.sort in ["uploaded_session", "upload_session"]:
+        torrents = sorted(torrents, key=lambda t: t.uploaded_session, reverse=reverse_sort)
+    elif args.sort in ["dl_speed", "dlspeed"]:
+        torrents = sorted(torrents, key=lambda t: t.dlspeed, reverse=reverse_sort)
+    elif args.sort in ["ul_speed", "ulspeed", "upspeed"]:
+        torrents = sorted(torrents, key=lambda t: t.upspeed, reverse=reverse_sort)
+    elif args.sort == "tracker":
+        torrents = sorted(torrents, key=lambda t: t.tracker_domain(), reverse=reverse_sort)
+    elif args.sort == "tracker_count":
+        torrents = sorted(torrents, key=lambda t: t.tracker_count(), reverse=reverse_sort)
     elif args.sort in ["counts", "count"]:
         torrents = sorted(torrents, key=lambda t: len(torrent_files(t)), reverse=reverse_sort)
     elif args.sort in ["size", "total_size"]:
@@ -561,9 +597,9 @@ def torrents_info():
             ),
             reverse=reverse_sort,
         )
-    elif args.sort in ["download", "ingress"]:
+    elif args.sort in ["downloaded", "download", "ingress"]:
         torrents = sorted(torrents, key=lambda t: (t.downloaded, t.downloaded_session), reverse=reverse_sort)
-    elif args.sort in ["upload", "egress"]:
+    elif args.sort in ["uploaded", "upload", "egress"]:
         torrents = sorted(torrents, key=lambda t: (t.uploaded, t.uploaded_session), reverse=reverse_sort)
     elif args.inactive:
         torrents = sorted(
