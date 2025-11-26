@@ -2171,7 +2171,7 @@ def qBittorrent_paths(parent_parser):
 
 
 def torrents_start(parser):
-    parser.add_argument("--stop", action="store_true", default=False, help="Add torrent stopped")
+    parser.add_argument("--stop", "--pause", action="store_true", default=False, help="Add torrent stopped")
     parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Add torrent force-started")
     parser.add_argument(
         "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
