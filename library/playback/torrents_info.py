@@ -40,7 +40,7 @@ def parse_args():
 
     parser.add_argument("--tag", help="Add a tag to matching torrents")
     parser.add_argument("--untag", "--un-tag", "--no-tag", help="Remove a tag to matching torrents")
-    parser.add_argument("--stop", action="store_true", help="Stop matching torrents")
+    parser.add_argument("--stop", "--pause", action="store_true", help="Stop matching torrents")
     parser.add_argument(
         "--delete-incomplete",
         nargs="?",
