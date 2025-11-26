@@ -167,6 +167,7 @@ def torrents_add():
             else:
                 if torrent_info["info_hash"] in known_hashes and not args.force:
                     if args.delete_files:
+                        log.info("[%s]: known info_hash; Deleting.", torrent_info["path"])
                         trash(args, torrent_info["path"])
                     else:
                         log.info(
@@ -193,7 +194,7 @@ def torrents_add():
                 playlists_id = db_playlists._add(args, objects.dict_filter_bool(torrent_info))
                 files = [file | {"playlists_id": playlists_id} for file in files]
                 args.db["media"].insert_all(files, pk=["playlists_id", "path"], alter=True, replace=True)
-    print()
+    print("Extracted metadata from", num_paths, "files")
 
     if not args.db["media"].detect_fts():
         db_utils.optimize(args)
