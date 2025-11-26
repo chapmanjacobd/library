@@ -167,6 +167,7 @@ def torrents_add():
             else:
                 if torrent_info["info_hash"] in known_hashes and not args.force:
                     if args.delete_files:
+                        log.info("[%s]: known info_hash; Deleting.", torrent_info["path"])
                         trash(args, torrent_info["path"])
                     else:
                         log.info(

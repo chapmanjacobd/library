@@ -549,7 +549,7 @@ def torrents_info():
     elif args.sort == "remaining":
         torrents = sorted(torrents, key=lambda t: t.amount_left, reverse=reverse_sort)
     elif args.sort == "random":
-        torrents = shuffle(torrents)
+        shuffle(torrents)
     elif args.sort == "seeders":
         torrents = sorted(torrents, key=lambda t: t.num_complete, reverse=reverse_sort)
     elif args.sort == "leechers":
