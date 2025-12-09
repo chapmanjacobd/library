@@ -168,9 +168,9 @@ def cmd(
 
             cmd_prefix += [
                 "-p",
-                "MemoryMax=4G",
+                "MemoryMax=8G",
                 "-p",
-                "MemorySwapMax=1G",
+                "MemorySwapMax=4G",
                 "--same-dir",
                 "--collect",
                 "--quiet",
