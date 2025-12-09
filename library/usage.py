@@ -1988,6 +1988,10 @@ torrents_info = """library torrents-info
 
         library torrents -pa
 
+    Aggregate tracker errors
+
+        library torrents --errored --trackers
+
     Search for specific file
 
         library torrents query -v --file-search query2

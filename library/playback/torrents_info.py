@@ -895,10 +895,10 @@ def torrents_info():
                         if 0.0 < file.progress < args.delete_incomplete:
                             print(f"Deleting incomplete file: {file_path}")
                             file_utils.trash(args, str(file_path), detach=False)
-                        elif file.progress == 100.0:
+                        elif file.progress == 1.0:
                             print(f"Keeping complete file: {file_path}")
                         else:
-                            print(f"Keeping {strings.percent(1 - (file.progress / 100))} incomplete file: {file_path}")
+                            print(f"Keeping {strings.percent(1 - file.progress)} incomplete file: {file_path}")
                         break  # Stop after deleting first valid path
 
     alt_move_syntax = any(
