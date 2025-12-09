@@ -73,6 +73,7 @@ def torrents_remaining():
         wasted = sum(t.properties.total_wasted for t in mountpoint_torrents)
         dl_speed = sum(t.dlspeed for t in mountpoint_torrents if not t.state_enum.is_complete)
         dl_time = [t.downloading_time for t in mountpoint_torrents if t.state_enum.is_complete]
+        ul_time = [t.seeding_time for t in mountpoint_torrents if t.state_enum.is_complete]
 
         categories.append(
             {
@@ -90,9 +91,10 @@ def torrents_remaining():
                     else None
                 ),
                 "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
-                "historical_eta": strings.duration_short(statistics.median(dl_time)) if dl_time else None,
                 "next_eta": strings.duration_short(min(etas)) if etas else None,
                 "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
+                "historical_eta": strings.duration_short(statistics.median(dl_time)) if dl_time else None,
+                "ul_time": strings.duration_short(statistics.median(ul_time)) if ul_time else None,
             }
         )
     printing.table(iterables.list_dict_filter_bool(categories))
