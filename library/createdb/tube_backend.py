@@ -139,6 +139,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                 )
 
                 # TODO: webpage_url_basename seems like a weird property to check
+                # or is this just extra guarding for YouTube behavior
                 if webpath != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if playlist_root:
                         if not info.get("playlist_id") or webpath == playlist_path:
@@ -187,16 +188,23 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
             pl = ydl.extract_info(playlist_path, download=False, process=True)
             log.debug("ydl.extract_info done %s", t.elapsed())
         except yt_dlp.DownloadError:
-            log.error("DownloadError skipping %s", playlist_path)
+            if args.safe:
+                log.error("DownloadError skipping %s", playlist_path)
+            else:
+                log.warning("Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)")
+                db_playlists.save_undownloadable(args, playlist_path)
             return
         except ExistingPlaylistVideoReached:
             if added_media_count > count_before_extract:
                 sys.stderr.write("\n")
             db_playlists.log_problem(args, playlist_path)
         else:
-            if not pl and not args.safe:
-                log.warning("Logging undownloadable media")
-                db_playlists.save_undownloadable(args, playlist_path)
+            if not pl:
+                if args.safe:
+                    log.error("DownloadError skipping %s", playlist_path)
+                else:
+                    log.warning("Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)")
+                    db_playlists.save_undownloadable(args, playlist_path)
 
         if args.action == consts.SC.tube_update:
             if added_media_count > count_before_extract:
