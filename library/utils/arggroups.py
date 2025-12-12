@@ -158,7 +158,7 @@ def debug(parent_parser):
     )
     parser.add_argument("--no-pdb", action="store_true", help="Exit immediately on error. Never launch debugger")
     parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after N minutes")
-    parser.add_argument("--timeout-size", "--sizeout", "-TS", metavar="SIZE", help="Quit after processing N bytes")
+    parser.add_argument("--timeout-size", "--sizeout", "--limit-size", "-LS", "-TS", metavar="SIZE", help="Quit after processing N bytes")
     parser.add_argument("--threads", type=int, help="Load N files in parallel")
     parser.add_argument("--same-file-threads", type=int, default=1, help="Read the same file N times in parallel")
     parser.add_argument(
