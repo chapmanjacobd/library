@@ -93,7 +93,9 @@ def tube_update(args=None) -> None:
 
     tube_playlists = db_playlists.get_all(
         args,
-        sql_filters=["AND coalesce(extractor_key, '') NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"],
+        sql_filters=[
+            "AND coalesce(extractor_key, '') NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"
+        ],
     )
 
     print("Checking", len(tube_playlists), "playlists for updates")

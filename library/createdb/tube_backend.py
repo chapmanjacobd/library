@@ -191,7 +191,9 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
             if args.safe:
                 log.error("DownloadError skipping %s", playlist_path)
             else:
-                log.warning("Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)")
+                log.warning(
+                    "Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)"
+                )
                 db_playlists.save_undownloadable(args, playlist_path)
             return
         except ExistingPlaylistVideoReached:
@@ -203,7 +205,9 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                 if args.safe:
                     log.error("DownloadError skipping %s", playlist_path)
                 else:
-                    log.warning("Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)")
+                    log.warning(
+                        "Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)"
+                    )
                     db_playlists.save_undownloadable(args, playlist_path)
 
         if args.action == consts.SC.tube_update:
