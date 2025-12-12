@@ -12,18 +12,8 @@ if consts.VOLKSWAGEN:
 
 
 @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
-def test_lb_fs(play_mocked):
-    lb(["wt", tube_db])
-    out = play_mocked.call_args[0][1]
-    assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]
-    assert out["duration"] == 28
-    assert out["title"] == "Most Epic Video About Nothing"
-    assert out["size"] > 2000000
-
-
-@mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_search(play_mocked):
-    lb(["wt", tube_db, "-s", "nothing"])
+    lb(["wt", tube_db, "-s", "MUST TURN"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 

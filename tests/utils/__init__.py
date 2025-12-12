@@ -82,6 +82,6 @@ if not consts.VOLKSWAGEN and not Path(tube_db).exists():
             "--extra",
             "--extractor-config",
             "TEST1=1 TEST2=2",
-            "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm",
+            "https://vimeo.com/hunteratkins",
         ]
     )

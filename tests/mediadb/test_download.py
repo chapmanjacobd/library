@@ -7,7 +7,7 @@ from library.createdb.tube_add import tube_add
 from library.utils import consts
 from tests.utils import connect_db_args
 
-URL = "https://www.youtube.com/watch?v=BaW_jenozKc"
+URL = "https://www.youtube.com/watch?v=5DqJwmzG6Fk"
 STORAGE_PREFIX = "tests/data/"
 
 dl_db = "tests/data/dl.db"
