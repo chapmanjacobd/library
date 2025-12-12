@@ -1,4 +1,4 @@
-import shlex, shutil
+import shlex
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
