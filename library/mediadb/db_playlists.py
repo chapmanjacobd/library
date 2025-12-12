@@ -306,4 +306,7 @@ def log_problem(args, playlist_path) -> None:
 
 def save_undownloadable(args, playlist_path) -> None:
     entry = {"path": playlist_path, "extractor_config": args.extractor_config}
-    _add(args, objects.dict_filter_bool(entry) or {})
+    _add(args, consolidate(args, entry))
+
+    if args.action == consts.SC.tube_update:
+        update_less_frequently(args, playlist_path)
