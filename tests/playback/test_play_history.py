@@ -6,16 +6,16 @@ from unittest import mock
 import pytest
 
 from library.__main__ import library as lb
-from tests.utils import p, v_db
+from tests.utils import p
 
 history_db = p("tests/data/history.db")
-shutil.copy(v_db, history_db)
+lb(["fs-add", history_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
 lb(["history-add", history_db, p("tests/data/corrupt.mp4")])
 
 history_flags = [
     ("--played-before '10 years'", 0, ""),
-    ("-P s", 4, ""),
-    ("-w 'play_count=0'", 4, ""),
+    ("-P s", 3, ""),
+    ("-w 'play_count=0'", 3, ""),
     ("-P f", 1, "corrupt.mp4"),
     ("-P fo", 1, "corrupt.mp4"),
     ("-P n", 1, "corrupt.mp4"),
