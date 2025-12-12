@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.151; 104 subcommands)
+    library (v3.0.152; 104 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -3057,6 +3057,10 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Aggregate torrent info (torrents-status)
 
         library torrents -pa
+
+    Aggregate tracker errors
+
+        library torrents --errored --trackers
 
     Search for specific file
 
