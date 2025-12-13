@@ -105,6 +105,7 @@ def _add(args, entry):
         entry["hours_update_delay"] = 70  # about three days
         args.db["playlists"].insert(entry, alter=True)
         playlists_id = get_id(args, entry["path"])
+        assert playlists_id is not None
     return playlists_id
 
 

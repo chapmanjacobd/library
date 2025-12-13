@@ -37,6 +37,7 @@ def gallery_add(args=None) -> None:
 
     db_playlists.create(args)
     db_media.create(args)
+
     paths = file_utils.gen_paths(args)
 
     if args.no_extract:

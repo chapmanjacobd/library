@@ -120,6 +120,7 @@ To compensate for this the script will only continue fetching pages until there 
         "--stop-known", type=int, help="Stop fetching pages when encountering more than N known links"
     )
     paging_parser.add_argument("--stop-link", help="Stop fetching pages when hitting a specific link")
+    paging_parser.add_argument("--stop-text", help="Stop fetching pages when hitting a page with specific text")
     paging_parser.add_argument(
         "--confirm-ready", "--confirm-start", action="store_true", help="Hold the browser open until ready to start"
     )
