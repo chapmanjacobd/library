@@ -109,9 +109,10 @@ def parse_inner_urls(args, base_url, markup):
     else:
         soup = BeautifulSoup(markup, "lxml")
 
-    stop_text = getattr(args, "stop_text", None)
-    if stop_text and soup.find(string=lambda s: stop_text in s):
-        return None
+    stop_texts = getattr(args, "stop_text", None) or []
+    for stop_text in stop_texts:
+        if soup.find(string=lambda s: stop_text in s):
+            return None
 
     if base_url.startswith("//"):
         base_url = "https:" + base_url
