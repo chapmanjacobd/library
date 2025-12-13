@@ -1,4 +1,4 @@
-import json, random, time
+import json, random, sys, time
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
@@ -120,7 +120,12 @@ To compensate for this the script will only continue fetching pages until there 
         "--stop-known", type=int, help="Stop fetching pages when encountering more than N known links"
     )
     paging_parser.add_argument("--stop-link", help="Stop fetching pages when hitting a specific link")
-    paging_parser.add_argument("--stop-text", help="Stop fetching pages when hitting a page with specific text")
+    paging_parser.add_argument(
+        "--stop-text",
+        nargs="+",
+        action=argparse_utils.ArgparseList,
+        help="Stop fetching pages when hitting a page with specific text",
+    )
     paging_parser.add_argument(
         "--confirm-ready", "--confirm-start", action="store_true", help="Hold the browser open until ready to start"
     )
@@ -296,7 +301,7 @@ def extractor(args, playlist_path):
                     page_new[link] = objects.merge_dict_values_str(page_new.get(link) or {}, link_dict)
 
                 printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
-            print()
+            print(file=sys.stderr)
 
             if not (args.backfill_pages or args.fixed_pages):
                 if (args.stop_known and len(page_known) > args.stop_known) or (
@@ -325,7 +330,6 @@ def extractor(args, playlist_path):
             page_count_since_new >= args.stop_pages_no_new or page_count_since_match >= args.stop_pages_no_match
         ):
             end_of_playlist = True
-    print()
 
     print(
         f"{len(new_media)} new [{len(known_media)} known] in {page_count} pages (avg {len(new_media) // page_count} new [{len(known_media) // page_count} known])"
