@@ -91,7 +91,7 @@ build-backend = "pdm.backend"
 
 [tool.pdm.build]
 includes = ["library"]
-excludes = ["tests", "example_dbs"]
+excludes = ["tests"]
 
 [tool.black]
 line-length = 120

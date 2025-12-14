@@ -50,7 +50,7 @@ def play(action) -> str:
 
     View most recent files
 
-        library {action} example_dbs/web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        library {action} web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
         path                                                                                                                      width    height       size  time_modified
         ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
         https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
@@ -100,7 +100,7 @@ stats = """library stats DATABASE TIME_COLUMN
 
     View time_modified stats
 
-        library stats example_dbs/web_add.image.db time_modified -f year
+        library stats web_add.image.db time_modified -f year
         Time_Modified media:
         year      total_size    avg_size    count
         ------  ------------  ----------  -------
@@ -1153,7 +1153,7 @@ links_open = """library links-open DATABASE [search] [--title] [--title-prefix T
 
     Open links from a links db
 
-        wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.korea.ln.db
+        wget https://github.com/chapmanjacobd/library-examples/raw/main/music.korea.ln.db
         library open-links music.korea.ln.db
 
     Only open links once
@@ -1259,7 +1259,7 @@ markdown_tables = """library markdown-tables PATH ... [--table STR] [--end-row I
 
     Examples:
 
-    lb sdb example_dbs/cities.db places chic | lb table --from-json --transpose
+    lb sdb cities.db places chic | lb table --from-json --transpose
 
     ## stdin:0
 
@@ -1404,7 +1404,7 @@ links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookie
 
     Import lines from stdin
 
-        cb | library linksdb example_dbs/links.db --skip-extract -
+        cb | library linksdb links.db --skip-extract -
 
     IRIs vs URLs
 

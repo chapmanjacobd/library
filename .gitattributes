@@ -2,5 +2,5 @@
 * text=auto
 
 .git*       export-ignore
-example_dbs export-ignore
+*.db        export-ignore
 pdm.lock    -diff

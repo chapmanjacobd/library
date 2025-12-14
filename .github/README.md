@@ -358,12 +358,12 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 ### Watch online media on your PC
 
-    wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/mealtime.tw.db
+    wget https://github.com/chapmanjacobd/library-examples/raw/main/mealtime.tw.db
     library watch mealtime.tw.db --random --duration 30m
 
 ### Listen to online media on a chromecast group
 
-    wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.tl.db
+    wget https://github.com/chapmanjacobd/library-examples/raw/main/music.tl.db
     library listen music.tl.db -ct "House speakers" --random
 
 ### Hook into HackerNews
@@ -779,7 +779,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Import lines from stdin
 
-        cb | library linksdb example_dbs/links.db --skip-extract -
+        cb | library linksdb links.db --skip-extract -
 
     IRIs vs URLs
 
@@ -1901,7 +1901,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Examples:
 
-    lb sdb example_dbs/cities.db places chic | lb table --from-json --transpose
+    lb sdb cities.db places chic | lb table --from-json --transpose
 
     ## stdin:0
 
@@ -2683,7 +2683,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View time_modified stats
 
-        library stats example_dbs/web_add.image.db time_modified -f year
+        library stats web_add.image.db time_modified -f year
         Time_Modified media:
         year      total_size    avg_size    count
         ------  ------------  ----------  -------
@@ -2802,7 +2802,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View most recent files
 
-        library watch example_dbs/web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        library watch web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
         path                                                                                                                      width    height       size  time_modified
         ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
         https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
@@ -2984,7 +2984,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Open links from a links db
 
-        wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.korea.ln.db
+        wget https://github.com/chapmanjacobd/library-examples/raw/main/music.korea.ln.db
         library open-links music.korea.ln.db
 
     Only open links once
