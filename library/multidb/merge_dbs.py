@@ -1,8 +1,10 @@
 import argparse, sqlite3
 from pathlib import Path
 
+from tabulate import tabulate
+
 from library import usage
-from library.utils import arggroups, argparse_utils, db_utils
+from library.utils import arggroups, argparse_utils, consts, db_utils
 from library.utils.log_utils import log
 
 
@@ -38,10 +40,21 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def is_suspicious(v, expected):
+    if expected.startswith("TEXT") and isinstance(v, str):
+        return False
+    if expected.startswith("INT") and isinstance(v, int):
+        return False
+    if expected.startswith("REAL") and isinstance(v, (int, float)):
+        return False
+    return True
+
+
 def merge_db(args, source_db) -> None:
     source_db = str(Path(source_db).resolve())
 
     s_db = db_utils.connect(args, conn=sqlite3.connect(source_db))
+    assert s_db is not None
     for table in [s for s in s_db.table_names() if "_fts" not in s and not s.startswith("sqlite_")]:
         if args.only_tables and table not in args.only_tables:
             log.info("[%s]: Skipping %s", source_db, table)
@@ -75,14 +88,40 @@ def merge_db(args, source_db) -> None:
         data = s_db[table].rows_where(where=" AND ".join(args.where) if args.where else None)
         data = ({k: v for k, v in d.items() if k in selected_columns} for d in data)
         with args.db.conn:
-            args.db[table].insert_all(
-                data,
-                alter=True,
-                ignore=args.ignore,
-                replace=not args.ignore,
-                upsert=args.upsert,
-                **kwargs,
-            )
+            try:
+                args.db[table].insert_all(
+                    data,
+                    alter=True,
+                    ignore=args.ignore,
+                    replace=not args.ignore,
+                    upsert=args.upsert,
+                    **kwargs,
+                )
+            except sqlite3.IntegrityError as err:
+                log.error("Bulk insert failed for table %s: %s", table, err.sqlite_errorname)
+
+                d = next(data)
+                if d:
+                    expected_types = {
+                        col.name: col.type.upper() if col.type else "UNKNOWN" for col in args.db[table].columns
+                    }
+
+                    rows = []
+                    for k, v in d.items():
+                        exp = expected_types.get(k, "")
+                        if is_suspicious(v, exp):
+                            rows.append([k, repr(v), type(v).__name__, exp])
+                    log.error(
+                        "\n%s\n",
+                        tabulate(
+                            rows,
+                            headers=["column", "value", "py_type", "expected"],
+                            tablefmt="github",
+                        ),
+                    )
+
+                if args.verbose >= consts.LOG_INFO:
+                    raise
 
 
 def merge_dbs() -> None:
