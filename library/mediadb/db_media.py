@@ -24,7 +24,6 @@ def create(args):
             time_downloaded INTEGER,
             size INTEGER,
             duration INTEGER,
-            float REAL,
             path TEXT NOT NULL
         );
         """

@@ -164,7 +164,7 @@ def optimize(args) -> None:
                     db.execute(f"DROP TRIGGER IF EXISTS {name};")
 
             fts_tables = db.query(
-                f"SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE '{table}%_fts_%' OR name LIKE '{table}%_fts');"
+                f"SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE '{table}_fts_%' OR name LIKE '{table}_fts');"
             )
             for (name,) in fts_tables:
                 db.execute(f"DROP TABLE IF EXISTS {name};")

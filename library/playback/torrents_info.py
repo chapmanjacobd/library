@@ -482,8 +482,8 @@ def agg_torrents_state(args, state, state_torrents):
         "remaining": strings.file_size(remaining) if remaining else None,
         "next_eta": strings.duration_short(min(etas)) if etas else None,
         "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
-        "downloaded_session": strings.file_size(downloaded_session) if downloaded_session else None,
-        "uploaded_session": strings.file_size(uploaded_session) if uploaded_session else None,
+        "session_dl": strings.file_size(downloaded_session) if downloaded_session else None,
+        "session_up": strings.file_size(uploaded_session) if uploaded_session else None,
         "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
         "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
     }
