@@ -1,4 +1,4 @@
-import shlex
+import os, shlex
 from pathlib import Path
 
 from library.mediadb import db_history, db_media
@@ -15,22 +15,22 @@ except ModuleNotFoundError:
 
 
 def mv_to_keep_folder(args, src: str) -> str:
-    keep_dir = Path(args.keep_dir)
-    p = Path(src)
-    if keep_dir.is_absolute():
-        if p.parent.is_relative_to(keep_dir):
-            return src  # file already in a matching keep_dir
-    else:  # relative to existing media
-        if args.keep_dir in p.parent.parts:
-            return src  # file already in a matching keep_dir
-        keep_dir = p.parent / args.keep_dir
-
-    keep_dir = keep_dir.resolve()
-    keep_dir.mkdir(exist_ok=True)
+    keep_dir = args.keep_dir
+    if not args.keep_dir.startswith(":/"):
+        p = Path(src)
+        if os.path.isabs(keep_dir):
+            if p.parent.is_relative_to(keep_dir):
+                return src  # file already in a matching keep_dir
+        else:  # relative to existing media
+            if args.keep_dir in p.parent.parts:
+                return src  # file already in a matching keep_dir
+            keep_dir = str(p.parent / args.keep_dir)
 
     dest = file_utils.rel_move(args, src, keep_dir)
     if src == dest:
         return src
+
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
 
     if dest and hasattr(args, "db") and args.db:
         with args.db.conn:

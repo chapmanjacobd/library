@@ -12,6 +12,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")
+    parser.add_argument(
+        "--dedupe-parts",
+        "--dedupe",
+        action="store_true",
+        help="Will remove parent folders which are the same name as a parent ancestor",
+    )
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--run", "-r", action="store_true")
     arggroups.debug(parser)
@@ -31,6 +37,7 @@ def rename_path(args, base, b) -> None:
         dot_space=args.dot_space,
         case_insensitive=args.case_insensitive,
         lowercase_folders=args.lowercase_folders,
+        dedupe_parts=args.dedupe_parts,
     )
 
     if b != fixed.encode():
