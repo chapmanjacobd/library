@@ -39,7 +39,13 @@ def bytes_len(s):
     return len(s.encode("utf-8"))
 
 
-def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, lowercase_folders=False) -> str:
+def deduplicate_path_parts(parts):
+    return OrderedDict.fromkeys(parts).keys()
+
+
+def clean_path(
+    b, max_name_len=255, dot_space=False, case_insensitive=False, lowercase_folders=False, dedupe_parts=False
+) -> str:
     import ftfy
 
     p = b.decode("utf-8", "backslashreplace")
@@ -89,6 +95,9 @@ def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, low
 
         parent = [case_insensitive_r(p) for p in parent]
 
+    if dedupe_parts:
+        parent = list(deduplicate_path_parts(parent))
+
     fs_limit = max_name_len - len(ext.encode()) - 1
     if len(stem.encode()) > fs_limit:
         stem = strings.shorten_middle(stem, fs_limit, len_fn=bytes_len)
@@ -114,10 +123,6 @@ def sanitize_url(args, path: str) -> str:
         return path.replace("/m.", "/www.")
 
     return path
-
-
-def dedupe_path_parts(p):
-    return Path(*OrderedDict.fromkeys(Path(p).parts).keys())
 
 
 def common_path_full(paths):
@@ -380,8 +385,17 @@ def path_tuple_from_url(url):
     return parent, filename
 
 
-def gen_rel_path(source, dest, relative_to):
+def gen_rel_path(source: str, dest: str, relative_to):
     abspath = Path(source).expanduser().resolve()
+
+    if dest.startswith(":/"):
+        dest = os.path.join(mountpoint(abspath), dest.lstrip(":/"))
+        relpath = relativize(abspath)
+
+        source_destination = os.path.join(dest, relpath)
+        log.debug("source destination %s", source_destination)
+
+        return source_destination
 
     if relative_to:
         if str(relative_to).startswith("::") and dest.strip(os.sep) in source:

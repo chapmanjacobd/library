@@ -762,7 +762,7 @@ def sql_fs_post(args, table_prefix="m.") -> None:
                 keep_path = Path(args.keep_dir).resolve()
                 args.filter_sql.append(f'and path not like "{keep_path}{os.sep}%"')
         else:
-            args.filter_sql.append(f'and path not like "%{os.sep}{args.keep_dir.strip(os.sep)}{os.sep}%"')
+            args.filter_sql.append(f'and path not like "%{os.sep}{args.keep_dir.lstrip(":/").strip(os.sep)}{os.sep}%"')
 
     if args.no_video:
         args.filter_sql.append(" and video_count=0 ")
