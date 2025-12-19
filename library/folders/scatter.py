@@ -9,10 +9,10 @@ from library.utils import (
     consts,
     db_utils,
     devices,
-    file_utils,
     iterables,
     nums,
     printing,
+    shell_utils,
     strings,
 )
 from library.utils.log_utils import log
@@ -62,8 +62,8 @@ def parse_args() -> argparse.Namespace:
         msg = "Without targets defined the only meaningful policies are: `rand` or `used`"
         raise ValueError(msg)
 
-    args.relative_paths = file_utils.resolve_absolute_paths(args.relative_paths)
-    args.targets = file_utils.resolve_absolute_paths(args.targets)
+    args.relative_paths = shell_utils.resolve_absolute_paths(args.relative_paths)
+    args.targets = shell_utils.resolve_absolute_paths(args.targets)
 
     return args
 
@@ -358,7 +358,7 @@ def scatter() -> None:
         printing.table(tbl)
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")
-        file_utils.move_files_bash(rebinned)
+        shell_utils.move_files_bash(rebinned)
         sys.exit(0)
 
     if args.targets:

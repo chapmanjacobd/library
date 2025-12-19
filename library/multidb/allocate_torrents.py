@@ -19,8 +19,8 @@ from library.utils import (
     sqlgroups,
     strings,
 )
-from library.utils.file_utils import trash
 from library.utils.log_utils import log
+from library.utils.shell_utils import trash
 
 
 def parse_args():

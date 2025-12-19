@@ -6,6 +6,7 @@ from typing import NoReturn
 
 from library.data import unar_errors
 from library.utils import consts, iterables, nums, path_utils, strings
+from library.utils import shell_utils
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj
 
@@ -516,6 +517,7 @@ def unar_delete(archive_path):
         else:
             raise
 
+    shell_utils.flatten_wrapper_folder(output_path)
     path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     try:

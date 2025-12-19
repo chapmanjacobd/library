@@ -6,8 +6,8 @@ from time import sleep
 from library import usage
 from library.createdb.torrents_add import get_tracker_domain, torrent_decode
 from library.utils import arggroups, argparse_utils, processes
-from library.utils.file_utils import trash
 from library.utils.log_utils import log
+from library.utils.shell_utils import trash
 
 
 def parse_args():

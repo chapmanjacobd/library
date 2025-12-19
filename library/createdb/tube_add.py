@@ -4,7 +4,7 @@ from pathlib import Path
 from library import usage
 from library.createdb import tube_backend
 from library.mediadb import db_media, db_playlists
-from library.utils import arggroups, argparse_utils, consts, db_utils, file_utils
+from library.utils import arggroups, argparse_utils, consts, db_utils, shell_utils
 from library.utils.consts import SC
 from library.utils.log_utils import log
 
@@ -35,7 +35,7 @@ def tube_add(args=None) -> None:
         sys.argv = ["tubeadd", *args]
 
     args = parse_args(SC.tube_add, usage=usage.tube_add)
-    paths = file_utils.gen_paths(args)
+    paths = shell_utils.gen_paths(args)
 
     db_playlists.create(args)
     db_media.create(args)

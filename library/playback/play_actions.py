@@ -10,7 +10,7 @@ from library.fsdb import files_info
 from library.mediadb import db_history, db_media
 from library.playback import media_player, media_printer
 from library.tablefiles import mcda
-from library.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, nums, processes, sqlgroups
+from library.utils import arggroups, argparse_utils, consts, devices, iterables, nums, processes, shell_utils, sqlgroups
 from library.utils.consts import SC, DBType
 from library.utils.log_utils import Timer, log
 
@@ -320,21 +320,21 @@ def file_or_folder_media(args, paths):
             media.extend([{"path": str(p)}])
         elif p.is_dir():
             if args.folder_glob:
-                media.extend([{"path": s} for s in file_utils.fast_glob(p)])
+                media.extend([{"path": s} for s in shell_utils.fast_glob(p)])
             elif args.action in SC.watch:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS, args.exclude)[0]])
+                media.extend([{"path": s} for s in shell_utils.rglob(str(p), consts.VIDEO_EXTENSIONS, args.exclude)[0]])
             elif args.action == SC.listen:
                 media.extend(
-                    [{"path": s} for s in file_utils.rglob(str(p), consts.AUDIO_ONLY_EXTENSIONS, args.exclude)[0]]
+                    [{"path": s} for s in shell_utils.rglob(str(p), consts.AUDIO_ONLY_EXTENSIONS, args.exclude)[0]]
                 )
             elif args.action in SC.view:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.IMAGE_EXTENSIONS, args.exclude)[0]])
+                media.extend([{"path": s} for s in shell_utils.rglob(str(p), consts.IMAGE_EXTENSIONS, args.exclude)[0]])
             elif args.action in SC.read:
                 media.extend(
-                    [{"path": s} for s in file_utils.rglob(str(p), consts.TEXTRACT_EXTENSIONS, args.exclude)[0]]
+                    [{"path": s} for s in shell_utils.rglob(str(p), consts.TEXTRACT_EXTENSIONS, args.exclude)[0]]
                 )
             else:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p), exclude=args.exclude)[0]])
+                media.extend([{"path": s} for s in shell_utils.rglob(str(p), exclude=args.exclude)[0]])
 
     if any(s not in args.defaults for s in ["size", "time_modified", "time_created", "type", "no_type"]):
         media = files_info.filter_files_by_criteria(args, media)
@@ -472,7 +472,7 @@ def process_playqueue(args) -> None:
     elif args.folders:
         media = folder_media(args, media)
     elif args.folder_glob:
-        media = ({"path": s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
+        media = ({"path": s} for m in media for s in shell_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
 
     if args.play_in_order:
         media = db_media.natsort_media(args, media)

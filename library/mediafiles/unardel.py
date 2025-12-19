@@ -13,6 +13,7 @@ from library.utils import (
     path_utils,
     printing,
     processes,
+    shell_utils,
     strings,
 )
 from library.utils.log_utils import log
@@ -47,7 +48,7 @@ def collect_media(args) -> list[dict]:
     if not UNAR_INSTALLED:
         processes.exit_error("unar not installed. Archives will not be extracted")
 
-    media = file_utils.gen_d(args, consts.ARCHIVE_EXTENSIONS)
+    media = shell_utils.gen_d(args, consts.ARCHIVE_EXTENSIONS)
 
     media = files_info.filter_files_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
@@ -154,7 +155,7 @@ def unardel() -> None:
 
                 if args.move and not m.get("time_deleted") and m.get("new_path"):
                     dest = path_utils.relative_from_mountpoint(m["new_path"], args.move)
-                    file_utils.rename_move_file(m["new_path"], dest)
+                    shell_utils.rename_move_file(m["new_path"], dest)
                 elif args.move_broken and not m.get("time_deleted") and os.path.exists(m["path"]):
                     dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
-                    file_utils.rename_move_file(m["path"], dest)
+                    shell_utils.rename_move_file(m["path"], dest)

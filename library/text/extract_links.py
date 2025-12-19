@@ -8,10 +8,10 @@ from library.utils import (
     argparse_utils,
     consts,
     devices,
-    file_utils,
     iterables,
     path_utils,
     printing,
+    shell_utils,
     strings,
     web,
 )
@@ -224,7 +224,7 @@ def extract_links() -> None:
     args = parse_args()
 
     if args.no_extract:
-        for url in file_utils.gen_paths(args):
+        for url in shell_utils.gen_paths(args):
             if args.url_encode:
                 url = web.url_encode(url).strip()
             if args.download:
@@ -239,7 +239,7 @@ def extract_links() -> None:
     if args.selenium:
         web.load_selenium(args)
     try:
-        for url in file_utils.gen_paths(args):
+        for url in shell_utils.gen_paths(args):
             for d in iterables.return_unique(get_inner_urls, lambda d: d["link"])(args, url):
                 print_or_download(args, d)
 

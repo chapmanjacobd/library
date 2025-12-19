@@ -1,4 +1,5 @@
 import os, random, shlex, shutil, subprocess, sys, time, webbrowser
+from pathlib import Path
 
 from library.files import sample_compare
 from library.utils import arggroups, consts, file_utils, path_utils, processes, strings
@@ -102,6 +103,17 @@ def log_size_diff(src_size, dst_size):
         print(f"Source ({src_size_str}) is {dst_size_str} smaller than destination ({diff_size_str})")
 
 
+def alt_name(file_path):
+    file_path = Path(file_path)
+    alternative_path = file_path
+    counter = 1
+    while alternative_path.exists():
+        new_name = f"{file_path.stem}_{counter}{file_path.suffix}"
+        alternative_path = file_path.with_name(new_name)
+        counter += 1
+    return str(alternative_path)
+
+
 def clobber(args, source, destination) -> tuple[str | None, str]:
     if source == destination:
         log.info("Destination is the same as source\t%s", destination)
@@ -120,9 +132,9 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                 case arggroups.FileOverFolder.SKIP:
                     source = None
                 case arggroups.FileOverFolder.RENAME_SRC:
-                    destination = file_utils.alt_name(destination)
+                    destination = alt_name(destination)
                 case arggroups.FileOverFolder.RENAME_DEST:
-                    existing_rename = file_utils.alt_name(destination)
+                    existing_rename = alt_name(destination)
                     rename(args, destination, existing_rename)
                 case arggroups.FileOverFolder.DELETE_SRC:
                     unlink(args, source)
@@ -221,9 +233,9 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                         if confirm("Replace destination file?"):
                             unlink(args, destination)
                     case arggroups.FileOverFile.RENAME_SRC:
-                        destination = file_utils.alt_name(destination)
+                        destination = alt_name(destination)
                     case arggroups.FileOverFile.RENAME_DEST:
-                        existing_rename = file_utils.alt_name(destination)
+                        existing_rename = alt_name(destination)
                         rename(args, destination, existing_rename)
                     case arggroups.FileOverFile.DELETE_SRC:
                         unlink(args, source)
@@ -260,10 +272,10 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                 case arggroups.FolderOverFile.DELETE_DEST:
                     unlink(args, parent_file)
                 case arggroups.FolderOverFile.RENAME_DEST:
-                    existing_rename = file_utils.alt_name(parent_file)
+                    existing_rename = alt_name(parent_file)
                     rename(args, parent_file, existing_rename)
                 case arggroups.FolderOverFile.MERGE:
-                    temp_rename = file_utils.alt_name(parent_file)
+                    temp_rename = alt_name(parent_file)
                     rename(args, parent_file, temp_rename)
                     os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
 
@@ -299,9 +311,9 @@ def clobber_new_file(args, destination) -> str:
                 case arggroups.FileOverFolder.SKIP:
                     pass
                 case arggroups.FileOverFolder.RENAME_SRC:
-                    destination = file_utils.alt_name(destination)
+                    destination = alt_name(destination)
                 case arggroups.FileOverFolder.RENAME_DEST:
-                    existing_rename = file_utils.alt_name(destination)
+                    existing_rename = alt_name(destination)
                     rename(args, destination, existing_rename)
                 case arggroups.FileOverFolder.DELETE_DEST:
                     rmtree(args, destination)
@@ -358,10 +370,10 @@ def clobber_new_file(args, destination) -> str:
                         if confirm("Overwrite destination file?"):
                             unlink(args, destination)
                     case arggroups.FileOverFile.RENAME_DEST:
-                        existing_rename = file_utils.alt_name(destination)
+                        existing_rename = alt_name(destination)
                         rename(args, destination, existing_rename)
                     case _:  # FileOverFile.RENAME_SRC
-                        destination = file_utils.alt_name(destination)
+                        destination = alt_name(destination)
 
     else:
         parent_dir = os.path.dirname(destination)
@@ -389,10 +401,10 @@ def clobber_new_file(args, destination) -> str:
                 case arggroups.FolderOverFile.DELETE_DEST:
                     unlink(args, parent_file)
                 case arggroups.FolderOverFile.RENAME_DEST:
-                    existing_rename = file_utils.alt_name(parent_file)
+                    existing_rename = alt_name(parent_file)
                     rename(args, parent_file, existing_rename)
                 case _:  # FolderOverFile.MERGE
-                    temp_rename = file_utils.alt_name(parent_file)
+                    temp_rename = alt_name(parent_file)
                     rename(args, parent_file, temp_rename)
                     os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
 

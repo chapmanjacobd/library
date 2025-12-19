@@ -3,9 +3,9 @@ from pathlib import Path
 
 from library import usage
 from library.data import imagemagick_errors
-from library.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes, web
-from library.utils.file_utils import gen_paths
+from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils, web
 from library.utils.log_utils import log
+from library.utils.shell_utils import gen_paths
 from library.utils.web import WebPath
 
 
@@ -49,7 +49,7 @@ def process_path(args, path) -> str | None:
             log.info("Extracting images %s", path)
         else:
             archive_dir = processes.unar_delete(path)
-            image_paths = file_utils.rglob(str(archive_dir), consts.IMAGE_EXTENSIONS, quiet=True)[0]
+            image_paths = shell_utils.rglob(str(archive_dir), consts.IMAGE_EXTENSIONS, quiet=True)[0]
             for p in image_paths:
                 process_path(args, p)
             return archive_dir

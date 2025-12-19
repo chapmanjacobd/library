@@ -18,6 +18,7 @@ from library.utils import (
     path_utils,
     printing,
     processes,
+    shell_utils,
     sqlgroups,
     strings,
 )
@@ -135,7 +136,7 @@ def collect_media(args) -> list[dict]:
         except sqlite3.OperationalError:
             media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
     else:
-        media = file_utils.gen_d(args, default_exts)
+        media = shell_utils.gen_d(args, default_exts)
 
         media = files_info.filter_files_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
@@ -295,7 +296,7 @@ def check_shrink(args, m) -> list:
 
             for p in part_files:
                 dest = path_utils.relative_from_mountpoint(p, args.move_broken)
-                file_utils.rename_move_file(p, dest)
+                shell_utils.rename_move_file(p, dest)
     else:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     # TODO?: csv, json => parquet
@@ -430,7 +431,7 @@ def process_media() -> None:
                     if args.move:
                         # move original file
                         dest = path_utils.relative_from_mountpoint(m["path"], args.move)
-                        file_utils.rename_move_file(m["path"], dest)
+                        shell_utils.rename_move_file(m["path"], dest)
                     continue
                 else:
                     if m["media_type"] in ("Audio", "Video", "Image"):
@@ -465,10 +466,10 @@ def process_media() -> None:
 
                 if args.move and not m.get("time_deleted") and m.get("new_path"):
                     dest = path_utils.relative_from_mountpoint(m["new_path"], args.move)
-                    file_utils.rename_move_file(m["new_path"], dest)
+                    shell_utils.rename_move_file(m["new_path"], dest)
                 elif args.move_broken and m.get("time_deleted") and os.path.exists(m["path"]):
                     dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
-                    file_utils.rename_move_file(m["path"], dest)
+                    shell_utils.rename_move_file(m["path"], dest)
 
                 if args.database:
                     with suppress(sqlite3.OperationalError), args.db.conn:

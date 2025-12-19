@@ -2,7 +2,18 @@ import errno, math, subprocess
 
 from library.createdb import subtitle
 from library.mediafiles import media_check
-from library.utils import consts, date_utils, file_utils, iterables, nums, objects, path_utils, processes, strings
+from library.utils import (
+    consts,
+    date_utils,
+    file_utils,
+    iterables,
+    nums,
+    objects,
+    path_utils,
+    processes,
+    shell_utils,
+    strings,
+)
 from library.utils.consts import DBType
 from library.utils.log_utils import log
 
@@ -148,7 +159,7 @@ def munge_av_tags(args, m) -> dict:
             and not path.startswith("http")
             and not file_utils.is_file_open(path)
         ):
-            file_utils.trash(args, path, detach=False)
+            shell_utils.trash(args, path, detach=False)
             m["time_deleted"] = consts.APPLICATION_START
         m["error"] = "Metadata check failed"
         return m
@@ -207,7 +218,7 @@ def munge_av_tags(args, m) -> dict:
                 log.warning(
                     "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str
                 )
-                file_utils.trash(args, path, detach=False)
+                shell_utils.trash(args, path, detach=False)
                 m["time_deleted"] = consts.APPLICATION_START
                 m["error"] = "Media check failed"
 

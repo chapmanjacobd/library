@@ -4,7 +4,7 @@ from pathlib import Path
 from natsort import natsorted
 
 from library import usage
-from library.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes, web
+from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils, web
 from library.utils.date_utils import utc_from_local_timestamp
 from library.utils.log_utils import log
 
@@ -104,7 +104,7 @@ def gen_arg_groups(args):
     individual_files = []
     for path in local_paths:
         if os.path.isdir(path):
-            dir_image_paths = file_utils.rglob(
+            dir_image_paths = shell_utils.rglob(
                 str(path), args.ext or DEFAULT_EXTENSIONS, getattr(args, "exclude", None)
             )[0]
             if dir_image_paths:
@@ -113,7 +113,7 @@ def gen_arg_groups(args):
                 log.warning("No images found in %s", path)
         elif path_utils.ext(path) in consts.ARCHIVE_EXTENSIONS:
             archive_dir = processes.unar_delete(path)
-            archive_image_paths = file_utils.rglob(str(archive_dir), DEFAULT_EXTENSIONS, quiet=True)[0]
+            archive_image_paths = shell_utils.rglob(str(archive_dir), DEFAULT_EXTENSIONS, quiet=True)[0]
             if archive_image_paths:
                 yield archive_image_paths
             else:

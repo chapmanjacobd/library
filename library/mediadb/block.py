@@ -3,7 +3,7 @@ import sys
 from library import usage
 from library.createdb import tube_backend
 from library.playback import media_printer, post_actions
-from library.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, iterables, strings
+from library.utils import arggroups, argparse_utils, consts, db_utils, devices, iterables, shell_utils, strings
 from library.utils.log_utils import log
 
 
@@ -58,7 +58,7 @@ def block(args=None) -> None:
 
     columns = {"path", "webpath", args.match_column, "size", "playlist_path", "time_deleted"}
 
-    paths = list(file_utils.gen_paths(args))
+    paths = list(shell_utils.gen_paths(args))
 
     if not paths:
         if "blocklist" in args.db.table_names():

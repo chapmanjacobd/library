@@ -4,10 +4,10 @@ from pathlib import Path
 
 from library import usage
 from library.mediadb import db_media, db_playlists
-from library.utils import arggroups, argparse_utils, consts, db_utils, file_utils, iterables, nums, objects, printing
-from library.utils.file_utils import trash
+from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing, shell_utils
 from library.utils.log_utils import log
 from library.utils.path_utils import tld_from_url
+from library.utils.shell_utils import trash
 
 
 def parse_args():
@@ -122,7 +122,7 @@ def torrents_add():
     db_playlists.create(args)
     db_media.create(args)
 
-    scanned_set = set(file_utils.gen_paths(args, default_exts=(".torrent",)))
+    scanned_set = set(shell_utils.gen_paths(args, default_exts=(".torrent",)))
 
     known_hashes = set()
     try:
@@ -194,7 +194,9 @@ def torrents_add():
                 playlists_id = db_playlists._add(args, objects.dict_filter_bool(torrent_info))
                 files = [file | {"playlists_id": playlists_id} for file in files]
                 args.db["media"].insert_all(files, pk=["playlists_id", "path"], alter=True, replace=True)
-    print("Extracted metadata from", num_paths, "files")
 
-    if not args.db["media"].detect_fts():
-        db_utils.optimize(args)
+    if num_paths > 0:
+        print("Extracted metadata from", num_paths, "files")
+
+        if not args.db["media"].detect_fts():
+            db_utils.optimize(args)

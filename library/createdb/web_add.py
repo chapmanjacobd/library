@@ -20,6 +20,7 @@ from library.utils import (
     nums,
     objects,
     printing,
+    shell_utils,
     sql_utils,
     strings,
     web,
@@ -270,7 +271,7 @@ def web_add(args=None) -> None:
     if args.no_extract:
         media_new = set()
         media_known = set()
-        for p in file_utils.gen_paths(args):
+        for p in shell_utils.gen_paths(args):
             if db_media.exists(args, p):
                 media_known.add(p)
             else:
@@ -283,9 +284,9 @@ def web_add(args=None) -> None:
             web.load_selenium(args)
         try:
             if args.media:
-                spider(args, list(file_utils.gen_paths(args)))
+                spider(args, list(shell_utils.gen_paths(args)))
             else:
-                for playlist_path in file_utils.gen_paths(args):
+                for playlist_path in shell_utils.gen_paths(args):
                     args.playlists_id = add_playlist(args, playlist_path)
                     spider(args, [playlist_path])
 

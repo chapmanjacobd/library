@@ -14,7 +14,7 @@ from library.data.yt_dlp_errors import (
 )
 from library.mediadb import db_media, db_playlists
 from library.mediafiles import media_check
-from library.utils import consts, db_utils, file_utils, iterables, objects, path_utils, printing, sql_utils, strings
+from library.utils import consts, db_utils, iterables, objects, path_utils, printing, shell_utils, sql_utils, strings
 from library.utils.consts import DBType, DLStatus, VideoArchiveError
 from library.utils.log_utils import Timer, log
 from library.utils.processes import FFProbe
@@ -579,7 +579,7 @@ def download(args, m) -> None:
                 )
                 local_path = path_utils.clean_path(local_path.encode())
                 if Path(temp_path).exists():  # may be download error
-                    file_utils.rename_move_file(temp_path, local_path)
+                    shell_utils.rename_move_file(temp_path, local_path)
                 # TODO: wtf is this doing...
                 elif Path(local_path).exists():  # media might already be in download archive
                     local_path = temp_path

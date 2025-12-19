@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup, element
 from library import usage
 from library.createdb import fs_add_metadata
 from library.data.http_errors import HTTPStatus
-from library.utils import arggroups, argparse_utils, devices, file_utils, iterables, printing, strings, web
+from library.utils import arggroups, argparse_utils, devices, iterables, printing, shell_utils, strings, web
 from library.utils.log_utils import log
 
 
@@ -134,7 +134,7 @@ def extract_text() -> None:
     if args.selenium:
         web.load_selenium(args)
     try:
-        for url in file_utils.gen_paths(args):
+        for url in shell_utils.gen_paths(args):
             output_lines = []
             for s in iterables.return_unique(get_text)(args, url):
                 if s is None:

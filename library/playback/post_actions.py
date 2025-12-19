@@ -2,7 +2,7 @@ import os, shlex
 from pathlib import Path
 
 from library.mediadb import db_history, db_media
-from library.utils import devices, file_utils, iterables, processes
+from library.utils import devices, iterables, processes, shell_utils
 from library.utils.log_utils import log
 
 try:
@@ -26,7 +26,7 @@ def mv_to_keep_folder(args, src: str) -> str:
                 return src  # file already in a matching keep_dir
             keep_dir = str(p.parent / args.keep_dir)
 
-    dest = file_utils.rel_move(args, src, keep_dir)
+    dest = shell_utils.rel_move(args, src, keep_dir)
     if src == dest:
         return src
 
@@ -49,7 +49,7 @@ def delete_media(args, paths) -> int:
         if getattr(args, "prefix", False):
             Path(p).unlink(missing_ok=True)
         else:
-            file_utils.trash(args, p, detach=len(paths) < 30)
+            shell_utils.trash(args, p, detach=len(paths) < 30)
 
     if hasattr(args, "db") and args.db:
         return db_media.mark_media_deleted(args, paths)
