@@ -14,9 +14,9 @@ from library.utils import (
     argparse_utils,
     consts,
     db_utils,
-    file_utils,
     iterables,
     processes,
+    shell_utils,
     sql_utils,
     strings,
     web,
@@ -107,7 +107,7 @@ def download(args=None) -> None:
     if "blocklist" in args.db.table_names():
         args.blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
 
-    media = list(file_utils.gen_d(args))
+    media = list(shell_utils.gen_d(args))
     if not media:
         query, bindings = construct_download_query(args)
         media = list(args.db.query(query, bindings))

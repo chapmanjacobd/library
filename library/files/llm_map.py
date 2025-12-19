@@ -5,8 +5,8 @@ from shutil import which
 from library import usage
 from library.createdb import fs_add_metadata
 from library.utils import arggroups, argparse_utils, path_utils
-from library.utils.file_utils import gen_paths
 from library.utils.log_utils import log
+from library.utils.shell_utils import gen_paths
 
 
 def parse_args():

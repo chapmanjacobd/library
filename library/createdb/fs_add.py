@@ -14,10 +14,10 @@ from library.utils import (
     argparse_utils,
     consts,
     db_utils,
-    file_utils,
     iterables,
     objects,
     printing,
+    shell_utils,
 )
 from library.utils.consts import SC, DBType
 from library.utils.log_utils import log
@@ -167,7 +167,7 @@ def find_new_files(args, path) -> list[str]:
                 exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
             exts = tuple(exts)
 
-    scanned_set = file_utils.rglob(path, exts or None, args.exclude)[0]
+    scanned_set = shell_utils.rglob(path, exts or None, args.exclude)[0]
 
     m_columns = db_utils.columns(args, "media")
 

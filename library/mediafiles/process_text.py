@@ -3,9 +3,9 @@ from pathlib import Path
 
 from library import usage
 from library.mediafiles import process_image
-from library.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes, web
-from library.utils.file_utils import gen_paths
+from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils, web
 from library.utils.log_utils import log
+from library.utils.shell_utils import gen_paths
 
 
 def parse_args() -> argparse.Namespace:
@@ -152,7 +152,7 @@ def process_path(args, path) -> str | None:
 
     if os.path.isdir(output_path):
         # we need to make sure the target folder is empty because we possibly call rmtree later
-        existing_rename = file_utils.alt_name(output_path)
+        existing_rename = devices.alt_name(output_path)
         devices.rename(args, output_path, existing_rename)
     else:
         path, output_path = devices.clobber(args, path, output_path)
@@ -213,7 +213,7 @@ def process_path(args, path) -> str | None:
     shutil.copy((base_folder / ".." / "assets" / "calibre.css").resolve(), output_path / "stylesheet.css")
 
     # shrink images
-    image_paths = file_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
+    image_paths = shell_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
 
     mp_image_args = argparse.Namespace(
         **{k: v for k, v in args.__dict__.items() if k not in {"db"}} | {"delete_larger": True}
@@ -228,7 +228,7 @@ def process_path(args, path) -> str | None:
     replacements = {"image/jpeg": "image/avif"} | {
         os.path.basename(old): os.path.basename(new) for old, new in avif_files.items() if new
     }
-    text_paths = file_utils.rglob(str(output_path), consts.PLAIN_EXTENSIONS, quiet=True)[0]
+    text_paths = shell_utils.rglob(str(output_path), consts.PLAIN_EXTENSIONS, quiet=True)[0]
     for text_path in text_paths:
         update_references(text_path, replacements)
 

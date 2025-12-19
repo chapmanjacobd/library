@@ -3,9 +3,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from shutil import which
 
 from library import usage
-from library.utils import arggroups, argparse_utils, consts, file_utils, nums, path_utils, printing, processes, strings
-from library.utils.file_utils import gen_paths
+from library.utils import arggroups, argparse_utils, consts, nums, path_utils, printing, processes, shell_utils, strings
 from library.utils.log_utils import log
+from library.utils.shell_utils import gen_paths
 
 
 def parse_args():
@@ -228,4 +228,4 @@ def media_check() -> None:
                     log.warning(
                         "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str
                     )
-                    file_utils.trash(args, path)
+                    shell_utils.trash(args, path)

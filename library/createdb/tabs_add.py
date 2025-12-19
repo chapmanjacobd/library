@@ -5,8 +5,8 @@ from random import randint
 from library import usage
 from library.mediadb import db_history, db_media
 from library.utils import arggroups, argparse_utils, consts, iterables
-from library.utils.file_utils import gen_paths
 from library.utils.log_utils import log
+from library.utils.shell_utils import gen_paths
 
 
 def parse_args() -> argparse.Namespace:

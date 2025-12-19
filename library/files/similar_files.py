@@ -1,7 +1,7 @@
 from library import usage
 from library.folders.similar_folders import cluster_folders, map_and_name
 from library.fsdb import files_info
-from library.utils import arggroups, argparse_utils, file_utils, nums, printing, strings
+from library.utils import arggroups, argparse_utils, file_utils, nums, printing, shell_utils, strings
 from library.utils.log_utils import log
 
 
@@ -100,7 +100,7 @@ def filter_groups_by_size(args, groups):
 
 def similar_files():
     args = parse_args()
-    media = list(file_utils.gen_d(args))
+    media = list(shell_utils.gen_d(args))
     media = files_info.filter_files_by_criteria(args, media)
 
     groups: list[dict] = []

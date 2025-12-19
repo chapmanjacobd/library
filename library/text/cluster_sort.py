@@ -8,13 +8,13 @@ from library.utils import (
     argparse_utils,
     consts,
     db_utils,
-    file_utils,
     iterables,
     log_utils,
     nums,
     objects,
     path_utils,
     printing,
+    shell_utils,
     strings,
 )
 from library.utils.consts import DBType
@@ -415,7 +415,7 @@ def cluster_sort() -> None:
         elif args.profile in ("image",):
             for i, group in enumerate(groups, start=1):
                 paths = [s.rstrip("\n") for s in group["grouped_paths"]]
-                file_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
+                shell_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
     else:
         lines = (p + "\n" for d in groups for p in d["grouped_paths"])
         if args.output_path:

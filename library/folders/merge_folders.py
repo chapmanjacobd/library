@@ -2,7 +2,7 @@ import argparse, json, os
 from pathlib import Path
 
 from library import usage
-from library.utils import arg_utils, arggroups, argparse_utils, consts, devices, file_utils, path_utils, printing
+from library.utils import arg_utils, arggroups, argparse_utils, consts, devices, path_utils, printing, shell_utils
 from library.utils.log_utils import log
 
 
@@ -110,7 +110,7 @@ def apply_merge(args, empty_folder_data, rename_data, clobber):
         try:
             mv_fn(t[1], t[2])
         except Exception:
-            file_utils.rename_move_file(t[1], t[2])
+            shell_utils.rename_move_file(t[1], t[2])
 
     if args.simulate:
         for p in empty_folder_data:

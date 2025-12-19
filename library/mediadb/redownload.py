@@ -4,7 +4,7 @@ from pathlib import Path
 
 from library import usage
 from library.playback import media_printer
-from library.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, iterables
+from library.utils import arggroups, argparse_utils, consts, db_utils, devices, iterables, shell_utils
 
 
 def parse_args() -> argparse.Namespace:
@@ -126,7 +126,7 @@ def redownload() -> None:
         if len(redownload_ids) > 0:
             download_archive = Path(args.download_archive).expanduser().resolve()
             if download_archive.exists():
-                file_utils.filter_file(str(download_archive), redownload_ids)
+                shell_utils.filter_file(str(download_archive), redownload_ids)
 
         mark_media_undownloaded(args, deleted_media)
         non_tube_media = get_non_tube_media(args, paths)

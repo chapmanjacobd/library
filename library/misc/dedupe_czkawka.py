@@ -11,10 +11,10 @@ from library.utils import (
     argparse_utils,
     consts,
     devices,
-    file_utils,
     iterables,
     mpv_utils,
     processes,
+    shell_utils,
     strings,
 )
 from library.utils.log_utils import log
@@ -259,7 +259,7 @@ def mv_to_keep_folder(args, d) -> None:
         else:
             print("Source and destination are the same size", strings.file_size(src_size))
         if devices.confirm("Replace destination file?"):
-            file_utils.trash(args, new_path, detach=False)
+            shell_utils.trash(args, new_path, detach=False)
             new_path = shutil.move(media_file, keep_path)
 
     log.info(f"{new_path}: new location")
@@ -277,7 +277,7 @@ def group_and_delete(args, groups):
             continue
 
         def delete_dupe(d, detach=is_interactive):
-            file_utils.trash(args, d["path"], detach=detach)
+            shell_utils.trash(args, d["path"], detach=detach)
             log.info(f"{d['path']}: Deleted")
 
         group.sort(key=lambda x: x["size"], reverse=True)

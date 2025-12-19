@@ -3,7 +3,17 @@ from random import random
 
 from library import usage
 from library.playback import media_printer
-from library.utils import arggroups, argparse_utils, consts, file_utils, iterables, processes, sqlgroups, strings
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    file_utils,
+    iterables,
+    processes,
+    shell_utils,
+    sqlgroups,
+    strings,
+)
 from library.utils.objects import Reverser
 
 
@@ -171,7 +181,7 @@ def get_data(args) -> list[dict]:
     else:
         if args.hide_deleted:
             args.paths = [p for p in args.paths if os.path.exists(p)]
-        files = file_utils.gen_d(args)
+        files = shell_utils.gen_d(args)
 
         files = filter_files_by_criteria(args, files)
 

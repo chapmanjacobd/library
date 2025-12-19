@@ -4,7 +4,7 @@ from library import usage
 from library.folders import big_dirs
 from library.fsdb import files_info
 from library.text import cluster_sort
-from library.utils import arggroups, argparse_utils, file_utils, nums, path_utils, printing, strings
+from library.utils import arggroups, argparse_utils, file_utils, nums, path_utils, printing, shell_utils, strings
 from library.utils.log_utils import log
 
 
@@ -157,7 +157,7 @@ def filter_groups_by_numbers(args, groups):
 
 def similar_folders():
     args = parse_args()
-    media = file_utils.gen_d(args)
+    media = shell_utils.gen_d(args)
 
     media = files_info.filter_files_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]

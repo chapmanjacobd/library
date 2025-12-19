@@ -12,6 +12,7 @@ from library.utils import (
     objects,
     path_utils,
     processes,
+    shell_utils,
     sqlgroups,
     strings,
 )
@@ -280,7 +281,7 @@ def get_data(args) -> list[dict]:
         if any([args.group_by_size, args.group_by_extensions, args.group_by_mimetypes]):
             args.paths = [os.path.realpath(s) for s in args.paths]
 
-        media = file_utils.gen_d(args)
+        media = shell_utils.gen_d(args)
         if args.hide_deleted:
             args.paths = file_utils.filter_deleted(args.paths)
 

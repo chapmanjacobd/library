@@ -495,7 +495,7 @@ class MediaPrefetcher:
                 try:
                     processes.FFProbe(m["path"])
                 except processes.UnplayableFile:
-                   media_path.unlink(missing_ok=True)
+                    media_path.unlink(missing_ok=True)
 
             if not media_path.exists():
                 log.warning("[%s]: Does not exist. Skipping...", m["path"])

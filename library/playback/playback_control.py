@@ -8,13 +8,13 @@ from library.utils import (
     arggroups,
     argparse_utils,
     consts,
-    file_utils,
     iterables,
     mpv_utils,
     nums,
     objects,
     printing,
     processes,
+    shell_utils,
     strings,
 )
 from library.utils.log_utils import log
@@ -346,14 +346,14 @@ def playback_next() -> None:
         Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
         catt_stop(args)
         if args.delete_files:
-            file_utils.trash(args, playing["catt"])
+            shell_utils.trash(args, playing["catt"])
 
     if playing["mpv"]:
         args.mpv.command("playlist_next", "force")
         with suppress(AttributeError):
             args.mpv.terminate()
         if args.delete_files:
-            file_utils.trash(args, playing["mpv"])
+            shell_utils.trash(args, playing["mpv"])
 
 
 def playback_seek() -> None:

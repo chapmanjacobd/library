@@ -2,7 +2,7 @@ from pathlib import Path
 
 from library import usage
 from library.mediadb import db_history
-from library.utils import arggroups, argparse_utils, consts, file_utils
+from library.utils import arggroups, argparse_utils, consts, shell_utils
 
 
 def parse_args(**kwargs):
@@ -26,7 +26,7 @@ def history_add() -> None:
     history_exists = set()
     history_new = set()
     media_unknown = set()
-    for p in file_utils.gen_paths(args):
+    for p in shell_utils.gen_paths(args):
         if Path(p).exists():
             p = str(Path(p).resolve())
         media_id = args.db.pop("select id from media where path = ?", [p])

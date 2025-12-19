@@ -4,10 +4,10 @@ from pathlib import Path
 from library import usage
 from library.folders import filter_src
 from library.folders.filter_src import track_moved
-from library.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils
+from library.utils import arggroups, argparse_utils, consts, devices, path_utils, shell_utils
 from library.utils.consts import DBType
-from library.utils.file_utils import rglob_gen
 from library.utils.log_utils import log
+from library.utils.shell_utils import rglob_gen
 
 
 def parse_args(defaults_override=None):
@@ -119,7 +119,7 @@ def mmv_file(args, source, destination):
         print(source)
         print("-->", destination)
     else:
-        file_utils.rename_move_file(source, destination)
+        shell_utils.rename_move_file(source, destination)
         log.debug("moved %s\t%s", source, destination)
 
 

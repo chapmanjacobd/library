@@ -7,11 +7,11 @@ from library.utils import (
     argparse_utils,
     consts,
     db_utils,
-    file_utils,
     iterables,
     nums,
     objects,
     processes,
+    shell_utils,
     sql_utils,
     web,
 )
@@ -662,7 +662,7 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         if args.include == ["."]:
             args.include = [str(Path().cwd().resolve())]
         elif os.sep in args.include[0]:
-            args.include[0] = file_utils.resolve_absolute_path(args.include[0])
+            args.include[0] = shell_utils.resolve_absolute_path(args.include[0])
 
     if not args.no_url_encode_search:
         from library.utils.web import url_encode

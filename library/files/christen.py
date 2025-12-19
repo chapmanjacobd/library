@@ -3,7 +3,7 @@ from os import fsdecode, fsencode
 from pathlib import Path
 
 from library import usage
-from library.utils import arggroups, argparse_utils, file_utils, path_utils
+from library.utils import arggroups, argparse_utils, path_utils, shell_utils
 from library.utils.log_utils import log
 
 
@@ -79,7 +79,9 @@ def christen() -> None:
         base = Path(path).resolve()
         log.info("[%s]: Processing subfolders...", base)
         subpaths = sorted(
-            (fsencode(p) for p in file_utils.rglob(str(base), args.ext or None, args.exclude)[0]), key=len, reverse=True
+            (fsencode(p) for p in shell_utils.rglob(str(base), args.ext or None, args.exclude)[0]),
+            key=len,
+            reverse=True,
         )
         for p in subpaths:
             rename_path(args, base, p)

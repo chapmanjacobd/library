@@ -3,7 +3,6 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
 
-import library.utils.file_utils
 from library import usage
 from library.mediadb import db_media, db_playlists
 from library.text import extract_links
@@ -16,6 +15,7 @@ from library.utils import (
     devices,
     objects,
     printing,
+    shell_utils,
     strings,
     web,
 )
@@ -349,7 +349,7 @@ def links_add() -> None:
         try:
             media_new = set()
             media_known = set()
-            for url in library.utils.file_utils.gen_paths(args):
+            for url in shell_utils.gen_paths(args):
                 if url in media_known:
                     continue
 
@@ -371,7 +371,7 @@ def links_add() -> None:
     elif args.no_extract:
         media_new = set()
         media_known = set()
-        for p in library.utils.file_utils.gen_paths(args):
+        for p in shell_utils.gen_paths(args):
             if db_media.exists(args, p):
                 media_known.add(p)
                 if args.category:
@@ -386,7 +386,7 @@ def links_add() -> None:
             web.load_selenium(args)
         try:
             playlist_count = 0
-            for playlist_path in library.utils.file_utils.gen_paths(args):
+            for playlist_path in shell_utils.gen_paths(args):
                 args.playlists_id = add_playlist(args, playlist_path)
                 extractor(args, playlist_path)
 
