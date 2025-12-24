@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 
 
 def mv_to_keep_folder(args, src: str) -> str:
-    keep_dir = args.keep_dir
+    keep_dir = str(args.keep_dir)
     if not args.keep_dir.startswith(":/"):
         p = Path(src)
         if os.path.isabs(keep_dir):

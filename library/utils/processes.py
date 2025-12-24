@@ -5,8 +5,7 @@ from shutil import which
 from typing import NoReturn
 
 from library.data import unar_errors
-from library.utils import consts, iterables, nums, path_utils, strings
-from library.utils import shell_utils
+from library.utils import consts, iterables, nums, path_utils, shell_utils, strings
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj
 

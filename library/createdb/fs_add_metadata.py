@@ -110,10 +110,10 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         m["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "copy", False) and not file_utils.is_file_open(path):
-        path = m["path"] = shell_utils.copy(mp_args, path, mp_args.copy)
+        path = m["path"] = shell_utils.copy(mp_args, path, str(mp_args.copy))
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
-        path = m["path"] = shell_utils.rel_move(mp_args, path, mp_args.move)
+        path = m["path"] = shell_utils.rel_move(mp_args, path, str(mp_args.move))
 
     if getattr(mp_args, "process", False):
         if objects.is_profile(mp_args, DBType.audio) and Path(path).suffix not in [".opus", ".mka"]:

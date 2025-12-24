@@ -1,5 +1,6 @@
 import concurrent.futures, os, shutil
 from pathlib import Path
+from typing import Iterable
 
 from library import usage
 from library.folders import filter_src
@@ -133,7 +134,7 @@ def mcp_file(args, source, destination):
         log.debug("copied %s\t%s", source, out)
 
 
-def gen_src_dest(args, sources, destination, shortcut_allowed=False):
+def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowed=False):
     for source in sources:
         if args.relative_to:  # modify the destination for each source
             source_destination = path_utils.gen_rel_path(source, destination, args.relative_to)
