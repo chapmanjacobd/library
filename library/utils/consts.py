@@ -219,7 +219,7 @@ VIDEO_EXTENSIONS = set(
         "|v210|yuv10|vag|vc1|rcv|vob|viv|vpk|vqf|vql|vqe|wmv|wsd|xmv|xvag|yop|y4m"
     ).split("|")
 )
-SUBTITLE_EXTENSIONS = set("srt|vtt|mks".split("|"))
+SUBTITLE_EXTENSIONS = set("srt|vtt|mks|ass|ssa".split("|"))
 TEXTRACT_EXTENSIONS = set(
     "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls".split("|")
 )

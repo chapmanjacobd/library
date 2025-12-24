@@ -143,10 +143,6 @@ def unardel() -> None:
                         log.info("Unarchiving %s", m["archive_path"])
                     else:
                         processes.unar_delete(m["archive_path"])
-
-                if not os.path.exists(m["path"]):
-                    log.error("[%s]: FileNotFoundError from archive %s", m["path"], m["archive_path"])
-                    continue
             else:
                 if not os.path.exists(m["path"]):
                     log.error("[%s]: FileNotFoundError", m["path"])
