@@ -883,23 +883,29 @@ def torrents_info():
                 continue
 
             for file in torrent_files(t):
+                if invalid_state:
+                    break
+
                 for base_path in base_paths:
                     file_path = Path(base_path) / file.name
                     if file_path.exists() and not file_path.is_dir():
-                        stat = file_path.stat()
-                        if stat.st_blocks and stat.st_blocks > 12 and file.progress == 0.0:
-                            log.warning(
-                                "Skipping the rest of torrent because invalid state likely. Recheck first. %s", t.name
-                            )
-                            break  # invalid state likely
+                        if file.progress == 0.0:
+                            stat = file_path.stat()
+                            if stat.st_blocks and stat.st_blocks > 12:
+                                log.error(
+                                    "Skipping the rest of torrent because invalid state likely. Recheck first. %s",
+                                    t.name,
+                                )
+                                invalid_state = True
+                                break
 
-                        if 0.0 < file.progress < args.delete_incomplete:
-                            print(f"Deleting incomplete file: {file_path}")
+                        if file.progress < args.delete_incomplete:
+                            log.warning("Deleting incomplete file: %s", file_path)
                             shell_utils.trash(args, str(file_path), detach=False)
                         elif file.progress == 1.0:
-                            print(f"Keeping complete file: {file_path}")
+                            log.info("Keeping complete file: %s", file_path)
                         else:
-                            print(f"Keeping {strings.percent(1 - file.progress)} incomplete file: {file_path}")
+                            log.warning("Keeping %s incomplete file: %s", strings.percent(1 - file.progress), file_path)
                         break  # Stop after deleting first valid path
 
     alt_move_syntax = any(
