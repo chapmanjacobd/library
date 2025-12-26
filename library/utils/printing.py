@@ -1,9 +1,10 @@
-import csv, itertools, math, sys, textwrap, time
+import csv, itertools, math, shutil, signal, sys, textwrap, time
 from collections.abc import Callable
 from datetime import datetime, timezone
 
 import humanize
 from tabulate import tabulate
+from wcwidth import wcswidth
 
 from library.utils import consts, path_utils
 from library.utils.strings import duration, duration_short, file_size, relative_datetime, shorten_middle
@@ -26,6 +27,62 @@ def print_overwrite(*text, **kwargs):
         print("\r" + text, end="", **kwargs)
     else:
         print(text, **kwargs)
+
+
+class MultilineOverwriteConsole:
+
+    def _term_width(self):
+        try:
+            return shutil.get_terminal_size().columns
+        except Exception:
+            return consts.TERMINAL_SIZE.columns
+
+    def _on_resize(self, *_):
+        self.width = self._term_width()
+
+    def __init__(self, stream=None):
+        self.stream = stream or sys.stdout
+        self.overwrite_enabled = self.stream.isatty()
+        self.width = consts.TERMINAL_SIZE.columns
+        self.lines = 0
+
+        if self.overwrite_enabled:
+            signal.signal(signal.SIGWINCH, self._on_resize)
+
+    def reset(self):
+        if self.lines and self.overwrite_enabled:
+            # Move cursor to initial line
+            self.stream.write("\x1b[F" * self.lines)
+            self.stream.write("\x1b[J")
+        self.lines = 0
+
+    def _wrapped_lines(self, text):
+        rows = 0
+        for line in text.splitlines() or [""]:
+            width = max(0, wcswidth(line))
+            rows += max(1, (width // max(1, self.width)) + 1)
+        return rows
+
+    def print(self, *args, sep=" ", end="\n"):
+        text = sep.join(map(str, args))
+        full = text + end
+
+        if not self.overwrite_enabled:
+            self.stream.write(full)
+            return
+
+        # Safe partial-line overwrite
+        if end == "\n" and "\n" not in text:
+            self.stream.write("\r")
+            self.stream.write(text)
+            self.stream.write("\n")
+        else:
+            self.stream.write(full)
+
+        self.lines += self._wrapped_lines(text)
+
+    def flush(self):
+        self.stream.flush()
 
 
 def serialize_key(s):
