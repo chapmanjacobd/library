@@ -1,4 +1,4 @@
-import errno, os, random, re, shutil, string, sys
+import errno, os, random, re, shutil, signal, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
@@ -71,8 +71,6 @@ REGEX_REDDITOR = re.compile(
 )
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()
-TERMINAL_SIZE = shutil.get_terminal_size(fallback=(600, 50))
-MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
 TABULATE_STYLE = "simple"
 DEFAULT_DIFFLIB_RATIO = 0.73
 DEFAULT_MIN_SPLIT = "150s"
@@ -81,6 +79,24 @@ IS_MAC = sys.platform == "darwin"
 IS_WINDOWS = os.name == "nt" or sys.platform in ("win32", "cygwin", "msys")
 NOT_WINDOWS = os.name == "posix"
 REQUESTS_TIMEOUT = (8, 45)
+
+
+def get_terminal_size():
+    return shutil.get_terminal_size(fallback=(600, 50))
+
+
+TERMINAL_SIZE = get_terminal_size()
+MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
+
+
+def _on_winch(_signal, _frame):
+    global TERMINAL_SIZE, MOBILE_TERMINAL
+    TERMINAL_SIZE = get_terminal_size()
+    MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
+
+
+signal.signal(signal.SIGWINCH, _on_winch)
+
 
 SQLITE_INT1 = 255
 SQLITE_INT2 = 65_535
