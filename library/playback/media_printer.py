@@ -103,7 +103,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     cols = getattr(args, "cols", [])
     m_columns = db_utils.columns(args, "media")
 
-    media = deepcopy(data)
+    media = deepcopy(list(data))
 
     if args.verbose >= consts.LOG_DEBUG and cols and "*" in cols:
         breakpoint()
