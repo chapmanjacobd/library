@@ -38,6 +38,8 @@ class MultilineOverwriteConsole:
     def reset(self):
         if self.lines and self.overwrite_enabled:
             # Move cursor to initial line
+            # TODO: handle SIGWINCH because lines will need to be recalculated (if the count of wrapped lines changes)
+            # but this would require storing all printed text between resets() or perhaps using Device Status Report (DSR) sequence [6n
             self.stream.write("\x1b[F" * self.lines)
             self.stream.write("\x1b[J")
         self.lines = 0
