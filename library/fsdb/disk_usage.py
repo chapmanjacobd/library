@@ -50,12 +50,16 @@ def parse_args(defaults_override=None):
 
 def sort_by(args):
     if args.sort_groups_by:
-        return lambda x: x.get(args.sort_groups_by.replace(" desc", "")) or 0
+        key = args.sort_groups_by.replace(" desc", "")
+        if key != "priority":
+            return lambda x: (x.get(key) or 0, objects.Reverser(x.get("path")))
 
+    # priority sort
     return lambda x: (
-        x.get("size") or 0 / (x.get("count") or 1),
+        (x.get("size") or 0) / (x.get("count") or 1),
         x.get("size") or 0,
         x.get("count") or 1,
+        x.get("folders") or 1,
         objects.Reverser(x.get("path")),
     )
 

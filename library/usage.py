@@ -649,7 +649,7 @@ big_dirs = """library big-dirs PATH ... [--limit (4000)] [--depth (0)] [--sort-g
     library big-dirs ./video/ -u 'mcda median_size,-deleted'
 """
 
-disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+disk_usage = """library disk-usage DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
 
     To aggregate to high level folders use --parents and --depth
 
