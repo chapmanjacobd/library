@@ -7,7 +7,7 @@ dependencies = [
   "sqlite-utils>=3.38",
   "ipython>=9.0.0",
   "ffmpeg-python",
-  "gallery-dl",
+  "gallery-dl<1.31.0",
   "yt-dlp[default,curl-cffi]",
   "natsort",
   "charset-normalizer",
