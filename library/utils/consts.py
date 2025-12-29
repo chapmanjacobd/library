@@ -95,7 +95,8 @@ def _on_winch(_signal, _frame):
     MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
 
 
-signal.signal(signal.SIGWINCH, _on_winch)
+if getattr(signal, "SIGWINCH"):
+    signal.signal(signal.SIGWINCH, _on_winch)
 
 
 SQLITE_INT1 = 255
