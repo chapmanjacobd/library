@@ -95,7 +95,7 @@ def _on_winch(_signal, _frame):
     MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
 
 
-if getattr(signal, "SIGWINCH"):
+if hasattr(signal, "SIGWINCH"):
     signal.signal(signal.SIGWINCH, _on_winch)
 
 
