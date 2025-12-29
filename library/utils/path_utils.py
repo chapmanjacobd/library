@@ -388,7 +388,7 @@ def path_tuple_from_url(url):
 def gen_rel_path(source: str, dest: str, relative_to):
     abspath = Path(source).expanduser().resolve()
 
-    if dest.startswith(":/"):
+    if str(dest).startswith(":/"):
         dest = os.path.join(mountpoint(abspath), dest.lstrip(":/"))
         relpath = relativize(abspath)
 

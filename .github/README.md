@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.155; 104 subcommands)
+    library (v3.0.156; 104 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -2303,7 +2303,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Show disk usage</summary>
 
     $ library disk-usage -h
-    usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+    usage: library disk-usage DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
 
     To aggregate to high level folders use --parents and --depth
 
