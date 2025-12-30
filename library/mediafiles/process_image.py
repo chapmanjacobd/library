@@ -21,7 +21,6 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="Delete larger of transcode or original files",
     )
-    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=False, help="Clean output path")
     parser.add_argument(
         "--hide-deleted",
         action=argparse.BooleanOptionalAction,

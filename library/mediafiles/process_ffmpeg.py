@@ -15,7 +15,6 @@ def parse_args(defaults_override=None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.process_ffmpeg)
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-dest")
-    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=False, help="Clean output path")
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 

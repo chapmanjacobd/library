@@ -42,7 +42,6 @@ def parse_args(action, usage):
     parser.add_argument(
         "--force", "-f", action="store_true", help="Mark all subpath files as deleted if no files found"
     )
-    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
     parser.add_argument("--copy")
     parser.add_argument("--move")
 
