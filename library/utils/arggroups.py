@@ -1506,6 +1506,7 @@ Choose ONE of the following options:
     parser.add_argument(
         "--skip-open", action="store_true", help="Skip source files that are already open in another process"
     )
+    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=False, help="Clean output path")
 
 
 def media_scan(parent_parser):
