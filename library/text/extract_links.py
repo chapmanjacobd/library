@@ -101,6 +101,21 @@ def is_desired_url(args, link, link_text, before, after) -> bool:
     return True
 
 
+def get_highest_res(srcset):
+    if not srcset:
+        return None
+    try:
+        parts = [s.strip().split() for s in srcset.split(",")]
+        clean_parts = [p for p in parts if len(p) == 2]
+        if not clean_parts:
+            return srcset.strip().split()[0] if srcset else None
+
+        highest = max(clean_parts, key=lambda x: int(x[1].lower().replace("w", "").replace("x", "")))
+        return highest[0]
+    except (ValueError, IndexError):
+        return None
+
+
 def parse_inner_urls(args, base_url, markup):
     from bs4 import BeautifulSoup
 
@@ -134,32 +149,43 @@ def parse_inner_urls(args, base_url, markup):
     if args.data_src:
         link_attrs.update({"data-src", "data-url", "data-original"})
 
+    image_attrs = set()
+    if args.srcset:
+        image_attrs.add("srcset")
+    if args.data_srcset:
+        image_attrs.add("data-srcset")
+
     url_renames = args.url_renames.items()
 
     def delimit_fn(el):
-        return any(el.has_attr(s) for s in link_attrs)
+        return any(el.has_attr(s) for s in link_attrs | image_attrs)
 
     tags = web.tags_with_text(soup, delimit_fn)
     for tag in tags:
         for attr_name, attr_value in tag.attrs.items():
-            if attr_name not in link_attrs:
+            link = None
+
+            if attr_name in link_attrs:
+                link = str(attr_value).strip()
+            elif attr_name in image_attrs:
+                link = get_highest_res(str(attr_value))
+
+            if not link or link.startswith("#"):
                 continue
 
-            attr_value = str(attr_value).strip()
-            if attr_value and attr_value[0] != "#":
-                link = web.construct_absolute_url(base_url, attr_value)
-                link_text = strings.remove_consecutive_whitespace(tag.text.strip())
+            link = web.construct_absolute_url(base_url, link)
+            link_text = strings.remove_consecutive_whitespace(tag.text.strip())
 
-                if is_desired_url(args, link, link_text, tag.before_text, tag.after_text):
-                    for k, v in url_renames:
-                        link = link.replace(k, v)
+            if is_desired_url(args, link, link_text, tag.before_text, tag.after_text):
+                for k, v in url_renames:
+                    link = link.replace(k, v)
 
-                    yield {
-                        "link": link,
-                        "link_text": strings.strip_enclosing_quotes(link_text),
-                        "before_text": tag.before_text,
-                        "after_text": tag.after_text,
-                    }
+                yield {
+                    "link": link,
+                    "link_text": strings.strip_enclosing_quotes(link_text),
+                    "before_text": tag.before_text,
+                    "after_text": tag.after_text,
+                }
 
 
 def get_inner_urls(args, url):
