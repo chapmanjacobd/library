@@ -1,5 +1,6 @@
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from pathlib import Path
 
 from library import usage
@@ -47,7 +48,10 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
     if len(paths) < 2:
         raise ValueError("Not enough paths. Include 2 or more paths to compare")
 
-    path_stats = {path: Path(path).stat() for path in paths}
+    path_stats = {}
+    for path in paths:
+        with suppress(FileNotFoundError):
+            path_stats[path] = Path(path).stat()
 
     sizes = [stat_res.st_size for stat_res in path_stats.values()]
     if not all(size == sizes[0] for size in sizes):
@@ -69,10 +73,12 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
             path: pool.submit(sample_hash.sample_hash_file, path, threads=threads, gap=gap, chunk_size=chunk_size)
             for path in paths
         }
+
     paths_dict = {}
     for path, future in futures.items():
-        paths_dict[path] = future.result()
-
+        result = future.result()
+        if result:
+            paths_dict[path] = result
     sorted_paths = sorted(paths_dict.items(), key=lambda x: x[1])
     paths_str = "\n".join([f"{file_hash}\t{path}" for path, file_hash in sorted_paths])
 
