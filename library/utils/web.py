@@ -975,8 +975,9 @@ def get_title(args, url):
     for x in consts.COMMON_SITE_TITLE_SUFFIXES:
         title = title.replace(x, "")
 
-    log.info("[%s]: got title %s", url, title)
+    title = strings.remove_consecutive_whitespace(title)
 
+    log.info("[%s]: got title %s", url, title)
     return title
 
 
