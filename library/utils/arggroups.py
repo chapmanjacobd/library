@@ -1827,10 +1827,12 @@ def filter_links(parent_parser):
     parser.add_argument("--url", action="store_true", help="Include url values")
     parser.add_argument("--src", action="store_true", help="Include src values")
     parser.add_argument("--data-src", action="store_true", help="Include data-src values")
+    parser.add_argument("--srcset", action="store_true", help="Include srcset values")
+    parser.add_argument("--data-srcset", action="store_true", help="Include data-srcset values")
 
 
 def filter_links_post(args):
-    if not any([args.href, args.url, args.src, args.data_src]):
+    if not any([args.href, args.url, args.src, args.data_src, args.srcset, args.data_srcset]):
         args.href, args.url, args.src, args.data_src = True, True, True, True
 
     if not args.case_sensitive:
