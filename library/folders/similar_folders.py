@@ -4,7 +4,7 @@ from library import usage
 from library.folders import big_dirs
 from library.fsdb import files_info
 from library.text import cluster_sort
-from library.utils import arggroups, argparse_utils, file_utils, nums, path_utils, printing, shell_utils, strings
+from library.utils import arggroups, argparse_utils, file_utils, nums, path_utils, printing, processes, shell_utils, strings
 from library.utils.log_utils import log
 
 
@@ -68,7 +68,7 @@ def map_and_name(media, clusters):
 
 def cluster_folders(args, media):
     if len(media) < 2:
-        return media
+        processes.exit_error("Too few folders to compare")
 
     if args.estimated_duplicates:
         args.clusters = int(len(media) / args.estimated_duplicates)
