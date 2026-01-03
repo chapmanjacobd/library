@@ -4,7 +4,17 @@ from library import usage
 from library.folders import big_dirs
 from library.fsdb import files_info
 from library.text import cluster_sort
-from library.utils import arggroups, argparse_utils, file_utils, nums, path_utils, printing, processes, shell_utils, strings
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    file_utils,
+    nums,
+    path_utils,
+    printing,
+    processes,
+    shell_utils,
+    strings,
+)
 from library.utils.log_utils import log
 
 
