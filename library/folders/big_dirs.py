@@ -123,13 +123,13 @@ def reaggregate_at_depth(args, folders) -> list[dict]:
 
 
 def process_big_dirs(args, folders) -> list[dict]:
-    if args.hide_deleted:
+    if getattr(args, "hide_deleted", False):
         folders = [d for d in folders if d["total"] != d["deleted"]]  # remove folders where all deleted
 
     if args.depth:
         folders = reaggregate_at_depth(args, folders)
 
-    if args.only_deleted:
+    if getattr(args, "only_deleted", False):
         if args.folder_sizes:
             folders = [d for d in folders if args.folder_sizes(d["deleted_size"])]
         if args.file_counts:
@@ -150,7 +150,7 @@ def collect_media(args) -> list[dict]:
     if args.database:
         media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
     else:
-        if args.hide_deleted:
+        if getattr(args, "hide_deleted", False):
             args.paths = file_utils.filter_deleted(args.paths)
         media = shell_utils.gen_d(args)
 
