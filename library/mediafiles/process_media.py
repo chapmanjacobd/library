@@ -63,7 +63,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-video-bitrate",
         type=nums.human_to_bits,
-        default="1400kbps",
+        default="1500kbps",
         help="Used to estimate duration when files are inside of archives or invalid",
     )
 
@@ -239,7 +239,7 @@ def check_shrink(args, m) -> list:
                     log.warning("Deleting unplayable (ffprobe): %s", m["path"])
                     Path(m["path"]).unlink(missing_ok=True)
                     return []
-        if m["duration"] is None or not m["duration"] > 0:
+        if m["duration"] is None or not m["duration"] > 0 or m["ext"] in consts.SKIP_MEDIA_CHECK:
             log.debug("[%s]: Invalid duration", m["path"])
             m["duration"] = m["size"] / args.source_video_bitrate * 8
             is_invalid = True
