@@ -1,12 +1,9 @@
-import itertools, os
+import os
 from pathlib import Path
 from types import ModuleType
 
 import gallery_dl
-from gallery_dl.exception import StopExtraction
-from gallery_dl.extractor.message import Message
 from gallery_dl.job import Job
-from gallery_dl.util import build_duration_func
 
 from library.mediadb import db_media, db_playlists
 from library.utils import consts, printing, strings
@@ -141,70 +138,57 @@ def download(args, m):
     )
 
 
-class GeneratorJob(Job):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if hasattr(super(), "_init"):
-            super()._init()
-        self.dispatched = False
+class UrlJob(Job):
+    resolve = 1  # depth of queue resolution
+
+    def __init__(self, url, parent=None, resolve=None):
+        super().__init__(url, parent)
+        self.results = []
         self.visited = set()
-        self.status = 0
+        if resolve is not None:
+            self.resolve = resolve
 
-    def message_generator(self):
-        extractor = self.extractor
-        sleep = build_duration_func(extractor.config("sleep-extractor"))
-        if sleep:
-            extractor.sleep(sleep(), "extractor")
-
-        try:
-            for msg in extractor:
-                self.dispatch(msg)
-                if self.dispatched:
-                    yield msg
-                    self.dispatched = False
-        except StopExtraction:
-            pass
-
-    def run(self):
-        for msg in self.message_generator():
-            ident, url, kwdict = msg
-            if ident == Message.Url:
-                yield (msg[1], msg[2])
-
-            elif ident == Message.Queue:
-                if url in self.visited:
-                    continue
-                self.visited.add(url)
-
-                cls = kwdict.get("_extractor")
-                if cls:
-                    extr = cls.from_url(url)
-                else:
-                    extr = self.extractor.find(url)
-
-                if extr:
-                    job = self.__class__(extr, self)
-                    yield from job.run()
-            else:
-                raise TypeError
+        if self.resolve > 0:
+            self.handle_queue = self.handle_queue_resolve
 
     def handle_url(self, url, kwdict):
-        self.dispatched = True
+        self.results.append((url, kwdict))
 
     def handle_queue(self, url, kwdict):
-        self.dispatched = True
+        # unresolved queue entry
+        self.results.append((url, kwdict))
+
+    def handle_queue_resolve(self, url, kwdict):
+        if url in self.visited:
+            return
+        self.visited.add(url)
+
+        cls = kwdict.get("_extractor")
+        if cls:
+            extr = cls.from_url(url)
+        else:
+            extr = self.extractor.find(url)
+
+        if not extr:
+            self.results.append((url, kwdict))
+            return
+
+        job = self.__class__(extr, self, self.resolve - 1)
+        job.results = self.results  # shared accumulator
+        job.visited = self.visited  # shared visited set
+        job.run()
 
 
 def get_playlist_metadata(args, playlist_path):
     gallery_dl = load_module_level_gallery_dl(args)
 
     added_media_count = 0
-    job = GeneratorJob(playlist_path)
-    gen = job.run()
+    job = UrlJob(playlist_path)
+    job.run()
 
-    first_two = list(itertools.islice(gen, 2))
-    is_playlist = len(first_two) > 1
-    for webpath, info in itertools.chain(first_two, gen):
+    is_playlist = len(job.results) > 1
+
+    for webpath, info in job.results:
         errors = parse_gdl_job_status(job.status, playlist_path)
         extractor_key = "gdl_" + job.extractor.category
 
