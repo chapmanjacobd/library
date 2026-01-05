@@ -608,6 +608,8 @@ def torrents_info():
         torrents = sorted(torrents, key=lambda t: (t.downloaded, t.downloaded_session), reverse=reverse_sort)
     elif args.sort in ["uploaded", "upload", "egress"]:
         torrents = sorted(torrents, key=lambda t: (t.uploaded, t.uploaded_session), reverse=reverse_sort)
+    elif args.move:
+        torrents = sorted(torrents, key=lambda t: (t.state_enum.is_complete, t.downloaded))
     elif args.inactive:
         torrents = sorted(
             torrents,
