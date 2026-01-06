@@ -415,7 +415,7 @@ def natsort_media(args, media):
         @strings.output_filter(ignore_pattern)
         def fn_key(d):
             if sort_key in ("parent", "stem", "ps", "pts"):
-                path = Path(d["path"])
+                path = Path(d.get("path") or "")
 
                 if sort_key == "parent":
                     return path.parent
@@ -533,7 +533,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
         + ",".join(f":playlist{i}" for i, _ in enumerate(playlist_paths))
         + "))"
     )
-    playlists_params = {f"playlist{i}": str(Path(p).resolve()) for i, p in enumerate(playlist_paths)}
+    playlists_params = {f"playlist{i}": p for i, p in enumerate(playlist_paths)}
 
     query = f"""WITH m as (
             SELECT
