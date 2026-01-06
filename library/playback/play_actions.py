@@ -403,7 +403,7 @@ def process_playqueue(args) -> None:
             processes.no_media_found()
 
         path = " ".join(args.include)
-        media = db_media.get_playlist_media(args, [path])
+        media = db_media.get_playlist_media(args, [path if path.startswith("http") else str(Path(path).resolve())])
         if not media and os.path.exists(path):
             media = db_media.get_dir_media(args, [path])
         if not media and os.path.exists(args.include[0]):

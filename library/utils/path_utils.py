@@ -399,18 +399,21 @@ def gen_rel_path(source: str, dest: str, relative_to):
 
     if relative_to:
         if str(relative_to).startswith("::") and dest.strip(os.sep) in source:
-            rel = source.split(dest.strip(os.sep), 1)[0]
-            rel = Path(rel, dest.strip(os.sep), str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
+            rel_to = source.split(dest.strip(os.sep), 1)[0]
+            rel_to = Path(rel_to, dest.strip(os.sep), str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
         elif str(relative_to).startswith(":"):
-            rel = os.path.commonpath([abspath, dest])
-            rel = Path(rel, str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
+            rel_to = os.path.commonpath([abspath, dest])
+            rel_to = Path(rel_to, str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
         else:
-            rel = Path(relative_to).expanduser().resolve()
+            rel_to = Path(relative_to).expanduser().resolve()
 
-        log.debug("rel %s", rel)
+        if not rel_to:
+            rel_to = mountpoint(abspath)
+
+        log.debug("rel_to %s", rel_to)
         try:
-            relpath = abspath.relative_to(rel)
-            log.debug("abspath %s relative to %s = %s", abspath, rel, relpath)
+            relpath = abspath.relative_to(rel_to)
+            log.debug("abspath %s relative to %s = %s", abspath, rel_to, relpath)
         except ValueError:
             relpath = relativize(abspath)
             log.debug("ValueError using abspath %s", relpath)
