@@ -398,17 +398,13 @@ def gen_rel_path(source: str, dest: str, relative_to):
         return source_destination
 
     if relative_to:
-        if str(relative_to).startswith("::") and dest.strip(os.sep) in source:
-            rel_to = source.split(dest.strip(os.sep), 1)[0]
-            rel_to = Path(rel_to, dest.strip(os.sep), str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
-        elif str(relative_to).startswith(":"):
+        if str(relative_to).startswith("::"):
             rel_to = os.path.commonpath([abspath, dest])
             rel_to = Path(rel_to, str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
+        elif str(relative_to) == ":":
+            rel_to = mountpoint(abspath)
         else:
             rel_to = Path(relative_to).expanduser().resolve()
-
-        if not rel_to:
-            rel_to = mountpoint(abspath)
 
         log.debug("rel_to %s", rel_to)
         try:
