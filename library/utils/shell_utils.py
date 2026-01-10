@@ -9,30 +9,29 @@ from library.utils import consts, path_utils, printing, processes, strings
 from library.utils.log_utils import log
 
 
-def rename_move_file(source_file, destination_file, simulate=False):
+def rename_move_file(src, dst, simulate=False):
     if simulate:
-        print("mv", source_file, destination_file)
+        print("mv", src, dst)
     else:
         try:
-            os.rename(source_file, destination_file)  # performance
+            return shutil.move(src, dst)
+        except FileNotFoundError:
+            log.error("FileNotFoundError. %s", src)
         except PermissionError:
-            log.warning("PermissionError. Could not rename %s into %s", source_file, os.path.dirname(destination_file))
+            log.warning("PermissionError. Could not move %s into %s", src, os.path.dirname(dst))
+            # raise
         except OSError as excinfo:
-            if excinfo.errno == errno.ENOENT:
-                try:
-                    os.makedirs(os.path.dirname(destination_file), exist_ok=True)
-                    os.rename(source_file, destination_file)  # try again
-                except FileNotFoundError:
-                    log.error("FileNotFoundError. %s", source_file)
-                except OSError as excinfo:
-                    if excinfo.errno == errno.EXDEV:  # Cross-device
-                        shutil.move(source_file, destination_file)  # Fallback to shutil.move
-                    else:
-                        raise
-            elif excinfo.errno == errno.EXDEV:  # Cross-device
-                shutil.move(source_file, destination_file)  # Fallback to shutil.move
-            else:
-                raise
+            if excinfo.errno == errno.ENOENT:  # no parent folder
+                parent = os.path.dirname(dst)
+                if not parent or not os.path.exists(src):
+                    raise
+                os.makedirs(parent, exist_ok=True)
+                return rename_move_file(src, dst, simulate)
+
+            if excinfo.errno in (errno.EIO, errno.ENOSPC, errno.EDQUOT, errno.EFBIG, errno.ENOMEM):
+                if os.path.isfile(src) and os.path.isfile(dst):
+                    os.unlink(dst)
+            raise
 
 
 def rename_no_replace(src, dst):
