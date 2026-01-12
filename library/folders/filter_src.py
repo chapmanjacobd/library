@@ -1,4 +1,4 @@
-import os
+import os, sys
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -28,10 +28,10 @@ def filter_src(args, path):
         return False
 
     if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
-        print(f"\nReached sizeout... ({args.timeout_size})")
+        print(f"\nReached sizeout... ({args.timeout_size})", file=sys.stderr)
         raise SystemExit(124)
     elif args.move_limit and args.move_limit <= MOVED_COUNT:
-        print(f"\nReached file move limit... ({args.move_limit})")
+        print(f"\nReached file move limit... ({args.move_limit})", file=sys.stderr)
         raise SystemExit(124)
 
     return True
