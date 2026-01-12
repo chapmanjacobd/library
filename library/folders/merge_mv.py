@@ -50,6 +50,18 @@ def parse_args(defaults_override=None):
     parser.add_argument(
         "--clobber", "--overwrite", action="store_true", help="Shortcut for --file-over-file delete-dest"
     )
+    parser.add_argument(
+        "--clobber-larger",
+        "--larger",
+        action="store_true",
+        help="Shortcut for --file-over-file 'delete-src-smaller delete-dest'",
+    )
+    parser.add_argument(
+        "--clobber-smaller",
+        "--smaller",
+        action="store_true",
+        help="Shortcut for --file-over-file 'delete-src-larger delete-dest'",
+    )
     arggroups.clobber(parser)
 
     profiles = parser.add_argument_group("File Extension Profiles")
@@ -98,6 +110,18 @@ def parse_args(defaults_override=None):
             args.file_over_file[-1] = "delete-dest"
         else:
             args.file_over_file = arggroups.file_over_file("delete-dest")
+
+    if args.clobber_larger:
+        if args.file_over_file[0] == "skip-hash":
+            args.file_over_file = arggroups.file_over_file("skip-smaller delete-dest")
+        else:
+            args.file_over_file = arggroups.file_over_file("delete-src-smaller delete-dest")
+
+    if args.clobber_smaller:
+        if args.file_over_file[0] == "skip-hash":
+            args.file_over_file = arggroups.file_over_file("skip-larger delete-dest")
+        else:
+            args.file_over_file = arggroups.file_over_file("delete-src-larger delete-dest")
 
     if args.profiles:
         exts = set(args.ext or [])
