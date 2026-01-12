@@ -103,7 +103,26 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     cols = getattr(args, "cols", [])
     m_columns = db_utils.columns(args, "media")
 
-    media = deepcopy(list(data))
+    if "path" in data[0].keys():
+        new_data = []
+        MOVED_COUNT = 0
+        for d in data:
+            try:
+                stat = os.stat(d["path"])
+            except FileNotFoundError:
+                continue
+
+            if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
+                print(f"\nReached sizeout... ({args.timeout_size})", file=sys.stderr)
+                break
+
+            new_data.append(d)
+            MOVED_COUNT += 1
+        data = new_data
+    else:
+        data = list(data)
+
+    media = deepcopy(data)
 
     if args.verbose >= consts.LOG_DEBUG and cols and "*" in cols:
         breakpoint()
