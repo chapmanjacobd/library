@@ -107,12 +107,15 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         new_data = []
         MOVED_COUNT = 0
         for d in data:
-            try:
-                stat = os.stat(d["path"])
-            except FileNotFoundError:
-                continue
+            filesize = d.get("size")
+            if not filesize:
+                try:
+                    stat = os.stat(d["path"])
+                    filesize = stat.st_size
+                except FileNotFoundError:
+                    continue
 
-            if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
+            if args.timeout_size and processes.sizeout(args.timeout_size, filesize):
                 print(f"\nReached sizeout... ({args.timeout_size})", file=sys.stderr)
                 break
 
