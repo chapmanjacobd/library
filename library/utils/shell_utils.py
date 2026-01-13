@@ -15,16 +15,15 @@ def rename_move_file(src, dst, simulate=False):
     else:
         try:
             return shutil.move(src, dst)
-        except FileNotFoundError:
-            log.error("FileNotFoundError. %s", src)
-        except PermissionError:
+        except PermissionError:  # errno.EACCES, errno.EPERM
             log.warning("PermissionError. Could not move %s into %s", src, os.path.dirname(dst))
             # raise
         except OSError as excinfo:
-            if excinfo.errno == errno.ENOENT:  # no parent folder
+            if excinfo.errno == errno.ENOENT:  # no parent folder, FileNotFoundError
                 parent = os.path.dirname(dst)
                 if not parent or not os.path.exists(src):
-                    raise
+                    log.error("FileNotFoundError. %s", src)
+                    return
                 os.makedirs(parent, exist_ok=True)
                 return rename_move_file(src, dst, simulate)
 
