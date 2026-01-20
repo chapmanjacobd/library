@@ -217,7 +217,7 @@ class PartialContent:
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.temp_file:
-            os.remove(self.temp_file.name)
+            os.unlink(self.temp_file.name)
 
 
 def download_embeds(args, soup):

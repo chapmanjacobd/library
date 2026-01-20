@@ -116,7 +116,7 @@ def collect_media(args) -> list[dict]:
         log.warning("unar not installed. Archives will not be extracted")
 
     default_exts = (
-        (consts.AUDIO_ONLY_EXTENSIONS if FFMPEG_INSTALLED else set())
+        (consts.AUDIO_ONLY_EXTENSIONS - set(("opus", "mka")) if FFMPEG_INSTALLED else set())
         | (consts.VIDEO_EXTENSIONS if FFMPEG_INSTALLED else set())
         | (consts.IMAGE_EXTENSIONS - set(("avif",)) if IM7_INSTALLED else set())
         | (consts.CALIBRE_EXTENSIONS if CALIBRE_INSTALLED else set())
