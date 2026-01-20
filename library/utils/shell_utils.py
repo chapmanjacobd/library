@@ -31,6 +31,10 @@ def rename_move_file(src, dst, simulate=False):
                 if os.path.isfile(src) and os.path.isfile(dst):
                     os.unlink(dst)
             raise
+        except KeyboardInterrupt:
+            if os.path.isfile(src) and os.path.isfile(dst):
+                os.unlink(dst)
+            raise
 
 
 def rename_no_replace(src, dst):

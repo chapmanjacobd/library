@@ -201,6 +201,8 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                 sys.stderr.write("\n")
             db_playlists.log_problem(args, playlist_path)
         else:
+            if added_media_count > count_before_extract:
+                sys.stderr.write("\n")
             if not pl:
                 if args.safe:
                     log.error("DownloadError skipping %s", playlist_path)
