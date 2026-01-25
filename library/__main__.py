@@ -44,7 +44,6 @@ progs = {
     },
     "Folder subcommands": {
         "merge_mv": "Move files and merge folders in BSD/rsync style, rename if possible",
-        "merge_folders": "Merge two or more file trees, check for conflicts before merging",
         "mergerfs_cp": "cp files with reflink on mergerfs",
         "scatter": "Scatter files between folders or disks",
         "mv_list": "Find specific folders to move to different disks",
@@ -199,7 +198,6 @@ modules = {
     "library.files.sample_hash.sample_hash": ["hash", "hash-file"],
     "library.files.similar_files.similar_files": [],
     "library.files.llm_map.llm_map": [],
-    "library.folders.merge_folders.merge_folders": ["merge-folder"],
     "library.folders.move_list.move_list": ["mv-list"],
     "library.folders.merge_mv.merge_mv": ["mv"],
     "library.folders.merge_mv.merge_cp": ["cp"],

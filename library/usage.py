@@ -904,16 +904,6 @@ merge_dbs = """library merge-dbs SOURCE_DB ... DEST_DB [--only-target-columns] [
          library merge-dbs --pk path big.db specific-site.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
 """
 
-merge_folders = """library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
-
-    Merge multiple folders with the same file tree into a single folder.
-
-    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
-
-    Trumps are new or replaced files from an earlier source which now conflict with a later source.
-    If you only have one source then the count of trumps will always be zero.
-    The count of conflicts also includes trumps.
-"""
 
 merge_online_local = """library merge-online-local DATABASE
 
