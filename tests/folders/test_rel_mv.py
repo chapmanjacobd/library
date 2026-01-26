@@ -49,7 +49,7 @@ def test_two_simple_folders_commonpath(temp_file_tree):
     src2_inodes = read_relative_file_tree_dict(src2)
 
     target = temp_file_tree({})
-    lb(["rel-mv", "--relative-to=:", src1, src2, target])
+    lb(["rel-mv", "--relative-to=::", src1, src2, target])
 
     assert read_relative_file_tree_dict(target) == {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
 
@@ -60,7 +60,7 @@ def test_dupe_delete_same(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1)
     target_inodes = read_relative_file_tree_dict(target)
-    lb(["rel-mv", "--relative-to=:", "--file-over-file=delete-src-hash skip", src1, target])
+    lb(["rel-mv", "--relative-to=::", "--file-over-file=delete-src-hash skip", src1, target])
 
     assert read_relative_file_tree_dict(target) == target_inodes
     assert read_relative_file_tree_dict(src1) == {"file4.txt": src1_inodes["file4.txt"]}
@@ -72,7 +72,7 @@ def test_dupe_skip(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1)
     target_inodes = read_relative_file_tree_dict(target)
-    lb(["rel-mv", "--relative-to=:", "--file-over-file=skip", src1, target])
+    lb(["rel-mv", "--relative-to=::", "--file-over-file=skip", src1, target])
 
     assert read_relative_file_tree_dict(target) == target_inodes
     assert read_relative_file_tree_dict(src1) == src1_inodes
@@ -84,7 +84,7 @@ def test_dupe_replace(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1)
     target_inodes = read_relative_file_tree_dict(target)
-    lb(["rel-mv", "--relative-to=:", "--file-over-file=delete-dest", src1, target])
+    lb(["rel-mv", "--relative-to=::", "--file-over-file=delete-dest", src1, target])
 
     assert read_relative_file_tree_dict(target) == target_inodes | {Path(src1).name: src1_inodes}
     assert not Path(src1).exists()
@@ -96,7 +96,7 @@ def test_folder_conflict_replace(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1)
     target_inodes = read_relative_file_tree_dict(target)
-    lb(["rel-mv", "--relative-to=:", src1, target])
+    lb(["rel-mv", "--relative-to=::", src1, target])
 
     assert read_relative_file_tree_dict(target) == target_inodes | {Path(src1).name: src1_inodes}
     assert not Path(src1).exists()
@@ -108,7 +108,7 @@ def test_file_conflict_replace(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1)
     target_inodes = read_relative_file_tree_dict(target)
-    lb(["rel-mv", "--relative-to=:", src1, target])
+    lb(["rel-mv", "--relative-to=::", src1, target])
 
     assert read_relative_file_tree_dict(target) == target_inodes | {Path(src1).name: src1_inodes}
     assert not Path(src1).exists()
