@@ -128,7 +128,7 @@ def test_gen_rel_path(test_dirs):
     source = source_dir / "file.txt"
     source.touch()
 
-    result = gen_rel_path(source, dest_dir, ":")
+    result = gen_rel_path(source, dest_dir, "::")
     expected = os.path.join(dest_dir, "source", "file.txt")
     assert result == expected
 
@@ -139,7 +139,7 @@ def test_gen_rel_path_from_subdir(test_dirs):
     source.parent.mkdir(exist_ok=True)
     source.touch()
 
-    result = gen_rel_path(source, dest_dir, ":")
+    result = gen_rel_path(source, dest_dir, "::")
     expected = os.path.join(dest_dir, "source", "subdir", "file.txt")
     assert result == expected
 
