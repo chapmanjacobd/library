@@ -103,12 +103,12 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     cols = getattr(args, "cols", [])
     m_columns = db_utils.columns(args, "media")
 
-    if "path" in data[0].keys():
+    if (args.limit or args.timeout_size) and "path" in data[0].keys():
         new_data = []
         MOVED_COUNT = 0
         for d in data:
             filesize = d.get("size")
-            if not filesize:
+            if not filesize and not d["path"].startswith("http"):
                 try:
                     stat = os.stat(d["path"])
                     filesize = stat.st_size

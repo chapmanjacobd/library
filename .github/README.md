@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.161; 104 subcommands)
+    library (v3.0.162; 103 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -170,8 +170,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     Folder subcommands:
     ╭─────────────────┬─────────────────────────────────────────────────────────────────────╮
     │ merge-mv        │ Move files and merge folders in BSD/rsync style, rename if possible │
-    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ merge-folders   │ Merge two or more file trees, check for conflicts before merging    │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
     │ mergerfs-cp     │ cp files with reflink on mergerfs                                   │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
@@ -1349,24 +1347,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library relmv (
             library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/sync/weekly/
-
-
-</details>
-
-###### merge-folders
-
-<details><summary>Merge two or more file trees, check for conflicts before merging</summary>
-
-    $ library merge-folders -h
-    usage: library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
-
-    Merge multiple folders with the same file tree into a single folder.
-
-    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
-
-    Trumps are new or replaced files from an earlier source which now conflict with a later source.
-    If you only have one source then the count of trumps will always be zero.
-    The count of conflicts also includes trumps.
 
 
 </details>
