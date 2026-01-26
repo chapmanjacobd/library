@@ -319,13 +319,13 @@ def relmv_run(temp_file_tree, src, use_parent, relative_to):
 @pytest.mark.parametrize("src", ["FILE", "FOLDER"])
 @pytest.mark.parametrize("use_parent", [True, False])
 @pytest.mark.parametrize(
-    "relative_to", [":", "/", os.sep, "TEMP_DIR", "SRC_FILE", "SRC_FOLDER", "SRC_PARENT", "TARGET"]
+    "relative_to", ["::", "/", os.sep, "TEMP_DIR", "SRC_FILE", "SRC_FOLDER", "SRC_PARENT", "TARGET"]
 )
 def test_relmv(temp_file_tree, src, use_parent, relative_to):
     src1, src1_inodes, target = relmv_run(temp_file_tree, src, use_parent, relative_to)
 
     expected_results = path_utils.build_nested_dir_dict(consts.TEMP_DIR, {Path(src1).name: src1_inodes})
-    if relative_to in (":", "TEMP_DIR"):
+    if relative_to in ("::", "TEMP_DIR"):
         expected_results = {Path(src1).name: src1_inodes}
     if relative_to in ("SRC_FOLDER",):
         expected_results = src1_inodes
