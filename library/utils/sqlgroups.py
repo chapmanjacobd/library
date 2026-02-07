@@ -157,6 +157,10 @@ def construct_links_query(args, limit) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
+    if getattr(args, "category", None) and "category" in m_columns:
+        args.filter_sql.append("and category = :category")
+        args.filter_bindings["category"] = args.category
+
     args.select = ["path"]
     if args.cols:
         args.select.extend(args.cols)
