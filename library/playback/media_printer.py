@@ -112,7 +112,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
                 try:
                     stat = os.stat(d["path"])
                     filesize = stat.st_size
-                except FileNotFoundError:
+                except OSError:
                     continue
 
             if args.timeout_size and processes.sizeout(args.timeout_size, filesize):
