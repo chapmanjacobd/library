@@ -258,7 +258,7 @@ modules = {
     "library.playback.torrents_info.torrents_info": ["torrent-info", "torrents", "torrent"],
     "library.playback.torrents_remaining.torrents_remaining": ["torrent-remaining"],
     "library.tablefiles.eda.eda": ["preview"],
-    "library.tablefiles.incremental_diff.incremental_diff": [],
+    "library.tablefiles.incremental_diff.incremental_diff": ["diff"],
     "library.tablefiles.columns.columns": [],
     "library.tablefiles.markdown_tables.markdown_tables": ["tables", "table"],
     "library.tablefiles.mcda.mcda": ["mcdm", "rank"],
