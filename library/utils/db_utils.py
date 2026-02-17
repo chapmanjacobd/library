@@ -155,17 +155,16 @@ def optimize(args) -> None:
             except Exception as excinfo:
                 log.debug(excinfo)
 
-            trigger_suffixes = ["_au", "_ad", "_ai"]
-            for suffix in trigger_suffixes:
-                triggers = db.query(
-                    f"SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE '{table}%{suffix}';"
-                )
-                for (name,) in triggers:
-                    db.execute(f"DROP TRIGGER IF EXISTS {name};")
+            triggers = db.execute(
+                "SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name = ?;", [table]
+            ).fetchall()
+            for (name,) in triggers:
+                db.execute(f"DROP TRIGGER IF EXISTS {name};")
 
-            fts_tables = db.query(
-                f"SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE '{table}_fts_%' OR name LIKE '{table}_fts');"
-            )
+            fts_tables = db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE ? OR name LIKE ?);",
+                [f"{table}_fts_%", f"{table}_fts"],
+            ).fetchall()
             for (name,) in fts_tables:
                 db.execute(f"DROP TABLE IF EXISTS {name};")
 
