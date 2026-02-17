@@ -8,6 +8,7 @@ import pytest
 from library.__main__ import library as lb
 from library.createdb.fs_add import fs_add
 from library.mediadb import db_history, db_media
+from library.playback import media_player
 from library.playback.media_player import MediaPrefetcher
 from library.utils import consts
 from library.utils.log_utils import log
@@ -158,3 +159,80 @@ class TestFs(unittest.TestCase):
             temp_dir.cleanup()
         except Exception as excinfo:
             log.debug(excinfo)
+
+
+def test_calculate_duration():
+    args = NoneSpace(start=None, end=None, interdimensional_cable=None)
+    m = {"duration": 100, "playhead": 10}
+    assert media_player.calculate_duration(args, m) == (10, 100)
+
+    args = NoneSpace(start="50%", end=None, interdimensional_cable=None)
+    assert media_player.calculate_duration(args, m) == (50, 100)
+
+    args = NoneSpace(start=None, end="50%", interdimensional_cable=None)
+    assert media_player.calculate_duration(args, m) == (10, 50)
+
+    args = NoneSpace(start="20", end="+20", interdimensional_cable=None)
+    assert media_player.calculate_duration(args, m) == (20, 40)
+
+
+def test_infer_command():
+    args = NoneSpace(
+        action=consts.SC.watch,
+        fullscreen=True,
+        loop=False,
+        pause=False,
+        crop=None,
+        start=None,
+        volume=None,
+        mute=False,
+        interdimensional_cable=False,
+        player_args_sub=[],
+        player_args_no_sub=[],
+        prefetch=1,
+        prefix="",
+        transcode=False,
+        transcode_audio=False,
+        folders=False,
+        delete_unplayable=False,
+        mpv_socket="/tmp/mpv_socket",
+    )
+    m = {"path": "test.mp4", "duration": 100, "size": 1000, "subtitle_count": 0}
+    prep = MediaPrefetcher(args, [])
+
+    # Patch the imported 'which' in media_player module
+    with mock.patch("library.playback.media_player.which", return_value="/usr/bin/mpv"):
+        player, need_sleep = prep.infer_command(m)
+        assert "/usr/bin/mpv" in player
+        assert "--fullscreen=yes" in player
+        assert not need_sleep
+
+    # Test override_player
+    args.override_player = ["vlc"]
+    prep = MediaPrefetcher(args, [])
+    player, need_sleep = prep.infer_command(m)
+    assert player == ["vlc"]
+    assert not need_sleep
+
+
+@mock.patch("library.playback.media_player.MediaPrefetcher")
+@mock.patch("library.playback.media_player.play")
+def test_play_list(mock_play, mock_prefetcher):
+    args = NoneSpace(multiple_playback=1, mpv_socket="/tmp/socket", chromecast=False)
+    media = [{"path": "test.mp4"}]
+
+    # Mock MediaPrefetcher instance
+    instance = mock_prefetcher.return_value
+    instance.remaining = 1
+
+    def get_m_side_effect():
+        if instance.remaining > 0:
+            instance.remaining -= 1
+            return {"path": "test.mp4", "original_path": "test.mp4"}
+        return None
+
+    instance.get_m.side_effect = get_m_side_effect
+
+    media_player.play_list(args, media)
+
+    mock_play.assert_called()

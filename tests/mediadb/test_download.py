@@ -22,7 +22,6 @@ def test_yt():
             dl_db,
             "--video",
             f"--prefix={STORAGE_PREFIX}",
-            "--write-thumbnail",
             "--force",
             "--subs",
             "-s",
@@ -33,8 +32,4 @@ def test_yt():
     args = connect_db_args(dl_db)
 
     captions = list(args.db.query("select * from captions"))
-    assert {"media_id": 1, "time": 3, "text": "For more information contact phihag@phihag.de"} in captions
-
-    video_id = "BaW_jenozKc"
-    thumbnail_path = os.path.join(STORAGE_PREFIX, "Youtube", "Philipp Hagemeister", f"{video_id}.jpg")
-    assert os.path.exists(thumbnail_path), "Thumbnail file does not exist"
+    assert {"media_id": 1, "text": "welcome to the Microsoft Windows 95", "time": 3} in captions

@@ -330,3 +330,95 @@ def test_selenium_get_page_without_cookies():
     url = "https://www.example.com/path/to/page"
     selenium_get_page(args, url)
     mock_driver.get.assert_called_once_with(url)
+
+
+def test_parse_cookies_from_browser():
+    assert web.parse_cookies_from_browser("chrome") == ("chrome", None, None, None)
+    assert web.parse_cookies_from_browser("firefox+gnomekeyring") == ("firefox", None, "GNOMEKEYRING", None)
+    assert web.parse_cookies_from_browser("chrome:profile") == ("chrome", "profile", None, None)
+    assert web.parse_cookies_from_browser("brave::container") == ("brave", None, None, "container")
+    assert web.parse_cookies_from_browser("chromium+basictext:profile::container") == (
+        "chromium",
+        "profile",
+        "BASICTEXT",
+        "container",
+    )
+
+    with pytest.raises(ValueError, match="unsupported browser"):
+        web.parse_cookies_from_browser("invalid_browser")
+
+    with pytest.raises(ValueError, match="unsupported keyring"):
+        web.parse_cookies_from_browser("chrome+invalid_keyring")
+
+
+def test_is_index():
+    assert web.is_index("http://example.com/")
+    assert web.is_index("http://example.com/dir/")
+    assert web.is_index("http://example.com/index.html")
+    assert web.is_index("http://example.com/index.php")
+    assert web.is_index("http://example.com/index.php?dir=somedir")
+    assert not web.is_index("http://example.com/file.txt")
+    assert not web.is_index("http://example.com/image.jpg")
+
+
+def test_remove_apache_sorting_params():
+    url = "http://example.com/?C=N&O=D"
+    expected = "http://example.com/"
+    assert web.remove_apache_sorting_params(url) == expected
+
+    url = "http://example.com/?C=M&O=A&other=param"
+    expected = "http://example.com/?other=param"
+    assert web.remove_apache_sorting_params(url) == expected
+
+    url = "http://example.com/dir/?C=S;O=A"
+    expected = "http://example.com/dir/"
+    assert web.remove_apache_sorting_params(url) == expected
+
+
+def test_fake_title():
+    url = "https://www.example.com/path/to/page?query=string#fragment"
+    expected = "example.com  path to page  query=string: fragment"
+    assert web.fake_title(url) == expected
+
+    url = "http://example.com"
+    expected = "example.com   :"
+    assert web.fake_title(url) == expected
+
+
+def mock_requests_session_head(url, timeout=None):
+    mock_response = Mock()
+    if url.endswith(".html"):
+        mock_response.headers = {"Content-Type": "text/html"}
+    elif url.endswith(".xml"):
+        mock_response.headers = {"Content-Type": "application/xml"}
+    elif url.endswith(".txt"):
+        mock_response.headers = {"Content-Type": "text/plain"}
+    elif url.endswith(".jpg"):
+        mock_response.headers = {"Content-Type": "image/jpeg"}
+    else:
+        mock_response.headers = {}
+    return mock_response
+
+
+def test_is_html():
+    args = Mock()
+    args.sleep_interval_requests = 0
+
+    # We need to mock requests_session
+    original_session = web.requests_session
+    web.requests_session = Mock(return_value=Mock(head=mock_requests_session_head))
+
+    try:
+        assert web.is_html(args, "http://example.com/page.html")
+        # .xml extension is in media_extensions, so it returns False immediately.
+        # To test content-type check for xml, use a URL without extension.
+        # We need to update mock_requests_session_head to handle this case if we want to test it.
+        # For now, let's just assert that .xml returns False due to extension check.
+        assert not web.is_html(args, "http://example.com/data.xml")
+
+        assert not web.is_html(args, "http://example.com/image.jpg")
+        assert not web.is_html(args, "http://example.com/text.txt")
+        # fast path extension check
+        assert not web.is_html(args, "http://example.com/video.mp4")
+    finally:
+        web.requests_session = original_session
