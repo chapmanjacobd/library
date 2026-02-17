@@ -231,3 +231,85 @@ def test_shorten_middle(text, max_width, expected):
     result = strings.shorten_middle(text, max_width)
     assert result == expected
     assert wcswidth(result) <= max_width or expected == "..."
+
+
+def test_safe_json_loads():
+    assert strings.safe_json_loads('{"a": 1}') == {"a": 1}
+    assert strings.safe_json_loads(b'{"a": 1}') == {"a": 1}
+    assert strings.safe_json_loads('{"a": 1\x00}') == {"a": 1}  # Control char removal
+
+
+def test_remove_excessive_linebreaks():
+    assert strings.remove_excessive_linebreaks("a\r\nb") == "a\nb"
+    assert strings.remove_excessive_linebreaks("a \n b") == "a\nb"
+    assert strings.remove_excessive_linebreaks("a\n\n\nb") == "a\n\nb"
+
+
+def test_strip_enclosing_quotes():
+    assert strings.strip_enclosing_quotes('"hello"') == "hello"
+    assert strings.strip_enclosing_quotes("'hello'") == "hello"
+    assert strings.strip_enclosing_quotes("“hello”") == "hello"
+    assert strings.strip_enclosing_quotes("hello") == "hello"
+
+
+def test_un_paragraph():
+    assert strings.un_paragraph("“hello”  world…") == "'hello' world..."
+
+
+def test_path_to_sentence():
+    assert strings.path_to_sentence("path/to/file.txt") == "path to file txt"
+    assert strings.path_to_sentence("file_name-1.txt") == "file name 1 txt"
+
+
+def test_extract_words():
+    # "Hello" and "World" might be in stop_words/prepositions, using simpler unique words or checking logic
+    # Assuming extract_words filters common words.
+    assert strings.extract_words("UniqueTerm, AnotherTerm!") == ["UniqueTerm", "AnotherTerm"]
+    assert strings.extract_words("Hello 123") == []  # Numbers are filtered, Hello might be stopped
+    assert strings.extract_words("") is None
+
+
+def test_remove_text_inside_brackets():
+    assert strings.remove_text_inside_brackets("Hello (World)") == "Hello "
+    assert strings.remove_text_inside_brackets("Hello [World]") == "Hello "
+    assert strings.remove_text_inside_brackets("Hello") == "Hello"
+
+
+def test_last_chars():
+    assert strings.last_chars("Series.S01.1080p") == "1080p"
+
+
+def test_percent():
+    assert strings.percent(0.5) == "50.00%"
+    assert strings.percent(None) is None
+    assert strings.percent("") is None
+
+
+def test_load_string():
+    assert strings.load_string('{"a": 1}') == {"a": 1}
+    assert strings.load_string("{'a': 1}") == {"a": 1}  # literal_eval
+    assert strings.load_string("just string") == "just string"
+
+
+def test_file_size():
+    assert strings.file_size(1024) == "1.0KiB"
+
+
+def test_duration_short():
+    assert strings.duration_short(30) == "30 seconds"
+    assert strings.duration_short(70) == "1.2 minutes"
+    assert strings.duration_short(4000) == "1.1 hours"
+    assert strings.duration_short(100000) == "1.2 days"
+    assert strings.duration_short(0) == ""
+
+
+def test_glob_match_any():
+    assert strings.glob_match_any("test", ["this is a test"])
+    assert not strings.glob_match_any("foo", ["bar"])
+    assert strings.glob_match_any(["foo", "bar"], ["bar"])
+
+
+def test_glob_match_all():
+    assert strings.glob_match_all(["foo", "bar"], ["foo", "bar"])
+    assert not strings.glob_match_all(["foo", "baz"], ["foo", "bar"])
+    assert strings.glob_match_all("foo", "foo")
