@@ -802,7 +802,11 @@ def sql_fs_post(args, table_prefix="m.") -> None:
     if args.only_deleted:
         args.hide_deleted = False  # --deleted overrides the --hide-deleted default
 
-    if args.db and "time_deleted" not in m_columns:
+    if args.action == SC.playlists:
+        if args.db and "time_deleted" not in pl_columns:
+            args.hide_deleted = False
+            args.only_deleted = False
+    elif args.db and "time_deleted" not in m_columns:
         args.hide_deleted = False
         args.only_deleted = False
 
