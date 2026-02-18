@@ -2,12 +2,12 @@ import os
 from collections import defaultdict
 
 from library import usage
-from library.fsdb import files_info
 from library.playback import media_printer
 from library.utils import (
     arggroups,
     argparse_utils,
     file_utils,
+    filter_engine,
     iterables,
     objects,
     path_utils,
@@ -289,7 +289,7 @@ def get_data(args) -> list[dict]:
         if args.hide_deleted:
             args.paths = file_utils.filter_deleted(args.paths)
 
-        media = files_info.filter_files_by_criteria(args, media)
+        media = filter_engine.filter_items_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
 
     if not media:

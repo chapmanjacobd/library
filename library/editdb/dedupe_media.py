@@ -14,10 +14,10 @@ from library.utils import (
     consts,
     db_utils,
     devices,
+    filter_engine,
     path_utils,
     processes,
     shell_utils,
-    sql_utils,
     strings,
 )
 from library.utils.consts import DBType
@@ -109,10 +109,11 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.sql_fs_post(args, table_prefix="m1.")
 
+    filter_engine_obj = filter_engine.FilterEngine(args)
     m_columns = db_utils.columns(args, "media")
     if args.compare_dirs:
         args.table2 = "media"
-        search_sql, search_bindings = sql_utils.construct_search_bindings(
+        search_sql, search_bindings = filter_engine.construct_search_bindings(
             include=[args.include.pop()],
             exclude=args.exclude,
             columns=[f"m2.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
@@ -122,8 +123,8 @@ def parse_args() -> argparse.Namespace:
         args.filter_sql.extend(search_sql)
         args.filter_bindings = {**args.filter_bindings, **search_bindings}
     else:
-        args.table2, _ = sql_utils.search_filter(args, m_columns, table_prefix="m2.")
-    args.table, _ = sql_utils.search_filter(args, m_columns, table_prefix="m1.")
+        args.table2, _ = filter_engine_obj.apply_sql_filters(m_columns, table_prefix="m2.")
+    args.table, _ = filter_engine_obj.apply_sql_filters(m_columns, table_prefix="m1.")
 
     return args
 

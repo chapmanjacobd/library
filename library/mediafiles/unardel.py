@@ -2,13 +2,13 @@ import argparse, concurrent.futures, os
 from shutil import which
 
 from library import usage
-from library.fsdb import files_info
 from library.utils import (
     arggroups,
     argparse_utils,
     consts,
     devices,
     file_utils,
+    filter_engine,
     iterables,
     path_utils,
     printing,
@@ -48,7 +48,7 @@ def collect_media(args) -> list[dict]:
 
     media = shell_utils.gen_d(args, consts.ARCHIVE_EXTENSIONS)
 
-    media = files_info.filter_files_by_criteria(args, media)
+    media = filter_engine.filter_items_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
     return media
 
