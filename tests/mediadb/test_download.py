@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from library.__main__ import library as lb

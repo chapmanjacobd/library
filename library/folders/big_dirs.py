@@ -3,11 +3,19 @@ from collections import defaultdict
 from pathlib import Path
 
 from library import usage
-from library.fsdb import files_info
 from library.fsdb.disk_usage import check_depth, count_folders, format_folder
 from library.playback import media_printer
 from library.tablefiles import mcda
-from library.utils import arggroups, argparse_utils, file_utils, iterables, nums, shell_utils, sqlgroups
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    file_utils,
+    filter_engine,
+    iterables,
+    nums,
+    shell_utils,
+    sqlgroups,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -154,7 +162,7 @@ def collect_media(args) -> list[dict]:
             args.paths = file_utils.filter_deleted(args.paths)
         media = shell_utils.gen_d(args)
 
-        media = files_info.filter_files_by_criteria(args, media)
+        media = filter_engine.filter_items_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
 
     return media

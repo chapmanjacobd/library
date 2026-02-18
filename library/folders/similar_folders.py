@@ -2,12 +2,12 @@ from pathlib import Path
 
 from library import usage
 from library.folders import big_dirs
-from library.fsdb import files_info
 from library.text import cluster_sort
 from library.utils import (
     arggroups,
     argparse_utils,
     file_utils,
+    filter_engine,
     nums,
     path_utils,
     printing,
@@ -169,7 +169,7 @@ def similar_folders():
     args = parse_args()
     media = shell_utils.gen_d(args)
 
-    media = files_info.filter_files_by_criteria(args, media)
+    media = filter_engine.filter_items_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
 
     media = big_dirs.group_files_by_parent(args, media)

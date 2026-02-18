@@ -1,7 +1,7 @@
 import argparse, json
 
 from library import usage
-from library.utils import arggroups, argparse_utils, consts, sql_utils
+from library.utils import arggroups, argparse_utils, consts, filter_engine
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,7 +49,7 @@ def search_db() -> None:
     args.filter_bindings = {}
 
     columns = args.db[args.search_table].columns_dict
-    search_sql, search_bindings = sql_utils.construct_search_bindings(
+    search_sql, search_bindings = filter_engine.construct_search_bindings(
         include=args.include,
         exclude=args.exclude,
         columns=columns,

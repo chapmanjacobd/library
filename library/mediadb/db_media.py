@@ -524,7 +524,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
 
 
 def get_playlist_media(args, playlist_paths) -> list[dict]:
-    select_sql = "\n        , ".join(s for s in args.select)
+    select_sql = getattr(args, "select_sql", None) or "\n        , ".join(s for s in args.select)
 
     playlists_subquery = (
         """AND playlists_id in (
@@ -562,7 +562,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
             {" ".join(args.aggregate_filter_sql)}
         ORDER BY play_count
             , path
-            {'' if 'sort' in args.defaults else ', ' + args.sort}
+            {', ' + args.sort if args.sort and args.sort != 'path' else ''}
         {sql_utils.limit_sql(args.limit, args.offset)}
     """
 

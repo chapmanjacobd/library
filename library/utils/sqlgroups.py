@@ -1,32 +1,9 @@
-import sys
-
 from library.createdb import gallery_backend, tube_backend
-from library.utils import consts, db_utils, processes, sql_utils
-from library.utils.consts import SC, DBType
+from library.utils import consts, db_utils, filter_engine, sql_utils
+from library.utils.consts import DBType
 
-
-def media_select_sql(args, m_columns):
-    if args.action in (consts.SC.disk_usage, consts.SC.big_dirs):
-        default_cols = ["path", "duration", "size", "rank"]
-    else:
-        default_cols = ["path", "title", "duration", "size", "rank"]
-
-    cols = args.cols or default_cols
-    if "deleted" in " ".join(sys.argv):
-        cols.append("time_deleted")
-    if "played" in " ".join(sys.argv):
-        cols.append("time_last_played")
-    args.select = [c for c in cols if c in m_columns or c in ["*"]] + getattr(args, "select", [])
-    if args.action == SC.read and "tags" in m_columns:
-        if "duration" in args.select:
-            args.select.remove("duration")
-        args.select += ["cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"]
-
-    if not args.select:
-        processes.exit_error("No columns to query. No table in sqlite file?")
-
-    select_sql = "\n        , ".join(args.select)
-    return select_sql
+media_select_sql = filter_engine.media_select_sql
+perf_randomize_using_ids = filter_engine.perf_randomize_using_ids
 
 
 def fs_sql(args, limit) -> tuple[str, dict]:
@@ -65,15 +42,6 @@ def playlists_fs_sql(args, limit) -> tuple[str, dict]:
     """
 
     return query, args.filter_bindings
-
-
-def perf_randomize_using_ids(args):
-    if args.random and not args.include and not args.print and args.limit in args.defaults:
-        limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
-        where_not_deleted = "where COALESCE(time_deleted,0) = 0" if args.hide_deleted else ""
-        args.filter_sql.append(
-            f"and m.rowid in (select rowid as id from media {where_not_deleted} order by random() limit {limit})",
-        )
 
 
 def media_sql(args) -> tuple[str, dict]:

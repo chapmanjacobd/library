@@ -4,7 +4,6 @@ from pathlib import Path
 from shutil import which
 
 from library import usage
-from library.fsdb import files_info
 from library.mediadb import db_history
 from library.mediafiles import process_ffmpeg, process_image, process_text
 from library.utils import (
@@ -13,6 +12,7 @@ from library.utils import (
     consts,
     devices,
     file_utils,
+    filter_engine,
     iterables,
     nums,
     path_utils,
@@ -137,7 +137,7 @@ def collect_media(args) -> list[dict]:
     else:
         media = shell_utils.gen_d(args, default_exts)
 
-        media = files_info.filter_files_by_criteria(args, media)
+        media = filter_engine.filter_items_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
     return media
 

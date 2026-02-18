@@ -6,11 +6,21 @@ from pathlib import Path
 from library import usage
 from library.createdb import fs_add, fs_add_metadata, tube_backend
 from library.folders import big_dirs
-from library.fsdb import files_info
 from library.mediadb import db_history, db_media
 from library.playback import media_player, media_printer
 from library.tablefiles import mcda
-from library.utils import arggroups, argparse_utils, consts, devices, iterables, nums, processes, shell_utils, sqlgroups
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    devices,
+    filter_engine,
+    iterables,
+    nums,
+    processes,
+    shell_utils,
+    sqlgroups,
+)
 from library.utils.consts import SC, DBType
 from library.utils.log_utils import Timer, log
 
@@ -245,73 +255,6 @@ If you don't know the exact name of your chromecast group run `catt scan`
     return args
 
 
-def filter_episodic(args, media: list[dict]) -> list[dict]:
-    parent_dict = {}
-    for m in media:
-        path = Path(m["path"])
-        parent_path = path.parent
-        parent_dict.setdefault(parent_path, 0)
-        parent_dict[parent_path] += 1
-
-    filtered_media = []
-    for m in media:
-        path = Path(m["path"])
-        parent_path = path.parent
-
-        siblings = parent_dict[parent_path]
-
-        if not args.file_counts(siblings):
-            continue
-        else:
-            filtered_media.append(m)
-
-    return filtered_media
-
-
-def history_sort(args, media) -> list[dict]:
-    if "s" in args.partial:  # skip; only play unseen
-        previously_watched_paths = [m["path"] for m in media if m["time_first_played"]]
-        return [m for m in media if m["path"] not in previously_watched_paths]
-
-    def mpv_progress(m):
-        playhead = m.get("playhead")
-        duration = m.get("duration")
-        if not playhead:
-            return float("-inf")
-        if not duration:
-            return float("-inf")
-
-        if "p" in args.partial and "t" in args.partial:
-            return (duration / playhead) * -(duration - playhead)  # weighted remaining
-        elif "t" in args.partial:
-            return -(duration - playhead)  # time remaining
-        else:
-            return playhead / duration  # percent remaining
-
-    def sorting_hat():
-        if "f" in args.partial:  # first-viewed
-            return lambda m: m.get("time_first_played") or 0
-        elif "p" in args.partial or "t" in args.partial:  # sort by remaining duration
-            return mpv_progress
-
-        return lambda m: m.get("time_last_played") or m.get("time_first_played") or 0
-
-    reverse_chronology = True
-    if "o" in args.partial:  # oldest first
-        reverse_chronology = False
-
-    key = sorting_hat()
-    if args.print:
-        reverse_chronology = not reverse_chronology
-
-    media = sorted(media, key=key, reverse=reverse_chronology)
-
-    if args.offset:
-        media = media[int(args.offset) :]
-
-    return media
-
-
 def file_or_folder_media(args, paths):
     media = []
     for path in paths:
@@ -337,7 +280,7 @@ def file_or_folder_media(args, paths):
                 media.extend([{"path": s} for s in shell_utils.rglob(str(p), exclude=args.exclude)[0]])
 
     if any(s not in args.defaults for s in ["size", "time_modified", "time_created", "type", "no_type"]):
-        media = files_info.filter_files_by_criteria(args, media)
+        media = filter_engine.filter_items_by_criteria(args, media)
 
     if any(s not in args.defaults for s in ["duration", "start", "end"]):
         with ThreadPoolExecutor() as parallel:
@@ -369,34 +312,36 @@ def filter_total_size(media, max_size):
 
 def process_playqueue(args) -> None:
     t = Timer()
+    filter_engine_obj = filter_engine.FilterEngine(args)
 
     if args.database:
         db_history.create(args)
 
+        m_columns = filter_engine.db_utils.columns(args, "media")
+        args.table, m_columns = filter_engine_obj.apply_sql_filters(m_columns)
+        args.select_sql = sqlgroups.media_select_sql(args, m_columns)
+
         if args.action == SC.filesystem:
-            query, bindings = sqlgroups.fs_sql(args, args.limit)
+            db_sql_func = lambda a: sqlgroups.fs_sql(a, a.limit)
         else:
-            query, bindings = sqlgroups.media_sql(args)
+            db_sql_func = sqlgroups.media_sql
 
         if args.playlists:
             args.playlists = [p if p.startswith("http") else str(Path(p).resolve()) for p in args.playlists]
             media = db_media.get_playlist_media(args, args.playlists)
         else:
-            media = list(args.db.query(query, bindings))
+            media = filter_engine_obj.get_filtered_data(db_sql_func=db_sql_func)
             log.debug("len(media_sql) = %s", len(media))
         log.debug("query: %s", t.elapsed())
     else:
         media = file_or_folder_media(args, args.paths)
         log.debug("file_or_folder_media: %s", t.elapsed())
 
-        media = files_info.filter_files_by_criteria(args, media)
-
     if args.fetch_siblings:
         media = db_media.get_sibling_media(args, media)
 
-    if args.file_counts:
-        media = filter_episodic(args, media)
-        log.debug("utils.filter_episodic: %s", t.elapsed())
+    media = filter_engine_obj.apply_post_filters(media)
+    log.debug("apply_post_filters: %s", t.elapsed())
 
     if not media:
         if not args.include:
@@ -456,10 +401,6 @@ def process_playqueue(args) -> None:
                         media_set.add(key)
                         media.append(media_keyed[key])
             log.debug("double for loop compare_block_strings: %s", t.elapsed())
-
-    if args.partial:
-        media = history_sort(args, media)
-        log.debug("utils.history_sort: %s", t.elapsed())
 
     if getattr(args, "exists", False):
         marked = db_media.mark_media_deleted(
