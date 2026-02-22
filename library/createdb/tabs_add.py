@@ -55,7 +55,7 @@ def get_new_paths(args, paths) -> list[str]:
             with args.db.conn:  # type: ignore
                 for p in list(existing):
                     args.db.conn.execute(  # type: ignore
-                        "DELETE from history WHERE media_id = (select id from media where path = ?)", [p]
+                        "DELETE from history WHERE media_id IN (select id from media where path = ?)", [p]
                     )
             db_media.mark_media_deleted(args, list(existing))
 

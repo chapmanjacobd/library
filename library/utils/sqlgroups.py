@@ -157,7 +157,7 @@ def construct_links_query(args, limit) -> tuple[str, dict]:
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
         , play_count
-        {', ROW_NUMBER() OVER ( PARTITION BY hostname )' if 'hostname' in m_columns else ''}
+        {", ROW_NUMBER() OVER ( PARTITION BY hostname )" if "hostname" in m_columns else ", ROW_NUMBER() OVER ( PARTITION BY domain_from_url(path) )"}
         {', ROW_NUMBER() OVER ( PARTITION BY category )' if 'category' in m_columns else ''}
         , random()
     {sql_utils.limit_sql(limit, args.offset)}
@@ -177,7 +177,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
                 , COALESCE(MAX(h.time_played), 0) time_last_played
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , time_deleted
-                , hostname
+                {', hostname' if 'hostname' in m_columns else ''}
                 , category
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.rowid
@@ -210,7 +210,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
         SELECT
             CASE WHEN frequency = 'daily' THEN 1
             ELSE ROW_NUMBER() OVER (
-                PARTITION BY hostname, frequency = 'daily'
+                PARTITION BY {"hostname" if "hostname" in m_columns else "domain_from_url(path)"}, frequency = 'daily'
                 ORDER BY 1=1
                     {', time_last_played desc, time_valid desc, path' if args.print else ''}
                     , frequency = 'daily' desc
@@ -242,7 +242,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
         , ROW_NUMBER() OVER ( PARTITION BY
             play_count
             , frequency
-            , hostname
+            , {"hostname" if "hostname" in m_columns else "domain_from_url(path)"}
             , category
         ) -- prefer to spread hostname, category over time
         , random()
