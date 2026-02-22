@@ -36,7 +36,8 @@ def exists(args, media_id) -> bool:
 def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_done=None):
     media_ids = media_ids or []
     if paths:
-        media_ids.extend([args.db.pop("select id from media where path = ?", [path]) for path in paths])
+        for path in paths:
+            media_ids.extend([d["id"] for d in args.db.query("select id from media where path = ?", [path])])
 
     rows = [
         {
@@ -55,7 +56,8 @@ def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_
 def remove(args, paths=None, media_ids=None):
     media_ids = media_ids or []
     if paths:
-        media_ids.extend([args.db.pop("SELECT id from media WHERE path = ?", [path]) for path in paths])
+        for path in paths:
+            media_ids.extend([d["id"] for d in args.db.query("select id from media where path = ?", [path])])
 
     with args.db.conn:
         for media_id in media_ids:

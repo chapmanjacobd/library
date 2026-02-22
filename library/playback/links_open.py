@@ -79,6 +79,8 @@ def links_open() -> None:
     args = parse_args()
     db_history.create(args)
 
+    args.db.register_function(domain_from_url, deterministic=True)
+
     is_whole_db_query = any(
         [
             args.cluster_sort,
@@ -103,8 +105,14 @@ def links_open() -> None:
         media = cluster_sort.sort_dicts(args, media)
 
     if args.max_same_domain and args.max_same_domain > 0:
-        domain_counts = Counter(domain_from_url(d["path"]) for d in media)
-        media = [d for d in media if domain_counts[domain_from_url(d["path"])] <= args.max_same_domain]
+        new_media = []
+        counts = Counter()
+        for d in media:
+            domain = domain_from_url(d["path"])
+            if counts[domain] < args.max_same_domain:
+                new_media.append(d)
+                counts[domain] += 1
+        media = new_media
 
     if not "a" in args.print:
         if is_whole_db_query:

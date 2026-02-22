@@ -56,6 +56,10 @@ def tabs_open() -> None:
     args = parse_args()
     db_history.create(args)
 
+    from library.utils.path_utils import domain_from_url
+
+    args.db.register_function(domain_from_url, deterministic=True)
+
     query, bindings = construct_tabs_query(args)
 
     if args.print or args.delete_rows or args.mark_deleted or args.mark_watched:

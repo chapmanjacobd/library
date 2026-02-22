@@ -29,16 +29,17 @@ def history_add() -> None:
     for p in shell_utils.gen_paths(args):
         if Path(p).exists():
             p = str(Path(p).resolve())
-        media_id = args.db.pop("select id from media where path = ?", [p])
-        if media_id is None:
+        media_ids = [d["id"] for d in args.db.query("select id from media where path = ?", [p])]
+        if not media_ids:
             media_unknown.add(p)
             continue
 
-        if db_history.exists(args, media_id):
-            history_exists.add(p)
-        else:
-            history_new.add(p)
+        for media_id in media_ids:
+            if db_history.exists(args, media_id):
+                history_exists.add(p)
+            else:
+                history_new.add(p)
 
-        db_history.add(args, media_ids=[media_id], time_played=consts.APPLICATION_START, mark_done=True)
+        db_history.add(args, media_ids=media_ids, time_played=consts.APPLICATION_START, mark_done=True)
 
     print(f"History: {len(history_new)} new [{len(history_exists)} known {len(media_unknown)} skipped]")
