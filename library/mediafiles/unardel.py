@@ -140,7 +140,7 @@ def unardel() -> None:
                     if args.simulate:
                         log.info("Unarchiving %s", m["archive_path"])
                     else:
-                        processes.unar_delete(m["archive_path"])
+                        processes.unar_delete(m["archive_path"], single_file_flatten=True)
             else:
                 if not os.path.exists(m["path"]):
                     log.error("[%s]: FileNotFoundError", m["path"])
