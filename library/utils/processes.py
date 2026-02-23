@@ -1,7 +1,6 @@
-import contextlib, functools, importlib, json, multiprocessing, os, shlex, signal, subprocess, sys, threading
+import contextlib, functools, importlib, json, multiprocessing, os, shlex, shutil, signal, subprocess, sys, threading
 from contextlib import suppress
 from pathlib import Path
-from shutil import which
 from typing import NoReturn
 
 from library.data import unar_errors
@@ -154,7 +153,7 @@ def cmd(
 
     if limit_ram:
         cmd_prefix = []
-        if which("systemd-run"):
+        if shutil.which("systemd-run"):
             cmd_prefix += ["systemd-run"]
             if not "SUDO_UID" in os.environ:
                 cmd_prefix += ["--user"]
@@ -439,7 +438,7 @@ def unar_out_path(archive_path):
 def lsar(archive_path):
     # TODO: seems a little slow. maybe compare perf with 7z or https://github.com/wummel/patool
 
-    if not which("lsar"):
+    if not shutil.which("lsar"):
         log.error("[%s]: The 'lsar' command is not available. Install 'unar' to check archives", archive_path)
         return []
 
@@ -467,10 +466,12 @@ def lsar(archive_path):
     unar_out = unar_out_path(archive_path)
     archive_info_list = []
     for entry in lsar_contents:
+        rel_path = entry.get("XADFileName")
         archive_info_list.append(
             {
                 "archive_path": archive_path,
-                "path": path_utils.safe_join(unar_out, entry.get("XADFileName")),
+                "rel_path": rel_path,
+                "path": path_utils.safe_join(unar_out, rel_path),
                 "compressed_size": entry.get("XADCompressedSize") or ar_size // ar_len,
                 "size": entry.get("XADFileSize"),
             }
@@ -479,7 +480,7 @@ def lsar(archive_path):
     return archive_info_list
 
 
-def unar_delete(archive_path):
+def unar_delete(archive_path, single_file_flatten=False):
     output_path = unar_out_path(archive_path)
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -516,8 +517,30 @@ def unar_delete(archive_path):
         else:
             raise
 
-    shell_utils.flatten_wrapper_folder(output_path)
-    path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+    is_flattened = False
+    lsar_contents = lsar_json.get("lsarContents", [])
+    files = [d for d in lsar_contents if not d.get("XADIsDirectory")]
+    if single_file_flatten and len(files) == 1:
+        rel_path = files[0].get("XADFileName")
+        if rel_path:
+            parts = rel_path.replace("\\", "/").split("/")
+            skipped_folders = parts[:-1]
+            if skipped_folders:
+                log.warning("[%s]: Skipped folders: %s", archive_path, " / ".join(skipped_folders))
+
+            extracted_file_path = path_utils.safe_join(output_path, rel_path)
+            target_file_path = os.path.join(os.path.dirname(archive_path), parts[-1])
+
+            if os.path.exists(extracted_file_path):
+                shell_utils.rename_move_file(extracted_file_path, target_file_path)
+                os.utime(target_file_path, (original_stats.st_atime, original_stats.st_mtime))
+                shutil.rmtree(output_path)
+                output_path = os.path.dirname(archive_path)
+                is_flattened = True
+
+    if not is_flattened:
+        shell_utils.flatten_wrapper_folder(output_path)
+        path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     try:
         for part_file in part_files:
