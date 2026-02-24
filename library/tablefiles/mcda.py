@@ -101,6 +101,11 @@ def auto_mcda(args, alternatives, minimize_cols, df=None):
 
         goal_directions = np.array([-1 if col in minimize_cols else 1 for col in alternatives.columns])
         alternatives_np = alternatives.fillna(getattr(args, "nodata", None) or 0).to_numpy()
+
+        # Ensure strictly positive for pymcdm 1.4.0+ entropy_weights/sum_normalization
+        if np.any(alternatives_np <= 0):
+            alternatives_np = np.where(alternatives_np <= 0, 1e-9, alternatives_np)
+
         weights = w.entropy_weights(alternatives_np)
 
         methods = [TOPSIS(), MABAC()]
