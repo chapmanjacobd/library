@@ -6,6 +6,21 @@ media_select_sql = filter_engine.media_select_sql
 perf_randomize_using_ids = filter_engine.perf_randomize_using_ids
 
 
+def add_hostname_column(args):
+    m_columns = db_utils.columns(args, "media")
+    from library.utils.path_utils import domain_from_url
+
+    args.db.register_function(domain_from_url, deterministic=True)
+    if m_columns and "hostname" not in m_columns:
+        args.db.execute("ALTER TABLE media ADD COLUMN hostname TEXT")
+        m_columns.add("hostname")
+
+    with args.db.conn:
+        args.db.execute("UPDATE media SET hostname = domain_from_url(path) WHERE hostname IS NULL")
+        args.db.execute("CREATE INDEX IF NOT EXISTS media_hostname_idx ON media (hostname)")
+    return m_columns
+
+
 def fs_sql(args, limit) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
@@ -122,7 +137,7 @@ def historical_media(args):
 
 
 def construct_links_query(args, limit) -> tuple[str, dict]:
-    m_columns = db_utils.columns(args, "media")
+    m_columns = add_hostname_column(args)
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     if getattr(args, "category", None) and "category" in m_columns:
@@ -167,7 +182,7 @@ def construct_links_query(args, limit) -> tuple[str, dict]:
 
 
 def construct_tabs_query(args) -> tuple[str, dict]:
-    m_columns = db_utils.columns(args, "media")
+    m_columns = add_hostname_column(args)
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""WITH media_history as (
