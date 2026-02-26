@@ -105,6 +105,23 @@ def test_safe_join(user_path, expected):
 
 
 @pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("http://example.com/path/to/file.txt", "example.com"),
+        ("https://www.example.org/another/file.jpg", "www.example.org"),
+        ("ftp://fileserver.net/pub/document.pdf", "fileserver.net"),
+        ("http://example.com:8080/path", "example.com"),
+        ("https://user:password@example.com/path", "example.com"),
+        ("http://[::1]/path", "::1"),
+        ("http://127.0.0.1/path", "127.0.0.1"),
+        ("https://sub.domain.example.com/path", "sub.domain.example.com"),
+    ],
+)
+def test_domain_from_url(url, expected):
+    assert path_utils.domain_from_url(url) == expected
+
+
+@pytest.mark.parametrize(
     ("url", "expected_parent_path", "expected_filename"),
     [
         ("http://example.com/path/to/file.txt", "example.com/path/to", "file.txt"),
