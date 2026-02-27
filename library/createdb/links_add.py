@@ -11,7 +11,6 @@ from library.utils import (
     arggroups,
     argparse_utils,
     consts,
-    db_utils,
     devices,
     objects,
     printing,
@@ -397,9 +396,6 @@ def links_add() -> None:
         finally:
             if args.selenium:
                 web.quit_selenium(args)
-
-    if not args.db["media"].detect_fts():
-        db_utils.optimize(args)
 
 
 def links_update() -> None:
