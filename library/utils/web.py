@@ -838,7 +838,7 @@ def safe_quote(url):
 
     def selective_quote(component, restricted_chars):
         try:
-            quoted = quote(component, safe="/:[]@!$&'()*+,;=", errors="strict")
+            quoted = quote(component, errors="strict")
         except UnicodeDecodeError:
             return component
         return "".join(quote(char, safe="%") if char in restricted_chars else char for char in quoted)

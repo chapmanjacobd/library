@@ -665,10 +665,32 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             args.include[0] = shell_utils.resolve_absolute_path(args.include[0])
 
     if not args.no_url_encode_search:
+        from library.utils.path_utils import safe_unquote
         from library.utils.web import url_encode
 
-        args.include = [url_encode(s) if s.startswith("http") else s for s in args.include]
-        args.exclude = [url_encode(s) if s.startswith("http") else s for s in args.exclude]
+        new_include = []
+        for s in args.include:
+            if s.startswith("http"):
+                variants = {s, url_encode(s), safe_unquote(s)}
+                if len(variants) > 1:
+                    new_include.append(list(variants))
+                else:
+                    new_include.append(s)
+            else:
+                new_include.append(s)
+        args.include = new_include
+
+        new_exclude = []
+        for s in args.exclude:
+            if s.startswith("http"):
+                variants = {s, url_encode(s), safe_unquote(s)}
+                if len(variants) > 1:
+                    new_exclude.append(list(variants))
+                else:
+                    new_exclude.append(s)
+            else:
+                new_exclude.append(s)
+        args.exclude = new_exclude
 
     parse_args_limit(args)
 
