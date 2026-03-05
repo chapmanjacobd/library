@@ -103,6 +103,9 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     cols = getattr(args, "cols", [])
     m_columns = db_utils.columns(args, "media")
 
+    if not data:
+        processes.no_media_found()
+
     if (
         (args.limit or args.timeout_size)
         and "path" in data[0].keys()
