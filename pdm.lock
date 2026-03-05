@@ -5,7 +5,7 @@
 groups = ["default", "deluxe", "test"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:0526a8ac075136c527d1c462f2373005238999388911585211ca873666f6ab21"
+content_hash = "sha256:da7b96a787183cec84066d57c9e51364cd26f8e0da657bb72ccf7f268e00edb1"
 
 [[metadata.targets]]
 requires_python = ">=3.11"
@@ -4216,14 +4216,13 @@ files = [
 [[package]]
 name = "yt-dlp"
 version = "2026.3.3"
-extras = ["curl-cffi", "default"]
+extras = ["default"]
 requires_python = ">=3.10"
 summary = "A feature-rich command-line audio/video downloader"
 dependencies = [
     "brotli; implementation_name == \"cpython\"",
     "brotlicffi; implementation_name != \"cpython\"",
     "certifi",
-    "curl-cffi!=0.6.*,!=0.7.*,!=0.8.*,!=0.9.*,<0.15,>=0.5.10; implementation_name == \"cpython\"",
     "mutagen",
     "pycryptodomex",
     "requests<3,>=2.32.2",
