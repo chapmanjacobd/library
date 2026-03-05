@@ -28,11 +28,18 @@ def create(args):
         );
         """
     )
-    try:
-        args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx ON media (playlists_id, path);")
-    except sqlite3.IntegrityError:
-        dedupe_rows(args, "media", ["rowid"], ["playlists_id", "path"])
-        args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx ON media (playlists_id, path);")
+    if args.action in ("tube-add", "gallery-add", "web-add", "site-add"):
+        try:
+            args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx ON media (playlists_id, path);")
+        except sqlite3.IntegrityError:
+            dedupe_rows(args, "media", ["rowid"], ["playlists_id", "path"])
+            args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx ON media (playlists_id, path);")
+    else:
+        try:
+            args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_media_path ON media (path);")
+        except sqlite3.IntegrityError:
+            dedupe_rows(args, "media", ["rowid"], ["path"])
+            args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_media_path ON media (path);")
 
 
 def exists(args, path) -> bool:

@@ -14,7 +14,7 @@ def test_links_open(mock_souffle):
     media = mock_souffle.call_args[0][1]
     assert len(media) == 3
     assert media == [
-        {"path": "https://site0", "category": "p1"},
-        {"path": "https://site1", "category": "p1"},
-        {"path": "https://site2", "category": "p1"},
+        {"path": "https://site0", "hostname": "site0", "category": "p1"},
+        {"path": "https://site1", "hostname": "site1", "category": "p1"},
+        {"path": "https://site2", "hostname": "site2", "category": "p1"},
     ]

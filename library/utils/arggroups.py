@@ -1078,7 +1078,12 @@ def extractor(parent_parser):
         help="Convert UTF-8 IRIs (RFC 3987) to ASCII percent-encoded URLs (RFC 1738)",
     )
     parser.add_argument(
-        "--no-extract", "--skip-extract", "--insert-only", action="store_true", help="Insert paths into media table"
+        "--no-extract",
+        "--skip-extract",
+        "--insert-only",
+        "-n",
+        action="store_true",
+        help="Insert paths into media table",
     )  # TODO: move to its own subcommand
     parser.add_argument(
         "--no-extract-playlists",
