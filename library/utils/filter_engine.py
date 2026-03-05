@@ -213,27 +213,51 @@ def construct_search_bindings(include, exclude, columns, exact=False, flexible_s
     sql = []
     bindings = {}
 
-    incl = ":" + param_key + "include{0}"
-    includes = "(" + " OR ".join([f"{col} LIKE {incl}" for col in columns]) + ")"
-    includes_sql_parts = []
-    for idx, inc in enumerate(include):
-        includes_sql_parts.append(includes.format(idx))
+    def get_include_sql(idx_str, inc):
+        incl = ":" + param_key + f"include{idx_str}"
         if exact:
-            bindings[f"{param_key}include{idx}"] = inc
+            bindings[f"{param_key}include{idx_str}"] = inc
         else:
-            bindings[f"{param_key}include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-    join_op = " OR " if flexible_search else " AND "
-    if len(includes_sql_parts) > 0:
-        sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
+            bindings[f"{param_key}include{idx_str}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+        return "(" + " OR ".join([f"{col} LIKE {incl}" for col in columns]) + ")"
+
+    include_sql_parts = []
+    for idx, inc in enumerate(include):
+        if isinstance(inc, list):
+            group_parts = [get_include_sql(f"{idx}_{sub_idx}", sub_inc) for sub_idx, sub_inc in enumerate(inc)]
+            include_sql_parts.append("(" + " OR ".join(group_parts) + ")")
+        else:
+            include_sql_parts.append(get_include_sql(idx, inc))
+
+    if flexible_search:
+        if include_sql_parts:
+            sql.append("AND (" + " OR ".join(include_sql_parts) + ")")
+    else:
+        for part in include_sql_parts:
+            sql.append("AND " + part)
 
     excl = ":" + param_key + "exclude{0}"
     excludes = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in columns]) + ")"
     for idx, exc in enumerate(exclude):
-        sql.append(excludes.format(idx))
-        if exact:
-            bindings[f"{param_key}exclude{idx}"] = exc
+        if isinstance(exc, list):
+            # For exclusion, OR inside the group means if ANY variant matches, it's excluded
+            # This is equivalent to AND NOT variant1 AND NOT variant2
+            for sub_idx, sub_exc in enumerate(exc):
+                sub_idx_str = f"{idx}_{sub_idx}"
+                bindings[f"{param_key}exclude{sub_idx_str}"] = (
+                    sub_exc if exact else "%" + sub_exc.replace(" ", "%").replace("%%", " ") + "%"
+                )
+                sql.append(
+                    "AND ("
+                    + " AND ".join([f"COALESCE({col},'') NOT LIKE :{param_key}exclude{sub_idx_str}" for col in columns])
+                    + ")"
+                )
         else:
-            bindings[f"{param_key}exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+            sql.append(excludes.format(idx))
+            if exact:
+                bindings[f"{param_key}exclude{idx}"] = exc
+            else:
+                bindings[f"{param_key}exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
     return sql, bindings
 
