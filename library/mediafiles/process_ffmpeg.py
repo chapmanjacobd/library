@@ -496,11 +496,14 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
     if video_stream and args.audio_only and not args.no_preserve_video:
         delete_larger = False
 
-    if delete_transcode:
-        output_path.unlink()
-        return str(path)
-    elif delete_larger:
-        path.unlink()
+    try:
+        if delete_transcode:
+            output_path.unlink()
+            return str(path)
+        elif delete_larger:
+            path.unlink()
+    except FileNotFoundError:
+        return None
 
     os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
     return str(output_path)
