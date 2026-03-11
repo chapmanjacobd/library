@@ -4,7 +4,7 @@ from typing import Iterable
 
 from library import usage
 from library.folders import filter_src
-from library.folders.filter_src import track_moved
+from library.folders.filter_src import process_time_filters, track_moved
 from library.utils import arggroups, argparse_utils, consts, devices, path_utils, shell_utils
 from library.utils.consts import DBType
 from library.utils.log_utils import log
@@ -27,6 +27,7 @@ def parse_args(defaults_override=None):
 -S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
 -S+5GB -S-7GB  # between 5 and 7 GB""",
     )
+    filter_src.add_time_filters(parser, prefix="move")
     parser.add_argument("--move-limit", "--limit", "-n", "-l", "-L", type=int, help="Limit number of files transferred")
     parser.add_argument(
         "--move-exclude",
@@ -104,6 +105,7 @@ def parse_args(defaults_override=None):
     arggroups.args_post(args, parser)
 
     arggroups.mmv_folders_post(args)
+    process_time_filters(args, prefix="move")
 
     if args.clobber:
         if args.file_over_file[-1] == "rename-dest":
