@@ -466,6 +466,14 @@ Double spaces are equal to one space:
 --deleted-before '3 years'""",
     )
     parse_fs.add_argument(
+        "--time-deleted",
+        action="append",
+        default=[],
+        help="""Constrain media by time_deleted
+--time-deleted='-3 days' (newer than)
+--time-deleted='+3 days' (older than)""",
+    )
+    parse_fs.add_argument(
         "--downloaded-within",
         action="append",
         default=[],
@@ -742,6 +750,12 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             args.modified_before.append(s.lstrip("+"))
         else:
             args.modified_within.append(s.lstrip("-"))
+
+    for s in args.time_deleted:
+        if s.startswith("+"):
+            args.deleted_before.append(s.lstrip("+"))
+        else:
+            args.deleted_within.append(s.lstrip("-"))
 
     for s in args.created_within:
         args.filter_sql.append(
@@ -2513,6 +2527,14 @@ def files(parent_parser, no_db=False):
             help="""Constrain media by time_modified (older than)
     --modified-before '3 years'""",
         )
+        parse_fs.add_argument(
+            "--time-deleted",
+            action="append",
+            default=[],
+            help="""Constrain media by time_deleted
+    --time-deleted='-3 days' (newer than)
+    --time-deleted='+3 days' (older than)""",
+        )
 
 
 def files_post(args):
@@ -2524,11 +2546,15 @@ def files_post(args):
         args.time_created.extend(["+" + s.lstrip("+").lstrip("-") for s in args.created_before])
         args.time_modified.extend(["-" + s.lstrip("-").lstrip("+") for s in args.modified_within])
         args.time_modified.extend(["+" + s.lstrip("+").lstrip("-") for s in args.modified_before])
+        args.time_deleted.extend(["-" + s.lstrip("-").lstrip("+") for s in args.deleted_within])
+        args.time_deleted.extend(["+" + s.lstrip("+").lstrip("-") for s in args.deleted_before])
 
         if args.time_created:
             args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
         if args.time_modified:
             args.time_modified = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_modified)
+        if args.time_deleted:
+            args.time_deleted = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_deleted)
 
     if args.type:
         args.type = set(args.type)
