@@ -2539,22 +2539,63 @@ def files(parent_parser, no_db=False):
 
 def files_post(args):
     if not getattr(args, "database", None):
+        import time
+        
         if args.sizes:
             args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
 
-        args.time_created.extend(["-" + s.lstrip("-").lstrip("+") for s in args.created_within])
-        args.time_created.extend(["+" + s.lstrip("+").lstrip("-") for s in args.created_before])
-        args.time_modified.extend(["-" + s.lstrip("-").lstrip("+") for s in args.modified_within])
-        args.time_modified.extend(["+" + s.lstrip("+").lstrip("-") for s in args.modified_before])
-        args.time_deleted.extend(["-" + s.lstrip("-").lstrip("+") for s in args.deleted_within])
-        args.time_deleted.extend(["+" + s.lstrip("+").lstrip("-") for s in args.deleted_before])
-
-        if args.time_created:
-            args.time_created = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_created)
-        if args.time_modified:
-            args.time_modified = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_modified)
-        if args.time_deleted:
-            args.time_deleted = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_deleted)
+        now = time.time()
+        
+        # Calculate threshold timestamps for time_created
+        created_within_thresholds = [now - nums.human_to_seconds(s) for s in args.created_within]
+        created_before_thresholds = [now - nums.human_to_seconds(s) for s in args.created_before]
+        
+        def time_created_filter(timestamp):
+            if timestamp is None:
+                return False
+            for threshold in created_within_thresholds:
+                if timestamp < threshold:
+                    return False
+            for threshold in created_before_thresholds:
+                if timestamp >= threshold:
+                    return False
+            return True
+        
+        args.time_created = time_created_filter
+        
+        # Calculate threshold timestamps for time_modified
+        modified_within_thresholds = [now - nums.human_to_seconds(s) for s in args.modified_within]
+        modified_before_thresholds = [now - nums.human_to_seconds(s) for s in args.modified_before]
+        
+        def time_modified_filter(timestamp):
+            if timestamp is None:
+                return False
+            for threshold in modified_within_thresholds:
+                if timestamp < threshold:
+                    return False
+            for threshold in modified_before_thresholds:
+                if timestamp >= threshold:
+                    return False
+            return True
+        
+        args.time_modified = time_modified_filter
+        
+        # Calculate threshold timestamps for time_deleted
+        deleted_within_thresholds = [now - nums.human_to_seconds(s) for s in args.deleted_within]
+        deleted_before_thresholds = [now - nums.human_to_seconds(s) for s in args.deleted_before]
+        
+        def time_deleted_filter(timestamp):
+            if timestamp is None:
+                return False
+            for threshold in deleted_within_thresholds:
+                if timestamp < threshold:
+                    return False
+            for threshold in deleted_before_thresholds:
+                if timestamp >= threshold:
+                    return False
+            return True
+        
+        args.time_deleted = time_deleted_filter
 
     if args.type:
         args.type = set(args.type)
