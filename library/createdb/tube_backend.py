@@ -541,6 +541,7 @@ def download(args, m) -> None:
             IndexError,
             RecursionError,
             TypeError,
+            ValueError,
         ) as excinfo:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(excinfo))
             ydl_log["error"].append(error)
