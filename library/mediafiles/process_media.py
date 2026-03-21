@@ -318,6 +318,8 @@ def process_media() -> None:
     if args.continue_from:
         media = iterables.tail_from(media, args.continue_from, key="path")
 
+    media = iterables.list_dict_unique(media, ["path"])
+
     if not media:
         processes.no_media_found()
 
@@ -376,17 +378,16 @@ def process_media() -> None:
                 strings.file_size(m["size"]),
             )
 
-            if m.get("compressed_size"):
-                if os.path.exists(m["archive_path"]):
-                    if m["archive_path"] in uncompressed_archives:
-                        continue
+            if m.get("compressed_size") and os.path.exists(m["archive_path"]):
+                if m["archive_path"] not in uncompressed_archives:
                     uncompressed_archives.add(m["archive_path"])
 
                     if args.simulate:
                         log.info("Unarchiving %s", m["archive_path"])
                     else:
-                        processes.unar_delete(m["archive_path"])
-            elif not os.path.exists(m["path"]):
+                        processes.unar_delete(m["archive_path"], flatten=False)
+
+            if not os.path.exists(m["path"]):
                 log.error("[%s]: FileNotFoundError", m["path"])
                 m["time_deleted"] = consts.APPLICATION_START
                 if args.database:

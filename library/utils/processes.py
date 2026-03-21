@@ -480,7 +480,7 @@ def lsar(archive_path):
     return archive_info_list
 
 
-def unar_delete(archive_path, single_file_flatten=False):
+def unar_delete(archive_path, single_file_flatten=False, flatten=True):
     output_path = unar_out_path(archive_path)
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -538,7 +538,7 @@ def unar_delete(archive_path, single_file_flatten=False):
                 output_path = os.path.dirname(archive_path)
                 is_flattened = True
 
-    if not is_flattened:
+    if not is_flattened and flatten:
         shell_utils.flatten_wrapper_folder(output_path)
         path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
