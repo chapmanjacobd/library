@@ -147,6 +147,10 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                     return clobber(args, source, destination)
 
         else:
+            if not os.path.exists(source):
+                log.error("Source file does not exist: %s", source)
+                return None, destination
+
             src_stat = os.stat(source)
             dst_stat = os.stat(destination)
             if os.path.samestat(src_stat, dst_stat):
