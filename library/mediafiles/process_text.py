@@ -279,10 +279,6 @@ def process_path(args, path) -> str | None:
             output_path.rmdir()
         return str(path)
 
-    # replace CSS
-    base_folder = Path(__file__).resolve().parent
-    shutil.copy((base_folder / ".." / "assets" / "calibre.css").resolve(), output_path / "stylesheet.css")
-
     # shrink images
     image_paths = shell_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
 
@@ -312,6 +308,10 @@ def process_path(args, path) -> str | None:
     epub_path = output_path.with_suffix(".OEB.epub")
     epub_path = Path(devices.clobber_new_file(args, str(epub_path)))
 
+    # Use extra-css instead of replacing stylesheet.css
+    base_folder = Path(__file__).resolve().parent
+    css_path = str((base_folder / ".." / "assets" / "calibre.css").resolve())
+
     epub_command = [
         "ebook-convert",
         str(opf_path),
@@ -319,7 +319,11 @@ def process_path(args, path) -> str | None:
         "--no-default-epub-cover",
         "--epub-inline-toc",
         "--dont-split-on-page-breaks",
+        "--epub-max-image-size=none",
+        "--output-profile tablet",
     ]
+
+    epub_command.append(f"--extra-css={css_path}")
 
     if args.simulate:
         print(shlex.join(epub_command))
