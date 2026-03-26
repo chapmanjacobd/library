@@ -1079,7 +1079,7 @@ class WebPath:
             return False
         return True
 
-    def unlink(self):
+    def unlink(self, *args, **kwargs):
         pass
 
     def as_posix(self) -> str:
