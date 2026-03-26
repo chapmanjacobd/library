@@ -61,6 +61,77 @@ def update_references(path, replacements):
         log.exception("Error occurred while updating references %s", path)
 
 
+def get_media_type(ext):
+    """Return MIME type for a file extension"""
+    ext = ext.lower()
+    media_types = {
+        ".avif": "image/avif",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".webp": "image/webp",
+        ".bmp": "image/bmp",
+    }
+    return media_types.get(ext)
+
+
+def update_manifest(output_path, avif_files):
+    """Update content.opf manifest with converted image references"""
+    manifest_path = output_path / "content.opf"
+
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception as e:
+        log.warning("Failed to read content.opf: %s", e)
+        return
+
+    modified = False
+
+    # Build mapping of old basename -> new basename for converted files
+    for old_path, new_path in avif_files.items():
+        if not new_path:
+            continue
+
+        old_name = os.path.basename(old_path)
+        new_name = os.path.basename(new_path)
+        new_ext = os.path.splitext(new_name)[1]
+        new_media_type = get_media_type(new_ext)
+
+        # Replace href attributes in manifest items
+        # Pattern: href="images/old.jpg" -> href="images/old.avif"
+        if f'href="{old_name}"' in content:
+            content = content.replace(f'href="{old_name}"', f'href="{new_name}"')
+            modified = True
+        if f"href='{old_name}'" in content:
+            content = content.replace(f"href='{old_name}'", f"href='{new_name}'")
+            modified = True
+
+        # Update media-type attribute for this item
+        if new_media_type:
+            # Find the item line containing this file and update its media-type
+            lines = content.split("\n")
+            for i, line in enumerate(lines):
+                if "<item" in line and old_name in line:
+                    # Update media-type attribute
+                    old_media_type = get_media_type(os.path.splitext(old_name)[1])
+                    if old_media_type and f'media-type="{old_media_type}"' in line:
+                        lines[i] = line.replace(
+                            f'media-type="{old_media_type}"', f'media-type="{new_media_type}"'
+                        )
+                        modified = True
+            content = "\n".join(lines)
+
+    if modified:
+        try:
+            with open(manifest_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except Exception as e:
+            log.warning("Failed to write content.opf: %s", e)
+
+
 def convert_to_text_pdf(args, path):
     import ocrmypdf, ocrmypdf.exceptions
 
@@ -200,11 +271,14 @@ def process_path(args, path) -> str | None:
         processes.cmd(*command, limit_ram=True, nice=6)
     except subprocess.CalledProcessError:
         log.exception("[%s]: Calibre failed to process book. Skipping...", str(path))
+        if output_path.exists():
+            devices.rmtree(args, output_path)  # Remove transcode
         return str(path)
 
     if not output_path.exists() or path_utils.is_empty_folder(output_path):
-        output_path.unlink()  # Remove transcode
         log.error("Could not transcode %s", path)
+        if output_path.exists():
+            output_path.rmdir()
         return str(path)
 
     # replace CSS
@@ -231,16 +305,51 @@ def process_path(args, path) -> str | None:
     for text_path in text_paths:
         update_references(text_path, replacements)
 
-    # compare final output size
-    if args.delete_larger and path_utils.folder_size(output_path) > original_stats.st_size:
-        devices.rmtree(args, output_path)  # Remove transcode
+    # Update content.opf manifest with converted image references
+    if any(avif_files.values()):
+        update_manifest(output_path, avif_files)
+
+    # Repackage to EPUB using content.opf as input
+    opf_path = output_path / "content.opf"
+    epub_path = output_path.with_suffix(".OEB.epub")
+    epub_path = Path(devices.clobber_new_file(args, str(epub_path)))
+
+    epub_command = [
+        "ebook-convert",
+        str(opf_path),
+        str(epub_path),
+        "--no-default-epub-cover",
+        "--epub-inline-toc",
+        "--dont-split-on-page-breaks",
+    ]
+
+    if args.simulate:
+        print(shlex.join(epub_command))
         return str(path)
 
-    if args.delete_larger:
-        path.unlink()  # Remove original
-    path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+    try:
+        processes.cmd(*epub_command, limit_ram=True, nice=6)
+    except subprocess.CalledProcessError:
+        log.exception("[%s]: Calibre failed to package EPUB", path)
+        epub_path.unlink(missing_ok=True)  # Remove transcode
+        return str(path)
 
-    return str(output_path)
+    if not epub_path.exists():
+        log.error("Could not create EPUB %s", path)
+        return str(path)
+
+    # Clean up .OEB folder
+    devices.rmtree(args, output_path)
+
+    # compare final output size
+    epub_size = os.path.getsize(epub_path)
+    if args.delete_larger and epub_size > original_stats.st_size:
+        epub_path.unlink(missing_ok=True)  # Remove transcode
+        return str(path)
+    elif args.delete_larger:
+        path.unlink()  # Remove original
+
+    return str(epub_path)
 
 
 def process_text():
