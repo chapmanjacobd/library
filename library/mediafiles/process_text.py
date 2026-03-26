@@ -118,9 +118,7 @@ def update_manifest(output_path, avif_files):
                     # Update media-type attribute
                     old_media_type = get_media_type(os.path.splitext(old_name)[1])
                     if old_media_type and f'media-type="{old_media_type}"' in line:
-                        lines[i] = line.replace(
-                            f'media-type="{old_media_type}"', f'media-type="{new_media_type}"'
-                        )
+                        lines[i] = line.replace(f'media-type="{old_media_type}"', f'media-type="{new_media_type}"')
                         modified = True
             content = "\n".join(lines)
 

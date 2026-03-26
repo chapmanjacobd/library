@@ -10,13 +10,13 @@ MOVED_SIZE = 0
 
 def add_time_filters(parser, prefix="move"):
     """Add time-based filtering arguments (ctime/mtime) to a parser.
-    
+
     Args:
         parser: The argument parser or argument group
         prefix: Prefix for argument names (e.g., 'move' for --move-sizes)
     """
     prefix_dash = f"--{prefix}-" if prefix else "--"
-    
+
     time_group = parser.add_argument_group("Time Filters")
     time_group.add_argument(
         f"{prefix_dash}time-created",
@@ -68,22 +68,22 @@ def add_time_filters(parser, prefix="move"):
 
 def process_time_filters(args, prefix="move"):
     """Process time-based filtering arguments into filter functions.
-    
+
     Args:
         args: Parsed arguments namespace
         prefix: Prefix for argument names (e.g., 'move' or empty)
     """
     prefix_underscore = f"{prefix}_" if prefix else ""
     now = time.time()
-    
+
     # Process time-created arguments
     created_within = getattr(args, f"{prefix_underscore}created_within", [])
     created_before = getattr(args, f"{prefix_underscore}created_before", [])
-    
+
     # Calculate threshold timestamps
     created_within_thresholds = [now - nums.human_to_seconds(s) for s in created_within]
     created_before_thresholds = [now - nums.human_to_seconds(s) for s in created_before]
-    
+
     # Create filter function: timestamp must be >= all within thresholds AND < all before thresholds
     def time_created_filter(timestamp):
         if timestamp is None:
@@ -95,17 +95,17 @@ def process_time_filters(args, prefix="move"):
             if timestamp >= threshold:
                 return False
         return True
-    
+
     args.time_created = time_created_filter
-    
+
     # Process time-modified arguments
     modified_within = getattr(args, f"{prefix_underscore}modified_within", [])
     modified_before = getattr(args, f"{prefix_underscore}modified_before", [])
-    
+
     # Calculate threshold timestamps
     modified_within_thresholds = [now - nums.human_to_seconds(s) for s in modified_within]
     modified_before_thresholds = [now - nums.human_to_seconds(s) for s in modified_before]
-    
+
     # Create filter function
     def time_modified_filter(timestamp):
         if timestamp is None:
@@ -117,7 +117,7 @@ def process_time_filters(args, prefix="move"):
             if timestamp >= threshold:
                 return False
         return True
-    
+
     args.time_modified = time_modified_filter
 
 
