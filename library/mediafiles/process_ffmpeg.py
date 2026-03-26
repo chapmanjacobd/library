@@ -267,7 +267,9 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         source_rate = int(audio_stream.get("sample_rate") or 44100)
 
         duration = float(audio_stream.get("duration") or probe.format.get("duration") or 0)
-        is_split = args.always_split or (not video_stream and args.split_longer_than and duration > args.split_longer_than)
+        is_split = args.always_split or (
+            not video_stream and args.split_longer_than and duration > args.split_longer_than
+        )
 
         try:
             assert bitrate > 0

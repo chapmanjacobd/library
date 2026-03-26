@@ -338,21 +338,21 @@ def test_relmv(temp_file_tree, src, use_parent, relative_to):
 def test_filter_time_modified(temp_file_tree):
     """Test filtering files by modification time (mtime)."""
     import time
-    
+
     # Create source files
     src1 = temp_file_tree({"old.txt": "old", "new.txt": "new"})
     src1_inodes = read_relative_file_tree_dict(src1)
-    
+
     # Set old.txt to have an old mtime (10 days ago)
     old_path = Path(src1) / "old.txt"
     old_time = time.time() - (10 * 24 * 60 * 60)  # 10 days ago
     os.utime(old_path, (old_time, old_time))
-    
+
     dest = temp_file_tree({})
-    
+
     # Only move files modified within the last 5 days (should only move new.txt)
     lb(["merge-mv", "--move-modified-within", "5 days", src1 + os.sep, dest])
-    
+
     # old.txt should still be in src, new.txt should be moved
     assert (Path(src1) / "old.txt").exists()
     assert not (Path(src1) / "new.txt").exists()
@@ -362,26 +362,26 @@ def test_filter_time_modified(temp_file_tree):
 def test_filter_time_before(temp_file_tree):
     """Test filtering files by time before a certain date."""
     import time
-    
+
     # Create source files
     src1 = temp_file_tree({"old.txt": "old", "new.txt": "new"})
     src1_inodes = read_relative_file_tree_dict(src1)
-    
+
     # Set new.txt to have a recent mtime (1 day ago)
     new_path = Path(src1) / "new.txt"
     new_time = time.time() - (1 * 24 * 60 * 60)  # 1 day ago
     os.utime(new_path, (new_time, new_time))
-    
+
     # Set old.txt to have an old mtime (30 days ago)
     old_path = Path(src1) / "old.txt"
     old_time = time.time() - (30 * 24 * 60 * 60)  # 30 days ago
     os.utime(old_path, (old_time, old_time))
-    
+
     dest = temp_file_tree({})
-    
+
     # Only move files modified before 10 days ago (should only move old.txt)
     lb(["merge-mv", "--move-modified-before", "10 days", src1 + os.sep, dest])
-    
+
     # old.txt should be moved, new.txt should still be in src
     assert not (Path(src1) / "old.txt").exists()
     assert (Path(src1) / "new.txt").exists()
@@ -391,34 +391,33 @@ def test_filter_time_before(temp_file_tree):
 def test_filter_time_combined(temp_file_tree):
     """Test filtering files by combined time criteria."""
     import time
-    
+
     # Create source files
     src1 = temp_file_tree({"too_old.txt": "too_old", "just_right.txt": "just_right", "too_new.txt": "too_new"})
-    
+
     # Set different mtimes for each file
     # too_old.txt: 30 days ago
     old_path = Path(src1) / "too_old.txt"
     old_time = time.time() - (30 * 24 * 60 * 60)
     os.utime(old_path, (old_time, old_time))
-    
+
     # just_right.txt: 5 days ago
     right_path = Path(src1) / "just_right.txt"
     right_time = time.time() - (5 * 24 * 60 * 60)
     os.utime(right_path, (right_time, right_time))
-    
+
     # too_new.txt: 1 day ago
     new_path = Path(src1) / "too_new.txt"
     new_time = time.time() - (1 * 24 * 60 * 60)
     os.utime(new_path, (new_time, new_time))
-    
+
     dest = temp_file_tree({})
-    
+
     # Move files modified between 10 days ago and 2 days ago (should only move just_right.txt)
     lb(["merge-mv", "--move-modified-before", "2 days", "--move-modified-within", "10 days", src1 + os.sep, dest])
-    
+
     # Only just_right.txt should be moved
     assert (Path(src1) / "too_old.txt").exists()
     assert not (Path(src1) / "just_right.txt").exists()
     assert (Path(src1) / "too_new.txt").exists()
     assert (Path(dest) / "just_right.txt").exists()
-
