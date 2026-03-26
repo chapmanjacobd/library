@@ -47,6 +47,8 @@ fs_flags = [
     ("--modified-before '1 second'", 5, "corrupt.mp4"),
     ("--time-modified '+1 second'", 5, "corrupt.mp4"),
     ("--deleted-before '1 day'", 5, "corrupt.mp4"),
+    ("--time-deleted '-3 days'", 5, "corrupt.mp4"),
+    ("--time-deleted '+1 second'", 5, "corrupt.mp4"),
     ("--hide-deleted", 5, "corrupt.mp4"),
     ("--no-hide-deleted", 5, "corrupt.mp4"),
 ]
