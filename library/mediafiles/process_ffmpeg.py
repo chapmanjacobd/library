@@ -90,7 +90,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
     except processes.UnplayableFile:
         if args.delete_unplayable:
             log.warning("Deleting unplayable (ffprobe): %s", path)
-            path.unlink()
+            path.unlink(missing_ok=True)
             return None
         raise
 
@@ -98,7 +98,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         log.error("No media streams found: %s", path)
         if args.delete_unplayable:
             log.warning("Deleting unplayable (no streams): %s", path)
-            path.unlink()
+            path.unlink(missing_ok=True)
             return None
         return str(path)
 
@@ -107,7 +107,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         if is_animation is None:
             if args.delete_unplayable:
                 log.warning("Deleting unplayable (zero frames): %s", path)
-                path.unlink()
+                path.unlink(missing_ok=True)
                 return None
             return str(path)
         elif not is_animation:
@@ -119,7 +119,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
     album_art_stream = next((s for s in probe.album_art_streams), None)
     if not video_stream:
         if args.delete_no_video:
-            path.unlink()
+            path.unlink(missing_ok=True)
             return None
         if args.video_only:
             return str(path)
@@ -129,7 +129,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
 
     if not audio_stream:
         if args.delete_no_audio:
-            path.unlink()
+            path.unlink(missing_ok=True)
             return None
         if args.audio_only:
             return str(path)
@@ -276,7 +276,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         except AssertionError:
             log.exception("Broken file or audio format misdetected: %s", path)
             if args.delete_no_audio:
-                path.unlink()
+                path.unlink(missing_ok=True)
                 return None
         else:
             if channels == 1:
@@ -498,10 +498,10 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
 
     try:
         if delete_transcode:
-            output_path.unlink()
+            output_path.unlink(missing_ok=True)
             return str(path)
         elif delete_larger:
-            path.unlink()
+            path.unlink(missing_ok=True)
     except FileNotFoundError:
         return None
 
