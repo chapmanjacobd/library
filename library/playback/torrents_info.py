@@ -1,8 +1,6 @@
 import argparse, os, statistics
 from collections import defaultdict
 from pathlib import Path
-
-#!/usr/bin/python3
 from random import randint, shuffle
 from statistics import mean, median
 from time import sleep
