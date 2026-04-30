@@ -242,7 +242,7 @@ def computer_info():
                     else partition.device
                 )
                 device_key = mapped_device.replace("\\", "/").split("/")[-1]  # without /dev/ prefix
-                io = disk_io[device_key]
+                io = disk_io.get(device_key)
 
                 # TODO: IO is counted multiple times for devices with multiple mount points (btrfs subvols)
 
@@ -252,11 +252,14 @@ def computer_info():
                     "total": usage.total,
                     "free": usage.free,
                     "device": mapped_device,
-                    "device_read": io.read_bytes,
-                    "device_write": io.write_bytes,
-                    "device_read_ms": io.read_time,
-                    "device_write_ms": io.write_time,
-                    "device_utilization": int((((io.read_time + io.write_time) / 1000) / uptime_info["up_time"]) * 100),
+                    "device_read": getattr(io, "read_bytes", 0),
+                    "device_write": getattr(io, "write_bytes", 0),
+                    "device_read_ms": getattr(io, "read_time", 0),
+                    "device_write_ms": getattr(io, "write_time", 0),
+                    "device_utilization": int(
+                        (((getattr(io, "read_time", 0) + getattr(io, "write_time", 0)) / 1000) / uptime_info["up_time"])
+                        * 100
+                    ),
                 }
 
         return mounts
@@ -265,7 +268,10 @@ def computer_info():
         disk_info = []
 
         for mountpoint, final_info in final_mounts.items():
-            initial_info = initial_mounts[mountpoint]
+            initial_info = initial_mounts.get(mountpoint)
+            if initial_info is None:
+                print(f"Mountpoint {mountpoint} not found in initial mounts; skipping", file=sys.stderr)
+                continue
 
             device_read = (final_info.pop("device_read_ms") - initial_info.pop("device_read_ms")) / 1000
             device_write = (final_info.pop("device_write_ms") - initial_info.pop("device_write_ms")) / 1000
