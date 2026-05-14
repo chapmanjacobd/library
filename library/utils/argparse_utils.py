@@ -58,7 +58,7 @@ class ArgparseDict(argparse.Action):
                 if any(sym in v for sym in (" [", " {")):
                     d[k] = load_string(v)
                 elif v_strip in ("True", "False"):
-                    d[k] = bool(v_strip)
+                    d[k] = v_strip == "True"
                 elif v_strip.isnumeric():
                     d[k] = nums.safe_int_float_str(v_strip)
                 else:
