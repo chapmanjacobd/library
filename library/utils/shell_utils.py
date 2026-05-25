@@ -9,28 +9,58 @@ from library.utils import consts, path_utils, printing, processes, strings
 from library.utils.log_utils import log
 
 
+def describe_os_error(excinfo: OSError) -> str:
+    if excinfo.strerror:
+        err_msg = excinfo.strerror
+    elif excinfo.errno is not None:
+        err_msg = os.strerror(excinfo.errno)
+    elif isinstance(excinfo, PermissionError):
+        err_msg = "Permission denied"
+    else:
+        err_msg = str(excinfo) or excinfo.__class__.__name__
+
+    return err_msg
+
+
 def rename_move_file(src, dst, simulate=False):
     if simulate:
         print("mv", src, dst)
+        return None
     else:
         try:
             return shutil.move(src, dst)
-        except PermissionError:  # errno.EACCES, errno.EPERM
-            log.warning("PermissionError. Could not move %s into %s", src, os.path.dirname(dst))
-            # raise
+        except PermissionError as excinfo:  # errno.EACCES, errno.EPERM
+            log.warning("PermissionError. %s", dst)
+            return None
         except OSError as excinfo:
             if excinfo.errno == errno.ENOENT:  # no parent folder, FileNotFoundError
                 parent = os.path.dirname(dst)
                 if not parent or not os.path.exists(src):
                     log.error("FileNotFoundError. %s", src)
-                    return
+                    return None
                 os.makedirs(parent, exist_ok=True)
                 return rename_move_file(src, dst, simulate)
 
-            if excinfo.errno in (errno.EIO, errno.ENOSPC, errno.EDQUOT, errno.EFBIG, errno.ENOMEM):
-                if os.path.isfile(src) and os.path.isfile(dst):
-                    os.unlink(dst)
-            raise
+            if excinfo.errno in (errno.EIO, errno.ENOSPC, errno.EDQUOT, errno.EFBIG, errno.ENOMEM) and os.path.isfile(
+                src
+            ) and os.path.isfile(dst):
+                os.unlink(dst)
+
+            if excinfo.errno == errno.ENOSPC:
+                log.error("No space left on device. %s", dst)
+                raise
+
+            if excinfo.errno == errno.EIO:
+                log.error("Input/output error. %s", src)
+            elif excinfo.errno == errno.EDQUOT:
+                log.error("Disk quota exceeded. %s", dst)
+            elif excinfo.errno == errno.EFBIG:
+                log.error("File too large. %s", dst)
+            elif excinfo.errno == errno.ENOMEM:
+                log.error("Cannot allocate memory. %s", src)
+            else:
+                log.error("%s. %s", describe_os_error(excinfo), src)
+            return None
         except KeyboardInterrupt:
             if os.path.isfile(src) and os.path.isfile(dst):
                 os.unlink(dst)
@@ -389,8 +419,8 @@ def rel_move(args, src: str, dest: str):
     if src == dest:
         return src
 
-    rename_move_file(src, dest, simulate=args.simulate)
-    return dest
+    moved_dest = rename_move_file(src, dest, simulate=args.simulate)
+    return dest if args.simulate or moved_dest else src
 
 
 def move_files(file_list):

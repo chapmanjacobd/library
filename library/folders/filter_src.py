@@ -182,7 +182,7 @@ def print_stats(args, dest_path=None, file_size=None):
 def track_moved(func):
     def wrapper(*args, **kwargs):
         if args[0].verbose == 0:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         else:
             global MOVED_COUNT, MOVED_SIZE
             try:
@@ -193,9 +193,11 @@ def track_moved(func):
             if not args[0].simulate:
                 print_stats(args[0], args[2], file_size)
             try:
-                func(*args, **kwargs)
-                MOVED_SIZE += file_size
-                MOVED_COUNT += 1
+                result = func(*args, **kwargs)
+                if result is not False:
+                    MOVED_SIZE += file_size
+                    MOVED_COUNT += 1
+                return result
             finally:
                 print_stats(args[0])
 
