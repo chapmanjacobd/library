@@ -41,9 +41,11 @@ def rename_move_file(src, dst, simulate=False):
                 os.makedirs(parent, exist_ok=True)
                 return rename_move_file(src, dst, simulate)
 
-            if excinfo.errno in (errno.EIO, errno.ENOSPC, errno.EDQUOT, errno.EFBIG, errno.ENOMEM) and os.path.isfile(
-                src
-            ) and os.path.isfile(dst):
+            if (
+                excinfo.errno in (errno.EIO, errno.ENOSPC, errno.EDQUOT, errno.EFBIG, errno.ENOMEM)
+                and os.path.isfile(src)
+                and os.path.isfile(dst)
+            ):
                 os.unlink(dst)
 
             if excinfo.errno == errno.ENOSPC:
