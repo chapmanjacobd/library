@@ -1,7 +1,9 @@
+import argparse, errno
 from unittest.mock import patch
 
 import pytest
 
+from library.folders import merge_mv
 from library.utils import shell_utils
 
 
@@ -18,10 +20,11 @@ def test_rename_move_file_success(mock_move):
 
 
 @patch("shutil.move")
-def test_rename_move_file_permission_error(mock_move):
+def test_rename_move_file_permission_error(mock_move, caplog):
     mock_move.side_effect = PermissionError
     # Should log warning and not raise
     shell_utils.rename_move_file("src", "dst")
+    assert "PermissionError. dst" in caplog.text
 
 
 @patch("shutil.move")
@@ -36,6 +39,53 @@ def test_rename_move_file_file_not_found_error(mock_move):
         mock_move.side_effect = [OSError(2, "No such file or directory"), None]
         shell_utils.rename_move_file("src", "parent/dst")
         assert mock_move.call_count == 2
+
+
+@patch("shutil.move")
+def test_rename_move_file_os_error_logs_and_returns_none(mock_move, caplog):
+    mock_move.side_effect = OSError(errno.EIO, "Input/output error")
+
+    with patch("os.path.isfile", return_value=False):
+        assert shell_utils.rename_move_file("src", "dst") is None
+
+    assert "Input/output error. src" in caplog.text
+
+
+@patch("shutil.move")
+def test_rename_move_file_os_error_cleans_partial_dest(mock_move):
+    mock_move.side_effect = OSError(errno.EIO, "Input/output error")
+
+    with (
+        patch("os.path.isfile", return_value=True),
+        patch("os.unlink") as mock_unlink,
+    ):
+        shell_utils.rename_move_file("src", "dst")
+
+    mock_unlink.assert_called_once_with("dst")
+
+
+@patch("shutil.move")
+def test_rename_move_file_enospc_raises_after_logging_and_cleanup(mock_move, caplog):
+    mock_move.side_effect = OSError(errno.ENOSPC, "No space left on device")
+
+    with (
+        patch("os.path.isfile", return_value=True),
+        patch("os.unlink") as mock_unlink,
+        pytest.raises(OSError, match="No space left on device"),
+    ):
+        shell_utils.rename_move_file("src", "dst")
+
+    mock_unlink.assert_called_once_with("dst")
+    assert "No space left on device. dst" in caplog.text
+
+
+@patch("library.folders.merge_mv.log.debug")
+@patch("library.folders.merge_mv.shell_utils.rename_move_file")
+def test_mmv_file_does_not_log_moved_when_move_fails(mock_move, mock_debug):
+    mock_move.return_value = None
+
+    assert merge_mv.mmv_file(argparse.Namespace(simulate=False, verbose=0), "src", "dst") is False
+    mock_debug.assert_not_called()
 
 
 def test_rename_no_replace(tmp_path):

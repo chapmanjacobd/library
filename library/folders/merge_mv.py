@@ -145,9 +145,13 @@ def mmv_file(args, source, destination):
     if args.simulate:
         print(source)
         print("-->", destination)
+        return True
     else:
-        shell_utils.rename_move_file(source, destination)
-        log.debug("moved %s\t%s", source, destination)
+        moved = shell_utils.rename_move_file(source, destination)
+        if moved:
+            log.debug("moved %s\t%s", source, destination)
+            return True
+        return False
 
 
 @track_moved
