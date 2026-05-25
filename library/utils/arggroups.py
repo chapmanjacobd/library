@@ -751,12 +751,6 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         else:
             args.modified_within.append(s.lstrip("-"))
 
-    for s in args.time_deleted:
-        if s.startswith("+"):
-            args.deleted_before.append(s.lstrip("+"))
-        else:
-            args.deleted_within.append(s.lstrip("-"))
-
     for s in args.created_within:
         args.filter_sql.append(
             f"and m.time_created >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
@@ -781,6 +775,12 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         args.filter_sql.append(
             f"and m.time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
         )
+    for s in args.time_deleted:
+        threshold = f"cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s.lstrip('+-'))}')) as int)"
+        if s.startswith("+"):
+            args.filter_sql.append(f"and (COALESCE(m.time_deleted,0) = 0 or m.time_deleted < {threshold})")
+        else:
+            args.filter_sql.append(f"and (COALESCE(m.time_deleted,0) = 0 or m.time_deleted >= {threshold})")
     for s in args.downloaded_within:
         args.filter_sql.append(
             f"and m.time_downloaded >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
