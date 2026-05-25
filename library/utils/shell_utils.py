@@ -22,6 +22,11 @@ def describe_os_error(excinfo: OSError) -> str:
     return err_msg
 
 
+def unlink_partial_dst(src, dst):
+    if os.path.isfile(src) and os.path.isfile(dst):
+        os.unlink(dst)
+
+
 def rename_move_file(src, dst, simulate=False):
     if simulate:
         print("mv", src, dst)
@@ -41,12 +46,7 @@ def rename_move_file(src, dst, simulate=False):
                 os.makedirs(parent, exist_ok=True)
                 return rename_move_file(src, dst, simulate)
 
-            if (
-                excinfo.errno in (errno.EIO, errno.ENOSPC, errno.EDQUOT, errno.EFBIG, errno.ENOMEM)
-                and os.path.isfile(src)
-                and os.path.isfile(dst)
-            ):
-                os.unlink(dst)
+            unlink_partial_dst(src, dst)
 
             if excinfo.errno == errno.ENOSPC:
                 log.error("No space left on device. %s", dst)
@@ -64,8 +64,7 @@ def rename_move_file(src, dst, simulate=False):
                 log.error("%s. %s", describe_os_error(excinfo), src)
             return None
         except KeyboardInterrupt:
-            if os.path.isfile(src) and os.path.isfile(dst):
-                os.unlink(dst)
+            unlink_partial_dst(src, dst)
             raise
 
 
@@ -347,9 +346,17 @@ def copy_file(source_file, destination_file, simulate=False):
         except OSError as excinfo:
             if excinfo.errno in (errno.ENOENT, errno.EXDEV):
                 os.makedirs(os.path.dirname(destination_file), exist_ok=True)
-                shutil.copy2(source_file, destination_file)  # try again
+                try:
+                    shutil.copy2(source_file, destination_file)  # try again
+                except (OSError, KeyboardInterrupt):
+                    unlink_partial_dst(source_file, destination_file)
+                    raise
             else:
+                unlink_partial_dst(source_file, destination_file)
                 raise
+        except KeyboardInterrupt:
+            unlink_partial_dst(source_file, destination_file)
+            raise
 
 
 def copy(args, src: str, dest: str):

@@ -128,6 +128,36 @@ def test_copy_file_success(mock_copy):
     mock_copy.assert_called_once_with("src", "dst")
 
 
+@patch("shutil.copy2")
+def test_copy_file_os_error_cleans_partial_dest(mock_copy):
+    mock_move_error = OSError(errno.EIO, "Input/output error")
+    mock_copy.side_effect = mock_move_error
+
+    with (
+        patch("os.path.isfile", return_value=True),
+        patch("os.unlink") as mock_unlink,
+        pytest.raises(OSError, match="Input/output error"),
+    ):
+        shell_utils.copy_file("src", "dst")
+
+    mock_unlink.assert_called_once_with("dst")
+
+
+@patch("shutil.copy2")
+def test_copy_file_retry_os_error_cleans_partial_dest(mock_copy):
+    mock_copy.side_effect = [OSError(errno.ENOENT, "No such file or directory"), OSError(errno.EIO, "Input/output error")]
+
+    with (
+        patch("os.makedirs"),
+        patch("os.path.isfile", return_value=True),
+        patch("os.unlink") as mock_unlink,
+        pytest.raises(OSError, match="Input/output error"),
+    ):
+        shell_utils.copy_file("src", "dst")
+
+    mock_unlink.assert_called_once_with("dst")
+
+
 def test_flatten_wrapper_folder(tmp_path):
     # struct: output_path/wrapper/file.txt
     output_path = tmp_path / "out"
