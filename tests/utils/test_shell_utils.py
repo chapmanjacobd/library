@@ -171,3 +171,85 @@ def test_flatten_wrapper_folder(tmp_path):
 
     assert (output_path / "file.txt").exists()
     assert not wrapper.exists()
+
+
+class FakeDirEntry:
+    def __init__(self, path, *, is_dir=False, is_symlink=False):
+        self.path = path
+        self.name = path.rsplit("/", 1)[-1]
+        self._is_dir = is_dir
+        self._is_symlink = is_symlink
+
+    def is_dir(self, **_kwargs):
+        return self._is_dir
+
+    def is_symlink(self):
+        return self._is_symlink
+
+
+class FakeScandir:
+    def __init__(self, entries=None, error=None):
+        self.entries = iter(entries or [])
+        self.error = error
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.error is not None:
+            raise self.error
+        return next(self.entries)
+
+
+def test_rglob_gen_warns_and_skips_eio(caplog):
+    def fake_scandir(path):
+        if path == "/base":
+            return FakeScandir(
+                [
+                    FakeDirEntry("/base/good_dir", is_dir=True),
+                    FakeDirEntry("/base/bad_dir", is_dir=True),
+                    FakeDirEntry("/base/root.txt"),
+                ]
+            )
+        if path == "/base/bad_dir":
+            return FakeScandir(error=OSError(errno.EIO, "Input/output error"))
+        if path == "/base/good_dir":
+            return FakeScandir([FakeDirEntry("/base/good_dir/nested.txt")])
+        msg = f"unexpected path: {path}"
+        raise AssertionError(msg)
+
+    with patch("os.scandir", side_effect=fake_scandir):
+        assert list(shell_utils.rglob_gen("/base")) == ["/base/root.txt", "/base/good_dir/nested.txt"]
+
+    assert "Skipping folder /base/bad_dir" in caplog.text
+
+
+def test_rglob_warns_and_skips_eio(caplog):
+    def fake_scandir(path):
+        if path == "/base":
+            return FakeScandir(
+                [
+                    FakeDirEntry("/base/good_dir", is_dir=True),
+                    FakeDirEntry("/base/bad_dir", is_dir=True),
+                    FakeDirEntry("/base/root.txt"),
+                ]
+            )
+        if path == "/base/bad_dir":
+            return FakeScandir(error=OSError(errno.EIO, "Input/output error"))
+        if path == "/base/good_dir":
+            return FakeScandir([FakeDirEntry("/base/good_dir/nested.txt")])
+        msg = f"unexpected path: {path}"
+        raise AssertionError(msg)
+
+    with patch("os.scandir", side_effect=fake_scandir):
+        files, _filtered_files, folders = shell_utils.rglob("/base", quiet=True)
+
+    assert files == {"/base/root.txt", "/base/good_dir/nested.txt"}
+    assert folders == {"/base/good_dir", "/base/bad_dir"}
+    assert "Skipping folder /base/bad_dir" in caplog.text
