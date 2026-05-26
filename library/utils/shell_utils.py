@@ -82,6 +82,21 @@ def scan_stats(files: int, filtered_files: int, folders: int, filtered_folders: 
     )
 
 
+def scandir_entries(current_dir: str | Path):
+    try:
+        with os.scandir(current_dir) as scanned_dir:
+            yield from scanned_dir
+    except (FileNotFoundError, PermissionError):
+        return
+    except OSError as excinfo:
+        if excinfo.errno == errno.ENFILE:  # Too many open files
+            raise
+        if excinfo.errno == errno.EIO:  # Input/output error
+            log.warning("Input/output error: check dmesg. Skipping folder %s", current_dir)
+            return
+        raise
+
+
 def rglob(
     base_dir: str | Path,
     extensions: Iterable[str] | None = None,
@@ -100,49 +115,34 @@ def rglob(
     stack = [base_dir]
     while stack:
         current_dir = stack.pop()
-        try:
-            scanned_dir = os.scandir(current_dir)
-        except (FileNotFoundError, PermissionError):
-            pass
-        except OSError as excinfo:
-            if excinfo.errno == errno.ENFILE:  # Too many open files
-                raise
-            elif excinfo.errno == errno.EIO:  # Input/output error
-                log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
-            raise
-        else:
-            for entry in scanned_dir:
-                if entry.is_dir(follow_symlinks=False):
-                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
-                        filtered_folders.add(entry.path)
-                        continue
-                    if include and not any(
-                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
-                    ):
-                        filtered_folders.add(entry.path)
-                        continue
-                    folders.add(entry.path)
-                    stack.append(entry.path)
-                elif entry.is_symlink():
+        for entry in scandir_entries(current_dir):
+            if entry.is_dir(follow_symlinks=False):
+                if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                    filtered_folders.add(entry.path)
                     continue
-                else:  # file or close enough
-                    if extensions and not entry.path.lower().endswith(extensions):
-                        filtered_files.add(entry.path)
-                        continue
-                    if include and not any(
-                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
-                    ):
-                        filtered_files.add(entry.path)
-                        continue
-                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
-                        filtered_files.add(entry.path)
-                        continue
-                    files.add(entry.path)
+                if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
+                    filtered_folders.add(entry.path)
+                    continue
+                folders.add(entry.path)
+                stack.append(entry.path)
+            elif entry.is_symlink():
+                continue
+            else:  # file or close enough
+                if extensions and not entry.path.lower().endswith(extensions):
+                    filtered_files.add(entry.path)
+                    continue
+                if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
+                    filtered_files.add(entry.path)
+                    continue
+                if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                    filtered_files.add(entry.path)
+                    continue
+                files.add(entry.path)
 
-            if not quiet:
-                printing.print_overwrite(
-                    f"[{base_dir_print}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
-                )
+        if not quiet:
+            printing.print_overwrite(
+                f"[{base_dir_print}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
+            )
 
     if not consts.PYTEST_RUNNING and not quiet:
         print(
@@ -168,39 +168,24 @@ def rglob_gen(
     stack = [base_dir]
     while stack:
         current_dir = stack.pop()
-        try:
-            scanned_dir = os.scandir(current_dir)
-        except (FileNotFoundError, PermissionError):
-            pass
-        except OSError as excinfo:
-            if excinfo.errno == errno.ENFILE:  # errno.errorcode[23] Too many open files
-                raise
-            elif excinfo.errno == errno.EIO:
-                log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
-            raise
-        else:
-            for entry in scanned_dir:
-                if entry.is_dir(follow_symlinks=False):
-                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
-                        continue
-                    if include and not any(
-                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
-                    ):
-                        continue
-                    folders.add(entry.path)
-                    stack.append(entry.path)
-                elif entry.is_symlink():
+        for entry in scandir_entries(current_dir):
+            if entry.is_dir(follow_symlinks=False):
+                if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
                     continue
-                else:  # file or close enough
-                    if extensions and not entry.path.lower().endswith(extensions):
-                        continue
-                    if include and not any(
-                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
-                    ):
-                        continue
-                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
-                        continue
-                    yield entry.path
+                if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
+                    continue
+                folders.add(entry.path)
+                stack.append(entry.path)
+            elif entry.is_symlink():
+                continue
+            else:  # file or close enough
+                if extensions and not entry.path.lower().endswith(extensions):
+                    continue
+                if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
+                    continue
+                if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                    continue
+                yield entry.path
 
 
 def fast_glob(path_dir, limit=100):
