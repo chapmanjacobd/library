@@ -145,7 +145,10 @@ def test_copy_file_os_error_cleans_partial_dest(mock_copy):
 
 @patch("shutil.copy2")
 def test_copy_file_retry_os_error_cleans_partial_dest(mock_copy):
-    mock_copy.side_effect = [OSError(errno.ENOENT, "No such file or directory"), OSError(errno.EIO, "Input/output error")]
+    mock_copy.side_effect = [
+        OSError(errno.ENOENT, "No such file or directory"),
+        OSError(errno.EIO, "Input/output error"),
+    ]
 
     with (
         patch("os.makedirs"),
@@ -192,19 +195,19 @@ class FakeScandir:
         self.entries = iter(entries or [])
         self.error = error
 
+    def __next__(self):
+        if self.error is not None:
+            raise self.error
+        return next(self.entries)
+
+    def __iter__(self):
+        return self
+
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc, tb):
         return False
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.error is not None:
-            raise self.error
-        return next(self.entries)
 
 
 def test_rglob_gen_warns_and_skips_eio(caplog):
