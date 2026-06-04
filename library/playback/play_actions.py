@@ -10,6 +10,7 @@ from library.mediadb import db_history, db_media
 from library.playback import media_player, media_printer
 from library.tablefiles import mcda
 from library.utils import (
+    arg_utils,
     arggroups,
     argparse_utils,
     consts,
@@ -279,8 +280,9 @@ def file_or_folder_media(args, paths):
             else:
                 media.extend([{"path": s} for s in shell_utils.rglob(str(p), exclude=args.exclude)[0]])
 
-    if any(s not in args.defaults for s in ["size", "time_modified", "time_created", "type", "no_type"]):
-        media = filter_engine.filter_items_by_criteria(args, media)
+    if any(s not in args.defaults for s in ["sizes", "time_modified", "time_created", "type", "no_type"]):
+        prefilter_args = arg_utils.args_override(args, {"sort": [], "limit": None})
+        media = filter_engine.filter_items_by_criteria(prefilter_args, media)
 
     if any(s not in args.defaults for s in ["duration", "start", "end"]):
         with ThreadPoolExecutor() as parallel:
@@ -290,7 +292,7 @@ def file_or_folder_media(args, paths):
             media = parallel.map(partial(fs_add_metadata.extract_metadata, mp_args), [m["path"] for m in media])
             media = list(filter(None, media))
 
-    return media
+    return filter_engine.filter_items_by_criteria(args, media)
 
 
 def folder_media(args, media):
