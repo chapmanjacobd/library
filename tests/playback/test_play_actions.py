@@ -163,3 +163,20 @@ def test_print_flags(print_mocked, flags):
         lb([subcommand, v_db, *shlex.split(flags)])
         out = print_mocked.call_args[0][1]
         assert out is not None, f"Test failed for {flags}"
+
+
+@mock.patch("library.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
+def test_fs_direct_paths_apply_sort_and_limit(play_mocked, temp_file_tree):
+    temp_dir = Path(
+        temp_file_tree(
+            {
+                "a.mp4": "a",
+                "z.mp4": "z",
+            }
+        )
+    )
+
+    lb(["media", str(temp_dir / "a.mp4"), str(temp_dir / "z.mp4"), "-u", "path", "desc", "-L", "1"])
+    out = play_mocked.call_args[0][1]
+
+    assert [Path(m["path"]).name for m in out] == ["z.mp4"]
