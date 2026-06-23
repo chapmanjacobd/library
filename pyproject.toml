@@ -69,7 +69,7 @@ fat = [
   "ghostscript",
   "opencv-python",
   "orjson",
-  "selenium-wire",
+  "selenium-wire-lw",
   "subliminal",
   "textract-py3==2.0.1",
 ]
