@@ -813,10 +813,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library siteadd jobs.st.db --poke https://hk.jobsdb.com/hk/search-jobs/python/
 
-    Requires selenium-wire
+    Requires selenium-wire-lw
     Requires xmltodict when using --extract-xml
 
-        pip install selenium-wire xmltodict
+        pip install selenium-wire-lw xmltodict
 
     Run with `-vv` to see and interact with the browser
 

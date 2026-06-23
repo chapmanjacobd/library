@@ -263,7 +263,7 @@ def attach_interceptors(args):
                 db_thread[table_name].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)  # type: ignore
 
         request = None
-        response = None  # tell selenium-wire to not keep the response... idk if this works
+        response = None  # tell selenium-wire-lw to not keep the response... idk if this works
 
     args.driver.response_interceptor = response_interceptor  # type: ignore
 
