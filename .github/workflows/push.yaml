@@ -58,7 +58,9 @@ jobs:
           sudo apt-get update -q -q
           sudo apt-get install --yes ffmpeg
       - if: runner.os == 'macOS'
-        run: brew install ffmpeg
+        run: |
+          brew untap aws/tap azure/bicep
+          brew install ffmpeg
       - if: runner.os == 'Windows'
         run: choco install ffmpeg
 
@@ -85,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pdm-project/setup-pdm@v4
+      - uses: pdm-project/setup-pdm@main
 
       - run: |
           pdm config request_timeout 100
@@ -97,11 +99,6 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: chapmanjacobd/create-release-node16@v1
+      - run: gh release create ${{ github.ref_name }} --repo ${{ github.repository }} --title "Release ${{ github.ref_name }}" --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
