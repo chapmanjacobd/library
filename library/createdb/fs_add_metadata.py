@@ -50,8 +50,11 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         stat = os.stat(path, follow_symlinks=False)
     except FileNotFoundError:
         return None
-    except OSError:
-        log.exception("OSError: possible disk error; check dmesg. %s", path)
+    except OSError as e:
+        errmsg = str(e)
+        if path not in errmsg:
+            errmsg = " ".join([path, errmsg])
+        log.error("%s: %s", type(e).__name__, errmsg)
         return None
     except Exception as excinfo:
         log.error(f"%s {path}", excinfo)
