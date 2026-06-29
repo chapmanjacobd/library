@@ -1,0 +1,18 @@
+name: Release Notes
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: changelogfa.st Release Notes
+        uses: changelogfast/changelog-fast-action@v1
+        with:
+          output: release
+          style: technical
