@@ -349,11 +349,12 @@ def process_playqueue(args) -> None:
         if not args.include:
             processes.no_media_found()
 
-        path = " ".join(args.include)
+        include_flat = [i for inc in args.include for i in (inc if isinstance(inc, list) else [inc])]
+        path = " ".join(include_flat)
         media = db_media.get_playlist_media(args, [path if path.startswith("http") else str(Path(path).resolve())])
         if not media and os.path.exists(path):
             media = db_media.get_dir_media(args, [path])
-        if not media and os.path.exists(args.include[0]):
+        if not media and os.path.exists(include_flat[0]):
             if getattr(args, "fs_add_attempted", False):
                 processes.no_media_found()
             args.fs_add_attempted = True
@@ -362,8 +363,8 @@ def process_playqueue(args) -> None:
             args.force = False
             args.process = False
             args.check_corrupt = False
-            for path in args.include:
-                file_count = fs_add.scan_path(args, path)
+            for p in include_flat:
+                file_count = fs_add.scan_path(args, p)
                 log.info("Imported %s media", file_count)
                 process_playqueue(args)
             return None
