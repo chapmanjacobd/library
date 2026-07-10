@@ -480,6 +480,24 @@ class FilterEngine:
             query, bindings = db_sql_func(self.args)
             items = list(self.args.db.query(query, bindings))
             items = filter_mimetype(self.args, items)
+
+            if not items and getattr(self.args, "include", None) and self.args.db["media"].detect_fts():
+                flat_include = [i for inc in self.args.include for i in (inc if isinstance(inc, list) else [inc])]
+                like_bindings = {}
+                like_parts = []
+                for idx, term in enumerate(flat_include):
+                    param = f"like_check_{idx}"
+                    like_parts.append(f"path LIKE :{param}")
+                    like_bindings[param] = "%" + term.replace(" ", "%").replace("%%", " ") + "%"
+                if like_parts:
+                    like_count = self.args.db.execute(
+                        f"SELECT count(*) FROM media WHERE ({' OR '.join(like_parts)})", like_bindings
+                    ).fetchone()[0]
+                    if like_count > 0:
+                        db_utils.rebuild_fts(self.args.db)
+                        query, bindings = db_sql_func(self.args)
+                        items = list(self.args.db.query(query, bindings))
+                        items = filter_mimetype(self.args, items)
         else:
             if fs_gen_func is None:
                 raise ValueError("fs_gen_func is required when not using database")

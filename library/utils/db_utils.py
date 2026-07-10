@@ -226,6 +226,15 @@ def optimize(args) -> None:
     db.analyze()
 
 
+def rebuild_fts(db: Database, table: str = "media") -> None:
+    fts_table = db[table].detect_fts()
+    if not fts_table:
+        return
+    with db.conn:
+        log.info("Rebuilding FTS index for table: %s", table)
+        db.execute(f'INSERT INTO [{fts_table}] ([{fts_table}]) VALUES ("rebuild")')
+
+
 def linear_interpolation(x, x1, y1, x2, y2):
     y = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
     return y

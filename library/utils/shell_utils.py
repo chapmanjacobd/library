@@ -367,6 +367,13 @@ def resolve_absolute_path(s):
     return s  # relative path
 
 
+def resolve_existing_path(s):
+    p = Path(s).expanduser().resolve()
+    if p.exists():
+        return str(p)
+    return s
+
+
 def resolve_absolute_paths(paths):
     if paths is None:
         return paths
