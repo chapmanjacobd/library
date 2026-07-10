@@ -504,7 +504,7 @@ class FilterEngine:
             items = fs_gen_func(self.args)
             items = self.apply_memory_filters(items)
 
-        if not items:
+        if not items and not getattr(self.args, "include", None):  # include fallback handled by caller
             processes.no_media_found()
         return items
 
