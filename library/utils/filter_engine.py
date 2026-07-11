@@ -490,8 +490,9 @@ class FilterEngine:
                     like_parts.append(f"path LIKE :{param}")
                     like_bindings[param] = "%" + term.replace(" ", "%").replace("%%", " ") + "%"
                 if like_parts:
+                    joiner = " OR " if getattr(self.args, "flexible_search", False) else " AND "
                     like_count = self.args.db.execute(
-                        f"SELECT count(*) FROM media WHERE ({' OR '.join(like_parts)})", like_bindings
+                        f"SELECT count(*) FROM media WHERE ({joiner.join(like_parts)})", like_bindings
                     ).fetchone()[0]
                     if like_count > 0:
                         db_utils.rebuild_fts(self.args.db)
