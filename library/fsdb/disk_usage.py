@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 
 from library import usage
+from library.fsdb import folder_stats
 from library.playback import media_printer
 from library.utils import (
     arggroups,
@@ -27,6 +28,7 @@ def parse_args(defaults_override=None):
 
     parser.add_argument("--folders-only", "-td", action="store_true", help="Only print folders")
     parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
+    parser.add_argument("--min-depth", type=int, metavar="DEPTH", help="Minimum folder depth")
 
     parser.add_argument("--group-by-extensions", action="store_true", help="Print statistics about file extensions")
     parser.add_argument(
@@ -299,11 +301,17 @@ def get_data(args) -> list[dict]:
 
 def disk_usage(defaults_override=None):
     args = parse_args(defaults_override)
-    args.data = get_data(args)
-    args.subset = []
     args.cwd = None
-
-    load_subset(args)
+    args.subset = folder_stats.get_subset(args)
+    if args.subset is None:
+        args.data = get_data(args)
+        args.subset = []
+        load_subset(args)
+    else:
+        args.data = []
+        args.subset = filter_criteria(args, args.subset)
+        if not args.subset:
+            processes.no_media_found()
 
     files = [d for d in args.subset if not d.get("count")]
     num_folders = sum(1 for d in args.subset if d.get("count"))

@@ -1214,7 +1214,7 @@ def group_folders_post(args) -> None:
         args.sort_groups_by = arg_utils.parse_ambiguous_sort(args.sort_groups_by)
         args.sort_groups_by = ",".join(args.sort_groups_by)
 
-    args.min_depth = 0
+    args.min_depth = getattr(args, "min_depth", None) or 0
     args.max_depth = None
     if args.depth:
         for s in args.depth:
