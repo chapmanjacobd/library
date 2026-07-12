@@ -25,11 +25,17 @@ def test_disk_usage(assert_unchanged, capsys):
 
 
 def test_disk_usage_min_depth(capsys):
+    from pathlib import Path
+
     lb(["du", v_db, "-td", "--parents", "--min-depth=3", "--to-json"])
     paths = {json.loads(line)["path"] for line in capsys.readouterr().out.strip().split("\n")}
 
-    assert "/home/" not in paths
-    assert "/home/xk/" in paths
+    cwd = Path.cwd()
+    depth_2 = Path(*cwd.parts[:2]).as_posix() + "/"
+    depth_3 = Path(*cwd.parts[:3]).as_posix() + "/"
+
+    assert depth_2 not in paths
+    assert depth_3 in paths
 
 
 def test_folder_stats_refreshes_after_media_change(temp_db):
