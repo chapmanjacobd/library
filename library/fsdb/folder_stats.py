@@ -1,5 +1,4 @@
-import os
-import re
+import os, re
 from collections import defaultdict
 
 _REQUIRED_MEDIA_COLUMNS = {"path", "size", "duration", "time_deleted"}
