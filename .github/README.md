@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.171; 103 subcommands)
+    library (v3.0.172; 103 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -194,7 +194,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ sample-compare │ Compare files using sample-hash and other shortcuts │
     ├────────────────┼─────────────────────────────────────────────────────┤
-    │ files-info     │ Find files by mimetype and size                     │
+    │ filesystem     │ Find files by mimetype and size                     │
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ similar-files  │ Find similar files based on filename and size       │
     ├────────────────┼─────────────────────────────────────────────────────┤
@@ -1711,12 +1711,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### files-info
+###### filesystem
 
 <details><summary>Find files by mimetype and size</summary>
 
-    $ library files-info -h
-    usage: library files-info
+    $ library filesystem -h
+    usage: library filesystem
 
     List files and filter by specific file types
 
