@@ -144,7 +144,7 @@ config = {
 def optimize(args) -> None:
     log.info("\nOptimizing database")
 
-    db: Database = args.db
+    db: "Database" = args.db
 
     for table in config:
         if table not in db.table_names():
@@ -226,7 +226,7 @@ def optimize(args) -> None:
     db.analyze()
 
 
-def rebuild_fts(db: Database, table: str = "media") -> None:
+def rebuild_fts(db: "Database", table: str = "media") -> None:
     fts_table = db[table].detect_fts()
     if not fts_table:
         return
