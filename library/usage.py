@@ -704,7 +704,7 @@ disk_usage = """library disk-usage DATABASE [--sort-groups-by (priority) | path 
 """
 
 
-files_info = """library files-info
+filesystem = """library filesystem
 
     List files and filter by specific file types
 

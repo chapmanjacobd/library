@@ -15,7 +15,7 @@ from library.utils import (
 
 
 def parse_args(defaults_override=None):
-    parser = argparse_utils.ArgumentParser(usage=usage.files_info)
+    parser = argparse_utils.ArgumentParser(usage=usage.filesystem)
     arggroups.files(parser)
     arggroups.sql_fs(parser)
     parser.set_defaults(hide_deleted=True)
@@ -48,7 +48,7 @@ def get_data(args) -> list[dict]:
     return files
 
 
-def files_info(defaults_override=None):
+def filesystem(defaults_override=None):
     args = parse_args(defaults_override)
     files = get_data(args)
 

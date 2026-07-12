@@ -109,7 +109,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     if (
         (args.limit or args.timeout_size)
         and "path" in data[0].keys()
-        and action in ("media", "filesystem", "files-info", "listen", "watch")
+        and action in ("media", "filesystem", "listen", "watch")
     ):
         new_data = []
         MOVED_COUNT = 0
