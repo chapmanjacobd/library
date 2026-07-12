@@ -6,6 +6,7 @@ from pathlib import Path
 from library.createdb import fs_add_metadata
 from library.createdb.subtitle import clean_up_temp_dirs
 from library.editdb.dedupe_db import dedupe_rows
+from library.fsdb import folder_stats
 from library.utils import consts, date_utils, db_utils, iterables, log_utils, objects, processes, sql_utils, strings
 from library.utils.consts import DBType
 from library.utils.log_utils import log
@@ -41,6 +42,7 @@ def create(args):
         except sqlite3.IntegrityError:
             dedupe_rows(args, "media", ["rowid"], ["path"])
             args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_media_path ON media (path);")
+    folder_stats.ensure(args.db)
 
 
 def exists(args, path) -> bool:
