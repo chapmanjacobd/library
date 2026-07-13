@@ -49,7 +49,7 @@ def original_datadir(request) -> Path:
 @pytest.fixture
 def assert_unchanged(data_regression, request):
     def assert_unchanged(captured, basename=None):
-        data_regression.check(captured, basename=basename if basename else "data")
+        data_regression.check(captured, basename=basename or "data")
 
     return assert_unchanged
 

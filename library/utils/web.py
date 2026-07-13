@@ -108,8 +108,7 @@ def load_cookie_jar(args):
 
 
 def requests_session(args=argparse.Namespace()):
-    global session
-    global cookie_jar
+    global session, cookie_jar
     load_cookie_jar(args)
 
     from yt_dlp.utils.networking import std_headers
@@ -228,8 +227,7 @@ def download_embeds(args, soup):
 
         response = get(args, img["src"])
         if response:
-            with open(local_path, "wb") as f:
-                f.write(response.content)
+            Path(local_path).write_bytes(response.content)
 
             img["src"] = local_path.relative_to(Path.cwd())  # Update image source to point to local file
 
@@ -461,7 +459,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
                     p.unlink()
                 else:
                     log.warning(
-                        f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} ({strings.percent(local_size/remote_size)}): {output_path}"
+                        f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} ({strings.percent(local_size / remote_size)}): {output_path}"
                     )
                     headers = {"Range": f"bytes={local_size}-"}
                     r.close()  # close previous session before opening a new one
@@ -484,7 +482,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
             if remote_size:
                 downloaded_size = os.path.getsize(output_path)
                 if downloaded_size < remote_size:
-                    msg = f"Incomplete download ({strings.percent(downloaded_size/remote_size)}) {output_path}"
+                    msg = f"Incomplete download ({strings.percent(downloaded_size / remote_size)}) {output_path}"
                     raise RuntimeError(msg)
         except Exception as excinfo:
             r.close()
@@ -932,8 +930,7 @@ def fake_title(url):
     p = urllib.parse.urlparse(url)
     title = f"{p.netloc} {p.path} {p.params} {p.query}: {p.fragment}"
 
-    if title.startswith("www."):
-        title = title[4:]
+    title = title.removeprefix("www.")
 
     title = title.replace("/", " ")
     title = title.replace("?", " ")
@@ -953,8 +950,7 @@ def get_title(args, url):
 
     try:
         if getattr(args, "local_html", False):
-            with open(url) as f:
-                html_text = f.read()
+            html_text = Path(url).read_text()
             url = "file://" + url
         elif args.selenium:
             selenium_get_page(args, url)

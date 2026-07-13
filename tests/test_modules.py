@@ -12,8 +12,7 @@ def extract_imports(file_path):
         imports = set()
         for node in ast.iter_child_nodes(tree):
             if isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.add(alias.name)
+                imports.update(alias.name for alias in node.names)
             elif isinstance(node, ast.ImportFrom):
                 imports.add(node.module)
 

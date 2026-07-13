@@ -114,7 +114,7 @@ def listen_chromecast(args, m: dict) -> subprocess.CompletedProcess | None:
         sleep(3.0)  # give chromecast some time to breathe
     elif m["path"].startswith("http"):
         catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
-    else:  #  local file
+    else:  # local file
         catt_log = processes.cmd(
             catt,
             "-d",
@@ -310,7 +310,7 @@ def modify_display_size_for_taskbar(display):
             display.width = work_area[2] - work_area[0]
 
         elif consts.IS_LINUX:
-            xprop_output = subprocess.check_output("xprop -root _NET_WORKAREA".split()).decode().strip()
+            xprop_output = subprocess.check_output(["xprop", "-root", "_NET_WORKAREA"]).decode().strip()
             work_area = [int(x) for x in xprop_output.split(" = ")[1].split(",")]
 
             _taskbar_height = display.height - work_area[3]

@@ -174,7 +174,7 @@ def find_clusters(args, sentence_strings):
             closest, _ = pairwise_distances_argmin_min(clusterizer.cluster_centers_, X, metric="cosine")
             log.info("\nCluster Centers (Representative Sentences):")
             for i, idx in enumerate(closest):
-                log.info(f"Cluster {i+1}: {sentence_strings[idx]}")
+                log.info(f"Cluster {i + 1}: {sentence_strings[idx]}")
 
         return clusters
     return None

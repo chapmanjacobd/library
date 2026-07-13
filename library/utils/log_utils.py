@@ -72,7 +72,7 @@ log = argparse_log()
 def gen_logging(name, original_generator):
     for x in original_generator:
         if name is not None:
-            log.debug(f"{name}: {x}")
+            log.debug("%s: %s", name, x)
         else:
             log.debug(x)
         yield x

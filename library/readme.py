@@ -25,7 +25,7 @@ for category, category_progs in __main__.progs.items():
 <details><summary>{prog_description}</summary>
 
     $ library {subcommand} -h
-    usage: {prog_usage.replace('%%','%')}
+    usage: {prog_usage.replace('%%', '%')}
 
 </details>
 """,

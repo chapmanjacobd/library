@@ -375,7 +375,7 @@ def filter_mimetype(args, files):
 def sort_items_by_criteria(args, items):
     def normalize_key(key: str) -> str:
         """Remove table prefixes like m.path -> path."""
-        return key.split(".")[-1]
+        return key.rsplit(".", maxsplit=1)[-1]
 
     def get_sort_key(item):
         sort_values = []

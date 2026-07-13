@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 
-
 class HTTPTooManyRequests(EnvironmentError):
     pass
 

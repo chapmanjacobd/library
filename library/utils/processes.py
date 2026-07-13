@@ -49,8 +49,7 @@ sizeout_total = 0
 
 
 def sizeout(max_size: str, next_size: int) -> bool:
-    global sizeout_max
-    global sizeout_total
+    global sizeout_max, sizeout_total
 
     if sizeout_max is None:
         sizeout_max = nums.human_to_bytes(max_size)

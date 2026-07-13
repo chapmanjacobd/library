@@ -519,8 +519,7 @@ def download(args, m) -> None:
         # ydl_opts["cookiesfrombrowser"] = ("firefox",)
         if len(yt_archive) == 0:
             with yt_dlp.utils.locked_file(str(download_archive), "r", encoding="utf-8") as archive_file:
-                for line in archive_file:
-                    yt_archive.add(line.strip())
+                yt_archive.update(line.strip() for line in archive_file)
         if len(yt_archive) > 0:  # check again
             ydl_opts["download_archive"] = yt_archive
         else:
@@ -564,7 +563,7 @@ def download(args, m) -> None:
             info = m
         else:
             info = {**m, **info}
-            temp_path = info.get("local_path", None)
+            temp_path = info.get("local_path")
             if args.profile == DBType.audio:
                 info = {**info, "ext": args.extract_audio_ext}
             temp_path = ydl.prepare_filename(info)

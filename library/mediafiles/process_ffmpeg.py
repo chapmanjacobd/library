@@ -217,11 +217,10 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
                 stereo_mode = "sbs"
             elif stereo_tag in {"top_bottom", "over_under", "tb", "ou"}:
                 stereo_mode = "ou"
-            else:  # fallback to aspect ratio
-                if 1.9 <= aspect_ratio <= 2.1 and width >= 4500:
-                    stereo_mode = "sbs"
-                elif 0.9 <= aspect_ratio <= 1.1 and height >= 2600:
-                    stereo_mode = "ou"
+            elif 1.9 <= aspect_ratio <= 2.1 and width >= 4500:  # fallback to aspect ratio
+                stereo_mode = "sbs"
+            elif 0.9 <= aspect_ratio <= 1.1 and height >= 2600:
+                stereo_mode = "ou"
 
             if stereo_mode == "sbs":
                 per_eye_width = width // 2
@@ -245,13 +244,12 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
                     video_filters.append(f"scale={args.max_video_width}:-2")
                 else:
                     video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
-            else:  # non-VR
-                if width > (args.max_video_width * (1 + args.max_width_buffer)):
-                    video_filters.append(f"scale={args.max_video_width}:-2")
-                elif height > (args.max_video_height * (1 + args.max_height_buffer)):
-                    video_filters.append(f"scale=-2:{args.max_video_height}")
-                else:  # make sure input raster is even for YUV_420 colorspace
-                    video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
+            elif width > (args.max_video_width * (1 + args.max_width_buffer)):  # non-VR
+                video_filters.append(f"scale={args.max_video_width}:-2")
+            elif height > (args.max_video_height * (1 + args.max_height_buffer)):
+                video_filters.append(f"scale=-2:{args.max_video_height}")
+            else:  # make sure input raster is even for YUV_420 colorspace
+                video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
 
             ff_opts.extend(["-vf", ",".join(video_filters)])
 
@@ -343,6 +341,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
                     is_split = False
 
     if subtitle_stream:
+        # fmt: off
         TEXT_SUBS = {
             "ass",
             "ssa",
@@ -371,6 +370,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
             "vplayer",
             "webvtt",
         }
+        # fmt: on
         IMAGE_SUBS = {"dvd_subtitle", "dvdsub", "pgssub", "hdmv_pgs_subtitle", "xsub", "dvb_subtitle", "dvbsub"}
 
         MKV_TEXT_SUBS = {"subrip", "srt", "ass", "ssa", "webvtt"}

@@ -48,14 +48,12 @@ def get_calibre_version():
 
 def update_references(path, replacements):
     try:
-        with open(path, "r", encoding="utf-8") as file:
-            content = file.read()
+        content = Path(path).read_text(encoding="utf-8")
 
         for old, new in replacements.items():
             content = content.replace(old, new)
 
-        with open(path, "w", encoding="utf-8") as file:
-            file.write(content)
+        Path(path).write_text(content, encoding="utf-8")
 
     except Exception:
         log.exception("Error occurred while updating references %s", path)
@@ -82,8 +80,7 @@ def update_manifest(output_path, avif_files):
     manifest_path = output_path / "content.opf"
 
     try:
-        with open(manifest_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        content = Path(manifest_path).read_text(encoding="utf-8")
     except Exception as e:
         log.warning("Failed to read content.opf: %s", e)
         return
@@ -124,8 +121,7 @@ def update_manifest(output_path, avif_files):
 
     if modified:
         try:
-            with open(manifest_path, "w", encoding="utf-8") as f:
-                f.write(content)
+            Path(manifest_path).write_text(content, encoding="utf-8")
         except Exception as e:
             log.warning("Failed to write content.opf: %s", e)
 

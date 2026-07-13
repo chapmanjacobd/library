@@ -104,8 +104,7 @@ def get_text(args, url):
                 yield from select_fn(args, markup)
     else:
         if args.local_html:
-            with open(url) as f:
-                markup = f.read()
+            markup = Path(url).read_text()
             url = "file://" + url
         else:
             try:

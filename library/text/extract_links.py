@@ -16,6 +16,7 @@ from library.utils import (
     web,
 )
 from library.utils.log_utils import log
+import pathlib
 
 
 def parse_args():
@@ -204,8 +205,7 @@ def get_inner_urls(args, url):
                 yield from parse_inner_urls(args, url, markup)
     else:
         if args.local_html:
-            with open(url) as f:
-                markup = f.read()
+            markup = pathlib.Path(url).read_text()
             url = "file://" + url
         else:
             try:

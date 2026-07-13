@@ -20,13 +20,13 @@ def parse_args():
 
 def gen_torrents(l):
     for s in l:
-        for file in Path(s).rglob("*.torrent"):
-            if not file.is_dir():
-                yield file
-        else:
-            file = Path(s)
-            if file.is_file() and file.suffix == ".torrent":
-                yield file
+        p = Path(s)
+        if p.is_dir():
+            for file in p.rglob("*.torrent"):
+                if not file.is_dir():
+                    yield file
+        elif p.is_file() and p.suffix == ".torrent":
+            yield p
 
 
 def torrents_dump():

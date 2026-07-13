@@ -69,7 +69,7 @@ def search_help():
             size = 100
             print(symbol * size)
             txt = f"{description} with lb {prog}"
-            print(symbol * 3 + " " + f"{txt + ' ':{symbol}<{size-4}}")
+            print(symbol * 3 + " " + f"{txt + ' ':{symbol}<{size - 4}}")
             print(symbol * size)
             print()
 
