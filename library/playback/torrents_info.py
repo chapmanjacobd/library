@@ -521,7 +521,7 @@ def torrents_info():
             for tr, msg in get_error_messages(t):
                 tracker = fqdn_from_url(tr.url)
                 # fmt: off
-                tbl[(tracker, msg)]["count"] += 1
+                tbl[tracker, msg]["count"] += 1
                 # fmt: on
         if tbl:
             print(f"Error Torrents ({sum(data['count'] for data in tbl.values())})")
