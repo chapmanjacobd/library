@@ -687,8 +687,8 @@ disk_usage = """library disk-usage DATABASE [--sort-groups-by (priority) | path 
         library du du.db -d 19
         | path                                                                                                                                                                |     size |
         |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
-        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
 
     Group by extension
 
