@@ -59,7 +59,8 @@ jobs:
           sudo apt-get install --yes ffmpeg
       - if: runner.os == 'macOS'
         run: |
-          brew untap aws/tap azure/bicep
+          brew uninstall bicep || true
+          brew untap aws/tap azure/bicep || true
           brew install ffmpeg
       - if: runner.os == 'Windows'
         run: choco install ffmpeg
