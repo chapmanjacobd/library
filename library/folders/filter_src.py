@@ -14,6 +14,7 @@ def add_time_filters(parser, prefix="move"):
     Args:
         parser: The argument parser or argument group
         prefix: Prefix for argument names (e.g., 'move' for --move-sizes)
+
     """
     prefix_dash = f"--{prefix}-" if prefix else "--"
 
@@ -72,6 +73,7 @@ def process_time_filters(args, prefix="move"):
     Args:
         args: Parsed arguments namespace
         prefix: Prefix for argument names (e.g., 'move' or empty)
+
     """
     prefix_underscore = f"{prefix}_" if prefix else ""
     now = time.time()

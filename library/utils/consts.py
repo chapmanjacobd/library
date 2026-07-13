@@ -69,7 +69,7 @@ REGEX_SUBREDDIT = re.compile(".*reddit\\.com/r/(.*?)/.*|.*redd\\.it/r/(.*?)/.*")
 REGEX_REDDITOR = re.compile(
     ".*reddit\\.com/u/(.*?)/.*|.*redd\\.it/u/(.*?)/.*|.*reddit\\.com/user/(.*?)/.*|.*redd\\.it/user/(.*?)/.*",
 )
-REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
+REGEX_V_REDD_IT = re.compile(r"https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()
 TABULATE_STYLE = "simple"
 DEFAULT_DIFFLIB_RATIO = 0.73
@@ -205,78 +205,38 @@ def reddit_frequency(frequency) -> str:
 SKIP_MEDIA_CHECK = ["iso", "img", "vob"]
 
 SQLITE_EXTENSIONS = (".sqlite", ".sqlite3", ".db", ".db3", ".s3db", ".sl3")
-SPEECH_RECOGNITION_EXTENSIONS = set("mp3|ogg|wav".split("|"))
-OCR_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff".split("|"))
-OCRMYPDF_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff|pdf".split("|"))
+SPEECH_RECOGNITION_EXTENSIONS = set(["mp3", "ogg", "wav"])
+OCR_EXTENSIONS = set(["gif", "jpg", "jpeg", "png", "tif", "tff", "tiff"])
+OCRMYPDF_EXTENSIONS = set(["gif", "jpg", "jpeg", "png", "tif", "tff", "tiff", "pdf"])
 HTML_SIDECAR_EXTENSIONS = set(
-    "css|js|json|xml|woff|woff2|otf|ttf|svg|ico|icns|map|txt|md|yml|yaml|wasm|webmanifest|swf".split("|")
+    ["css", "js", "json", "xml", "woff", "woff2", "otf", "ttf", "svg", "ico", "icns", "map", "txt", "md", "yml", "yaml", "wasm", "webmanifest", "swf"]
 )
-INSTRUMENT_EXTENSIONS = set("mid|midi|mod|it|xm|s3m|stm|med|mtm|okt".split("|"))
+INSTRUMENT_EXTENSIONS = set(["mid", "midi", "mod", "it", "xm", "s3m", "stm", "med", "mtm", "okt"])
 AUDIO_ONLY_EXTENSIONS = set(
-    "mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4r|caf|m4b|flac|wav|pcm|aif|aiff|wma|aac|aa3|ac3|ape|dsf|dff".split("|")
+    ["mka", "opus", "oga", "ogg", "mp3", "mpga", "m2a", "m4a", "m4r", "caf", "m4b", "flac", "wav", "pcm", "aif", "aiff", "wma", "aac", "aa3", "ac3", "ape", "dsf", "dff"]
 )
 VIDEO_EXTENSIONS = set(
-    (
-        "str|aa|aax|acm|adf|adp|asf|dtk|ads|ss2|adx|aea|afc|aix|al|apl|avifs|gif|gifv"
-        "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
-        "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
-        "|dif|divx|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco|heics"
-        "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|mts|m2ts|hca|hevc|h265|265|idf"
-        "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
-        "|med|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
-        "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
-        "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
-        "|mt2|mtm|nst|okt|ogm|ogv|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
-        "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|ts|tp|mk3d|webm|mca|mcc"
-        "|mjpg|mjpeg|mpg|mpeg|mpo|j2k|mlp|mods|moflex|mov|mp4|3g2|3gp2|3gp|3gpp|3g2|mj2|psp"
-        "|ism|ismv|isma|f4v|mp2|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg"
-        "|v|nist|sph|nut|obu|oma|omg|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd|rmvb|rm"
-        "|rsd|rso|sw|sb|sami|sbc|msbc|sbg|scc|sdr2|sds|sdx|ser|sga|shn|vb|son|imx"
-        "|sln|mjpg|stl|sup|svag|svs|tak|thd|tta|ans|art|asc|diz|ice|vt|ty|ty+|uw|ub"
-        "|v210|yuv10|vag|vc1|rcv|vob|viv|vpk|vqf|vql|vqe|wmv|wsd|xmv|xvag|yop|y4m"
-    ).split("|")
+    ["str", "aa", "aax", "acm", "adf", "adp", "asf", "dtk", "ads", "ss2", "adx", "aea", "afc", "aix", "al", "apl", "avifs", "gif", "gifv", "mac", "aptx", "aptxhd", "aqt", "ast", "obu", "avi", "avr", "avs", "avs2", "avs3", "bfstm", "bcstm", "binka", "bit", "bmv", "brstm", "cdg", "cdxl", "xl", "c2", "302", "daud", "str", "adp", "dav", "dss", "dts", "dtshd", "dv", "dif", "divx", "cdata", "eac3", "paf", "fap", "flm", "flv", "fsb", "fwse", "g722", "722", "tco", "rco", "heics", "g723_1", "g729", "genh", "gsm", "h261", "h26l", "h264", "264", "avc", "mts", "m2ts", "hca", "hevc", "h265", "265", "idf", "ifv", "cgi", "ipu", "sf", "ircam", "ivr", "kux", "669", "abc", "amf", "ams", "dbm", "dmf", "dsm", "far", "it", "mdl", "med", "mod", "mt2", "mtm", "okt", "psm", "ptm", "s3m", "stm", "ult", "umx", "xm", "itgz", "itr", "itz", "mdgz", "mdr", "mdz", "s3gz", "s3r", "s3z", "xmgz", "xmr", "xmz", "669", "amf", "ams", "dbm", "digi", "dmf", "dsm", "dtm", "far", "gdm", "ice", "imf", "it", "j2b", "m15", "mdl", "med", "mmcmp", "mms", "mo3", "mod", "mptm", "mt2", "mtm", "nst", "okt", "ogm", "ogv", "plm", "ppm", "psm", "pt36", "ptm", "s3m", "sfx", "sfx2", "st26", "stk", "stm", "stp", "ult", "umx", "wow", "xm", "xpk", "flv", "dat", "lvf", "m4v", "mkv", "ts", "tp", "mk3d", "webm", "mca", "mcc", "mjpg", "mjpeg", "mpg", "mpeg", "mpo", "j2k", "mlp", "mods", "moflex", "mov", "mp4", "3g2", "3gp2", "3gp", "3gpp", "3g2", "mj2", "psp", "ism", "ismv", "isma", "f4v", "mp2", "mpa", "mpc", "mjpg", "mpl2", "msf", "mtaf", "ul", "musx", "mvi", "mxg", "v", "nist", "sph", "nut", "obu", "oma", "omg", "pjs", "pvf", "yuv", "cif", "qcif", "rgb", "rt", "rsd", "rmvb", "rm", "rsd", "rso", "sw", "sb", "sami", "sbc", "msbc", "sbg", "scc", "sdr2", "sds", "sdx", "ser", "sga", "shn", "vb", "son", "imx", "sln", "mjpg", "stl", "sup", "svag", "svs", "tak", "thd", "tta", "ans", "art", "asc", "diz", "ice", "vt", "ty", "ty+", "uw", "ub", "v210", "yuv10", "vag", "vc1", "rcv", "vob", "viv", "vpk", "vqf", "vql", "vqe", "wmv", "wsd", "xmv", "xvag", "yop", "y4m"]
 )
-SUBTITLE_EXTENSIONS = set("srt|vtt|mks|ass|ssa".split("|"))
+SUBTITLE_EXTENSIONS = set(["srt", "vtt", "mks", "ass", "ssa"])
 TEXTRACT_EXTENSIONS = set(
-    "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls".split("|")
+    ["csv", "tab", "tsv", "doc", "docx", "eml", "epub", "json", "htm", "html", "msg", "odt", "pdf", "pptx", "ps", "rtf", "txt", "log", "xlsx", "xls"]
 )
 IMAGE_EXTENSIONS = set(
-    (
-        "aai|ai|ait|avs|bpg|png|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
-        "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mrw|nef|nrw|orf"
-        "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif"
-        "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|jpc|3fr|btf|dcr|k25"
-        "|kdc|miff|mif|rwz|srf|xcf|bpg|doc|dot|fla|fpx|max|ppt|pps|pot|vsd|xls"
-        "|xlt|pict|pct|360|dvb|f4a|f4b|f4p|lrv|bmp|bmp2|bmp3|jng|mng|emf|wmf"
-        "|m4p|qt|mqv|qtif|qti|qif|cr3|crm|jxl|crw|ciff|ind|indd|indt"
-        "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|djvu|djv|dvr-ms"
-        "|insv|inx|swf|exif|eip|pspimage|fax|farbfeld|fits|fl32|jbig"
-        "|pbm|pfm|pgm|phm|pnm|ppm|ptif|qoi|tga"
-    ).split("|")
+    ["aai", "ai", "ait", "avs", "bpg", "png", "arq", "arw", "cr2", "cs1", "dcp", "dng", "eps", "epsf", "ps", "erf", "exv", "fff", "gpr", "hdp", "wdp", "jxr", "iiq", "insp", "jpeg", "jpg", "jpe", "mef", "mie", "mos", "mrw", "nef", "nrw", "orf", "ori", "pef", "psd", "psb", "psdt", "raf", "raw", "rw2", "rwl", "sr2", "srw", "thm", "tiff", "tif", "x3f", "flif", "icc", "icm", "avif", "heic", "heif", "hif", "jp2", "jpf", "jpm", "jpx", "j2c", "jpc", "3fr", "btf", "dcr", "k25", "kdc", "miff", "mif", "rwz", "srf", "xcf", "bpg", "doc", "dot", "fla", "fpx", "max", "ppt", "pps", "pot", "vsd", "xls", "xlt", "pict", "pct", "360", "dvb", "f4a", "f4b", "f4p", "lrv", "bmp", "bmp2", "bmp3", "jng", "mng", "emf", "wmf", "m4p", "qt", "mqv", "qtif", "qti", "qif", "cr3", "crm", "jxl", "crw", "ciff", "ind", "indd", "indt", "nksc", "vrd", "xmp", "la", "ofr", "pac", "riff", "rif", "wav", "webp", "wv", "djvu", "djv", "dvr-ms", "insv", "inx", "swf", "exif", "eip", "pspimage", "fax", "farbfeld", "fits", "fl32", "jbig", "pbm", "pfm", "pgm", "phm", "pnm", "ppm", "ptif", "qoi", "tga"]
 )
 PIL_EXTENSIONS = set(
-    (
-        "apng|blp|bmp|bufr|bw|cur|dcx|dds|dib|emf|eps|fit|fits|flc|fli|fpx|ftc"
-        "|ftex|ftu|gbr|gd|gif|grib|h5|hdf|icb|icns|ico|iim|im|imt|iptc|j2c|j2k"
-        "|jfif|jp2|jpc|jpe|jpeg|jpf|jpg|jpx|mcidas|mic|mpeg|mpg|mpo|msp|naa|palm"
-        "|pbm|pcd|pcx|pdf|pfm|pgm|pixar|png|pnm|ppm|ps|psd|pxr|qoi|ras|rgb|rgba"
-        "|sgi|spi|spider|sun|tga|tif|tiff|vda|vst|wal|webp|wmf|xbm|xpm"
-    ).split("|")
+    ["apng", "blp", "bmp", "bufr", "bw", "cur", "dcx", "dds", "dib", "emf", "eps", "fit", "fits", "flc", "fli", "fpx", "ftc", "ftex", "ftu", "gbr", "gd", "gif", "grib", "h5", "hdf", "icb", "icns", "ico", "iim", "im", "imt", "iptc", "j2c", "j2k", "jfif", "jp2", "jpc", "jpe", "jpeg", "jpf", "jpg", "jpx", "mcidas", "mic", "mpeg", "mpg", "mpo", "msp", "naa", "palm", "pbm", "pcd", "pcx", "pdf", "pfm", "pgm", "pixar", "png", "pnm", "ppm", "ps", "psd", "pxr", "qoi", "ras", "rgb", "rgba", "sgi", "spi", "spider", "sun", "tga", "tif", "tiff", "vda", "vst", "wal", "webp", "wmf", "xbm", "xpm"]
 )
-IMAGE_ANIMATION_EXTENSIONS = set(("gif|png|apng|webp|avif|avifs|flif|mng").split("|"))
+IMAGE_ANIMATION_EXTENSIONS = set(["gif", "png", "apng", "webp", "avif", "avifs", "flif", "mng"])
 ARCHIVE_EXTENSIONS = set(
-    (
-        "0|1|01|001|0001|7z|ace|alz|alzip|arc|arj|b5i|b6i|bin|bz2|cab|ccd|cdr|cif"
-        "|cpio|daa|deb|dmg|exe|gi|gz|img|iso|lha|lzh|lzma|lzo|mdf|msi|nrg|nsi|nsis"
-        "|p01|pak|pdi|rar|r00|r01|rpm|sit|sitx|tar|bz2|gz|xz|Z|taz|tbz2|tgz|toast|txz"
-        "|tz|udf|uif|vcd|wim|xar|xz|z|zip|z00|z01|zipx|zoo|zst|cb7|cbr|cbz|cbt|cba"
-    ).split("|")
+    ["0", "1", "01", "001", "0001", "7z", "ace", "alz", "alzip", "arc", "arj", "b5i", "b6i", "bin", "bz2", "cab", "ccd", "cdr", "cif", "cpio", "daa", "deb", "dmg", "exe", "gi", "gz", "img", "iso", "lha", "lzh", "lzma", "lzo", "mdf", "msi", "nrg", "nsi", "nsis", "p01", "pak", "pdi", "rar", "r00", "r01", "rpm", "sit", "sitx", "tar", "bz2", "gz", "xz", "Z", "taz", "tbz2", "tgz", "toast", "txz", "tz", "udf", "uif", "vcd", "wim", "xar", "xz", "z", "zip", "z00", "z01", "zipx", "zoo", "zst", "cb7", "cbr", "cbz", "cbt", "cba"]
 )
 CALIBRE_EXTENSIONS = set(
-    ("azw|azw3|azw4|cbc|chm|docx|epub|fb2|fbz|htmlz|lit|lrf|mobi|odt|pdf|prc|pdb|pml|rb|rtf|snb|tcr|md|txtz").split("|")
+    ["azw", "azw3", "azw4", "cbc", "chm", "docx", "epub", "fb2", "fbz", "htmlz", "lit", "lrf", "mobi", "odt", "pdf", "prc", "pdb", "pml", "rb", "rtf", "snb", "tcr", "md", "txtz"]
 )
 PLAIN_EXTENSIONS = set(
-    ("xml|opf|html|xhtml|txt|text|md|markdown|css|js|json|csv|yaml|toml|ini|rst|cfg|conf").split("|")
+    ["xml", "opf", "html", "xhtml", "txt", "text", "md", "markdown", "css", "js", "json", "csv", "yaml", "toml", "ini", "rst", "cfg", "conf"]
 )
 
 time_facets = [

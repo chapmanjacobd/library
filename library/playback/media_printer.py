@@ -125,7 +125,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
             if args.timeout_size and processes.sizeout(args.timeout_size, filesize):
                 print(f"\nReached sizeout... ({args.timeout_size})", file=sys.stderr)
                 break
-            elif args.limit and args.limit <= MOVED_COUNT:
+            if args.limit and args.limit <= MOVED_COUNT:
                 print(f"\nReached limit... ({args.limit})", file=sys.stderr)
                 break
 

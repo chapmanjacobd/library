@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING, Any
 from library.utils import consts, iterables, nums, strings
 from library.utils.log_utils import log
 
-if TYPE_CHECKING:
-    from sqlite_utils import Database
+from sqlite_utils import Database
 
 
 def trace(sql, params) -> None:
@@ -17,8 +16,6 @@ def trace(sql, params) -> None:
 
 
 def connect(args, conn=None, **kwargs):
-    from sqlite_utils import Database
-
     LOG_SQL = args.verbose >= consts.LOG_DEBUG_SQL
     tracer = trace if LOG_SQL else None
 
@@ -144,7 +141,7 @@ config = {
 def optimize(args) -> None:
     log.info("\nOptimizing database")
 
-    db: "Database" = args.db
+    db: Database = args.db
 
     for table in config:
         if table not in db.table_names():
@@ -233,11 +230,6 @@ def rebuild_fts(db: "Database", table: str = "media") -> None:
     with db.conn:
         log.info("Rebuilding FTS index for table: %s", table)
         db.execute(f'INSERT INTO [{fts_table}] ([{fts_table}]) VALUES ("rebuild")')
-
-
-def linear_interpolation(x, x1, y1, x2, y2):
-    y = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
-    return y
 
 
 def has_similar_schema(set1, set2):

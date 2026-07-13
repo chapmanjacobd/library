@@ -412,7 +412,7 @@ def read_file_to_dataframes(
     if join_tables:
         dfs = [NDF(dfs[0].df_name, pd.concat([t.df for t in dfs], axis=0, ignore_index=True))]
 
-    dfs = [NDF(t.df_name if t.df_name else str(table_index_as_name), t.df) for table_index_as_name, t in enumerate(dfs)]
+    dfs = [NDF(t.df_name or str(table_index_as_name), t.df) for table_index_as_name, t in enumerate(dfs)]
 
     if transpose:
 

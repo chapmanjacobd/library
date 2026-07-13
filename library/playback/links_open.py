@@ -57,8 +57,7 @@ def make_souffle(args, media):
 
         if not args.title or args.path:
             if not m["path"].startswith("http"):
-                for engine in args.title_prefix:
-                    m_urls.add(web.construct_search(engine, m["path"]))
+                m_urls.update(web.construct_search(engine, m["path"]) for engine in args.title_prefix)
             else:
                 m_urls.add(m["path"])
 

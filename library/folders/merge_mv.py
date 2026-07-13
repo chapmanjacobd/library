@@ -1,6 +1,6 @@
 import concurrent.futures, os, shutil
 from pathlib import Path
-from typing import Iterable
+from collections.abc import Iterable
 
 from library import usage
 from library.folders import filter_src
@@ -242,19 +242,18 @@ def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowe
                     append_basename = False
                 elif args.dest_folder:
                     append_basename = True
-                else:  # args.dest_bsd
-                    if destination.endswith(os.sep):
+                elif destination.endswith(os.sep):  # args.dest_bsd
+                    append_basename = True
+                elif os.path.isdir(destination):
+                    append_basename = True
+                else:  # destination is not an existing directory
+                    same_basename = path_utils.basename(source) == path_utils.basename(destination)
+                    if same_basename:
+                        append_basename = False
+                    elif os.path.exists(destination):  # exists: file or file-like
+                        append_basename = False
+                    else:
                         append_basename = True
-                    elif os.path.isdir(destination):
-                        append_basename = True
-                    else:  # destination is not an existing directory
-                        same_basename = path_utils.basename(source) == path_utils.basename(destination)
-                        if same_basename:
-                            append_basename = False
-                        elif os.path.exists(destination):  # exists: file or file-like
-                            append_basename = False
-                        else:
-                            append_basename = True
 
                 if append_basename:
                     file_dest = os.path.join(file_dest, path_utils.basename(source))

@@ -61,8 +61,7 @@ def backup_and_read_file(file_path):
         except Exception as excinfo:
             print(f"Failed to create backup file: {excinfo}")
 
-    with open(file_path) as file:
-        content = file.read()
+    content = Path(file_path).read_text()
     return content
 
 
@@ -120,8 +119,7 @@ def truncate_file_before_match(filename, match_string):
 
     if len(matching_lines) == 1:
         line_index = matching_lines[0]
-        with open(filename, "w") as file:
-            file.write("".join(lines[line_index - 1 :]))
+        Path(filename).write_text("".join(lines[line_index - 1 :]))
         print(f"Progress saved. File truncated before the line containing: '{match_string}'")
         remaining = sum(1 for s in lines[line_index - 1 :] if s == "\n") - 1
         num_videos = sum(1 for s in lines[line_index - 1 :] if s != "\n") - 12

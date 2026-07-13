@@ -80,7 +80,7 @@ def test_prefetch(media):
 
 
 def test_wt_help(capsys):
-    wt_help_text = "usage:,where,sort,--duration".split(",")
+    wt_help_text = ["usage:", "where", "sort", "--duration"]
 
     with pytest.raises(SystemExit):
         lb(["wt", "-h"])

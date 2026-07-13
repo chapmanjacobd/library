@@ -107,7 +107,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         except (mp_TimeoutError, TimeoutError):
             log.warning(f"Timed out trying to read file. {path}")
         else:
-            log.debug(f"{timer()-start} {path}")
+            log.debug(f"{timer() - start} {path}")
 
     if getattr(mp_args, "hash", False) and m["type"] != "directory" and m["size"] > 0:
         m["hash"] = sample_hash.sample_hash_file(path)

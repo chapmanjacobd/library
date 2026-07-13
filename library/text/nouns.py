@@ -9,6 +9,7 @@ import regex
 from library import usage
 from library.data import wordbank
 from library.utils import arggroups, argparse_utils, iterables, printing
+import string
 
 
 def parse_args():
@@ -87,11 +88,11 @@ def line_splitter(txt):
 
 def generate_strings(length):
     if length == 1:
-        for char in "abcdefghijklmnopqrstuvwxyz":
+        for char in string.ascii_lowercase:
             yield char
     else:
         for prefix in generate_strings(length - 1):
-            for char in "abcdefghijklmnopqrstuvwxyz":
+            for char in string.ascii_lowercase:
                 yield prefix + char
 
 

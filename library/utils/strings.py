@@ -12,6 +12,7 @@ from wcwidth import wcswidth
 from library.data import wordbank
 from library.utils import consts, iterables, nums
 from library.utils.log_utils import log
+import pathlib
 
 
 def safe_json_loads(s):
@@ -25,8 +26,7 @@ def safe_json_loads(s):
 
 
 def safe_json_load(path):
-    with open(path, "rb") as file:
-        binary_data = file.read()
+    binary_data = pathlib.Path(path).read_bytes()
     return safe_json_loads(binary_data.decode("utf-8", errors="replace"))
 
 
@@ -111,8 +111,7 @@ def remove_prefixes(s, prefixes) -> str:
 @repeat_until_same
 def remove_suffixes(s, suffixes) -> str:
     for suffix in suffixes:
-        if s.endswith(suffix):
-            s = s[: -len(suffix)]
+        s = s.removesuffix(suffix)
     return s
 
 

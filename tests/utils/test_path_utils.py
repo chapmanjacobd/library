@@ -169,7 +169,7 @@ def test_domain_from_url(url, expected):
             "example.com/path/file.txt",
             "example.com/path",
             "file.txt",
-        ),  #  URL without scheme (might be interpreted as relative path, depending on context of urlparse)
+        ),  # URL without scheme (might be interpreted as relative path, depending on context of urlparse)
         (
             "/path/to/file.txt",
             "path/to",
