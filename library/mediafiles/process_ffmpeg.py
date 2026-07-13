@@ -366,9 +366,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
             "stl",
             "subviewer",
             "subviewer1",
-            "text",
             "vplayer",
-            "webvtt",
         }
         # fmt: on
         IMAGE_SUBS = {"dvd_subtitle", "dvdsub", "pgssub", "hdmv_pgs_subtitle", "xsub", "dvb_subtitle", "dvbsub"}
