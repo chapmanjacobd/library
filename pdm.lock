@@ -177,7 +177,7 @@ files = [
 
 [[package]]
 name = "anyio"
-version = "4.14.1"
+version = "4.14.2"
 requires_python = ">=3.10"
 summary = "High-level concurrency and networking framework on top of asyncio or Trio"
 dependencies = [
@@ -186,8 +186,8 @@ dependencies = [
     "typing-extensions>=4.5; python_version < \"3.13\"",
 ]
 files = [
-    {file = "anyio-4.14.1-py3-none-any.whl", hash = "sha256:4e5533c5b8ff0a24f5d7a176cbe6877129cd183893f66b537f8f227d10527d72"},
-    {file = "anyio-4.14.1.tar.gz", hash = "sha256:8d648a3544c1a700e3ff78615cd679e4c5c3f149904287e73687b2596963629e"},
+    {file = "anyio-4.14.2-py3-none-any.whl", hash = "sha256:9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494"},
+    {file = "anyio-4.14.2.tar.gz", hash = "sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f"},
 ]
 
 [[package]]
@@ -3631,7 +3631,7 @@ files = [
 
 [[package]]
 name = "sqlite-utils"
-version = "4.1"
+version = "4.1.1"
 requires_python = ">=3.10"
 summary = "CLI tool and Python library for manipulating SQLite databases"
 dependencies = [
@@ -3644,8 +3644,8 @@ dependencies = [
     "tabulate",
 ]
 files = [
-    {file = "sqlite_utils-4.1-py3-none-any.whl", hash = "sha256:770fa0222492065a9991a55f94f749d8d99bf7b93fc048a5b087c85a0438f8ce"},
-    {file = "sqlite_utils-4.1.tar.gz", hash = "sha256:70893f5bba2330bf83d6a84bdf9cd6164a566ece377d0447f162e76e4b9ae74b"},
+    {file = "sqlite_utils-4.1.1-py3-none-any.whl", hash = "sha256:b52fd3d58b2778aacb35a074323aac49a924a323f98ee74027e590b08d1e6f32"},
+    {file = "sqlite_utils-4.1.1.tar.gz", hash = "sha256:cf97e620b3940cd541cae9117cc24af961a6da426189fdb662f20f1950ba1f49"},
 ]
 
 [[package]]
