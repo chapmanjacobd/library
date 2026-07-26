@@ -29,7 +29,7 @@ def create(args):
         );
         """
     )
-    if args.action in ("tube-add", "gallery-add", "web-add", "site-add"):
+    if args.action in ("tube-add", "gallery-add", "web-add", "site-add", "computers-add"):
         args.db.execute("DROP INDEX IF EXISTS idx_media_path;")
         try:
             args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx ON media (playlists_id, path);")
