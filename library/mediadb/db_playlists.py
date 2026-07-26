@@ -99,6 +99,8 @@ def _add(args, entry):
     playlists_id = get_id(args, entry["path"])
     if playlists_id:
         entry["id"] = playlists_id
+        entry["time_modified"] = consts.now()
+        entry["time_deleted"] = 0
         args.db["playlists"].upsert(entry, pk="id", alter=True)
     else:
         entry["time_created"] = consts.APPLICATION_START
