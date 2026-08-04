@@ -256,9 +256,55 @@ def set_timestamp(headers, path):
         os.utime(path, (atime, mtime))
 
 
+def get_browser_profile_path(browser_name, profile=None):
+    from yt_dlp.cookies import _firefox_browser_dirs, _get_chromium_based_browser_settings
+
+    browser_name = browser_name.lower()
+
+    if browser_name == "firefox":
+        profile_roots = list(_firefox_browser_dirs())
+        if not profile_roots:
+            return None
+        root = profile_roots[0]
+        if profile:
+            candidate = os.path.join(root, profile)
+            if os.path.isdir(candidate):
+                return candidate
+        return root
+
+    if browser_name in {"chrome", "chromium", "brave", "edge", "opera", "vivaldi", "whale"}:
+        settings = _get_chromium_based_browser_settings(browser_name)
+        browser_dir = settings["browser_dir"]
+        if not os.path.isdir(browser_dir):
+            return None
+        if profile:
+            candidate = os.path.join(browser_dir, profile)
+            if os.path.isdir(candidate):
+                return candidate
+        default_profile = os.path.join(browser_dir, "Default")
+        if os.path.isdir(default_profile):
+            return default_profile
+        return browser_dir
+
+    return None
+
+
 def load_selenium(args, wire=False):
     if getattr(args, "driver", False):
         return
+
+    if not args.user_data_dir and getattr(args, "cookies_from_browser", None):
+        from library.utils.web import parse_cookies_from_browser
+
+        browser_name, profile, _keyring, _container = parse_cookies_from_browser(args.cookies_from_browser)
+        resolved = get_browser_profile_path(browser_name, profile)
+        if resolved:
+            args.user_data_dir = resolved
+            log.info("Using browser profile: %s", resolved)
+            if browser_name == "firefox" and not getattr(args, "chrome", False):
+                args.firefox = True
+            elif browser_name in {"chrome", "chromium", "brave", "edge", "opera", "vivaldi", "whale"}:
+                args.chrome = True
 
     if wire:
         import logging
@@ -644,12 +690,11 @@ def selenium_get_page(args, url):
     global cookie_jar
     load_cookie_jar(args)
 
-    if cookie_jar:
+    using_native_profile = bool(getattr(args, "user_data_dir", None))
+
+    if cookie_jar and not using_native_profile:
         if path_utils.fqdn_from_url(url) != path_utils.fqdn_from_url(args.driver.current_url):
             args.driver.get(path_utils.fqdn_from_url(url))
-
-        # log.debug('Browser: %s', {c['name']: c['value'] for c in args.driver.get_cookies() if c['name'] not in ["cf_clearance"]})
-        # log.debug('Python: %s', {c.name: c.value for c in cookie_jar.get_cookies_for_url(url) if c.name not in ["cf_clearance"]})
 
         for cookie in cookie_jar.get_cookies_for_url(url):
             cookie_dict = {
@@ -662,7 +707,8 @@ def selenium_get_page(args, url):
                 cookie_dict["expiry"] = cookie.expires
             if cookie.path_specified:
                 cookie_dict["path"] = cookie.path
-            args.driver.add_cookie(cookie_dict)
+            with suppress(Exception):
+                args.driver.add_cookie(cookie_dict)
 
     args.driver.get(url)
     args.driver.implicitly_wait(5)

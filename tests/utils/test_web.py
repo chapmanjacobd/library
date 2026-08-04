@@ -332,6 +332,57 @@ def test_selenium_get_page_without_cookies():
     mock_driver.get.assert_called_once_with(url)
 
 
+def test_selenium_get_page_skips_injection_with_native_profile(monkeypatch):
+    mock_driver = MagicMock()
+    mock_driver.current_url = "data:,"
+    args = MagicMock(
+        driver=mock_driver,
+        cookies="dummy",
+        cookies_from_browser="firefox",
+        user_data_dir="/home/user/.mozilla/firefox/abc123.default",
+    )
+    url = "https://example.com/page"
+
+    cookie_jar = MagicMock()
+    cookie = MagicMock(name="session", value="xyz", domain="example.com", secure=True, expires=None, path_specified=False)
+    cookie_jar.get_cookies_for_url.return_value = [cookie]
+
+    monkeypatch.setattr("library.utils.web.cookie_jar", cookie_jar)
+    monkeypatch.setattr("library.utils.web.load_cookie_jar", lambda a: None)
+    monkeypatch.setattr("library.utils.web.path_utils.fqdn_from_url", lambda u: "https://example.com")
+    monkeypatch.setattr("library.utils.web.re_trigger_input", lambda d: None)
+
+    selenium_get_page(args, url)
+
+    mock_driver.add_cookie.assert_not_called()
+    mock_driver.get.assert_called_once_with(url)
+
+
+def test_selenium_get_page_injects_cookies_without_native_profile(monkeypatch):
+    mock_driver = MagicMock()
+    mock_driver.current_url = "data:,"
+    args = MagicMock(
+        driver=mock_driver,
+        cookies="dummy",
+        cookies_from_browser="firefox",
+        user_data_dir=None,
+    )
+    url = "https://example.com/page"
+
+    cookie_jar = MagicMock()
+    cookie = MagicMock(name="session", value="xyz", domain="example.com", secure=True, expires=None, path_specified=False)
+    cookie_jar.get_cookies_for_url.return_value = [cookie]
+
+    monkeypatch.setattr("library.utils.web.cookie_jar", cookie_jar)
+    monkeypatch.setattr("library.utils.web.load_cookie_jar", lambda a: None)
+    monkeypatch.setattr("library.utils.web.path_utils.fqdn_from_url", lambda u: "https://example.com")
+    monkeypatch.setattr("library.utils.web.re_trigger_input", lambda d: None)
+
+    selenium_get_page(args, url)
+
+    mock_driver.add_cookie.assert_called_once()
+
+
 def test_parse_cookies_from_browser():
     assert web.parse_cookies_from_browser("chrome") == ("chrome", None, None, None)
     assert web.parse_cookies_from_browser("firefox+gnomekeyring") == ("firefox", None, "GNOMEKEYRING", None)
