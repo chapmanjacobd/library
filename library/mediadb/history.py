@@ -3,7 +3,7 @@ import argparse
 from library import usage
 from library.mediadb import db_history
 from library.playback import media_printer
-from library.utils import arggroups, argparse_utils, sqlgroups
+from library.utils import arggroups, argparse_utils, sqlgroups, strings
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,10 +13,19 @@ def parse_args() -> argparse.Namespace:
     arggroups.debug(parser)
 
     arggroups.database(parser)
+    arggroups.paths_or_stdin(parser, required=False)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    args.paths = [strings.strip_enclosing_quotes(path) for path in args.paths or []]
     arggroups.sql_fs_post(args)
+    if args.paths:
+        path_bindings = []
+        for index, path in enumerate(args.paths):
+            binding = f"history_path_{index}"
+            path_bindings.append(f":{binding}")
+            args.filter_bindings[binding] = path
+        args.where.append(f"path IN ({', '.join(path_bindings)})")
 
     return args
 
