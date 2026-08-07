@@ -392,7 +392,7 @@ history_add = """library history-add DATABASE PATH ...
     Items that don't already exist in the database will be counted under "skipped"
 """
 
-history = """library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
+history = """library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [PATH ...] [(all) watching watched created modified deleted]
 
     View playback history
 
@@ -418,8 +418,12 @@ history = """library history [--frequency daily weekly (monthly) yearly] [--limi
         Delete all history
         library history web_add.image.db -L inf --delete-rows
 
-    See also: library stats -h
-              library history-add -h
+        Delete history for exact paths
+            library history ~/mc/links.db --delete-rows https://example.com/article
+            cb | library history ~/mc/links.db --delete-rows -
+
+        See also: library stats -h
+                  library history-add -h
 """
 
 playlists = """library playlists DATABASE
