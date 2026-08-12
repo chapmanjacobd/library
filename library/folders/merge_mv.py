@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from library import usage
 from library.folders import filter_src
 from library.folders.filter_src import process_time_filters, track_moved
-from library.utils import arggroups, argparse_utils, consts, devices, path_utils, shell_utils
+from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils
 from library.utils.consts import DBType
 from library.utils.log_utils import log
 from library.utils.shell_utils import rglob_gen
@@ -265,6 +265,9 @@ def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowe
 
 
 def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):
+    if sources is None:
+        processes.exit_error("No paths passed in")
+
     destination = os.path.realpath(destination) + (os.sep if destination.endswith(os.sep) else "")
 
     sources = (
