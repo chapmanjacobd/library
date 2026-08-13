@@ -2313,13 +2313,192 @@ def auto_label_axes(plt, actions):
             ax.set_title(title)
 
 
+def is_key_col(col):
+    """Columns that identify rows rather than measure them (skip in auto plots)."""
+    c = col.lower()
+    return (
+        c in ("index", "id", "idx", "key", "uuid", "guid", "md5", "sha", "sha1", "sha256")
+        or c.endswith(("_id", "_idx", "_key", "_uuid", "_guid", "_md5", "_sha", "_sha1"))
+    )
+
+
+AUTO_PLOT_MIN_HIST_BINS = 2
+AUTO_PLOT_MAX_HIST_BINS = 50
+AUTO_PLOT_MIN_CATEGORIES = 2
+AUTO_PLOT_MAX_CATEGORIES = 30
+AUTO_PLOT_MAX_TIME_SERIES = 5
+AUTO_PLOT_MIN_ROWS_TIME_SERIES = 2
+AUTO_PLOT_MIN_ROWS_CORRELATION = 3
+AUTO_PLOT_MAX_PAIRS = 6
+AUTO_PLOT_PAIRS_CAP_NUMERIC_COLS = 4
+AUTO_PLOT_FIGSIZE_MIN = 4
+AUTO_PLOT_FIGSIZE_PER_COL = 0.5
+
+
+def auto_plot_add_figure(figures, fig, tight=True):
+    if tight:
+        try:
+            fig.tight_layout()
+        except Exception:
+            log.debug("Could not apply tight_layout", exc_info=True)
+    figures.append(fig)
+
+
+def auto_plot_histograms(figures, df, numeric_cols):
+    import matplotlib.pyplot as plt
+
+    for col in numeric_cols:
+        s = df[col].dropna()
+        if s.empty or s.nunique() < AUTO_PLOT_MIN_HIST_BINS:
+            continue
+        fig, ax = plt.subplots()
+        ax.hist(s.to_numpy(), bins=min(AUTO_PLOT_MAX_HIST_BINS, max(AUTO_PLOT_MIN_HIST_BINS, s.nunique())), alpha=0.7)
+        ax.set_ylabel("Count")
+        label_axis(ax, "x", col)
+        ax.set_title(f"{humanize_col_label(col)} Distribution")
+        auto_plot_add_figure(figures, fig)
+
+
+def auto_plot_categories(figures, df, categorical_cols):
+    import matplotlib.pyplot as plt
+
+    for col in categorical_cols:
+        unique_count = df[col].nunique(dropna=True)
+        if not AUTO_PLOT_MIN_CATEGORIES <= unique_count <= AUTO_PLOT_MAX_CATEGORIES:
+            continue
+        vc = df[col].value_counts(dropna=True).head(AUTO_PLOT_MAX_CATEGORIES)
+        if vc.empty:
+            continue
+        fig, ax = plt.subplots()
+        ax.bar(range(len(vc)), vc.values, alpha=0.7)
+        ax.set_xticks(range(len(vc)))
+        ax.set_xticklabels([str(v) for v in vc.index], rotation=45, ha="right")
+        ax.set_ylabel("Count")
+        ax.set_title(f"Common Values of {humanize_col_label(col)}")
+        auto_plot_add_figure(figures, fig)
+
+
+def auto_plot_time_series(figures, df, numeric_cols):
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    if len(df) < AUTO_PLOT_MIN_ROWS_TIME_SERIES:
+        return
+    date_cols = [
+        c
+        for c in df.columns
+        if not is_key_col(c)
+        and (
+            pd.api.types.is_datetime64_any_dtype(df[c])
+            or (col_axis_kind(c) == "date" and pd.api.types.is_numeric_dtype(df[c]))
+        )
+    ]
+    if not date_cols:
+        return
+    date_col = date_cols[0]
+    is_epoch = pd.api.types.is_numeric_dtype(df[date_col])
+    for col in numeric_cols[:AUTO_PLOT_MAX_TIME_SERIES]:
+        if col == date_col:
+            continue
+        tmp = df[[date_col, col]].sort_values(date_col).dropna()
+        if tmp.empty:
+            continue
+        fig, ax = plt.subplots()
+        ax.plot(tmp[date_col].to_numpy(), tmp[col].to_numpy(), alpha=0.7)
+        if is_epoch:
+            label_axis(ax, "x", date_col)
+        else:
+            ax.set_xlabel(humanize_col_label(date_col))
+        label_axis(ax, "y", col)
+        ax.set_title(f"{humanize_col_label(col)} over time")
+        auto_plot_add_figure(figures, fig)
+
+
+def auto_plot_correlation(figures, df, numeric_cols):
+    import itertools
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    if len(numeric_cols) < AUTO_PLOT_MIN_CATEGORIES or len(df) < AUTO_PLOT_MIN_ROWS_CORRELATION:
+        return
+    corr = df[numeric_cols].corr()
+
+    figsize = max(AUTO_PLOT_FIGSIZE_MIN, len(numeric_cols) * AUTO_PLOT_FIGSIZE_PER_COL)
+    fig, ax = plt.subplots(figsize=(figsize, figsize))
+    im = ax.imshow(corr, cmap="coolwarm", vmin=-1, vmax=1)
+    ax.set_xticks(range(len(numeric_cols)))
+    ax.set_xticklabels([humanize_col_label(c) for c in numeric_cols], rotation=45, ha="right")
+    ax.set_yticks(range(len(numeric_cols)))
+    ax.set_yticklabels([humanize_col_label(c) for c in numeric_cols])
+    for i in range(len(numeric_cols)):
+        for j in range(len(numeric_cols)):
+            v = corr.iloc[i, j]
+            if np.isfinite(v):
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center")
+    fig.colorbar(im, ax=ax)
+    ax.set_title("Correlation Heatmap")
+    auto_plot_add_figure(figures, fig, tight=False)
+
+    pairs = [
+        (a, b, corr.loc[a, b])
+        for a, b in itertools.combinations(numeric_cols, AUTO_PLOT_MIN_CATEGORIES)
+        if np.isfinite(corr.loc[a, b])
+    ]
+    pairs.sort(key=lambda ab: abs(ab[2]), reverse=True)
+    max_pairs = AUTO_PLOT_MAX_PAIRS if len(numeric_cols) > AUTO_PLOT_PAIRS_CAP_NUMERIC_COLS else len(pairs)
+    for a, b, _ in pairs[:max_pairs]:
+        fig, ax = plt.subplots()
+        ax.scatter(df[a], df[b], s=3, alpha=0.5)
+        label_axis(ax, "x", a)
+        label_axis(ax, "y", b)
+        ax.set_title(f"{humanize_col_label(b)} vs {humanize_col_label(a)}")
+        auto_plot_add_figure(figures, fig)
+
+
+def auto_plot_missing(figures, df):
+    import matplotlib.pyplot as plt
+
+    missing = df.isna().sum()
+    missing = missing[missing > 0]
+    if missing.empty:
+        return
+    fig, ax = plt.subplots()
+    ax.bar(range(len(missing)), missing.values, alpha=0.7)
+    ax.set_xticks(range(len(missing)))
+    ax.set_xticklabels([humanize_col_label(c) for c in missing.index], rotation=45, ha="right")
+    ax.set_ylabel("Count")
+    ax.set_title("Missing Values per Column")
+    auto_plot_add_figure(figures, fig)
+
+
+def auto_plot(df):
+    """Analyze a dataframe like `library eda` and return a list of useful figures."""
+    import pandas as pd
+
+    data_cols = [c for c in df.columns if not is_key_col(c)]
+    numeric_cols = [c for c in data_cols if pd.api.types.is_numeric_dtype(df[c])]
+    categorical_cols = [c for c in data_cols if c not in numeric_cols]
+
+    figures = []
+    auto_plot_histograms(figures, df, numeric_cols)
+    auto_plot_categories(figures, df, categorical_cols)
+    auto_plot_time_series(figures, df, numeric_cols)
+    auto_plot_correlation(figures, df, numeric_cols)
+    auto_plot_missing(figures, df)
+    return figures
+
+
 def matplotlib_post(args, unknown_args):
     import matplotlib.pyplot as plt
     import pandas as pd
 
+    if not unknown_args:
+        args.plot_fn = auto_plot
+        return
+
     def plot_fn(df):
-        numeric_columns = df.select_dtypes("number").columns.tolist()
-        actions = build_actions(unknown_args or ["plot", *numeric_columns], [*df.columns, "index"])
+        actions = build_actions(unknown_args, [*df.columns, "index"])
 
         if any("index" in cols for _, cols, _, _ in actions):
             df = df.copy()

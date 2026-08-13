@@ -247,6 +247,69 @@ def test_lb_plot_hist_counts(tmp_path):
     assert ax.get_ylabel() == "Count"
 
 
+def test_lb_plot_auto_mode_generates_multiple_figures(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text(
+        "category,size,duration,time_created\n"
+        "a,100,10,1600000000\n"
+        "b,200,20,1600001000\n"
+        "a,300,30,1600002000\n"
+        "b,400,15,1600003000\n"
+        "c,500,25,1600004000\n"
+    )
+    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    titles = [ax.get_title() for num in plt.get_fignums() for ax in plt.figure(num).axes]
+
+    assert len(plt.get_fignums()) >= 6
+    assert "Size Distribution" in titles
+    assert "Duration Distribution" in titles
+    assert "Common Values of Category" in titles
+    assert "Duration over time" in titles
+    assert "Correlation Heatmap" in titles
+    assert "Time Created vs Size" in titles
+
+
+def test_lb_plot_auto_mode_skips_key_columns(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("id,category\n1,a\n2,a\n3,b\n4,b\n")
+    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    titles = [ax.get_title() for num in plt.get_fignums() for ax in plt.figure(num).axes]
+
+    assert titles == ["Common Values of Category"]
+
+
+def test_lb_plot_auto_mode_save(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("a,b\n1,2\n2,4\n3,6\n")
+    lb(["plot", "--no-show-kitty", "--no-show-external", "--save", str(df)])
+    saved = [p for p in tmp_path.iterdir() if p.suffix == ".png"]
+    assert saved
+    assert any("distribution" in p.name for p in saved)
+
+
+def test_lb_plot_explicit_mode_overrides_auto(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("a,b\n1,2\n2,4\n3,6\n")
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--",
+            "scatter",
+            "a",
+            "b",
+        ]
+    )
+    assert len(plt.get_fignums()) == 1
+    assert plt.gca().get_title() == "B vs A"
+
+
 def test_lb_plot_fresh_figure_per_file(tmp_path):
     plt.close("all")
     f1 = tmp_path / "f1.csv"
