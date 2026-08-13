@@ -289,3 +289,23 @@ def value(obj, keys):
             return value
 
     return None
+
+
+def coerce_arg(v):
+    if not isinstance(v, str):
+        return v
+
+    lowered = v.lower()
+    if lowered in ("true", "false"):
+        return lowered == "true"
+    if lowered in ("none", "null"):
+        return None
+    try:
+        return int(v)
+    except ValueError:
+        pass
+    try:
+        return float(v)
+    except ValueError:
+        pass
+    return v
