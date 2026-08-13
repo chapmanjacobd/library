@@ -1,4 +1,4 @@
-import argparse, os, subprocess, sys
+import argparse, os, re, subprocess, sys
 from tempfile import NamedTemporaryFile
 
 from library import usage
@@ -46,16 +46,27 @@ def parse_args():
 
 
 def create_plot(args, df):
-    # TODO: add --classify
-    # df['category'] = df.col_name>0.5
-    # df.groupby('category').count().plot(kind='bar', legend=False)
+    plots = args.plot_fn(df)
+    if isinstance(plots, list):
+        return plots
+    return [plots]
 
-    plt = args.plot_fn(df)
-    return plt
+
+def figure_stem(plot):
+    """Return a short slug from a figure's title, used to name saved files."""
+    try:
+        ax = plot.axes[0]
+    except (AttributeError, IndexError, TypeError):
+        return "plot"
+    title = ax.get_title()
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    return slug or "plot"
 
 
 def file_plot(args, path):
     import matplotlib.pyplot as plt
+
+    plt.rcParams["figure.max_open_warning"] = 100  # auto mode can open many figures
 
     for df_name, df in file_utils.read_file_to_dataframes(
         path,
@@ -81,19 +92,23 @@ def file_plot(args, path):
         else:
             print(f"## {path}:{df_name}")
 
-        plt.clf()  # start each dataset on a fresh figure
-        plt = create_plot(args, df)
+        plt.close("all")  # start each dataset on a fresh set of figures
+        figures = create_plot(args, df)
 
-        if args.save:
-            output_path = devices.clobber_new_file(args, f"{path}.{df_name}.png")
-            log.debug("Saving to %s", output_path)
-            plt.savefig(output_path)
-            print("Saved to", output_path)
+        for plot in figures:
+            if args.save:
+                if len(figures) > 1:
+                    output_path = devices.clobber_new_file(args, f"{path}.{df_name}.{figure_stem(plot)}.png")
+                else:
+                    output_path = devices.clobber_new_file(args, f"{path}.{df_name}.png")
+                log.debug("Saving to %s", output_path)
+                plot.savefig(output_path)
+                print("Saved to", output_path)
 
-        if args.show_kitty:
-            with NamedTemporaryFile(suffix=".png") as f:
-                plt.savefig(f.name)
-                subprocess.call(["kitty", "+kitten", "icat", f.name])
+            if args.show_kitty:
+                with NamedTemporaryFile(suffix=".png") as f:
+                    plot.savefig(f.name)
+                    subprocess.call(["kitty", "+kitten", "icat", f.name])
 
         if args.show_external:
             plt.show()
