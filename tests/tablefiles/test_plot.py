@@ -4,6 +4,14 @@ import pytest
 from library.__main__ import library as lb
 
 
+def _figure_by_title(title):
+    for num in plt.get_fignums():
+        for ax in plt.figure(num).axes:
+            if ax.get_title() == title:
+                return ax
+    raise AssertionError(f"no figure titled {title!r}")
+
+
 @pytest.mark.parametrize(
     ("args", "stdout"),
     [
@@ -354,3 +362,151 @@ def test_lb_plot_separator_between_commands(tmp_path):
     )
     assert len(plt.gcf().axes[0].patches) == 4  # 2 histograms x 2 bins
     assert plt.gca().get_ylabel() == "Count"
+
+
+def test_lb_plot_where_filters_rows(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("size,duration\n100,10\n500,30\n2048,60\n1024,20\n")
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--where",
+            "size > 1000",
+            "--",
+            "plot",
+            "duration",
+        ]
+    )
+    assert plt.gca().get_ylabel() == "Duration (s)"
+    line = plt.gca().lines[0]
+    assert len(line.get_ydata()) == 2  # only 60 and 20 remain
+
+
+def test_lb_plot_classify_expression(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("size,duration\n100,10\n500,30\n2048,60\n1024,20\n")
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--classify",
+            "size > 1000",
+            "--groupby",
+            "category",
+        ]
+    )
+    ax = plt.gca()
+    assert ax.get_title() == "Count per Category"
+    assert len(ax.patches) == 2  # one bar per group (True/False)
+
+
+def test_lb_plot_classify_bins(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("size,duration\n100,10\n500,30\n2048,60\n1024,20\n")
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--classify",
+            "size",
+            "--bins",
+            "2",
+            "--groupby",
+            "category",
+            "--agg",
+            "mean",
+        ]
+    )
+    ax = _figure_by_title("Mean Size per Category")
+    assert len(ax.patches) == 2  # two bins
+
+
+def test_lb_plot_groupby_count_and_top(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("category,size\nc,100\nb,200\na,300\na,400\nb,500\nb,600\n")
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--groupby",
+            "category",
+            "--top",
+            "2",
+        ]
+    )
+    ax = plt.gca()
+    assert ax.get_title() == "Count per Category"
+    assert len(ax.patches) == 2  # b (3) and a (2); c dropped
+
+
+def test_lb_plot_groupby_mean(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("category,size,duration\na,100,10\na,300,30\nb,50,5\nb,150,15\n")
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--groupby",
+            "category",
+            "--agg",
+            "mean",
+        ]
+    )
+    ax = _figure_by_title("Mean Size per Category")
+    sizes = [p.get_height() for p in ax.patches]
+    assert sorted(sizes) == [100.0, 200.0]  # mean size of a and b
+
+
+def test_lb_plot_human_units(tmp_path):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("size,duration\n2GB,90s\n1GB,2min\n500MB,5s\n")
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--classify",
+            "size > 1GB",
+            "--groupby",
+            "category",
+        ]
+    )
+    ax = plt.gca()
+    assert ax.get_title() == "Count per Category"
+    assert len(ax.patches) == 2  # True (2GB) and False (1GB, 500MB)
+
+
+def test_lb_plot_groupby_missing_column(tmp_path, caplog):
+    plt.close("all")
+    df = tmp_path / "data.csv"
+    df.write_text("size,duration\n100,10\n200,20\n")
+    with pytest.raises(SystemExit):
+        lb(
+            [
+                "plot",
+                "--no-show-kitty",
+                "--no-show-external",
+                str(df),
+                "--groupby",
+                "nope",
+            ]
+        )
+    assert "--groupby column 'nope' not found" in caplog.text

@@ -1250,6 +1250,8 @@ plot = """library plot PATH ... [--table STR] [--end-row INT] -- [PLT.COMMAND ..
 
     Axes are auto-labeled from the column names and units are guessed from common names (e.g. `size` -> bytes, `duration` -> seconds, `time_*` -> dates). A title is auto-added from the plotted columns (e.g. `scatter size duration` -> "Duration vs Size"). Pass an explicit `xlabel=` / `ylabel=` / `title=` to override.
 
+    A transformation pipeline can be applied before plotting: `--where` filters rows, `--classify` derives a `category` column from an expression or binning, and `--groupby` (with `--agg`) groups and aggregates rows. With `--groupby` the auto mode draws one bar chart per aggregated column (e.g. "Count per Category").
+
     Examples:
 
     lb plot data.csv
@@ -1258,6 +1260,10 @@ plot = """library plot PATH ... [--table STR] [--end-row INT] -- [PLT.COMMAND ..
     lb plot data.csv -- hist x bins=50
     lb plot audio.db --table media --cols size,duration -- scatter size duration
     lb plot a.csv b.csv --join-tables -- sort -u time_created desc -- plot index time_created
+    lb plot data.csv --where 'duration > 60'
+    lb plot data.csv --classify 'size > 1GB' --groupby category
+    lb plot data.csv --classify duration --bins 5 --groupby category --agg mean
+    lb plot data.csv --groupby category --agg count --top 10
 """
 
 markdown_tables = """library markdown-tables PATH ... [--table STR] [--end-row INT] [--transpose] [--filetype]
