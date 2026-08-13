@@ -510,3 +510,129 @@ def test_lb_plot_groupby_missing_column(tmp_path, caplog):
             ]
         )
     assert "--groupby column 'nope' not found" in caplog.text
+
+
+def _write_lognormal(tmp_path, seed=7):
+    import numpy as np
+
+    df = tmp_path / "data.csv"
+    rng = np.random.default_rng(seed)
+    df.write_text("size\n" + "\n".join(map(str, rng.lognormal(3, 1.2, 500))) + "\n")
+    return df
+
+
+def _write_normal(tmp_path, seed=7):
+    import numpy as np
+
+    df = tmp_path / "data.csv"
+    rng = np.random.default_rng(seed)
+    df.write_text("a\n" + "\n".join(map(str, rng.normal(50, 10, 500))) + "\n")
+    return df
+
+
+def test_lb_plot_auto_detects_lognormal(tmp_path):
+    plt.close("all")
+    df = _write_lognormal(tmp_path)
+    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    ax = _figure_by_title("Size Distribution (Log-normal)")
+    assert ax.get_xscale() == "log"
+    assert len(ax.lines) == 1  # fitted lognormal PDF overlay
+
+
+def test_lb_plot_auto_overlays_pdf_for_normal(tmp_path):
+    plt.close("all")
+    df = _write_normal(tmp_path)
+    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    ax = _figure_by_title("A Distribution")
+    assert ax.get_xscale() == "linear"
+    assert len(ax.lines) == 1  # fitted normal PDF overlay
+
+
+def test_lb_plot_scale_off_disables_detection(tmp_path):
+    plt.close("all")
+    df = _write_lognormal(tmp_path)
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            "--scale",
+            "off",
+            str(df),
+        ]
+    )
+    ax = _figure_by_title("Size Distribution")
+    assert ax.get_xscale() == "linear"
+    assert len(ax.lines) == 0
+
+
+def test_lb_plot_scale_log_forces_log_scale(tmp_path):
+    plt.close("all")
+    df = _write_normal(tmp_path)
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            "--scale",
+            "log",
+            str(df),
+        ]
+    )
+    ax = _figure_by_title("A Distribution (Log)")
+    assert ax.get_xscale() == "log"
+
+
+def test_lb_plot_manual_hist_detects_lognormal(tmp_path):
+    plt.close("all")
+    df = _write_lognormal(tmp_path)
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            str(df),
+            "--",
+            "hist",
+            "size",
+        ]
+    )
+    ax = plt.gca()
+    assert ax.get_xscale() == "log"
+    assert len(ax.lines) == 1
+
+
+def test_lb_plot_manual_hist_forced_log(tmp_path):
+    plt.close("all")
+    df = _write_normal(tmp_path)
+    lb(
+        [
+            "plot",
+            "--no-show-kitty",
+            "--no-show-external",
+            "--scale",
+            "log",
+            str(df),
+            "--",
+            "hist",
+            "a",
+        ]
+    )
+    ax = plt.gca()
+    assert ax.get_xscale() == "log"
+
+
+def test_detect_distribution():
+    import numpy as np
+    import pandas as pd
+
+    from library.utils.arggroups import detect_distribution
+
+    rng = np.random.default_rng(3)
+    assert detect_distribution(pd.Series(rng.normal(50, 10, 500))) == "normal"
+    assert detect_distribution(pd.Series(rng.lognormal(3, 1, 500))) == "lognormal"
+    assert detect_distribution(pd.Series(rng.exponential(50, 500))) == "log"
+    assert detect_distribution(pd.Series(rng.beta(0.5, 0.5, 500))) == "logit"
+    assert detect_distribution(pd.Series(rng.gamma(5, 1, 500))) == "skewed"
+    assert detect_distribution(pd.Series([1, 2, 3])) is None  # too few samples
+    assert detect_distribution(pd.Series([0, 1, 2, 3])) in (None, "skewed")  # non-positive can't be lognormal

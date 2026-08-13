@@ -1,4 +1,4 @@
-import argparse, os, random, re, sqlite3, textwrap, typing
+import argparse, functools, os, random, re, sqlite3, textwrap, typing
 from pathlib import Path
 from shutil import which
 
@@ -2333,6 +2333,12 @@ AUTO_PLOT_MAX_PAIRS = 6
 AUTO_PLOT_PAIRS_CAP_NUMERIC_COLS = 4
 AUTO_PLOT_FIGSIZE_MIN = 4
 AUTO_PLOT_FIGSIZE_PER_COL = 0.5
+DIST_DETECT_MIN_SAMPLES = 30
+DIST_DETECT_ALPHA = 0.05
+DIST_RENDER_MIN_UNIQUE = 2
+DIST_LOG_RATIO = 100.0
+DIST_SYMLOG_RATIO = 100.0
+DIST_SKEW_THRESHOLD = 1.0
 
 
 def auto_plot_add_figure(figures, fig, tight=True):
@@ -2344,18 +2350,129 @@ def auto_plot_add_figure(figures, fig, tight=True):
     figures.append(fig)
 
 
-def auto_plot_histograms(figures, df, numeric_cols):
+def detect_distribution(s):
+    """Classify a numeric series to pick a histogram axis scale: 'normal', 'lognormal', 'log',
+    'symlog', 'logit', 'skewed', or None if too small."""
+    import numpy as np
+    from scipy.stats import normaltest
+
+    s = s.dropna()
+    if len(s) < DIST_DETECT_MIN_SAMPLES or s.nunique() < DIST_RENDER_MIN_UNIQUE:
+        return None
+    try:
+        _, p = normaltest(s.to_numpy())
+    except ValueError:
+        return None
+
+    result = "skewed"
+    if np.isfinite(p) and p > DIST_DETECT_ALPHA:
+        result = "normal"
+    elif s.gt(0).all() and s.lt(1).all():
+        result = "logit"  # proportions/probabilities in (0,1)
+    elif s.gt(0).all():
+        log_p = np.nan
+        try:
+            _, log_p = normaltest(np.log(s.to_numpy()))
+        except ValueError:
+            pass
+        if np.isfinite(log_p) and log_p > DIST_DETECT_ALPHA:
+            result = "lognormal"
+        elif np.isfinite(s.skew()) and s.skew() > DIST_SKEW_THRESHOLD and s.max() / s.min() > DIST_LOG_RATIO:
+            result = "log"  # strictly positive, heavy right-skew
+    else:
+        nonzero = s[s != 0].abs()
+        if (
+            len(nonzero) >= DIST_RENDER_MIN_UNIQUE
+            and nonzero.max() / nonzero.min() > DIST_SYMLOG_RATIO
+            and abs(s.skew()) > DIST_SKEW_THRESHOLD
+        ):
+            result = "symlog"  # spans orders of magnitude with zero/negative values
+    return result
+
+
+def log_bins(s, nbins):
+    """Bin edges evenly spaced in log space for a positive series."""
+    import numpy as np
+
+    s = s[s > 0]
+    return np.logspace(np.log10(s.min()), np.log10(s.max()), num=nbins)
+
+
+def overlay_fitted_pdf(ax, s, kind, bins, n):
+    """Overlay a fitted distribution PDF scaled to a count histogram's bars."""
+    import numpy as np
+    from scipy.stats import lognorm, norm
+
+    if kind == "normal":
+        s = s.dropna()
+        if s.nunique() < DIST_RENDER_MIN_UNIQUE:
+            return
+        mu, std = norm.fit(s)
+        x = np.linspace(bins[0], bins[-1], 200)
+        y = norm.pdf(x, mu, std) * n.sum() * np.diff(bins).mean()
+        ax.plot(x, y, color="tab:red", lw=1.5)
+    elif kind == "lognormal":
+        s = s[s > 0]
+        if len(s) < DIST_RENDER_MIN_UNIQUE or s.nunique() < DIST_RENDER_MIN_UNIQUE:
+            return
+        shape, loc, scale = lognorm.fit(s)
+        widths = np.diff(bins)
+        centers = bins[:-1] + widths / 2
+        ax.plot(centers, lognorm.pdf(centers, shape, loc, scale) * n.sum() * widths, color="tab:red", lw=1.5)
+
+
+def plot_histogram(ax, s, kind=None, bins=None, **kwargs):
+    """Draw a count histogram on a scale matched to the data. `kind` is None (auto-detect), a scale
+    name ('normal', 'log', 'symlog', 'logit'), or 'off'. Returns the effective kind."""
+    import numpy as np
+
+    s = s.dropna()
+    if kind is None:
+        kind = detect_distribution(s)
+
+    scale = {"normal": "linear", "lognormal": "log", "log": "log", "symlog": "symlog", "logit": "logit"}.get(
+        kind, "linear"
+    )
+    if scale == "log" and (s <= 0).any():
+        scale, kind = "linear", None  # non-positive data can't be log-scaled
+    if scale == "logit" and not (s.gt(0).all() and s.lt(1).all()):
+        scale, kind = "linear", None  # logit only makes sense for data in (0,1)
+
+    if scale == "log":
+        ax.set_xscale("log")
+        if bins is None:
+            bins = log_bins(s, min(AUTO_PLOT_MAX_HIST_BINS, max(AUTO_PLOT_MIN_HIST_BINS, s.nunique())))
+    elif scale == "symlog":
+        ax.set_xscale("symlog")
+    elif scale == "logit":
+        ax.set_xscale("logit")
+    if bins is None:
+        bins = min(AUTO_PLOT_MAX_HIST_BINS, max(AUTO_PLOT_MIN_HIST_BINS, s.nunique()))
+
+    n, bins, _ = ax.hist(s.to_numpy(), bins=bins, alpha=kwargs.pop("alpha", 0.7), **kwargs)
+
+    if kind in ("normal", "lognormal"):
+        overlay_fitted_pdf(ax, s, kind, bins, n)
+    return kind
+
+
+def auto_plot_histograms(figures, df, numeric_cols, scale=None):
     import matplotlib.pyplot as plt
 
     for col in numeric_cols:
         s = df[col].dropna()
         if s.empty or s.nunique() < AUTO_PLOT_MIN_HIST_BINS:
             continue
+        kind = None if scale == "auto" else scale  # a forced scale or 'off'
         fig, ax = plt.subplots()
-        ax.hist(s.to_numpy(), bins=min(AUTO_PLOT_MAX_HIST_BINS, max(AUTO_PLOT_MIN_HIST_BINS, s.nunique())), alpha=0.7)
+        kind = plot_histogram(ax, s, kind=kind)
         ax.set_ylabel("Count")
         label_axis(ax, "x", col)
-        ax.set_title(f"{humanize_col_label(col)} Distribution")
+        title = f"{humanize_col_label(col)} Distribution"
+        suffix = {"lognormal": " (Log-normal)", "log": " (Log)", "symlog": " (Symlog)", "logit": " (Logit)"}.get(
+            kind, ""
+        )
+        ax.set_title(title + suffix)
         auto_plot_add_figure(figures, fig)
 
 
@@ -2493,7 +2610,7 @@ def auto_plot_missing(figures, df):
     auto_plot_add_figure(figures, fig)
 
 
-def auto_plot(df):
+def auto_plot(df, scale=None):
     """Analyze a dataframe like `library eda` and return a list of useful figures."""
     import pandas as pd
 
@@ -2507,7 +2624,7 @@ def auto_plot(df):
     numeric_cols = [c for c in data_cols if pd.api.types.is_numeric_dtype(df[c])]
     categorical_cols = [c for c in data_cols if c not in numeric_cols]
 
-    auto_plot_histograms(figures, df, numeric_cols)
+    auto_plot_histograms(figures, df, numeric_cols, scale)
     auto_plot_categories(figures, df, categorical_cols)
     auto_plot_time_series(figures, df, numeric_cols)
     auto_plot_correlation(figures, df, numeric_cols)
@@ -2520,7 +2637,7 @@ def matplotlib_post(args, unknown_args):
     import pandas as pd
 
     if not unknown_args:
-        args.plot_fn = auto_plot
+        args.plot_fn = functools.partial(auto_plot, scale=getattr(args, "scale", "auto"))
         return
 
     def plot_fn(df):
@@ -2547,7 +2664,14 @@ def matplotlib_post(args, unknown_args):
                 method(*pargs, **kwargs)
             elif len(cols) == 1:
                 log.debug("Running plt.%s(df[%s], %s, %s)", method_name, cols[0], pargs, kwargs)
-                method(series(cols[0]), *pargs, **kwargs)
+                s = series(cols[0])
+                if method_name == "hist":
+                    kind = getattr(args, "scale", "auto")
+                    if kind == "auto":
+                        kind = detect_distribution(s)
+                    plot_histogram(plt.gca(), s, kind=kind, **kwargs)
+                else:
+                    method(s, *pargs, **kwargs)
             else:
                 # the first column is x-axis and the rest are y-axes
                 x = series(cols[0])
