@@ -61,6 +61,19 @@ def test_human_to_seconds():
     assert nums.human_to_seconds("3.5y") == 110376000
 
 
+def test_human_to_seconds_invalid():
+    # Malformed input must raise a clear ValueError, not IndexError/KeyError.
+    for bad in ["", "forever", "h", "5 fortnights", "5x"]:
+        with pytest.raises(ValueError):
+            nums.human_to_seconds(bad)
+
+
+def test_human_to_bytes_invalid():
+    for bad in ["", "big", "mb"]:
+        with pytest.raises(ValueError):
+            nums.human_to_bytes(bad)
+
+
 @pytest.mark.parametrize(
     ("input_sizes", "s"),
     [
