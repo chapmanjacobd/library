@@ -1246,6 +1246,8 @@ plot = """library plot PATH ... [--table STR] [--end-row INT] -- [PLT.COMMAND ..
 
     With no commands after `--`, the table is analyzed like `library eda` and a set of figures is generated: histograms for numeric columns, bar charts of common values for low/medium-cardinality columns, time-series when a date column is detected, pairwise scatter plots of the most correlated numeric columns, a correlation heatmap, and a missing-values chart.
 
+    Histograms get a fitted PDF overlay, and each numeric column is drawn on a scale matched to its distribution (D'Agostino-Pearson test): normal data on a linear axis, log-normal or heavy right-skewed positive data on a log axis, data spanning orders of magnitude that includes zero/negative values on a symlog axis, and proportions in (0,1) on a logit axis. `--scale log|symlog|logit` forces that scale on all histograms; `--scale off` disables detection and draws plain linear histograms.
+
     Pass a list of matplotlib.pyplot commands after `--` for manual control. Each command is a plt function name followed by column names (the first column is the x-axis, the rest are y-axes) and optional positional/keyword arguments. `index` refers to the row index. A single column is passed as a single dataset (e.g. for hist).
 
     Axes are auto-labeled from the column names and units are guessed from common names (e.g. `size` -> bytes, `duration` -> seconds, `time_*` -> dates). A title is auto-added from the plotted columns (e.g. `scatter size duration` -> "Duration vs Size"). Pass an explicit `xlabel=` / `ylabel=` / `title=` to override.

@@ -59,6 +59,16 @@ def parse_args():
     transform.add_argument(
         "--top", type=int, help="Keep only the N most numerous groups when using --groupby"
     )
+    transform.add_argument(
+        "--scale",
+        default="auto",
+        choices=["auto", "log", "symlog", "logit", "off"],
+        help="""Detect a fitting axis scale for each numeric column and render it accordingly.
+`auto` picks linear for normal data, log for log-normal or heavy right-skewed positive data,
+symlog for data spanning orders of magnitude that includes zero/negative values, and logit for
+proportions in (0,1); a fitted PDF is overlaid when a normal/lognormal match is found.
+Forcing a value applies that scale to all histograms; `off` draws plain linear histograms.""",
+    )
 
     arggroups.clobber(parser)
     arggroups.debug(parser)
