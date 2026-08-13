@@ -19,6 +19,8 @@ from library.utils.arg_utils import override_sort, parse_ambiguous_sort
 from library.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT, SC, DBType
 from library.utils.log_utils import log
 
+EPOCH_MILLISECONDS_THRESHOLD = 1e11
+
 
 def get_caller_name():
     import inspect
@@ -2139,65 +2141,216 @@ def ocrmypdf_post(args):
 def build_actions(unknown_args, df_columns):
     import matplotlib.pyplot as plt
 
+    def is_plt_method(token):
+        return callable(getattr(plt, token, None))
+
     actions = []
     i = 0
     while i < len(unknown_args):
-        method_name = unknown_args[i]
-        attr = getattr(plt, method_name, None)
-        if callable(attr):
+        token = unknown_args[i]
+        method_name, value = token.split("=", 1) if "=" in token else (token, None)
+        if token == "--":  # bare separator between plt commands  # noqa: S105
+            i += 1
+            continue
+        if is_plt_method(token):
             cols = []
             pargs = []
             kwargs = {}
             i += 1
             while i < len(unknown_args):
-                if unknown_args[i] in df_columns:
-                    cols.append(unknown_args[i])
-                elif "=" in unknown_args[i]:
-                    k, v = unknown_args[i].split("=")
-                    kwargs[k] = v
+                nxt = unknown_args[i]
+                if nxt == "--":  # next plt command begins after this separator
+                    i += 1
+                    break
+                if nxt in df_columns:
+                    cols.append(nxt)
+                elif "=" in nxt:
+                    k, v = nxt.split("=", 1)
+                    if is_plt_method(k):  # e.g. xlabel=foo is a new plt command
+                        break
+                    kwargs[k] = objects.coerce_arg(v)
+                elif is_plt_method(nxt):
+                    break
                 else:  # current element is a positional method value
-                    pargs.append(unknown_args[i])
+                    pargs.append(nxt)
 
                 i += 1
-                # check if the next element is another plt method
-                if i < len(unknown_args) and callable(getattr(plt, unknown_args[i], None)):
-                    break
 
             actions.append((method_name, cols, pargs, kwargs))
 
+        elif is_plt_method(method_name):  # e.g. xlabel=foo, title=My Plot, grid=True
+            pargs = [] if objects.coerce_arg(value) is True else [objects.coerce_arg(value)]
+            actions.append((method_name, [], pargs, {}))
+
+            i += 1
         else:
-            log.warning("Unknown argument %s at position %s", method_name, i)
+            log.warning("Unknown argument %s at position %s", token, i)
             i += 1
 
     return actions
 
 
+def col_axis_kind(col):
+    """Guess what a column represents so we can add units and tick formatters."""
+    c = col.lower()
+    if c == "index":
+        return "index"
+    checks = (
+        ("date", any(k in c for k in ("timestamp", "epoch", "created", "modified", "uploaded", "downloaded", "deleted", "published", "added", "time_", "_time", "_date")) or c == "time"),
+        ("bytes", "size" in c or c in ("bytes", "byte")),
+        ("duration", any(k in c for k in ("duration", "runtime", "seconds", "secs", "length"))),
+        ("bitrate", "bitrate" in c),
+        ("fps", "fps" in c or "framerate" in c),
+        ("bpm", c == "bpm"),
+    )
+    for kind, matches in checks:
+        if matches:
+            return kind
+    return None
+
+
+def humanize_col_label(col):
+    if col.lower() == "index":
+        return "Row Index"
+    words = [w.upper() if w.lower() in ("fps", "bpm", "id", "url", "md5", "sha", "gps", "ip") else w.capitalize() for w in col.replace("_", " ").replace("-", " ").split()]
+    return " ".join(words) or col
+
+
+def make_tick_formatter(kind):
+    import datetime as dt
+
+    import numpy as np
+    from humanize import naturalsize
+
+    def fmt_bytes(v, _pos=None):
+        if not np.isfinite(v):
+            return ""
+        return naturalsize(float(v))
+
+    def fmt_duration(v, _pos=None):
+        if not np.isfinite(v):
+            return ""
+        sign = "-" if v < 0 else ""
+        v = abs(int(v))
+        h, rem = divmod(v, 3600)
+        m, s = divmod(rem, 60)
+        return f"{sign}{h}:{m:02d}:{s:02d}" if h else f"{sign}{m}:{s:02d}"
+
+    def fmt_date(v, _pos=None):
+        if not np.isfinite(v):
+            return ""
+        v = float(v)
+        if abs(v) > EPOCH_MILLISECONDS_THRESHOLD:  # likely milliseconds
+            v /= 1000.0
+        try:
+            return dt.datetime.fromtimestamp(v, tz=dt.timezone.utc).astimezone().strftime("%Y-%m-%d")
+        except (ValueError, OSError, OverflowError):
+            return ""
+
+    fmt = {"date": fmt_date, "bytes": fmt_bytes, "duration": fmt_duration}.get(kind)
+    if fmt is None:
+        return None
+    from matplotlib.ticker import FuncFormatter
+
+    return FuncFormatter(fmt)
+
+
+def plot_title(x_cols, y_cols, hist):
+    if hist and len(x_cols) == 1 and not y_cols:
+        return f"{humanize_col_label(x_cols[0])} Distribution"
+    if len(x_cols) == 1 and len(y_cols) == 1:
+        return f"{humanize_col_label(y_cols[0])} vs {humanize_col_label(x_cols[0])}"
+    if len(x_cols) == 1 and len(y_cols) > 1:
+        return f"{humanize_col_label(x_cols[0])} vs {len(y_cols)} Columns"
+    return None
+
+
+def label_axis(ax, which, col):
+    axis = ax.xaxis if which == "x" else ax.yaxis
+    kind = col_axis_kind(col)
+    axis.set_label_text(humanize_col_label(col) + ({"bytes": " (bytes)", "duration": " (s)", "bitrate": " (bit/s)"}.get(kind, "")))
+    fmt = make_tick_formatter(kind)
+    if fmt:
+        axis.set_major_formatter(fmt)
+
+
+def auto_label_axes(plt, actions):
+    """Add axis labels, units, and a title based on the column names that were actually plotted."""
+    data_actions = [(m, cols) for m, cols, _, _ in actions if cols]
+    if not data_actions:
+        return
+    user_labels = {m for m, _, _, _ in actions if m in ("xlabel", "ylabel", "title")}
+
+    x_cols, y_cols, hist = [], [], False
+    for m, cols in data_actions:
+        if len(cols) == 1:
+            if m == "hist":
+                x_cols.append(cols[0])
+                hist = True
+            else:  # a single dataset is plotted against the row index
+                y_cols.append(cols[0])
+                x_cols.append("index")
+        else:
+            x_cols.append(cols[0])
+            y_cols.extend(cols[1:])
+    x_cols = list(dict.fromkeys(x_cols))
+    y_cols = list(dict.fromkeys(y_cols))
+
+    ax = plt.gca()
+
+    if "xlabel" not in user_labels and len(x_cols) == 1:
+        label_axis(ax, "x", x_cols[0])
+
+    if "ylabel" not in user_labels:
+        if len(y_cols) == 1:
+            label_axis(ax, "y", y_cols[0])
+        elif hist and not y_cols:
+            ax.set_ylabel("Count")
+
+    if "title" not in user_labels:
+        title = plot_title(x_cols, y_cols, hist)
+        if title:
+            ax.set_title(title)
+
+
 def matplotlib_post(args, unknown_args):
     import matplotlib.pyplot as plt
+    import pandas as pd
 
     def plot_fn(df):
-        actions = build_actions(unknown_args or ["plot", *df.columns], df.columns)
+        numeric_columns = df.select_dtypes("number").columns.tolist()
+        actions = build_actions(unknown_args or ["plot", *numeric_columns], [*df.columns, "index"])
+
+        if any("index" in cols for _, cols, _, _ in actions):
+            df = df.copy()
+            df["index"] = range(len(df))
+
+        def series(col):
+            s = df[col]
+            if not pd.api.types.is_numeric_dtype(s):
+                return pd.to_numeric(s, errors="coerce")
+            return s
 
         for method_name, cols, pargs, kwargs in actions:
             method = getattr(plt, method_name)
 
-            if cols:
-                if len(cols) == 1:
-                    if cols == ["index"]:
-                        df["level_0"] = df["index"]
-                    df["index"] = range(len(df))
-                    cols = ["index", *cols]
+            # kwarg values that name a column are passed as the column data, e.g. c=size
+            kwargs = {k: (series(v) if isinstance(v, str) and v in df.columns else v) for k, v in kwargs.items()}
 
-                # the first column is x-axis and the rest are y-axes
-                x_col = cols[0]
-                y_cols = cols[1:]
-
-                for y_col in y_cols:
-                    log.debug("Running plt.%s(df[%s], df[%s], %s, %s)", method_name, x_col, y_col, pargs, kwargs)
-                    method(df[x_col], df[y_col], *pargs, **kwargs)
-            else:
+            if not cols:
                 log.debug("Running plt.%s(%s, %s)", method_name, pargs, kwargs)
                 method(*pargs, **kwargs)
+            elif len(cols) == 1:
+                log.debug("Running plt.%s(df[%s], %s, %s)", method_name, cols[0], pargs, kwargs)
+                method(series(cols[0]), *pargs, **kwargs)
+            else:
+                # the first column is x-axis and the rest are y-axes
+                x = series(cols[0])
+                for y_col in cols[1:]:
+                    log.debug("Running plt.%s(df[%s], df[%s], %s, %s)", method_name, cols[0], y_col, pargs, kwargs)
+                    method(x, series(y_col), *pargs, **kwargs)
+
+        auto_label_axes(plt, actions)
 
         return plt
 

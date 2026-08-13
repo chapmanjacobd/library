@@ -1238,11 +1238,24 @@ eda = """library eda PATH ... [--table STR] [--end-row INT] [--repl]
     Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 """
 
-plot = """library plot PATH ... [--table STR] [--end-row INT]
+plot = """library plot PATH ... [--table STR] [--end-row INT] -- [PLT.COMMAND ...]
 
     Plot one or more files
 
     Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+    By default every numeric column is plotted against the first numeric column. Pass a list of matplotlib.pyplot commands after `--` for more control. Each command is a plt function name followed by column names (the first column is the x-axis, the rest are y-axes) and optional positional/keyword arguments. `index` refers to the row index. A single column is passed as a single dataset (e.g. for hist).
+
+    Axes are auto-labeled from the column names and units are guessed from common names (e.g. `size` -> bytes, `duration` -> seconds, `time_*` -> dates). A title is auto-added from the plotted columns (e.g. `scatter size duration` -> "Duration vs Size"). Pass an explicit `xlabel=` / `ylabel=` / `title=` to override.
+
+    Examples:
+
+    lb plot data.csv
+    lb plot data.csv -- plot x y
+    lb plot data.csv -- scatter x y s=3 alpha=0.5 label=points
+    lb plot data.csv -- hist x bins=50
+    lb plot audio.db --table media --cols size,duration -- scatter size duration
+    lb plot a.csv b.csv --join-tables -- sort -u time_created desc -- plot index time_created
 """
 
 markdown_tables = """library markdown-tables PATH ... [--table STR] [--end-row INT] [--transpose] [--filetype]

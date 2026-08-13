@@ -1,4 +1,4 @@
-import argparse, os, subprocess
+import argparse, os, subprocess, sys
 from tempfile import NamedTemporaryFile
 
 from library import usage
@@ -26,11 +26,21 @@ def parse_args():
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
-    args, unknown_args = parser.parse_known_intermixed_args()
+
+    # Everything after `--` is treated as a matplotlib command instead of a file path.
+    # e.g. lb plot data.csv -- scatter x y s=3 alpha=0.5
+    argv = sys.argv[1:]
+    plot_args = []
+    if "--" in argv:
+        separator = argv.index("--")
+        plot_args = argv[separator + 1 :]
+        argv = argv[:separator]
+
+    args, unknown_args = parser.parse_known_intermixed_args(argv)
     arggroups.args_post(args, parser)
 
     arggroups.table_like_post(args)
-    arggroups.matplotlib_post(args, unknown_args)
+    arggroups.matplotlib_post(args, [*plot_args, *unknown_args])
 
     return args
 
@@ -45,6 +55,8 @@ def create_plot(args, df):
 
 
 def file_plot(args, path):
+    import matplotlib.pyplot as plt
+
     for df_name, df in file_utils.read_file_to_dataframes(
         path,
         table_name=args.table_name,
@@ -69,6 +81,7 @@ def file_plot(args, path):
         else:
             print(f"## {path}:{df_name}")
 
+        plt.clf()  # start each dataset on a fresh figure
         plt = create_plot(args, df)
 
         if args.save:
