@@ -2456,6 +2456,27 @@ def auto_plot_correlation(figures, df, numeric_cols):
         auto_plot_add_figure(figures, fig)
 
 
+def auto_plot_grouped(figures, df):
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    agg = df.attrs.get("plot_agg", "count")
+    key_col = df.columns[0]
+    for agg_col in df.columns[1:]:
+        if not pd.api.types.is_numeric_dtype(df[agg_col]):
+            continue
+        fig, ax = plt.subplots()
+        ax.bar(range(len(df)), df[agg_col].to_numpy(), alpha=0.7)
+        ax.set_xticks(range(len(df)))
+        ax.set_xticklabels([str(v) for v in df[key_col]], rotation=45, ha="right")
+        label_axis(ax, "y", agg_col)
+        label = humanize_col_label(agg_col)
+        if agg != "count":
+            label = f"{agg.capitalize()} {label}"
+        ax.set_title(f"{label} per {humanize_col_label(key_col)}")
+        auto_plot_add_figure(figures, fig)
+
+
 def auto_plot_missing(figures, df):
     import matplotlib.pyplot as plt
 
@@ -2476,11 +2497,16 @@ def auto_plot(df):
     """Analyze a dataframe like `library eda` and return a list of useful figures."""
     import pandas as pd
 
+    figures = []
+
+    if df.attrs.get("plot_grouped"):
+        auto_plot_grouped(figures, df)
+        return figures
+
     data_cols = [c for c in df.columns if not is_key_col(c)]
     numeric_cols = [c for c in data_cols if pd.api.types.is_numeric_dtype(df[c])]
     categorical_cols = [c for c in data_cols if c not in numeric_cols]
 
-    figures = []
     auto_plot_histograms(figures, df, numeric_cols)
     auto_plot_categories(figures, df, categorical_cols)
     auto_plot_time_series(figures, df, numeric_cols)
