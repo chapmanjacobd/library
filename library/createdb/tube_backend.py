@@ -316,7 +316,6 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
                 if len(captions) > 0:
                     args.db["captions"].insert_all(captions, alter=True)
 
-            entry["id"] = media_id
             entry["playlists_id"] = playlists_id
             entry["chapter_count"] = chapter_count
 

@@ -1,6 +1,5 @@
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import suppress
 from pathlib import Path
 
 from library import usage
@@ -45,13 +44,16 @@ def full_hash_compare(paths):
 
 
 def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, skip_full_hash=False):
-    if len(paths) < 2:
-        raise ValueError("Not enough paths. Include 2 or more paths to compare")
-
     path_stats = {}
+    existing_paths = []
     for path in paths:
-        with suppress(FileNotFoundError):
+        try:
             path_stats[path] = Path(path).stat()
+            existing_paths.append(path)
+        except FileNotFoundError:
+            log.error("File not found %s", path)
+    if len(existing_paths) < 2:
+        raise ValueError("Not enough paths. Include 2 or more paths to compare")
 
     sizes = [stat_res.st_size for stat_res in path_stats.values()]
     if not all(size == sizes[0] for size in sizes):
@@ -71,7 +73,7 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {
             path: pool.submit(sample_hash.sample_hash_file, path, threads=threads, gap=gap, chunk_size=chunk_size)
-            for path in paths
+            for path in existing_paths
         }
 
     paths_dict = {}
@@ -87,7 +89,7 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
     if is_equal:
         if skip_full_hash:
             log.info("Files might be equal:\n%s", paths_str)
-        elif full_hash_compare(paths):
+        elif full_hash_compare(existing_paths):
             log.info("Files are equal:\n%s", paths_str)
         else:
             log.info("Files are similar but NOT equal:\n%s", paths_str)

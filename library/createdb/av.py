@@ -213,7 +213,7 @@ def munge_av_tags(args, m) -> dict:
                 args.delete_corrupt, corruption, duration
             ) and not file_utils.is_file_open(path):
                 threshold_str = (
-                    strings.percent(args.delete_corrupt) if 0 < args.delete_corrupt < 1 else (args.delete_corrupt + "s")
+                    strings.percent(args.delete_corrupt) if 0 < args.delete_corrupt < 1 else f"{args.delete_corrupt}s"
                 )
                 log.warning(
                     "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str

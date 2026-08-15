@@ -15,5 +15,6 @@ def test_moved_media_handles_quotes():
 
     media_printer.moved_media(args, ["/foo/o'brien/file.mp4"], "/foo/o'brien", "/foo/renamed")
 
-    row = db["media"].get({"playlists_id": 1, "path": "/foo/renamed/file.mp4"})
-    assert row is not None
+    rows = list(db["media"].rows)
+    assert len(rows) == 1
+    assert rows[0]["path"] == "/foo/renamed/file.mp4"

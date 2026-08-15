@@ -184,12 +184,12 @@ def test_time_filtering():
 
     consts.APPLICATION_START = 2000
 
-    # Created within 1500 units (2000 - 1000 = 1000, which is < 1500)
+    # Created within 1500 units (epoch timestamps: new=1000 > 2000-1500, old=100 < 2000-1500)
     args = Namespace(
         defaults=["sizes"],  # Skip size filtering
         type=[],
         no_type=[],
-        time_created=lambda x: x < 1500,
+        time_created=lambda x: x >= 500,
         to_json=False,
         sort=[],
         limit=None,
@@ -198,8 +198,8 @@ def test_time_filtering():
     assert len(filtered) == 1
     assert filtered[0]["path"] == "new"
 
-    # Created before (older than) 1500 units (2000 - 100 = 1900, which is > 1500)
-    args.time_created = lambda x: x > 1500
+    # Created before (older than) 1500 units
+    args.time_created = lambda x: x < 500
     filtered = filter_items_by_criteria(args, files)
     assert len(filtered) == 1
     assert filtered[0]["path"] == "old"
@@ -209,17 +209,16 @@ def test_time_created_within_uses_epoch_timestamp():
     # 4.1: filter_engine passes an *age* (APPLICATION_START - time_created) to
     # args.time_created which is built in arggroups.files_post to expect an *epoch*
     # timestamp, inverting --created-within/--created-before.
-    files = [
-        {"path": "old", "time_created": 100},
-        {"path": "new", "time_created": 1800},
-    ]
-
     import time
 
     from library.utils import consts, nums
 
-    now = time.time()
-    consts.APPLICATION_START = int(now)
+    now = int(time.time())
+    consts.APPLICATION_START = now
+    files = [
+        {"path": "old", "time_created": now - 10000},
+        {"path": "new", "time_created": now - 100},
+    ]
 
     def epoch_time_created_filter(timestamp):
         # exactly what arggroups.files_post builds (expects epoch timestamp)

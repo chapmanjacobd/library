@@ -427,18 +427,10 @@ def filter_items_by_criteria(args, items):
 
     if getattr(args, "time_created", []):
         items = [d if "time_created" in d else file_utils.get_file_stats(d) for d in items]
-        items = [
-            d
-            for d in items
-            if d["time_created"] > 0 and args.time_created(consts.APPLICATION_START - d["time_created"])  # type: ignore
-        ]
+        items = [d for d in items if d["time_created"] > 0 and args.time_created(d["time_created"])]  # type: ignore
     if getattr(args, "time_modified", []):
         items = [d if "time_modified" in d else file_utils.get_file_stats(d) for d in items]
-        items = [
-            d
-            for d in items
-            if d["time_modified"] > 0 and args.time_modified(consts.APPLICATION_START - d["time_modified"])  # type: ignore
-        ]
+        items = [d for d in items if d["time_modified"] > 0 and args.time_modified(d["time_modified"])]  # type: ignore
 
     if getattr(args, "to_json", False):
         items = [d if "size" in d else file_utils.get_file_stats(d) for d in items]

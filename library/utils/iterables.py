@@ -225,8 +225,8 @@ def return_unique_set_items(gen_func):
 def peek_value_exists(iterable: Iterator, key):
     peek, main = tee(iterable, 2)
 
-    d = next(peek)
-    exists = key in d
+    d = next(peek, None)
+    exists = d is not None and key in d
     return exists, main
 
 

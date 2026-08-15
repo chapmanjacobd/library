@@ -159,7 +159,7 @@ class SC:
     similar_folders = "similar-folders"
     similar_files = "similar-files"
     disk_usage = "disk-usage"
-    dedupe_media = "dedupe"
+    dedupe_media = "dedupe-media"
     web_add = "web-add"
     web_update = "web-update"
     computers_add = "computers-add"
@@ -223,7 +223,7 @@ TEXTRACT_EXTENSIONS = set(
     ["csv", "tab", "tsv", "doc", "docx", "eml", "epub", "json", "htm", "html", "msg", "odt", "pdf", "pptx", "ps", "rtf", "txt", "log", "xlsx", "xls"]
 )
 IMAGE_EXTENSIONS = set(
-    ["aai", "ai", "ait", "avs", "bpg", "png", "arq", "arw", "cr2", "cs1", "dcp", "dng", "eps", "epsf", "ps", "erf", "exv", "fff", "gpr", "hdp", "wdp", "jxr", "iiq", "insp", "jpeg", "jpg", "jpe", "mef", "mie", "mos", "mrw", "nef", "nrw", "orf", "ori", "pef", "psd", "psb", "psdt", "raf", "raw", "rw2", "rwl", "sr2", "srw", "thm", "tiff", "tif", "x3f", "flif", "icc", "icm", "avif", "heic", "heif", "hif", "jp2", "jpf", "jpm", "jpx", "j2c", "jpc", "3fr", "btf", "dcr", "k25", "kdc", "miff", "mif", "rwz", "srf", "xcf", "bpg", "doc", "dot", "fla", "fpx", "max", "ppt", "pps", "pot", "vsd", "xls", "xlt", "pict", "pct", "360", "dvb", "f4a", "f4b", "f4p", "lrv", "bmp", "bmp2", "bmp3", "jng", "mng", "emf", "wmf", "m4p", "qt", "mqv", "qtif", "qti", "qif", "cr3", "crm", "jxl", "crw", "ciff", "ind", "indd", "indt", "nksc", "vrd", "xmp", "la", "ofr", "pac", "riff", "rif", "wav", "webp", "wv", "djvu", "djv", "dvr-ms", "insv", "inx", "swf", "exif", "eip", "pspimage", "fax", "farbfeld", "fits", "fl32", "jbig", "pbm", "pfm", "pgm", "phm", "pnm", "ppm", "ptif", "qoi", "tga"]
+    ["aai", "ai", "ait", "avs", "bpg", "png", "arq", "arw", "cr2", "cs1", "dcp", "dng", "eps", "epsf", "ps", "erf", "exv", "fff", "gpr", "hdp", "wdp", "jxr", "iiq", "insp", "jpeg", "jpg", "jpe", "mef", "mie", "mos", "mrw", "nef", "nrw", "orf", "ori", "pef", "psd", "psb", "psdt", "raf", "raw", "rw2", "rwl", "sr2", "srw", "thm", "tiff", "tif", "x3f", "flif", "icc", "icm", "avif", "heic", "heif", "hif", "jp2", "jpf", "jpm", "jpx", "j2c", "jpc", "3fr", "btf", "dcr", "k25", "kdc", "miff", "mif", "rwz", "srf", "xcf", "bpg", "doc", "dot", "fla", "fpx", "max", "ppt", "pps", "pot", "vsd", "xls", "xlt", "pict", "pct", "360", "dvb", "f4a", "f4b", "f4p", "lrv", "bmp", "bmp2", "bmp3", "jng", "mng", "emf", "wmf", "m4p", "qt", "mqv", "qtif", "qti", "qif", "cr3", "crm", "jxl", "crw", "ciff", "ind", "indd", "indt", "nksc", "vrd", "xmp", "la", "ofr", "pac", "webp", "wv", "djvu", "djv", "dvr-ms", "insv", "inx", "swf", "exif", "eip", "pspimage", "fax", "farbfeld", "fits", "fl32", "jbig", "pbm", "pfm", "pgm", "phm", "pnm", "ppm", "ptif", "qoi", "tga"]
 )
 PIL_EXTENSIONS = set(
     ["apng", "blp", "bmp", "bufr", "bw", "cur", "dcx", "dds", "dib", "emf", "eps", "fit", "fits", "flc", "fli", "fpx", "ftc", "ftex", "ftu", "gbr", "gd", "gif", "grib", "h5", "hdf", "icb", "icns", "ico", "iim", "im", "imt", "iptc", "j2c", "j2k", "jfif", "jp2", "jpc", "jpe", "jpeg", "jpf", "jpg", "jpx", "mcidas", "mic", "mpeg", "mpg", "mpo", "msp", "naa", "palm", "pbm", "pcd", "pcx", "pdf", "pfm", "pgm", "pixar", "png", "pnm", "ppm", "ps", "psd", "pxr", "qoi", "ras", "rgb", "rgba", "sgi", "spi", "spider", "sun", "tga", "tif", "tiff", "vda", "vst", "wal", "webp", "wmf", "xbm", "xpm"]
@@ -252,7 +252,7 @@ time_facets = [
     "downloaded",
 ]
 
-frequency = ["minutely", "hourly", "daily", "weekly", "monthly", "quarterly", "yearly", "decadally"]
+frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
 
 
 PLAYLIST_KNOWN_KEYS = ("description", "url", "duration", "view_count", "webpage_url", "original_url", "time_deleted")

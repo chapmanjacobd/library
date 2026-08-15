@@ -372,6 +372,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         if args.profile in (DBType.audio, DBType.video):
             is_supported = tube_backend.is_supported
         elif args.profile in (DBType.image,):
+            gallery_backend.load_module_level_gallery_dl(args)
             is_supported = gallery_backend.is_supported
         else:
             raise NotImplementedError

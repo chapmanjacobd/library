@@ -12,7 +12,7 @@ from library.utils.log_utils import log
 gallery_dl = None
 
 
-def load_module_level_gallery_dl(args) -> ModuleType:
+def load_module_level_gallery_dl(args=None) -> ModuleType:
     global gallery_dl
 
     if gallery_dl is None:
@@ -20,12 +20,6 @@ def load_module_level_gallery_dl(args) -> ModuleType:
 
         gallery_dl.config.load()
 
-        download_archive = Path(args.download_archive or "~/.local/share/gallerydl.sqlite3").expanduser().resolve()
-        if download_archive.exists():
-            gallery_dl.config.set(("extractor",), "archive", str(download_archive))
-
-        if hasattr(args, "prefix"):
-            gallery_dl.config.set(("extractor",), "base-directory", args.prefix)
         gallery_dl.config.set(("extractor",), "parent-directory", False)
         gallery_dl.config.set(
             ("extractor",),
@@ -47,13 +41,23 @@ def load_module_level_gallery_dl(args) -> ModuleType:
         if consts.PYTEST_RUNNING:
             gallery_dl.config.set(("extractor",), "download", False)
 
+        is_supported.extractors = gallery_dl.extractor.extractors()
+
+    if args is not None:
+        is_supported.configured = True
+        download_archive = Path(args.download_archive or "~/.local/share/gallerydl.sqlite3").expanduser().resolve()
+        if download_archive.exists():
+            gallery_dl.config.set(("extractor",), "archive", str(download_archive))
+
+        if hasattr(args, "prefix"):
+            gallery_dl.config.set(("extractor",), "base-directory", args.prefix)
+
     return gallery_dl
 
 
-def is_supported(args, url) -> bool:
-    if getattr(is_supported, "extractors", None) is None:
-        gallery_dl = load_module_level_gallery_dl(args)
-        is_supported.extractors = gallery_dl.extractor.extractors()
+def is_supported(url) -> bool:
+    if not getattr(is_supported, "configured", False):
+        raise RuntimeError("gallery_backend.is_supported() requires load_module_level_gallery_dl(args) to be called first")
 
     return any(ie.pattern.match(url) and ie.category != "generic" for ie in is_supported.extractors)
 

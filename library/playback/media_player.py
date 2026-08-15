@@ -709,7 +709,7 @@ def play_list(args, media):
         playlist = MediaPrefetcher(args, media)
         playlist.fetch()
 
-        if args.multiple_playback > 1:
+        if args.multiple_playback and args.multiple_playback != 1:
             multiple_player(args, playlist)
         else:
             while playlist.remaining:
