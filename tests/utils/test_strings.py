@@ -313,3 +313,14 @@ def test_glob_match_all():
     assert strings.glob_match_all(["foo", "bar"], ["foo", "bar"])
     assert not strings.glob_match_all(["foo", "baz"], ["foo", "bar"])
     assert strings.glob_match_all("foo", "foo")
+
+
+def test_relative_datetime_in_future_remainder():
+    # 4.2: "in N days" is off-by-one for future times with a remainder because
+    # timedelta floors toward negative infinity.
+    from datetime import datetime, timedelta
+
+    now = datetime.now(tz=tz.UTC).astimezone()
+    future = now + timedelta(days=2, hours=1)  # 2 days and 1 hour in the future
+    result = strings.relative_datetime(future.timestamp())
+    assert result.startswith("in 2 days")

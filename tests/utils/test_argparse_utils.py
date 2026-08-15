@@ -49,3 +49,12 @@ def test_argparse_dict_boolean_conversion():
     assert args.config == {"enabled": True, "disabled": False, "count": 42}
     assert args.config["enabled"] is True
     assert args.config["disabled"] is False
+
+
+def test_override_sort_random_substring():
+    # 4.2: override_sort does a blind .replace("random", "random()") which corrupts
+    # column names containing the substring "random".
+    from library.utils.arg_utils import override_sort
+
+    assert override_sort("randomness") == "randomness"
+    assert override_sort("random") == "random()"

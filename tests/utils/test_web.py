@@ -473,3 +473,16 @@ def test_is_html():
         assert not web.is_html(args, "http://example.com/video.mp4")
     finally:
         web.requests_session = original_session
+
+def test_webpath_parts():
+    # 4.1: WebPath.parts splits the literal "/" and "&" instead of the path/query,
+    # so path and query components are lost.
+    wp = WebPath("https://example.com/a/b?x=1&y=2")
+    assert wp.parts == ("https", "example.com", "a", "b", "x=1", "y=2")
+
+
+def test_webpath_head_initialized():
+    # 4.1: WebPath.head() reads self._head before it is initialized (only set in
+    # head()), raising AttributeError on the first stat()/exists() call.
+    wp = WebPath("http://example.com/resource")
+    assert hasattr(wp, "_head")

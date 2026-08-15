@@ -203,3 +203,42 @@ def test_time_filtering():
     filtered = filter_items_by_criteria(args, files)
     assert len(filtered) == 1
     assert filtered[0]["path"] == "old"
+
+
+def test_time_created_within_uses_epoch_timestamp():
+    # 4.1: filter_engine passes an *age* (APPLICATION_START - time_created) to
+    # args.time_created which is built in arggroups.files_post to expect an *epoch*
+    # timestamp, inverting --created-within/--created-before.
+    files = [
+        {"path": "old", "time_created": 100},
+        {"path": "new", "time_created": 1800},
+    ]
+
+    import time
+
+    from library.utils import consts, nums
+
+    now = time.time()
+    consts.APPLICATION_START = int(now)
+
+    def epoch_time_created_filter(timestamp):
+        # exactly what arggroups.files_post builds (expects epoch timestamp)
+        for threshold in [now - nums.human_to_seconds("500 seconds")]:  # created-within 500s
+            if timestamp < threshold:
+                return False
+        return True
+
+    args = Namespace(
+        defaults=["sizes"],
+        type=[],
+        no_type=[],
+        time_created=epoch_time_created_filter,
+        to_json=False,
+        sort=[],
+        limit=None,
+    )
+    filtered = filter_items_by_criteria(args, files)
+
+    # only the file created within the last 500 seconds should survive
+    assert len(filtered) == 1
+    assert filtered[0]["path"] == "new"
