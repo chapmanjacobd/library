@@ -9,6 +9,7 @@ from library.utils import arggroups, argparse_utils, sqlgroups, strings
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.history)
     arggroups.sql_fs(parser)
+    arggroups.frequency(parser)
     arggroups.history(parser)
     arggroups.debug(parser)
 
@@ -16,6 +17,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.paths_or_stdin(parser, required=False)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
+    arggroups.frequency_post(args)
 
     args.paths = [strings.strip_enclosing_quotes(path) for path in args.paths or []]
     arggroups.sql_fs_post(args)

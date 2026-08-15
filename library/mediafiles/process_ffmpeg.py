@@ -137,7 +137,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         if not args.video_only and path_utils.ext(path) not in consts.IMAGE_ANIMATION_EXTENSIONS:
             log.warning("No audio stream found: %s", path)
 
-    if video_stream and (video_stream.get("codec_name") or "") == "av1":
+    if video_stream and not args.audio_only and (video_stream.get("codec_name") or "") == "av1":
         log.info("Video is already AV1: %s", path)
         return str(path)
     elif (not video_stream or args.audio_only) and audio_stream and (audio_stream.get("codec_name") or "") == "opus":

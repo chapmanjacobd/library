@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -67,8 +68,16 @@ if not Path(links_db).exists():
         ],
     )
 
+def _stale(path, max_age=6 * 60 * 60):
+    try:
+        return time.time() - Path(path).stat().st_mtime > max_age
+    except FileNotFoundError:
+        return True
+
+
 v_db = p("tests/data/video.db")
-if not Path(v_db).exists():
+if not Path(v_db).exists() or _stale(v_db):
+    Path(v_db).unlink(missing_ok=True)
     lb(["fs-add", v_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
     lb(["links-db", v_db, "--insert-only", "https://test/?tags%5B%5D="])
 

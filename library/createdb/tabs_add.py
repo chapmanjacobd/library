@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_days(frequency):
-    d = {"weekly": 7, "monthly": 30, "quarterly": 89, "yearly": 364, "decadally": 3640}
+    d = {"weekly": 7, "monthly": 30, "quarterly": 91, "yearly": 364, "decadally": 3640}
     return d.get(frequency, 7)
 
 

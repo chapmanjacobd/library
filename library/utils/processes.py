@@ -260,7 +260,7 @@ def cmd_interactive(*command, strict=True) -> subprocess.CompletedProcess:
 
 def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
     try:
-        stdout, stderr = process.communicate(input)
+        stdout, stderr = process.communicate()
     except subprocess.TimeoutExpired as exc:
         log.debug("subprocess.TimeoutExpired")
         process.kill()

@@ -1,4 +1,4 @@
-import argparse, operator
+import argparse, operator, re
 from collections import defaultdict
 from copy import copy
 from pathlib import Path
@@ -13,14 +13,15 @@ def override_sort(sort_expression: str) -> str:
     def year_month_day_sql(var):
         return f"cast(strftime('%Y%m%d', datetime({var}, 'unixepoch')) as int)"
 
-    return (
+    sort_expression = (
         sort_expression.replace("month_created", year_month_sql("time_created"))
         .replace("month_modified", year_month_sql("time_modified"))
         .replace("date_created", year_month_day_sql("time_created"))
         .replace("date_modified", year_month_day_sql("time_modified"))
-        .replace("random()", "random")
-        .replace("random", "random()")
-        .replace("priorityfast", "ntile(1000) over (order by size) desc, duration")
+    )
+    sort_expression = re.sub(r"\brandom\b", "random()", sort_expression)
+    return (
+        sort_expression.replace("priorityfast", "ntile(1000) over (order by size) desc, duration")
         .replace("priority", "ntile(1000) over (order by size/duration) desc")
         .replace("bitrate", "size/duration desc")
     )

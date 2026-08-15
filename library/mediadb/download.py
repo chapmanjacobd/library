@@ -119,13 +119,15 @@ def download(args=None) -> None:
         return
 
     get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d["link"])
+    if args.safe and args.profile == DBType.image:
+        gallery_backend.load_module_level_gallery_dl(args)
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             continue
 
         if args.safe:
             if (args.profile in (DBType.audio, DBType.video) and not tube_backend.is_supported(m["path"])) or (
-                args.profile in (DBType.image,) and not gallery_backend.is_supported(args, m["path"])
+                args.profile in (DBType.image,) and not gallery_backend.is_supported(m["path"])
             ):
                 log.info("Skipping unsupported URL (safe_mode) %s", m["path"])
                 continue

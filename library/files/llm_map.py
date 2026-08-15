@@ -79,6 +79,7 @@ def llm_map():
     import pandas as pd
 
     results = []
+    base_llama_args = list(args.llama_args)
     for path in gen_paths(args):
         prompt = args.prompt
 
@@ -91,6 +92,7 @@ def llm_map():
         for k, v in replacements.items():
             prompt = prompt.replace(k, "\n" + v + "\n\n")
 
+        args.llama_args = list(base_llama_args)
         if args.image_model:
             args.llama_args += ["--image", str(Path(path).absolute())]
         elif args.text:

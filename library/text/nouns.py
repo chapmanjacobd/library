@@ -162,7 +162,7 @@ def nouns() -> None:
 
     for line in args.paths:
         if args.html_strip:
-            txt = strip_tags(txt)
+            line = strip_tags(line)
 
         parts = line_splitter(line)
         parts = part_processor(args, parts)

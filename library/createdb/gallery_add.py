@@ -58,12 +58,15 @@ def gallery_add(args=None) -> None:
         if not args.force and len(paths) > 9:
             known_playlists = db_media.get_paths(args)
 
+        if args.safe:
+            gallery_backend.load_module_level_gallery_dl(args)
+
         for path in paths:
             if path in known_playlists:
                 log.info("Known already. Skipping %s", path)
                 continue
 
-            if args.safe and not gallery_backend.is_supported(args, path):
+            if args.safe and not gallery_backend.is_supported(path):
                 log.info("Skipping unsupported playlist (safe_mode) %s", path)
                 continue
 

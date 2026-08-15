@@ -223,7 +223,7 @@ def media_check() -> None:
                     threshold_str = (
                         strings.percent(args.delete_corrupt)
                         if 0 < args.delete_corrupt < 1
-                        else (args.delete_corrupt + "s")
+                        else f"{args.delete_corrupt}s"
                     )
                     log.warning(
                         "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str

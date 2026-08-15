@@ -145,11 +145,10 @@ def unardel() -> None:
             if not os.path.exists(m["path"]):
                 log.error("[%s]: FileNotFoundError", m["path"])
                 m["time_deleted"] = consts.APPLICATION_START
-                continue
 
-            if args.move and not m.get("time_deleted") and m.get("new_path"):
-                dest = path_utils.relative_from_mountpoint(m["new_path"], args.move)
-                shell_utils.rename_move_file(m["new_path"], dest)
-            elif args.move_broken and not m.get("time_deleted") and os.path.exists(m["path"]):
+            if args.move and not m.get("time_deleted"):
+                dest = path_utils.relative_from_mountpoint(m["path"], args.move)
+                shell_utils.rename_move_file(m["path"], dest)
+            elif args.move_broken and m.get("time_deleted") and os.path.exists(m["path"]):
                 dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
                 shell_utils.rename_move_file(m["path"], dest)

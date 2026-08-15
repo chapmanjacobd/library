@@ -27,6 +27,13 @@ def test_tw_sort(play_mocked):
 
 @mock.patch("library.createdb.tube_backend.get_playlist_metadata")
 def test_tubeupdate(play_mocked):
+    import time
+
+    import sqlite_utils
+
+    db = sqlite_utils.Database(tube_db)
+    db["playlists"].update(1, {"time_modified": int(time.time())})
+
     lb(["tube-update", tube_db, "--extractor-config", "TEST2=3 TEST3=1"])
     assert play_mocked.call_args is None
 

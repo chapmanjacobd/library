@@ -217,7 +217,12 @@ def get_rel_stats(parents, files) -> list[dict[str, float | str]]:
         mount_space.append([parent, used])
 
     return [
-        {"mount": mount, "used": used / total_used, "free": used / total_used, "total": used / total_used}
+        {
+            "mount": mount,
+            "used": used / total_used,
+            "free": (total_used - used) / total_used,
+            "total": used / total_used,
+        }
         for mount, used in mount_space
     ]
 

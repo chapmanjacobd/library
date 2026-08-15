@@ -1,4 +1,4 @@
-import csv, json, os, shlex, statistics, sys
+import csv, json, os, statistics, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -77,12 +77,12 @@ def moved_media(args, moved_files: str | list, base_from, base_to) -> int:
         for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
-                    f"""UPDATE media
-                    SET path=REPLACE(path, '{shlex.quote(base_from)}', '{shlex.quote(base_to)}')
+                    """UPDATE media
+                    SET path=REPLACE(path, ?, ?)
                     where path in ("""
                     + ",".join(["?"] * len(chunk_paths))
                     + ")",
-                    (*chunk_paths,),
+                    (base_from, base_to, *chunk_paths),
                 )
                 modified_row_count += cursor.rowcount
 

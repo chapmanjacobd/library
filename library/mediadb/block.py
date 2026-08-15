@@ -227,7 +227,7 @@ def block(args=None) -> None:
                         msg += f"  {key}: {preview}\n"
                     log.warning(msg)
                 else:
-                    p[1] = data[args.match_column]
+                    p.append(data[args.match_column])
                     if p[1]:
                         matching_media = list(
                             args.db.query(
@@ -237,7 +237,11 @@ def block(args=None) -> None:
                         )
 
         if not matching_media:
-            unmatched_playlists.append(p)
+            if len(p) < 2:
+                unmatched_playlists.append(p)
+                continue
+            log.info("Blocking URL resolved by tube metadata: %s", p[1])
+            add_to_blocklist(args, p)
             continue
 
         if args.regex_sort:

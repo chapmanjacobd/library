@@ -77,15 +77,17 @@ def extract_chunk(args, media) -> None:
     is_scan_all_files = getattr(args, "scan_all_files", False)
 
     if objects.is_profile(args, DBType.image):
-        image_media = [
-            m for m in media if m["path"].rsplit(".", 1)[-1].lower() in consts.IMAGE_EXTENSIONS or is_scan_all_files
-        ]
+        if is_scan_all_files:
+            image_media = list(media)
+            other_media = []
+        else:
+            image_media, other_media = [], []
+            for m in media:
+                if m["path"].rsplit(".", 1)[-1].lower() in consts.IMAGE_EXTENSIONS:
+                    image_media.append(m)
+                else:
+                    other_media.append(m)
         if image_media:
-            other_media = [
-                m
-                for m in media
-                if m["path"].rsplit(".", 1)[-1].lower() not in consts.IMAGE_EXTENSIONS or is_scan_all_files
-            ]
             image_media = extract_image_metadata_chunk(image_media)
             media = image_media + other_media
 
@@ -105,7 +107,7 @@ def extract_chunk(args, media) -> None:
         if description:
             tags += "\n" + description
         if tags:
-            caption["captions_t0"] = {"time": 0, "text": tags}
+            caption["caption_t0"] = {"time": 0, "text": tags}
 
         captions.append(caption)
 

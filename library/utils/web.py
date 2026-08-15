@@ -1047,6 +1047,7 @@ class WebPath:
 
     def __init__(self, path):
         self._path = str(path)
+        self._head = None
 
     def __fspath__(self):
         return str(self)
@@ -1079,13 +1080,13 @@ class WebPath:
         if res.netloc:
             parts += [res.netloc]
         if res.path:
-            parts += "/".split(res.path)
+            parts += [p for p in res.path.split("/") if p]
         if res.params:
-            parts += "&".split(res.params)
+            parts += [p for p in res.params.split("&") if p]
         if res.query:
-            parts += "&".split(res.query)
+            parts += [p for p in res.query.split("&") if p]
         if res.fragment:
-            parts += "&".split(res.fragment)
+            parts += [p for p in res.fragment.split("&") if p]
         return tuple(parts)
 
     @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
