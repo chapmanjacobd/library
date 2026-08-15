@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.1.001; 103 subcommands)
+    library (v3.2.001; 103 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1859,11 +1859,34 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Plot table-like files. A CLI interface to matplotlib</summary>
 
     $ library plot -h
-    usage: library plot PATH ... [--table STR] [--end-row INT]
+    usage: library plot PATH ... [--table STR] [--end-row INT] -- [PLT.COMMAND ...]
 
     Plot one or more files
 
     Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+    With no commands after `--`, the table is analyzed like `library eda` and a set of figures is generated: histograms for numeric columns, bar charts of common values for low/medium-cardinality columns, time-series when a date column is detected, pairwise scatter plots of the most correlated numeric columns, a correlation heatmap, and a missing-values chart.
+
+    Histograms get a fitted PDF overlay, and each numeric column is drawn on a scale matched to its distribution (D'Agostino-Pearson test): normal data on a linear axis, log-normal or heavy right-skewed positive data on a log axis, data spanning orders of magnitude that includes zero/negative values on a symlog axis, and proportions in (0,1) on a logit axis. `--scale log|symlog|logit` forces that scale on all histograms; `--scale off` disables detection and draws plain linear histograms.
+
+    Pass a list of matplotlib.pyplot commands after `--` for manual control. Each command is a plt function name followed by column names (the first column is the x-axis, the rest are y-axes) and optional positional/keyword arguments. `index` refers to the row index. A single column is passed as a single dataset (e.g. for hist).
+
+    Axes are auto-labeled from the column names and units are guessed from common names (e.g. `size` -> bytes, `duration` -> seconds, `time_*` -> dates). A title is auto-added from the plotted columns (e.g. `scatter size duration` -> "Duration vs Size"). Pass an explicit `xlabel=` / `ylabel=` / `title=` to override.
+
+    A transformation pipeline can be applied before plotting: `--where` filters rows, `--classify` derives a `category` column from an expression or binning, and `--groupby` (with `--agg`) groups and aggregates rows. With `--groupby` the auto mode draws one bar chart per aggregated column (e.g. "Count per Category").
+
+    Examples:
+
+    lb plot data.csv
+    lb plot data.csv -- plot x y
+    lb plot data.csv -- scatter x y s=3 alpha=0.5 label=points
+    lb plot data.csv -- hist x bins=50
+    lb plot audio.db --table media --cols size,duration -- scatter size duration
+    lb plot a.csv b.csv --join-tables -- sort -u time_created desc -- plot index time_created
+    lb plot data.csv --where 'duration > 60'
+    lb plot data.csv --classify 'size > 1GB' --groupby category
+    lb plot data.csv --classify duration --bins 5 --groupby category --agg mean
+    lb plot data.csv --groupby category --agg count --top 10
 
 
 </details>
@@ -2591,7 +2614,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Show and manage playback history</summary>
 
     $ library history -h
-    usage: library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
+    usage: library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [PATH ...] [(all) watching watched created modified deleted]
 
     View playback history
 
@@ -2617,8 +2640,12 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         Delete all history
         library history web_add.image.db -L inf --delete-rows
 
-    See also: library stats -h
-              library history-add -h
+        Delete history for exact paths
+            library history ~/mc/links.db --delete-rows https://example.com/article
+            cb | library history ~/mc/links.db --delete-rows -
+
+        See also: library stats -h
+                  library history-add -h
 
 
 </details>

@@ -3,6 +3,7 @@ import os.path
 import pytest
 
 from library.__main__ import library as lb
+import pathlib
 
 paths = ["test.gif", "test.opus"]
 
@@ -18,10 +19,8 @@ def test_sample_cmp_missing_file(caplog, tmp_path):
     f1 = tmp_path / "one"
     f2 = tmp_path / "two"
     missing = tmp_path / "missing"
-    with open(f1, "w") as f:
-        f.write("hello world")
-    with open(f2, "w") as f:
-        f.write("hello world")
+    pathlib.Path(f1).write_text("hello world")
+    pathlib.Path(f2).write_text("hello world")
 
     assert sample_compare.sample_cmp(f1, f2, missing) is True
     assert f"File not found {missing}" in caplog.text
