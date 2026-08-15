@@ -236,3 +236,31 @@ def test_play_list(mock_play, mock_prefetcher):
     media_player.play_list(args, media)
 
     mock_play.assert_called()
+
+
+def test_bare_multiple_playback_enables_multiple_player():
+    # C2: bare -m (--multiple-playback) sets multiple_playback to
+    # consts.DEFAULT_MULTIPLE_PLAYBACK (-1) but play_list gates on > 1,
+    # so bare -m silently falls back to single-player.
+    args = NoneSpace(
+        multiple_playback=consts.DEFAULT_MULTIPLE_PLAYBACK,
+        mpv_socket="/tmp/socket",
+        chromecast=False,
+    )
+    with mock.patch("library.playback.media_player.MediaPrefetcher") as MockPrefetcher:
+        instance = MockPrefetcher.return_value
+        instance.remaining = 1
+
+        def get_m_side_effect():
+            if instance.remaining > 0:
+                instance.remaining -= 1
+                return {"path": "test.mp4", "original_path": "test.mp4"}
+            return None
+
+        instance.get_m.side_effect = get_m_side_effect
+        with (
+            mock.patch("library.playback.media_player.multiple_player") as mock_multiple,
+            mock.patch("library.playback.media_player.play"),
+        ):
+            media_player.play_list(args, [{"path": "test.mp4"}])
+    mock_multiple.assert_called()

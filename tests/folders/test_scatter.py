@@ -39,3 +39,15 @@ def test_rebin_folders():
     untouched, rebinned = scatter.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 6)
     assert rebinned == []
     assert len(untouched) == 10
+
+
+def test_get_rel_stats_free_weight():
+    # 4.2: scatter.get_rel_stats sets "free" equal to "used", so --policy free
+    # behaves identically to --policy used.
+    parents = ["/a", "/b"]
+    files = [
+        {"path": "/a/f1.mp4", "size": 100},
+        {"path": "/b/f1.mp4", "size": 300},
+    ]
+    stats = scatter.get_rel_stats(parents, files)
+    assert stats[0]["free"] != stats[0]["used"]

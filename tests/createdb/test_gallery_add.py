@@ -53,3 +53,15 @@ def test_get_playlist_metadata_wikimedia_album():
     assert len(media) == 79
     playlists = list(args.db.query("select * from playlists"))
     assert len(playlists) == 1
+
+
+def test_is_supported_single_arg():
+    # C1: gallery_backend.is_supported is registered as a 1-arg SQLite UDF
+    # (called as is_supported(m.path)) but its signature requires (args, url).
+    import sqlite_utils
+
+    db = sqlite_utils.Database(memory=True)
+    db.register_function(gallery_backend.is_supported, deterministic=True)
+
+    rows = list(db.query("select is_supported('https://www.reddit.com') as r"))
+    assert rows[0]["r"] in (0, 1)

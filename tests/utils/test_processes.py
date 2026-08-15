@@ -103,3 +103,11 @@ def test_load_or_install_modules(mock_check_call, mock_import_module):
 
     mock_check_call.assert_called()
     assert mock_import_module.call_count == 2
+
+
+def test_pclose_works_with_stdin_pipe():
+    # 4.1: Pclose passes the builtin `input` function to communicate(), raising
+    # TypeError whenever the process has stdin=PIPE.
+    proc = subprocess.Popen(["echo", "hi"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    result = processes.Pclose(proc)
+    assert result.returncode == 0

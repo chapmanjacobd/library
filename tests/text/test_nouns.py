@@ -29,3 +29,10 @@ def test_lb_nouns_prepend_a(mock_stdin, assert_unchanged, capsys):
         lb(["nouns", "-u", "--prepend", "a"])
     captured = capsys.readouterr().out
     assert_unchanged(captured.split())
+
+
+def test_lb_nouns_html_strip(mock_stdin, capsys):
+    with mock_stdin("<p>hello</p> world"):
+        lb(["nouns", "--all", "--html-strip"])
+    captured = capsys.readouterr().out
+    assert "hello" in captured

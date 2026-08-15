@@ -39,3 +39,18 @@ class TestReddit(unittest.TestCase):
         lb(["dl", reddit_db, "-p"])
         lb(["pl", reddit_db])
         lb(["ds", reddit_db])
+
+
+def test_slim_post_data_uses_overridden_url():
+    # 4.1: when a URL is in skip_domains, d["url"] is reassigned to
+    # url_overridden_by_dest but the returned "path" still uses the unchanged local
+    # variable, making the skip-domain override dead code.
+    from library.createdb import reddit_add
+
+    d = {
+        "url": "https://twitter.com/someuser/status/1",
+        "url_overridden_by_dest": "https://i.imgur.com/abc.png",
+        "author": "u",
+    }
+    out = reddit_add.slim_post_data(d)
+    assert out["path"] == "https://i.imgur.com/abc.png"
