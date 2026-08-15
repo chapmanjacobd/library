@@ -131,7 +131,6 @@ def test_divide_sequence():
     assert iterables.divide_sequence([0, 10]) == float("inf")
 
 
-
 def test_peek_value_exists_empty():
     # 4.2: peek_value_exists raises StopIteration on legitimately empty input
     # instead of returning a not-found result.

@@ -474,6 +474,7 @@ def test_is_html():
     finally:
         web.requests_session = original_session
 
+
 def test_webpath_parts():
     # 4.1: WebPath.parts splits the literal "/" and "&" instead of the path/query,
     # so path and query components are lost.

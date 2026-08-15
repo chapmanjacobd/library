@@ -68,6 +68,7 @@ if not Path(links_db).exists():
         ],
     )
 
+
 def _stale(path, max_age=6 * 60 * 60):
     try:
         return time.time() - Path(path).stat().st_mtime > max_age
