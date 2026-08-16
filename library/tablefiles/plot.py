@@ -169,11 +169,11 @@ def humanize_units(expr):
 
 
 def convert_human_columns(df):
-    """Convert object columns of human values (2GB, 90s, 2min) to numbers."""
+    """Convert string columns of human values (2GB, 90s, 2min) to numbers."""
     import pandas as pd
 
     for col in df.columns:
-        if not pd.api.types.is_object_dtype(df[col]):
+        if not pd.api.types.is_string_dtype(df[col]):
             continue
         vals = df[col].dropna()
         if vals.empty:

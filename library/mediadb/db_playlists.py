@@ -125,8 +125,8 @@ def exists(args, playlist_path) -> bool:
 def get_parentpath_playlists_id(args, playlist_path) -> int | None:
     try:
         known = args.db.pop(
-            "SELECT id FROM playlists WHERE ? LIKE path || '%' AND path != ?",
-            [str(playlist_path), str(playlist_path)],
+            "SELECT id FROM playlists WHERE ? LIKE path || ? || '%' AND path != ?",
+            [str(playlist_path), os.sep, str(playlist_path)],
         )
     except sqlite3.OperationalError as excinfo:
         log.debug(excinfo)
@@ -176,17 +176,38 @@ def mark_media_deleted(args, playlist_paths) -> int:
     return deleted_playlist_count
 
 
-def delete_subpath_playlists(args, playlist_path) -> int | None:
+def delete_subpath_playlists(args, playlist_path, replacement_playlist_id=None) -> int | None:
+    subpath_filter = """
+        COALESCE(time_deleted, 0)=0
+        AND path LIKE ?
+        AND path != ?
+    """
+    subpath_params = [str(playlist_path) + os.sep + "%", str(playlist_path)]
+
+    if replacement_playlist_id:
+        try:
+            with args.db.conn:
+                args.db.conn.execute(
+                    f"""
+                    UPDATE media
+                    SET playlists_id = ?
+                    WHERE playlists_id IN (
+                        SELECT id FROM playlists WHERE {subpath_filter}
+                    )
+                    """,
+                    [replacement_playlist_id, *subpath_params],
+                )
+        except sqlite3.OperationalError:
+            pass
+
     try:
         with args.db.conn:
             args.db.conn.execute(
-                """
+                f"""
                 DELETE from playlists
-                WHERE COALESCE(time_deleted, 0)=0
-                    AND path LIKE ?
-                    AND path != ?
+                WHERE {subpath_filter}
                 """,
-                [str(playlist_path) + os.sep + "%", str(playlist_path)],
+                subpath_params,
             )
     except sqlite3.OperationalError:
         pass
@@ -198,15 +219,16 @@ def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key
         parentpath_playlist_id = get_parentpath_playlists_id(args, playlist_path)
         if parentpath_playlist_id:
             return parentpath_playlist_id
-        else:
-            delete_subpath_playlists(args, playlist_path)
 
     playlist = consolidate(args, objects.dumbcopy(info))
     if playlist_path:
         playlist = {**playlist, "path": playlist_path}
     if extractor_key:
         playlist["extractor_key"] = extractor_key
-    return _add(args, objects.dict_filter_bool(playlist) or {})
+    playlists_id = _add(args, objects.dict_filter_bool(playlist) or {})
+    if playlist_path and check_subpath:
+        delete_subpath_playlists(args, playlist_path, replacement_playlist_id=playlists_id)
+    return playlists_id
 
 
 def media_exists(args, path, playlist_path) -> bool:
