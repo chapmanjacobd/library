@@ -27,14 +27,14 @@ def parse_args(usage) -> argparse.Namespace:
     if parser.prog == "library seek":
         parser.add_argument("time")
 
-    parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_LISTEN_SOCKET)
+    parser.add_argument("--mpv-socket", help="Use a custom mpv socket location")
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
 
     arggroups.debug(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
-    args.mpv = mpv_utils.connect_mpv(args.mpv_socket)
+    args.mpv_socket, args.mpv = mpv_utils.connect_default_mpv(args.mpv_socket)
 
     return args
 
@@ -59,7 +59,7 @@ def from_duration_to_duration_str(duration, segment_start, segment_end):
 
     if segment_start or segment_end:
         if segment_end > 0:
-            segment_duration = segment_start - segment_end
+            segment_duration = segment_end - segment_start
         else:
             segment_duration = duration - segment_start  # segment muxer copies original duration
 

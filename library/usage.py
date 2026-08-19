@@ -121,9 +121,10 @@ stats = """library stats DATABASE TIME_COLUMN
         14 media
 """
 
-download = r"""library download DATABASE [--prefix /mnt/d/] --video [--subs] [--auto-subs] [--small] | --audio | --photos [--safe]
+download = r"""library download DATABASE [--prefix /mnt/d/] [--video (default) | --audio | --image | --filesystem] [--safe]
 
     Files will be saved to <prefix>/<extractor>/. The default prefix is the current working directory.
+    The default download profile is video. `--safe` supports audio, video, and image profiles only.
 
     By default things will download in a random order
 
@@ -1734,11 +1735,11 @@ nouns = """library nouns (stdin)
         xsv select text hn_comment_202210242109.csv | library nouns | sort | uniq -c | sort --numeric-sort
 """
 
-similar_files = """library similar-files PATH ...
+similar_files = """library similar-files (--filter-names | --filter-sizes | --filter-durations) PATH ...
 
     Find similar files using filenames and size
 
-        library similar-files ~/d/
+        library similar-files --filter-names --filter-sizes ~/d/
 
     Find similar files based on ONLY foldernames, using the full path
 
@@ -1756,11 +1757,11 @@ similar_files = """library similar-files PATH ...
         library similar-files --filter-names --filter-durations --estimated-duplicates 3 .
 """
 
-similar_folders = """library similar-folders PATH ...
+similar_folders = """library similar-folders (--filter-names | --filter-counts | --filter-sizes | --filter-durations) PATH ...
 
     Find similar folders based on foldernames, similar size, and similar number of files
 
-        library similar-folders ~/d/
+        library similar-folders --filter-names --filter-counts --filter-sizes ~/d/
 
         group /home/xk/d/dump/datasets/*vector          total_size    median_size      files
         ----------------------------------------------  ------------  -------------  -------
@@ -1840,27 +1841,6 @@ seek = """library seek
         library seek 5        # 5 seconds forward
 
         library seek -5       # 5 seconds backward
-"""
-
-llm_map = """library llm-map LLAMA_FILE [paths ...] [--llama-args LLAMA_ARGS] [--prompt STR] [--text [INT]] [--rename]
-
-    Run a llamafile with a prompt including path names and file contents
-
-    Rename files based on file contents
-
-        library llm-map ./gemma2.llamafile ~/Downloads/booka.pdf --rename --text
-
-        cat llm_map_renames.csv
-        Path,Output
-        /home/xk/Downloads/booka.pdf,/home/xk/Downloads/Mining_Massive_Datasets.pdf
-
-    Using GGUF files
-
-        wget https://github.com/Mozilla-Ocho/llamafile/releases/download/0.8.9/llamafile-0.8.9
-        chmod +x ~/Downloads/llamafile-0.8.9
-        mv ~/Downloads/llamafile-0.8.9 ~/.local/bin/llamafile  # move it somewhere in your $PATH
-
-        library llm-map --model ~/Downloads/llava-v1.5-7b-Q4_K.gguf --image-model ~/Downloads/llava-v1.5-7b-mmproj-Q4_0.gguf --prompt 'what do you see?' ~/Downloads/comp_*.jpg
 """
 
 nicotine_import = """library nicotine-import DATABASE PATH ...

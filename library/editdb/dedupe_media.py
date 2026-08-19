@@ -1,4 +1,4 @@
-import argparse, difflib, os, re, shlex, tempfile
+import argparse, difflib, os, shlex, tempfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
@@ -393,11 +393,6 @@ def get_fs_duplicates(args) -> list[dict]:
     # but we could add another column for full hashes
 
     return dup_media
-
-
-def filter_split_files(paths):
-    pattern = r"\.\d{3,5}\."
-    return filter(lambda x: not re.search(pattern, x), paths)
 
 
 def dedupe_media() -> None:

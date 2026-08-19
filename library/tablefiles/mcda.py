@@ -149,7 +149,7 @@ def print_info(args, dft):
         partial_dataset_msg = f"(limited by default --end-row {args.end_row})"
     else:
         partial_dataset_msg = f"(limited by --end-row {args.end_row})"
-    if args.end_row is not None and args.end_row not in df.shape:
+    if args.end_row is not None and args.end_row != df.shape[0]:
         partial_dataset_msg = ""
     print("### Shape")
     print()

@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.002; 103 subcommands)
+    library (v3.2.003; 102 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -197,8 +197,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ filesystem     │ Find files by mimetype and size                     │
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ similar-files  │ Find similar files based on filename and size       │
-    ├────────────────┼─────────────────────────────────────────────────────┤
-    │ llm-map        │ Run LLMs across multiple files                      │
     ╰────────────────┴─────────────────────────────────────────────────────╯
 
     Tabular data subcommands:
@@ -1614,11 +1612,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Find similar folders based on folder name, size, and count</summary>
 
     $ library similar-folders -h
-    usage: library similar-folders PATH ...
+    usage: library similar-folders (--filter-names | --filter-counts | --filter-sizes | --filter-durations) PATH ...
 
     Find similar folders based on foldernames, similar size, and similar number of files
 
-        library similar-folders ~/d/
+        library similar-folders --filter-names --filter-counts --filter-sizes ~/d/
 
         group /home/xk/d/dump/datasets/*vector          total_size    median_size      files
         ----------------------------------------------  ------------  -------------  -------
@@ -1730,11 +1728,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Find similar files based on filename and size</summary>
 
     $ library similar-files -h
-    usage: library similar-files PATH ...
+    usage: library similar-files (--filter-names | --filter-sizes | --filter-durations) PATH ...
 
     Find similar files using filenames and size
 
-        library similar-files ~/d/
+        library similar-files --filter-names --filter-sizes ~/d/
 
     Find similar files based on ONLY foldernames, using the full path
 
@@ -1750,34 +1748,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     How I use it
         library similar-files --filter-names --filter-durations --estimated-duplicates 3 .
-
-
-</details>
-
-###### llm-map
-
-<details><summary>Run LLMs across multiple files</summary>
-
-    $ library llm-map -h
-    usage: library llm-map LLAMA_FILE [paths ...] [--llama-args LLAMA_ARGS] [--prompt STR] [--text [INT]] [--rename]
-
-    Run a llamafile with a prompt including path names and file contents
-
-    Rename files based on file contents
-
-        library llm-map ./gemma2.llamafile ~/Downloads/booka.pdf --rename --text
-
-        cat llm_map_renames.csv
-        Path,Output
-        /home/xk/Downloads/booka.pdf,/home/xk/Downloads/Mining_Massive_Datasets.pdf
-
-    Using GGUF files
-
-        wget https://github.com/Mozilla-Ocho/llamafile/releases/download/0.8.9/llamafile-0.8.9
-        chmod +x ~/Downloads/llamafile-0.8.9
-        mv ~/Downloads/llamafile-0.8.9 ~/.local/bin/llamafile  # move it somewhere in your $PATH
-
-        library llm-map --model ~/Downloads/llava-v1.5-7b-Q4_K.gguf --image-model ~/Downloads/llava-v1.5-7b-mmproj-Q4_0.gguf --prompt 'what do you see?' ~/Downloads/comp_*.jpg
 
 
 </details>
@@ -2487,9 +2457,10 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Download media</summary>
 
     $ library download -h
-    usage: library download DATABASE [--prefix /mnt/d/] --video [--subs] [--auto-subs] [--small] | --audio | --photos [--safe]
+    usage: library download DATABASE [--prefix /mnt/d/] [--video (default) | --audio | --image | --filesystem] [--safe]
 
     Files will be saved to <prefix>/<extractor>/. The default prefix is the current working directory.
+    The default download profile is video. `--safe` supports audio, video, and image profiles only.
 
     By default things will download in a random order
 

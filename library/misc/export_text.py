@@ -6,7 +6,7 @@ from library.utils import arggroups, argparse_utils
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.export_text)
-    parser.add_argument("--format", default="html")
+    parser.add_argument("--format", choices=["html"], default="html")
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -17,9 +17,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def media_to_files(args):
-    if args.format != "html":
-        raise NotImplementedError
-
     media = list(args.db.query("SELECT * FROM media"))
     for d in media:
         path = d.pop("path")

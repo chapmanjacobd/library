@@ -45,6 +45,35 @@ def test_dedupe_no_bk(db1):
         lb(["dedupe-dbs", db1, "media", "--pk=path"])
 
 
+def test_dedupe_composite_and_nullable_primary_keys(temp_db):
+    db = temp_db()
+    args = connect_db_args(db)
+    with args.db.conn:
+        args.db.conn.execute("CREATE TABLE duplicates (first_key, second_key, business_key)")
+        args.db.conn.executemany(
+            "INSERT INTO duplicates VALUES (?, ?, ?)",
+            [
+                (1, 4, "composite"),
+                (2, 3, "composite"),
+                (None, 1, "nullable-first"),
+                (None, 2, "nullable-first"),
+                (1, None, "nullable-second"),
+                (2, None, "nullable-second"),
+            ],
+        )
+
+    lb(["dedupe-dbs", db, "duplicates", "--pk=first_key,second_key", "--bk=business_key"])
+
+    rows = list(
+        args.db.query("SELECT first_key, second_key, business_key FROM duplicates ORDER BY business_key, rowid")
+    )
+    assert rows == [
+        {"first_key": 1, "second_key": 4, "business_key": "composite"},
+        {"first_key": None, "second_key": 1, "business_key": "nullable-first"},
+        {"first_key": 1, "second_key": None, "business_key": "nullable-second"},
+    ]
+
+
 flags = [
     ("--bk=path,title", NO_CHANGE),
     ("--bk=path --pk=path", NO_CHANGE),  # TODO: should this be PATH_UNIQUE ?

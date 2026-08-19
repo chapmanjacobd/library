@@ -624,7 +624,7 @@ def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
     # switching between videos with and without subs is annoying
     subtitle_count = "=0"
     if random.random() < getattr(args, "subtitle_mix", consts.DEFAULT_SUBTITLE_MIX):
-        # bias slightly toward videos without subtitles
+        # bias slightly toward videos with subtitles
         subtitle_count = ">0"
 
     sorts = [
@@ -1578,10 +1578,15 @@ def process_ffmpeg(parent_parser):
     )
     parser.add_argument(
         "--delete-larger",
-        "--delete-original",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Delete larger of transcode or original files",
+    )
+    parser.add_argument(
+        "--delete-original",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Delete the original after a successful transcode",
     )
 
     parser.add_argument("--max-video-height", "--max-height", type=int, default=960)
@@ -2424,8 +2429,6 @@ def overlay_fitted_pdf(ax, s, kind, bins, n):
 def plot_histogram(ax, s, kind=None, bins=None, **kwargs):
     """Draw a count histogram on a scale matched to the data. `kind` is None (auto-detect), a scale
     name ('normal', 'log', 'symlog', 'logit'), or 'off'. Returns the effective kind."""
-    import numpy as np
-
     s = s.dropna()
     if kind is None:
         kind = detect_distribution(s)

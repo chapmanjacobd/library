@@ -36,11 +36,31 @@ def dedupe_rows(args, tablename, primary_keys, business_keys):
     with args.db.conn:
         args.db.conn.execute(
             f"""
-            DELETE FROM {tablename}
-            WHERE ({','.join(primary_keys)}) NOT IN (
-                SELECT {','.join(f"MIN({col}) AS {col}" for col in primary_keys)}
+            WITH ranked AS (
+                SELECT
+                    rowid
+                    , {','.join(business_keys)}
+                    , ROW_NUMBER() OVER (
+                        PARTITION BY {','.join(business_keys)}
+                        ORDER BY {','.join(primary_keys)}, rowid
+                    ) AS duplicate_number
+                    , COUNT(*) OVER (
+                        PARTITION BY {','.join(business_keys)}, {','.join(primary_keys)}
+                    ) AS primary_key_count
                 FROM {tablename}
-                GROUP BY {','.join(business_keys)}
+            ), candidates AS (
+                SELECT
+                    rowid
+                    , duplicate_number
+                    , MAX(primary_key_count) OVER (
+                        PARTITION BY {','.join(business_keys)}
+                    ) AS max_primary_key_count
+                FROM ranked
+            )
+            DELETE FROM {tablename} WHERE rowid IN (
+                SELECT rowid
+                FROM candidates
+                WHERE duplicate_number > 1 AND max_primary_key_count = 1
             )
             """,
         )

@@ -1,7 +1,6 @@
 import argparse, operator, re
 from collections import defaultdict
 from copy import copy
-from pathlib import Path
 
 from library.utils import iterables, nums
 
@@ -35,17 +34,6 @@ def parse_ambiguous_sort(sort):
         else:
             combined_sort.append(s.strip())
     return combined_sort
-
-
-def split_folder_glob(s):
-    p = Path(s).resolve()
-
-    if "*" not in s and not p.exists():
-        p.mkdir(parents=True, exist_ok=True)
-
-    if p.is_dir():
-        return p, "*"
-    return p.parent, p.name
 
 
 def override_config(args, extractor_config):

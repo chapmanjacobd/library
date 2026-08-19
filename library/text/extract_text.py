@@ -81,7 +81,6 @@ def select_grouped_info(args, html_content):
 
 
 def get_text(args, url):
-    is_error = False
     if not args.local_html and not url.startswith("http") and Path(url).is_file():
         text = fs_add_metadata.munge_book_tags_fast(url)
         if text:
@@ -114,17 +113,13 @@ def get_text(args, url):
                 return None
             if r.status_code == HTTPStatus.NOT_FOUND:
                 log.warning("404 Not Found Error: %s", url)
-                is_error = True
-            else:
-                r.raise_for_status()
+                return None
+            r.raise_for_status()
             markup = r.content
 
         yield from select_fn(args, markup)
 
     web.sleep(args)
-
-    if is_error:
-        return None
 
 
 def extract_text() -> None:

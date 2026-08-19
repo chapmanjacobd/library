@@ -2,9 +2,12 @@ import sqlite3
 
 from library import usage
 from library.data.http_errors import HTTPStatus
-from library.utils import arggroups, argparse_utils, iterables, web
+from library.mediadb import db_media, db_playlists
+from library.utils import arggroups, argparse_utils, consts, iterables, web
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj
+
+GETTY_COLLECTION_URL = "https://data.getty.edu/museum/collection/"
 
 
 def parse_args():
@@ -15,6 +18,7 @@ def parse_args():
     arggroups.database(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser, create_db=True)
+    args.profile = consts.DBType.image
 
     web.requests_session(args)  # prepare requests session
 
@@ -163,7 +167,7 @@ def objects_extract(args, j):
     )
 
     d = {
-        "path": image_path or None,
+        "path": image_path or j["id"],
         "title": j["_label"],
         "types": "; ".join(set(d["_label"] for d in j["classified_as"]) - ignore_types),
         "description": description,
@@ -199,6 +203,12 @@ def update_objects(args):
         ]
 
     print("Fetching", len(unknown_objects), "unknown objects")
+    playlists_id = db_playlists.add(
+        args,
+        GETTY_COLLECTION_URL,
+        {"title": "Getty Museum collection"},
+        extractor_key="Getty",
+    )
 
     for unknown_object in unknown_objects:
         log.debug("Fetching %s...", unknown_object)
@@ -206,13 +216,25 @@ def update_objects(args):
         page_data = getty_fetch(unknown_object)
         if page_data:
             images = objects_extract(args, page_data)
-            args.db["media"].insert_all(images, alter=True, pk="id")
+            for image in images:
+                db_media.add(args, {"playlists_id": playlists_id, **image})
         else:
-            args.db["media"].insert({"title": "404 Not Found", "object_path": unknown_object}, alter=True, pk="id")
+            db_media.add(
+                args,
+                {
+                    "playlists_id": playlists_id,
+                    "path": unknown_object,
+                    "title": "404 Not Found",
+                    "object_path": unknown_object,
+                },
+            )
 
 
 def getty_add():
     args = parse_args()
+
+    db_playlists.create(args)
+    db_media.create(args)
 
     update_activity_stream(args)
 

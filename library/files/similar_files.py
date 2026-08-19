@@ -27,13 +27,13 @@ def parse_args():
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
-    arggroups.args_post(args, parser)
 
+    if not args.filter_names and not args.filter_sizes and not args.filter_durations:
+        parser.error("specify at least one filter mode: --filter-names, --filter-sizes, or --filter-durations")
+
+    arggroups.args_post(args, parser)
     arggroups.files_post(args)
     arggroups.similar_files_post(args)
-    if not args.filter_names and not args.filter_sizes and not args.filter_durations:
-        print("Nothing to do")
-        raise NotImplementedError
 
     return args
 

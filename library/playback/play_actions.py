@@ -139,7 +139,7 @@ will get the 500 largest and then sort by regex_sort, time_modified, and the ori
         "--subtitle-mix",
         type=float,
         default=consts.DEFAULT_SUBTITLE_MIX,
-        help="Probability to play no-subtitle content",
+        help="Probability to prefer content with subtitles",
     )
     probabling.add_argument(
         "--interdimensional-cable",
@@ -224,8 +224,11 @@ If you don't know the exact name of your chromecast group run `catt scan`
     for i in range(255):
         if getattr(args, f"cmd{i}") is None:
             delattr(args, f"cmd{i}")
-    arggroups.args_post(args, parser)
 
+    if args.chromecast and action not in (SC.watch, SC.listen):
+        parser.error("--chromecast is supported only with watch or listen")
+
+    arggroups.args_post(args, parser)
     arggroups.sql_fs_post(args)
     arggroups.files_post(args)
     arggroups.playback_post(args)

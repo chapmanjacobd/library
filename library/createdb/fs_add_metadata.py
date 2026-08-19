@@ -1,4 +1,4 @@
-import os, re
+import argparse, os, re
 from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
 from timeit import default_timer as timer
@@ -39,7 +39,7 @@ munge_book_tags_slow = processes.with_timeout(350)(munge_book_tags)
 munge_book_tags_fast = processes.with_timeout(70)(munge_book_tags)
 
 
-def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
+def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[str, str | int | None]] | None:
     try:
         path.encode()
     except UnicodeEncodeError:
@@ -127,11 +127,17 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
             )
             if result is None:
                 return None
+            if isinstance(result, list):
+                processed_args = argparse.Namespace(**(vars(mp_args) | {"process": False}))
+                return [m for output_path in result if (m := extract_metadata(processed_args, output_path))]
             path = m["path"] = str(result)
         elif objects.is_profile(mp_args, DBType.video) and Path(path).suffix not in [".av1.mkv"]:
             result = process_ffmpeg.process_path(mp_args, path)
             if result is None:
                 return None
+            if isinstance(result, list):
+                processed_args = argparse.Namespace(**(vars(mp_args) | {"process": False}))
+                return [m for output_path in result if (m := extract_metadata(processed_args, output_path))]
             path = m["path"] = str(result)
         elif objects.is_profile(mp_args, DBType.image) and Path(path).suffix not in [".avif", ".avifs"]:
             result = process_image.process_path(mp_args, path)

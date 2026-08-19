@@ -4,8 +4,9 @@ from types import SimpleNamespace
 from unittest import mock
 
 from library.__main__ import library as lb
-from library.createdb import fs_add
+from library.createdb import fs_add, fs_add_metadata
 from library.utils import db_utils
+from library.utils.consts import DBType
 
 
 @mock.patch("library.playback.media_printer.media_printer")
@@ -45,6 +46,36 @@ def test_fsupdate_multi(mocked, temp_db):
     lb(["fs", db1, "-s", "conftest.py"])
     out = mocked.call_args[0][1]
     assert len(out) == 1
+
+
+def test_extract_metadata_expands_split_outputs(monkeypatch, tmp_path):
+    source = tmp_path / "source.mp3"
+    outputs = [tmp_path / "source.000.mka", tmp_path / "source.001.mka"]
+    source.write_bytes(b"x")
+    for output in outputs:
+        output.write_bytes(b"x")
+
+    args = SimpleNamespace(
+        profile=DBType.audio,
+        process=True,
+        split_longer_than=None,
+        ocr=False,
+        speech_recognition=False,
+        hash=False,
+    )
+    monkeypatch.setattr(fs_add_metadata.file_utils, "detect_mimetype", lambda _: "audio/mpeg")
+    monkeypatch.setattr(fs_add_metadata.objects, "is_profile", lambda _args, profile: profile == DBType.audio)
+    monkeypatch.setattr(fs_add_metadata.av, "munge_av_tags", lambda _args, metadata: metadata)
+    monkeypatch.setattr(
+        fs_add_metadata.process_ffmpeg,
+        "process_path",
+        lambda *_args, **_kwargs: [str(output) for output in outputs],
+    )
+
+    metadata = fs_add_metadata.extract_metadata(args, str(source))
+
+    assert metadata is not None
+    assert [item["path"] for item in metadata] == [str(output) for output in outputs]
 
 
 def _mk_db():

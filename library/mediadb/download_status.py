@@ -44,13 +44,14 @@ def download_status() -> None:
 
     for m in media:
         extractor_key = m.get("extractor_key", "Playlist-less media")
+        time_downloaded = m.get("time_downloaded") or 0
 
         if "download_attempts" in m and (m["download_attempts"] or 0) >= args.download_retries:
             extractor_stats[extractor_key]["retries_exceeded"] += 1
-        elif (m.get("time_downloaded") or 0) > 0 or (
+        elif time_downloaded > 0 or (
             not m["path"].startswith("http") and (m.get("webpath") or "").startswith("http")
         ):
-            if (m["time_downloaded"] + retry_delay) >= consts.APPLICATION_START:
+            if (time_downloaded + retry_delay) >= consts.APPLICATION_START:
                 extractor_stats[extractor_key]["downloaded_recently"] += 1
         elif m["path"].startswith("http"):
             if "time_modified" in m:

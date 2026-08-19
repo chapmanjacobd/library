@@ -397,7 +397,6 @@ def gen_rel_path(source: str, dest: str, relative_to):
         log.debug("source destination %s", source_destination)
 
         return source_destination
-
     if relative_to:
         if str(relative_to).startswith("::"):
             rel_to = os.path.commonpath([abspath, dest])
@@ -421,19 +420,3 @@ def gen_rel_path(source: str, dest: str, relative_to):
     log.debug("source destination %s", source_destination)
 
     return source_destination
-
-
-def split_uri(s):
-    # if f[:7].lower().startswith(("http://", "https://", "ftp://")):
-    parsed = urlparse(s)
-
-    if parsed.scheme:  # URI
-        root = f"{parsed.scheme}://"
-
-        path = parsed.path
-        if not path.endswith("/"):
-            path = os.path.dirname(path)
-
-        return [root, parsed.netloc, *path.split(os.sep)]
-    else:
-        return s.split(os.sep)

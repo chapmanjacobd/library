@@ -1,4 +1,4 @@
-import errno, os, shlex, shutil, subprocess, tempfile, time
+import errno, os, shlex, shutil, tempfile
 from collections import Counter
 from collections.abc import Iterable
 from fnmatch import fnmatch

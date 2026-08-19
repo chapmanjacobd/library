@@ -48,12 +48,13 @@ def parse_args():
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
-    arggroups.args_post(args, parser)
 
     if not args.filter_names and not args.filter_counts and not args.filter_sizes and not args.filter_durations:
-        print("Nothing to do")
-        raise NotImplementedError
+        parser.error(
+            "specify at least one filter mode: --filter-names, --filter-counts, --filter-sizes, or --filter-durations"
+        )
 
+    arggroups.args_post(args, parser)
     if args.filter_counts and not any([args.folder_counts, args.file_counts, args.folder_sizes]):
         args.file_counts = ["+2"]
 

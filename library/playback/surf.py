@@ -20,13 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-hosts", "--target", default=None, help="Target hosts IP:Port")
     arggroups.debug(parser)
 
-    arggroups.database(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
-
-    if args.database:
-        log.error("Currently only stdin is supported")
-        raise NotImplementedError
 
     return args
 
@@ -61,13 +56,23 @@ def streaming_tab_loader() -> None:
             if current_count < initial_count + args.count:
                 log.debug("[%s < %s]: Opening tab", current_count, initial_count + args.count)
                 fill_count = args.count - (current_count - initial_count)
-                urls = [sys.stdin.readline().rstrip() for _ in range(fill_count)]
+                urls = []
+                reached_eof = False
+                for _ in range(fill_count):
+                    url = sys.stdin.readline()
+                    if url == "":
+                        reached_eof = True
+                        break
+                    urls.append(url.rstrip())
                 try:
-                    open_tabs(args, urls)
+                    if urls:
+                        open_tabs(args, urls)
                 except ConnectionResetError:
                     log.error("open_tabs:ConnectionResetError... trying again")
 
-                tabs_opened += fill_count
+                tabs_opened += len(urls)
+                if reached_eof:
+                    return
             sleep(0.1)
     finally:
         log.warning("Opened %s tabs", tabs_opened)

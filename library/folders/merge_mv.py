@@ -217,7 +217,8 @@ def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowe
                 log.debug("rglob-file relpath %s", relpath)
                 if args.modify_depth:
                     rel_p = Path(relpath)
-                    parts = rel_p.parent.parts[args.modify_depth]
+                    parts = rel_p.parent.parts
+                    parts = parts[args.modify_depth]
                     relpath = os.path.join(*parts, rel_p.name)
                     log.debug("rglob-file modify_depth %s %s", parts, relpath)
 
