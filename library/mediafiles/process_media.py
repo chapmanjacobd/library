@@ -10,6 +10,7 @@ from library.utils import (
     arggroups,
     argparse_utils,
     consts,
+    db_utils,
     devices,
     file_utils,
     filter_engine,
@@ -423,6 +424,36 @@ def process_media() -> None:
 
                 if new_path is None:
                     m["time_deleted"] = consts.APPLICATION_START
+                elif isinstance(new_path, list):
+                    new_outputs = []
+                    for output_path in new_path:
+                        output_path = str(output_path)
+                        try:
+                            duration = processes.FFProbe(output_path).duration
+                        except (TimeoutError, subprocess.TimeoutExpired):
+                            log.error(f"FFProbe timed out. {output_path}")
+                            continue
+                        except processes.UnplayableFile:
+                            if args.delete_unplayable:
+                                log.warning("Deleting unplayable (ffprobe): %s", output_path)
+                                Path(output_path).unlink(missing_ok=True)
+                            continue
+                        new_outputs.append(
+                            {
+                                "path": output_path,
+                                "size": os.stat(output_path).st_size,
+                                "duration": duration,
+                            }
+                        )
+
+                    if len(new_outputs) != len(new_path):
+                        m["time_deleted"] = consts.APPLICATION_START
+                    else:
+                        m["new_outputs"] = new_outputs
+                        m["new_path"] = new_outputs[0]["path"]
+                        m["new_size"] = new_outputs[0]["size"]
+                        m["total_new_size"] = sum(output["size"] for output in new_outputs)
+                        m["duration"] = new_outputs[0]["duration"]
                 elif new_path == m["path"]:
                     if args.move:
                         # move original file
@@ -458,11 +489,20 @@ def process_media() -> None:
                             continue
 
                     if not os.path.exists(m["path"]):
-                        new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
+                        new_free_space += (m.get("compressed_size") or m["size"]) - m.get(
+                            "total_new_size", m["new_size"]
+                        )
 
                 if args.move and not m.get("time_deleted") and m.get("new_path"):
-                    dest = path_utils.relative_from_mountpoint(m["new_path"], args.move)
-                    shell_utils.rename_move_file(m["new_path"], dest)
+                    if m.get("new_outputs"):
+                        for output in m["new_outputs"]:
+                            dest = path_utils.relative_from_mountpoint(output["path"], args.move)
+                            shell_utils.rename_move_file(output["path"], dest)
+                            output["path"] = dest
+                        m["new_path"] = m["new_outputs"][0]["path"]
+                    else:
+                        dest = path_utils.relative_from_mountpoint(m["new_path"], args.move)
+                        shell_utils.rename_move_file(m["new_path"], dest)
                 elif args.move_broken and m.get("time_deleted") and os.path.exists(m["path"]):
                     dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
                     shell_utils.rename_move_file(m["path"], dest)
@@ -479,3 +519,19 @@ def process_media() -> None:
                                 "UPDATE media SET path = ?, size = ?, duration = ? WHERE path = ?",
                                 [m["new_path"], m["new_size"], nums.safe_int(m.get("duration")), m["path"]],
                             )
+                            if m.get("new_outputs"):
+                                media_columns = db_utils.columns(args, "media")
+                                for output in m["new_outputs"][1:]:
+                                    args.db.conn.execute("DELETE FROM media where path = ?", [output["path"]])
+                                    entry = {
+                                        key: value
+                                        for key, value in m.items()
+                                        if key in media_columns and key not in {"id", "path", "size", "duration"}
+                                    }
+                                    entry |= output
+                                    args.db["media"].insert(
+                                        entry,
+                                        pk=["playlists_id", "path"],
+                                        alter=False,
+                                        replace=True,
+                                    )

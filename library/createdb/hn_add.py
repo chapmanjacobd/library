@@ -1,4 +1,4 @@
-import argparse, asyncio, queue, sqlite3, threading
+import argparse, asyncio, importlib, queue, sqlite3, threading
 
 from library import usage
 from library.utils import arggroups, argparse_utils, db_utils, objects, web
@@ -103,7 +103,7 @@ async def run(args, db_queue):
 def hacker_news_add() -> None:
     args = parse_args(usage=usage.hn_add)
     try:
-        import aiohttp
+        importlib.import_module("aiohttp")
     except ModuleNotFoundError:
         log.error("aiohttp is required for hn_extract. Install with pip install aiohttp or pip install library[deluxe]")
         raise

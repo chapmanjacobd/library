@@ -225,6 +225,28 @@ def test_simulate(temp_file_tree):
     }
 
 
+def test_simulate_folder_over_file_merge(temp_file_tree):
+    src = temp_file_tree({"f1": {"file2": "2"}})
+    dest = temp_file_tree({"f1": "1"})
+    src_before = read_relative_file_tree_dict(src)
+    dest_before = read_relative_file_tree_dict(dest)
+
+    lb(["merge-mv", "--simulate", "--folder-over-file", "merge", src, dest])
+
+    assert read_relative_file_tree_dict(src) == src_before
+    assert read_relative_file_tree_dict(dest) == dest_before
+
+
+def test_simulate_new_file_folder_over_file_merge(temp_file_tree):
+    dest = temp_file_tree({"f1": "1"})
+    dest_before = read_relative_file_tree_dict(dest)
+    args = objects.NoneSpace(simulate=True, folder_over_file=arggroups.FolderOverFile.MERGE)
+
+    destination = str(Path(dest, "f1", "file2"))
+    assert devices.clobber_new_file(args, destination) == destination
+    assert read_relative_file_tree_dict(dest) == dest_before
+
+
 def test_simulate_mkdirs(temp_file_tree):
     src1 = temp_file_tree(simple_file_tree) + os.sep
     src1_inodes = read_relative_file_tree_dict(src1)

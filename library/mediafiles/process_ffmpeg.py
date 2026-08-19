@@ -60,7 +60,21 @@ def is_animation_from_probe(probe) -> bool | None:
     return False
 
 
-def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
+def result_paths(result: str | list[str] | Path | None) -> list[str]:
+    if result is None:
+        return []
+    if isinstance(result, list):
+        return [str(path) for path in result]
+    return [str(result)]
+
+
+def segment_paths(output_path: Path, segment_count: int) -> list[Path]:
+    if "%03d" not in output_path.name:
+        return [output_path]
+    return [output_path.with_name(output_path.name.replace("%03d", f"{index:03d}")) for index in range(segment_count)]
+
+
+def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str] | None:
     if kwargs:
         args = args_override(args, kwargs)
 
@@ -257,6 +271,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         ff_opts.extend(["-map", "0:v", "-c:v", "copy"])
 
     is_split = bool(audio_stream)
+    segment_count = 1
     if audio_stream:
         ff_opts.extend(["-map", "0:a"])
 
@@ -333,9 +348,10 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
                         prev = split
 
                 if final_splits:
-                    output_path = path.with_suffix(".%03d" + output_suffix)
+                    output_path = output_path.with_name(f"{output_path.stem}.%03d{output_path.suffix}")
+                    segment_count = len(final_splits) + 1
                     segment_times = ",".join(final_splits)
-                    log.info("Splitting %s into %s segments: %s", path, len(final_splits) + 1, segment_times)
+                    log.info("Splitting %s into %s segments: %s", path, segment_count, segment_times)
                     ff_opts.extend(["-f", "segment", "-segment_times", segment_times])
                 else:
                     is_split = False
@@ -422,6 +438,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         "0",
         str(output_path),
     ]
+    output_paths = segment_paths(output_path, segment_count)
 
     if args.simulate:
         print(shlex.join(command))
@@ -441,53 +458,54 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
         elif is_file_error:
             pass
         elif is_unsupported:
-            output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
+            for generated_path in output_paths:
+                generated_path.unlink(missing_ok=True)
             return str(path)
         else:
             raise
 
-    if is_split:
-        output_path = output_path.with_name(
-            output_path.name.replace(".%03d", ".000")
-        )  # TODO: support / return multiple paths...
-
     delete_larger = args.delete_larger
+    delete_original = getattr(args, "delete_original", False)
     delete_transcode = False
 
-    if not output_path.exists():
+    if not all(generated_path.exists() for generated_path in output_paths):
+        for generated_path in output_paths:
+            generated_path.unlink(missing_ok=True)
         return str(path) if path.exists() else None
     elif not path.exists():
-        return str(output_path)
+        results = [str(generated_path) for generated_path in output_paths]
+        return results if is_split else results[0]
 
-    output_stats = output_path.stat()
+    output_stats = [generated_path.stat() for generated_path in output_paths]
 
     # Never set delete_larger to True. That setting comes from args and it is default True
     transcode_invalid = False
-    if output_stats.st_size == 0:
+    if any(stats.st_size == 0 for stats in output_stats):
         transcode_invalid = True
-    elif delete_larger and output_stats.st_size > original_stats.st_size:
+    elif delete_larger and not delete_original and sum(stats.st_size for stats in output_stats) > original_stats.st_size:
         delete_larger = False
         delete_transcode = True
     else:
         try:
-            transcode_probe = processes.FFProbe(output_path)
+            transcode_probes = [processes.FFProbe(generated_path) for generated_path in output_paths]
         except (TimeoutError, subprocess.TimeoutExpired):
-            log.error(f"FFProbe timed out. {output_path}")
+            log.error("FFProbe timed out. %s", output_paths)
             transcode_invalid = True
         except processes.UnplayableFile:
             transcode_invalid = True
         else:
-            if not transcode_probe.streams:
+            if any(not transcode_probe.streams for transcode_probe in transcode_probes):
                 transcode_invalid = True
-            elif not transcode_probe.duration:
+            elif any(not transcode_probe.duration for transcode_probe in transcode_probes):
                 transcode_invalid = True
             elif args.delete_unplayable and is_file_error:
                 pass  # if the original file is broken but the transcode is somewhat valid, don't compare duration
             elif path_utils.ext(path).lower() in consts.SKIP_MEDIA_CHECK:
                 pass  # duration metadata for these source formats is usually incorrect
-            elif nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
+            elif nums.percentage_difference(probe.duration, sum(p.duration for p in transcode_probes)) > 5.0:
                 transcode_invalid = True
     if transcode_invalid:
+        delete_original = False
         if args.delete_unplayable:
             delete_transcode = False
         else:
@@ -498,15 +516,18 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | None:
 
     try:
         if delete_transcode:
-            output_path.unlink(missing_ok=True)
+            for generated_path in output_paths:
+                generated_path.unlink(missing_ok=True)
             return str(path)
-        elif delete_larger:
+        elif delete_larger or delete_original:
             path.unlink(missing_ok=True)
     except FileNotFoundError:
         return None
 
-    os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
-    return str(output_path)
+    for generated_path in output_paths:
+        os.utime(generated_path, (original_stats.st_atime, original_stats.st_mtime))
+    results = [str(generated_path) for generated_path in output_paths]
+    return results if is_split else results[0]
 
 
 def process_ffmpeg(defaults_override=None):

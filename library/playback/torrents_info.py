@@ -226,7 +226,7 @@ def filter_torrents_by_criteria(args, torrents):
     if "file_count" not in args.defaults:
         torrents = [t for t in torrents if args.file_count(len(torrent_files(t)))]
     if "avg_sizes" not in args.defaults:
-        torrents = [t for t in torrents if args.avg_sizes(median([f.size for f in torrent_files(t)]))]
+        torrents = [t for t in torrents if args.avg_sizes(median([f.size for f in torrent_files(t)] or [0]))]
     if "ratio" not in args.defaults:
         torrents = [t for t in torrents if args.ratio(t.ratio)]
     if "seeders" not in args.defaults:

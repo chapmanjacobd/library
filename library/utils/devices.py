@@ -279,22 +279,24 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                     existing_rename = alt_name(parent_file)
                     rename(args, parent_file, existing_rename)
                 case arggroups.FolderOverFile.MERGE:
+                    nested_destination = os.path.join(parent_file, os.path.basename(parent_file))
+                    while os.path.exists(nested_destination):
+                        nested_destination = os.path.join(nested_destination, os.path.basename(parent_file))
+
                     temp_rename = alt_name(parent_file)
                     rename(args, parent_file, temp_rename)
-                    os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
-
-                    while os.path.exists(parent_file):  # until we find an open file slot
-                        parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
+                    if not args.simulate:
+                        os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
 
                     if source == os.path.commonpath([source, destination]):
                         # file was a conflict with destination path but let the caller rename it
-                        return temp_rename, parent_file
-                    rename(args, temp_rename, parent_file)  # temporary rename to final dest
-                    if destination == parent_file:
+                        return temp_rename, nested_destination
+                    rename(args, temp_rename, nested_destination)  # temporary rename to final dest
+                    if destination == nested_destination:
                         log.info("re-targeted %s -> %s", orig_destination, destination)
                         return clobber(args, source, destination)
 
-            if source:
+            if source and not args.simulate:
                 os.makedirs(parent_dir, exist_ok=True)  # original destination parent
         else:
             log.debug("Nothing to clobber %s\t%s", source, destination)
@@ -408,19 +410,22 @@ def clobber_new_file(args, destination) -> str:
                     existing_rename = alt_name(parent_file)
                     rename(args, parent_file, existing_rename)
                 case _:  # FolderOverFile.MERGE
+                    nested_destination = os.path.join(parent_file, os.path.basename(parent_file))
+                    while os.path.exists(nested_destination):
+                        nested_destination = os.path.join(nested_destination, os.path.basename(parent_file))
+
                     temp_rename = alt_name(parent_file)
                     rename(args, parent_file, temp_rename)
-                    os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
+                    if not args.simulate:
+                        os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
 
-                    while os.path.exists(parent_file):  # until we find an open file slot
-                        parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
-
-                    rename(args, temp_rename, parent_file)  # temporary rename to final dest
-                    if destination == parent_file:
+                    rename(args, temp_rename, nested_destination)  # temporary rename to final dest
+                    if destination == nested_destination:
                         log.info("re-targeted %s -> %s", orig_destination, destination)
                         return clobber_new_file(args, destination)
 
-            os.makedirs(parent_dir, exist_ok=True)  # original destination parent
+            if not args.simulate:
+                os.makedirs(parent_dir, exist_ok=True)  # original destination parent
         else:
             log.debug("Nothing to clobber %s", destination)
 

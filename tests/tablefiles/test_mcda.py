@@ -110,3 +110,9 @@ def test_lb_mcda(args, stdout, capsys):
     lb(["mcda", *args])
     captured = capsys.readouterr().out
     assert all(l in captured for l in stdout)
+
+
+def test_mcda_end_row_checks_row_count(capsys):
+    lb(["mcda", "--end-row", "4", "tests/data/test.xml"])
+
+    assert "(limited by --end-row 4)" not in capsys.readouterr().out

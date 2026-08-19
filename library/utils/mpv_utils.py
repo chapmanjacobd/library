@@ -1,7 +1,7 @@
 import hashlib, random, time
 from pathlib import Path
 
-from library.utils import nums
+from library.utils import consts, nums
 from library.utils.log_utils import log
 
 
@@ -26,6 +26,17 @@ def connect_mpv(ipc_socket, start_mpv=False):  # noqa: ANN201
         Path(ipc_socket).unlink(missing_ok=True)
 
     return None
+
+
+def connect_default_mpv(ipc_socket=None):
+    sockets = [ipc_socket] if ipc_socket else [consts.DEFAULT_MPV_LISTEN_SOCKET, consts.DEFAULT_MPV_WATCH_SOCKET]
+    for socket in dict.fromkeys(sockets):
+        if Path(socket).exists():
+            mpv = connect_mpv(socket)
+            if mpv is not None:
+                return socket, mpv
+
+    return sockets[0], None
 
 
 def auto_seek(x_mpv, delay=0.0):

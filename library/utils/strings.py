@@ -12,7 +12,6 @@ from wcwidth import wcswidth
 from library.data import wordbank
 from library.utils import consts, iterables, nums
 from library.utils.log_utils import log
-import pathlib
 
 
 def safe_json_loads(s):

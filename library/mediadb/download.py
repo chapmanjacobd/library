@@ -61,15 +61,15 @@ def parse_args():
 
     parser.set_defaults(fts=False)
     args, unk = parser.parse_known_intermixed_args()
-    arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
 
     if unk and not args.profile in (DBType.video, DBType.audio):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
-    args.unk = unk
 
-    if not args.profile and not args.print:
-        log.error("Download profile must be specified. Use one of: --video OR --audio OR --image OR --filesystem")
-        raise SystemExit(1)
+    if args.safe and args.profile == DBType.filesystem:
+        parser.error("--safe is supported only with --audio, --video, or --image")
+
+    arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
+    args.unk = unk
 
     arggroups.sql_fs_post(args)
     arggroups.filter_links_post(args)
@@ -212,6 +212,7 @@ def download(args=None) -> None:
                         local_path = None
                         error = str(excinfo)
 
+                    local_paths = [local_path]
                     if local_path and args.process:
                         extension = local_path.rsplit(".", 1)[-1].lower()
                         if extension in consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS:
@@ -220,23 +221,26 @@ def download(args=None) -> None:
                             result = process_image.process_path(args, local_path)
 
                         if result is not None:
-                            local_path = str(result)
+                            local_paths = process_ffmpeg.result_paths(result)
 
                     is_not_found = error is not None and "HTTPNotFound" in error
                     if error is not None and "HTTPNotFound" not in error:
                         any_error = True
 
-                    db_media.download_add(
-                        args,
-                        webpath=original_path,
-                        info=m,
-                        local_path=local_path,
-                        error=error,
-                        mark_deleted=is_not_found,
-                        delete_webpath_entry=(
-                            not any_error if i == len(dl_paths) - 1 else False
-                        ),  # only check after last download link was saved
-                    )
+                    for output_index, local_path in enumerate(local_paths):
+                        db_media.download_add(
+                            args,
+                            webpath=original_path,
+                            info=m,
+                            local_path=local_path,
+                            error=error,
+                            mark_deleted=is_not_found,
+                            delete_webpath_entry=(
+                                not any_error
+                                if i == len(dl_paths) - 1 and output_index == len(local_paths) - 1
+                                else False
+                            ),  # only check after last downloaded output was saved
+                        )
             else:
                 raise NotImplementedError
 

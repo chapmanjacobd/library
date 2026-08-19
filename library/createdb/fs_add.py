@@ -264,7 +264,7 @@ def scan_path(args, path_str: str) -> int:
             while m is None:
                 m = extract_metadata(args, new_files.pop())
 
-            extract_chunk(args, [m])
+            extract_chunk(args, iterables.conform(m))
             db_utils.optimize(args)
             del args.playlist_path
 
@@ -301,7 +301,7 @@ def scan_path(args, path_str: str) -> int:
                     playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
                 )
                 metadata = parallel.map(partial(extract_metadata, mp_args), chunk_paths)
-                metadata = list(filter(None, metadata))
+                metadata = iterables.conform(metadata)
                 extract_chunk(args, metadata)
             print()
 

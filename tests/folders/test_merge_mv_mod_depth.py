@@ -5,6 +5,17 @@ from library.utils import arggroups, devices, objects
 from tests.conftest import read_relative_file_tree_dict
 
 
+def test_modify_depth_preserves_multiple_path_components(temp_file_tree):
+    source = temp_file_tree({"folder1": {"folder2": {"folder3": {"file.txt": "contents"}}}})
+    destination = temp_file_tree({})
+
+    lb(["merge-mv", "--modify-depth", "1", source, destination])
+
+    assert read_relative_file_tree_dict(destination, inodes=False) == {
+        "folder2": {"folder3": {"file.txt": "contents"}},
+    }
+
+
 @pytest.mark.parametrize("file_over_file", objects.class_enum(arggroups.FileOverFile))
 def test_file_over_file_mod_start(file_over_file, temp_file_tree):
     src1 = temp_file_tree({"file4.txt": "5", "folder1": {"file2.txt": "5", "folder2": {"file3.txt": "5"}}})

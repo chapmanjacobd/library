@@ -8,7 +8,9 @@ import pytest
 
 from library.__main__ import library as lb
 from library.mediadb import db_history
-from library.utils import arggroups
+from library.utils import arggroups, consts
+from library.utils.consts import SC
+from library.utils.objects import NoneSpace
 from tests.playback.test_play_history import history_flags
 from tests.utils import connect_db_args, v_db
 
@@ -97,6 +99,33 @@ db_history.create(args)
 temp_parser = ArgumentParser(add_help=False)
 arggroups.sql_fs(temp_parser)
 opts = temp_parser._actions
+
+
+@pytest.mark.parametrize(
+    ("subtitle_mix", "subtitle_sort"),
+    [
+        (0, "subtitle_count =0 desc"),
+        (1, "subtitle_count >0 desc"),
+    ],
+)
+def test_subtitle_mix_boundaries(monkeypatch, subtitle_mix, subtitle_sort):
+    monkeypatch.setattr(consts, "PYTEST_RUNNING", False)
+    monkeypatch.setattr(arggroups.random, "random", lambda: 0.5)
+    args = NoneSpace(
+        action=SC.watch,
+        subtitle_mix=subtitle_mix,
+        sort=[],
+        random=False,
+        print="",
+        where=[],
+        limit=consts.DEFAULT_PLAY_QUEUE,
+        include=[],
+        portrait=False,
+    )
+
+    sort, _ = arggroups.parse_args_sort(args, {"subtitle_count"})
+
+    assert subtitle_sort in sort
 
 
 @pytest.mark.parametrize("o", opts)

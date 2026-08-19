@@ -16,10 +16,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-image-width", type=int, default=2400)
     parser.add_argument(
         "--delete-larger",
-        "--delete-original",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Delete larger of transcode or original files",
+    )
+    parser.add_argument(
+        "--delete-original",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Delete the original after a successful transcode",
     )
     parser.add_argument(
         "--hide-deleted",
@@ -107,11 +112,13 @@ def process_path(args, path) -> str | None:
         return str(path) if path.exists() else None
 
     output_stats = output_path.stat()
-    if output_stats.st_size == 0 or (args.delete_larger and output_stats.st_size > original_stats.st_size):
+    if output_stats.st_size == 0 or (
+        args.delete_larger and not getattr(args, "delete_original", False) and output_stats.st_size > original_stats.st_size
+    ):
         output_path.unlink()  # Remove transcode
         return str(path)
 
-    if args.delete_larger:
+    if args.delete_larger or getattr(args, "delete_original", False):
         path.unlink()  # Remove original
     os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 

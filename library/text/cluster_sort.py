@@ -39,27 +39,6 @@ def parse_args() -> argparse.Namespace:
         const=DBType.image,
         help="Read image data",
     )
-    profile.add_argument(
-        "--audio",
-        action="store_const",
-        dest="profile",
-        const=DBType.audio,
-        help="Read audio data",
-    )
-    profile.add_argument(
-        "--video",
-        action="store_const",
-        dest="profile",
-        const=DBType.video,
-        help="Read video data",
-    )
-    profile.add_argument(
-        "--text",
-        action="store_const",
-        dest="profile",
-        const=DBType.text,
-        help="Read text data",
-    )
     parser.set_defaults(profile="lines")
 
     arggroups.text_filtering(parser)
@@ -182,7 +161,7 @@ def find_clusters(args, sentence_strings):
 
 def cluster_paths(args, paths):
     if len(paths) < 3:
-        return paths
+        return map_and_name(paths, range(len(paths)))
 
     sentence_strings = (strings.path_to_sentence(s) for s in paths)
     clusters = find_clusters(args, sentence_strings)
@@ -228,7 +207,11 @@ def sort_dicts(args, media):
     if getattr(args, "sort_groups_by", None):
         if args.sort_groups_by in ("duration", "duration desc"):
             sorted_paths = iterables.flatten(
-                sorted(d["grouped_paths"], key=lambda p: media_keyed[p]["duration"], reverse=" desc" in args.sort)
+                sorted(
+                    d["grouped_paths"],
+                    key=lambda p: media_keyed[p]["duration"],
+                    reverse=args.sort_groups_by.endswith(" desc"),
+                )
                 for d in groups
             )
         else:
@@ -273,6 +256,28 @@ def sort_dicts(args, media):
     return media
 
 
+def _groups_from_neighbors(paths, neighbor_indices):
+    parents = list(range(len(paths)))
+
+    def find(index):
+        while parents[index] != index:
+            parents[index] = parents[parents[index]]
+            index = parents[index]
+        return index
+
+    def union(first, second):
+        first_parent = find(first)
+        second_parent = find(second)
+        if first_parent != second_parent:
+            parents[second_parent] = first_parent
+
+    for index, neighbors in enumerate(neighbor_indices):
+        for neighbor in neighbors:
+            union(index, neighbor)
+
+    return map_and_name(paths, [find(index) for index in range(len(paths))])
+
+
 def cluster_images(paths, n_clusters=None):
     t = Timer()
 
@@ -289,51 +294,38 @@ def cluster_images(paths, n_clusters=None):
     img_size = 100  # trade-off between accuracy and speed
 
     image_mode_groups = {}
-    for path in paths:
+    for path_index, path in enumerate(paths):
         img = Image.open(path)
         img = img.resize((img_size, img_size), Image.Resampling.NEAREST)
         img_array = np.array(img).reshape(-1)  # convert to scalar for ANNoy
         mode = img.mode
         if mode not in image_mode_groups:
             image_mode_groups[mode] = []
-        image_mode_groups[mode].append(img_array)
+        image_mode_groups[mode].append((path_index, img_array))
     log.info("image_mode_groups %s", t.elapsed())
 
     annoy_indexes = {}
     for mode, images in image_mode_groups.items():
-        dimension = images[0].shape[0]
+        dimension = images[0][1].shape[0]
 
         annoy_index = AnnoyIndex(dimension, "angular")
-        for i, vector in enumerate(images):
+        for i, (_, vector) in enumerate(images):
             annoy_index.add_item(i, vector)
 
         annoy_index.build(100)  # trade-off between accuracy and speed
         annoy_indexes[mode] = annoy_index
     log.info("annoy_index %s", t.elapsed())
 
-    clusters = []
+    neighbor_indices = [[] for _ in paths]
     for mode, images in image_mode_groups.items():
         annoy_index = annoy_indexes[mode]
         for i in range(len(images)):
             nearest_neighbors = annoy_index.get_nns_by_item(i, n_clusters or int(len(images) ** 0.6))
-            clusters.extend([i] * len(nearest_neighbors))
+            path_index = images[i][0]
+            neighbor_indices[path_index] = [images[neighbor][0] for neighbor in nearest_neighbors]
     log.info("image_mode_groups %s", t.elapsed())
 
-    grouped_strings = {}
-    for i, group_string in enumerate(paths):
-        cluster_id = clusters[i]
-
-        if cluster_id not in grouped_strings:
-            grouped_strings[cluster_id] = []
-
-        grouped_strings[cluster_id].append(group_string + "\n")
-    log.info("grouped_strings %s", t.elapsed())
-
-    result = []
-    for paths in grouped_strings.values():
-        common_prefix = os.path.commonprefix(paths)
-        metadata = {"common_path": common_prefix, "grouped_paths": sorted(paths)}
-        result.append(metadata)
+    result = _groups_from_neighbors(paths, neighbor_indices)
     log.info("common_prefix %s", t.elapsed())
 
     return result

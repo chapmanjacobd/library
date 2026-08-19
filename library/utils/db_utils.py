@@ -2,7 +2,7 @@ import itertools, sqlite3
 from collections.abc import Iterable
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from library.utils import consts, iterables, nums, strings
 from library.utils.log_utils import log
@@ -230,23 +230,6 @@ def rebuild_fts(db: "Database", table: str = "media") -> None:
     with db.conn:
         log.info("Rebuilding FTS index for table: %s", table)
         db.execute(f'INSERT INTO [{fts_table}] ([{fts_table}]) VALUES ("rebuild")')
-
-
-def has_similar_schema(set1, set2):
-    len1 = len(set1)
-    len2 = len(set2)
-    min_len = min(len1, len2)
-
-    if min_len <= 3:
-        return set1 == set2
-    elif min_len <= 5:
-        return set1.issubset(set2) or set2.issubset(set1)
-    else:
-        threshold = min_len * (nums.linear_interpolation(min_len, [(6, 0.875), (100, 0.3)]) or 0.8)
-        if len1 == min_len:
-            return len(set1.intersection(set2)) >= threshold
-        else:
-            return len(set2.intersection(set1)) >= threshold
 
 
 def most_similar_schema(keys, existing_tables):

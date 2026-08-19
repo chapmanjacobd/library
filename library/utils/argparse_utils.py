@@ -275,15 +275,6 @@ def arggroup_parser(functions):
     return {a.dest: a for a in temp_parser._actions}
 
 
-def suppress_arggroups(parser, functions):
-    actions = arggroup_parser(functions)
-    destinations = set(actions.keys())
-
-    for action in parser._actions:
-        if action.dest in destinations:
-            action.help = argparse.SUPPRESS
-
-
 def forward_arggroups(args, *arggroups, **overrides):
     forward_args = []
     actions = arggroup_parser(arggroups)

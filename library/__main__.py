@@ -5,7 +5,7 @@ from tabulate import tabulate
 from library.utils import argparse_utils, iterables
 from library.utils.log_utils import log
 
-__version__ = "3.2.002"
+__version__ = "3.2.003"
 
 progs = {
     "Create database subcommands": {
@@ -58,7 +58,6 @@ progs = {
         "sample_compare": "Compare files using sample-hash and other shortcuts",
         "filesystem": "Find files by mimetype and size",
         "similar_files": "Find similar files based on filename and size",
-        "llm_map": "Run LLMs across multiple files",
     },
     "Tabular data subcommands": {
         "eda": "Exploratory Data Analysis on table-like files",
@@ -197,7 +196,6 @@ modules = {
     "library.files.sample_compare.sample_compare": ["cmp"],
     "library.files.sample_hash.sample_hash": ["hash", "hash-file"],
     "library.files.similar_files.similar_files": [],
-    "library.files.llm_map.llm_map": [],
     "library.folders.move_list.move_list": ["mv-list"],
     "library.folders.merge_mv.merge_mv": ["mv"],
     "library.folders.merge_mv.merge_cp": ["cp"],

@@ -15,10 +15,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-image-width", type=int, default=2400)
     parser.add_argument(
         "--delete-larger",
-        "--delete-original",
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Delete larger of transcode or original files",
+    )
+    parser.add_argument(
+        "--delete-original",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Delete the original after a successful transcode",
     )
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-dest")
@@ -163,7 +168,7 @@ def convert_to_text_pdf(args, path):
         log.warning("[%s]: Could not run OCR. %s", path, excinfo)
     else:
         if os.path.exists(pdf_path):
-            if args.delete_larger and not os.path.samefile(path, pdf_path):
+            if (args.delete_larger or args.delete_original) and not os.path.samefile(path, pdf_path):
                 os.unlink(path)
             path = pdf_path
 
@@ -279,7 +284,7 @@ def process_path(args, path) -> str | None:
     image_paths = shell_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
 
     mp_image_args = argparse.Namespace(
-        **{k: v for k, v in args.__dict__.items() if k not in {"db"}} | {"delete_larger": True}
+        **{k: v for k, v in args.__dict__.items() if k not in {"db"}} | {"delete_larger": True, "delete_original": False}
     )
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {
@@ -341,10 +346,10 @@ def process_path(args, path) -> str | None:
 
     # compare final output size
     epub_size = os.path.getsize(epub_path)
-    if args.delete_larger and epub_size > original_stats.st_size:
+    if args.delete_larger and not args.delete_original and epub_size > original_stats.st_size:
         epub_path.unlink(missing_ok=True)  # Remove transcode
         return str(path)
-    elif args.delete_larger:
+    elif args.delete_larger or args.delete_original:
         path.unlink()  # Remove original
 
     return str(epub_path)

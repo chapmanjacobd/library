@@ -53,3 +53,9 @@ def test_lb_eda(args, stdout, capsys):
     lb(["eda", *args])
     captured = capsys.readouterr().out
     assert all(l in captured for l in stdout)
+
+
+def test_eda_end_row_checks_row_count(capsys):
+    lb(["eda", "--end-row", "4", "tests/data/test.xml"])
+
+    assert "(limited by --end-row 4)" not in capsys.readouterr().out

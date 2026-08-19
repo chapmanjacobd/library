@@ -30,6 +30,9 @@ def parse_args() -> argparse.Namespace:
     if args.facet not in m_columns:
         args.facet = "time_played"
 
+    if args.facet == "time_deleted" and "hide_deleted" in args.defaults:
+        args.hide_deleted = False
+
     arggroups.sql_fs_post(args)
     arggroups.frequency_post(args)
 
@@ -39,9 +42,6 @@ def parse_args() -> argparse.Namespace:
 def stats() -> None:
     args = parse_args()
     db_history.create(args)
-
-    if args.facet == "time_deleted" and "hide_deleted" in args.defaults:
-        args.hide_deleted = False
 
     print(f"{args.facet.title()} media:")
     if args.facet == "time_played" or args.completed:

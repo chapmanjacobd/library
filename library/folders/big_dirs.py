@@ -91,6 +91,7 @@ def group_files_by_parent(args, media) -> list[dict]:
     for parent, media in list(p_media.items()):
         d[parent] = {
             "total": len(media),
+            "folders": 0,
             "duration": sum(m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))),
             "median_duration": nums.safe_median(m.get("duration") for m in media if not bool(m.get("time_deleted"))),
             "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),

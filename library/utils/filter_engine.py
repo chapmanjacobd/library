@@ -455,9 +455,6 @@ class FilterEngine:
     def apply_sql_filters(self, m_columns, table="media", table_prefix="m."):
         return search_filter(self.args, m_columns, table=table, table_prefix=table_prefix)
 
-    def sort_items(self, items: list[dict]) -> list[dict]:
-        return sort_items_by_criteria(self.args, items)
-
     def apply_post_filters(self, items: list[dict]) -> list[dict]:
         if getattr(self.args, "file_counts", None):
             items = filter_episodic(self.args, items)

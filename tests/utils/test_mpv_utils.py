@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+from unittest import mock
 
 from library.utils import consts, mpv_utils
 from library.utils.objects import NoneSpace
@@ -10,6 +11,19 @@ def test_mpv_md5():
         mpv_utils.path_to_mpv_watchlater_md5("/home/xk/github/xk/lb/tests/data/test.mp4")
         == "E1E0D0E3F0D2CB748303FDA43224B7E7"
     )
+
+
+def test_connect_default_mpv_probes_watch_socket(monkeypatch):
+    monkeypatch.setattr(mpv_utils.consts, "DEFAULT_MPV_LISTEN_SOCKET", "listen.sock")
+    monkeypatch.setattr(mpv_utils.consts, "DEFAULT_MPV_WATCH_SOCKET", "watch.sock")
+    monkeypatch.setattr(mpv_utils.Path, "exists", lambda self: str(self) in {"listen.sock", "watch.sock"})
+    watch_mpv = object()
+
+    with mock.patch.object(mpv_utils, "connect_mpv", side_effect=[None, watch_mpv]):
+        socket, mpv = mpv_utils.connect_default_mpv()
+
+    assert socket == "watch.sock"
+    assert mpv is watch_mpv
 
 
 def test_get_playhead():
