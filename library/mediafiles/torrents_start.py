@@ -1,5 +1,4 @@
-import getpass, logging, shutil, time
-from contextlib import suppress
+import getpass, shutil, time
 from pathlib import Path
 from time import sleep
 
@@ -65,9 +64,15 @@ def start_qBittorrent(args):
         HTTPADAPTER_ARGS={"pool_connections": 32, "pool_maxsize": 32},
     )
 
-    with suppress(Exception):
+    try:
         qbt_client.auth_log_in()
         return qbt_client
+    except qbittorrentapi.LoginFailed:
+        # qBittorrent may allow API access with WebUI authentication disabled.
+        if args.username is None and args.password is None:
+            return qbt_client
+    except (qbittorrentapi.APIConnectionError, ConnectionRefusedError):
+        pass
 
     if shutil.which("qbittorrent-nox"):
         username = getpass.getuser()
@@ -85,13 +90,13 @@ def start_qBittorrent(args):
             log.debug("qBittorrent web UI ready")
             break
         except qbittorrentapi.LoginFailed as excinfo:
-            logging.warning("Authentication failed. Check your qBit settings, --username, and --password: %s", excinfo)
+            log.warning("Authentication failed. Check your qBit settings, --username, and --password: %s", excinfo)
             break  # stop if authentication failing
         except (qbittorrentapi.APIConnectionError, ConnectionRefusedError):
             time.sleep(2)
             attempt += 1
     else:
-        logging.error("Failed to connect to qBittorrent web UI")
+        log.error("Failed to connect to qBittorrent web UI")
         raise ConnectionError("qBittorrent web UI not available")
 
     return qbt_client
