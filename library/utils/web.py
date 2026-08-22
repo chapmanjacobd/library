@@ -280,13 +280,8 @@ def get_browser_profile_path(browser_name, profile=None):
         browser_dir = settings["browser_dir"]
         if not os.path.isdir(browser_dir):
             return None
-        if profile:
-            candidate = os.path.join(browser_dir, profile)
-            if os.path.isdir(candidate):
-                return candidate
-        default_profile = os.path.join(browser_dir, "Default")
-        if os.path.isdir(default_profile):
-            return default_profile
+        # selenium passes this via --user-data-dir, which expects the data root;
+        # chrome selects its own last-used profile unless told otherwise
         return browser_dir
 
     return None
@@ -331,6 +326,7 @@ def load_selenium(args, wire=False):
     if getattr(args, "driver", False):
         return
 
+    _profile = None
     if not args.user_data_dir and getattr(args, "cookies_from_browser", None):
         from library.utils.web import parse_cookies_from_browser
 
@@ -338,6 +334,7 @@ def load_selenium(args, wire=False):
         resolved = get_browser_profile_path(browser_name, profile)
         if resolved:
             args.user_data_dir = resolved
+            _profile = profile
             log.info("Using browser profile: %s", resolved)
             if browser_name == "firefox" and not getattr(args, "chrome", False):
                 args.firefox = True
@@ -406,6 +403,8 @@ def load_selenium(args, wire=False):
         options = Options()
         if args.user_data_dir:
             options.add_argument(f"--user-data-dir={args.user_data_dir}")
+            if _profile:
+                options.add_argument(f"--profile-directory={_profile}")
 
         options.add_experimental_option(
             "prefs",
