@@ -262,7 +262,7 @@ def get_browser_profile_path(browser_name, profile=None):
     browser_name = browser_name.lower()
 
     if browser_name == "firefox":
-        profile_roots = list(_firefox_browser_dirs())
+        profile_roots = [root for root in _firefox_browser_dirs() if os.path.isfile(os.path.join(root, "profiles.ini"))]
         if not profile_roots:
             return None
         root = profile_roots[0]
@@ -270,6 +270,9 @@ def get_browser_profile_path(browser_name, profile=None):
             candidate = os.path.join(root, profile)
             if os.path.isdir(candidate):
                 return candidate
+        default_profile = _firefox_default_profile(root)
+        if default_profile and os.path.isdir(os.path.join(root, default_profile)):
+            return os.path.join(root, default_profile)
         return root
 
     if browser_name in {"chrome", "chromium", "brave", "edge", "opera", "vivaldi", "whale"}:
@@ -287,6 +290,41 @@ def get_browser_profile_path(browser_name, profile=None):
         return browser_dir
 
     return None
+
+
+def _firefox_default_profile(root):
+    import configparser
+
+    def read_ini(ini_name):
+        ini_path = os.path.join(root, ini_name)
+        if not os.path.isfile(ini_path):
+            return None
+        parser = configparser.RawConfigParser()
+        try:
+            with open(ini_path, encoding="utf8") as f:
+                parser.read_file(f)
+        except (configparser.Error, OSError):
+            return None
+        return parser
+
+    installs = read_ini("installs.ini")
+    if installs:
+        for section in installs.sections():
+            if section.lower().startswith("install"):
+                default = installs.get(section, "Default", fallback=None)
+                if default and os.path.isdir(os.path.join(root, default)):
+                    return default
+
+    profiles = read_ini("profiles.ini")
+    if not profiles:
+        return None
+    sections = [s for s in profiles.sections() if s.lower().startswith("profile")]
+    for section in sections:
+        if profiles.get(section, "Default", fallback="") == "1":
+            path = profiles.get(section, "Path", fallback=None)
+            if path and os.path.isdir(os.path.join(root, path)):
+                return path
+    return next((p for p in (profiles.get(s, "Path", fallback=None) for s in sections) if p), None)
 
 
 def load_selenium(args, wire=False):
