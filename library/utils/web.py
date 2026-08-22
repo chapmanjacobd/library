@@ -334,6 +334,7 @@ def load_selenium(args, wire=False):
         resolved = get_browser_profile_path(browser_name, profile)
         if resolved:
             args.user_data_dir = resolved
+            args.profile_directory = profile
             _profile = profile
             log.info("Using browser profile: %s", resolved)
             if browser_name == "firefox" and not getattr(args, "chrome", False):
@@ -378,6 +379,7 @@ def load_selenium(args, wire=False):
         if xvfb is False:
             options.add_argument("--headless")
 
+        backup_profile_prefs(args)
         args.driver = webdriver.Firefox(service=service, options=options)
 
         if not args.user_data_dir:
@@ -405,15 +407,15 @@ def load_selenium(args, wire=False):
             options.add_argument(f"--user-data-dir={args.user_data_dir}")
             if _profile:
                 options.add_argument(f"--profile-directory={_profile}")
-
-        options.add_experimental_option(
-            "prefs",
-            {
-                "credentials_enable_service": False,
-                "profile.password_manager_enabled": False,
-                "profile.default_content_setting_values.notifications": 2,
-            },
-        )
+        else:
+            options.add_experimental_option(
+                "prefs",
+                {
+                    "credentials_enable_service": False,
+                    "profile.password_manager_enabled": False,
+                    "profile.default_content_setting_values.notifications": 2,
+                },
+            )
         options.add_argument("--disable-notifications")
         options.add_argument("--mute-audio")
         if xvfb is False:
@@ -432,11 +434,48 @@ def load_selenium(args, wire=False):
                     else:
                         log.exception("Could not install chrome extension. Missing file %s", addon_path)
 
+        backup_profile_prefs(args)
         args.driver = webdriver.Chrome(options=options)
+
+
+firefox_profile_prefs = ("user.js", "prefs.js")
+
+
+def selenium_profile_prefs(args):
+    if getattr(args, "chrome", False):
+        # chromedriver writes experimental prefs + exit state into these;
+        # actual tab session data lives in <profile>/Sessions and is untouched
+        profile_subdir = getattr(args, "profile_directory", None) or "Default"
+        return ("Local State", str(Path(profile_subdir) / "Preferences"))
+    return firefox_profile_prefs
+
+
+def backup_profile_prefs(args):
+    if not getattr(args, "user_data_dir", None):
+        return
+    profile_dir = Path(args.user_data_dir)
+    args.profile_prefs_backup = {
+        name: (profile_dir / name).read_bytes() if (profile_dir / name).exists() else None
+        for name in selenium_profile_prefs(args)
+    }
+
+
+def restore_profile_prefs(args):
+    backup = getattr(args, "profile_prefs_backup", None)
+    if not backup:
+        return
+    profile_dir = Path(args.user_data_dir)
+    for name, content in backup.items():
+        target = profile_dir / name
+        if content is None:
+            target.unlink(missing_ok=True)
+        else:
+            target.write_bytes(content)
 
 
 def quit_selenium(args):
     args.driver.quit()
+    restore_profile_prefs(args)
     if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
         with suppress(Exception):
             args.driver_display.stop()
