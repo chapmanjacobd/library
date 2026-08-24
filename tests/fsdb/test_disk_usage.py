@@ -1,9 +1,10 @@
 import json
+from types import SimpleNamespace
 
 import pytest
 
 from library.__main__ import library as lb
-from library.fsdb import folder_stats
+from library.fsdb import disk_usage, folder_stats
 from library.utils import consts
 from tests.utils import connect_db_args, v_db
 
@@ -72,3 +73,22 @@ def test_folder_stats_refreshes_after_media_change(temp_db):
 
     folder_stats.refresh_if_needed(args.db)
     assert args.db.pop("SELECT total_size FROM folder_stats WHERE parent = ?", ["/root/a"]) == 9
+
+
+def test_extensions_sort_by_size_then_count():
+    args = SimpleNamespace(
+        data=[
+            {"path": "/root/a.mp4", "size": 100},
+            {"path": "/root/b.mp4", "size": 100},
+            {"path": "/root/a.gif", "size": 50},
+            {"path": "/root/b.gif", "size": 50},
+            {"path": "/root/c.gif", "size": 100},
+            {"path": "/root/a.jpg", "size": 300},
+        ],
+        cwd=None,
+        sort_groups_by=None,
+    )
+
+    result = disk_usage.get_subset_group_by_extensions(args)
+
+    assert [item["path"] for item in result] == ["jpg", "gif", "mp4"]

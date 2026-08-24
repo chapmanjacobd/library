@@ -50,11 +50,12 @@ def parse_args(defaults_override=None):
     return args
 
 
-def sort_by(args):
-    if args.sort_groups_by:
-        key = args.sort_groups_by.replace(" desc", "")
-        if key != "priority":
-            return lambda x: (x.get(key) or 0, objects.Reverser(x.get("path")))
+def sort_by(args, default_sort="priority"):
+    sort_groups_by = args.sort_groups_by or default_sort
+    if sort_groups_by:
+        keys = [key.replace(" desc", "") for key in sort_groups_by.split(",")]
+        if keys != ["priority"]:
+            return lambda x: (*[x.get(key) or 0 for key in keys], objects.Reverser(x.get("path")))
 
     # priority sort
     return lambda x: (
@@ -170,7 +171,11 @@ def get_subset_group_by_extensions(args) -> list[dict]:
     if args.sort_groups_by and " desc" in args.sort_groups_by:
         reverse = False
 
-    return sorted([{"path": k, **v} for k, v in d.items()], key=sort_by(args), reverse=reverse)
+    return sorted(
+        [{"path": k, **v} for k, v in d.items()],
+        key=sort_by(args, default_sort="size,count"),
+        reverse=reverse,
+    )
 
 
 def get_subset_group_by_mimetypes(args) -> list[dict]:
