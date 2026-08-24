@@ -241,3 +241,19 @@ def test_time_created_within_uses_epoch_timestamp():
     # only the file created within the last 500 seconds should survive
     assert len(filtered) == 1
     assert filtered[0]["path"] == "new"
+
+
+def test_time_filtering_skips_missing_files(tmp_path):
+    args = Namespace(
+        defaults=["sizes"],
+        type=[],
+        no_type=[],
+        time_created=lambda x: True,
+        to_json=False,
+        sort=[],
+        limit=None,
+    )
+
+    filtered = filter_items_by_criteria(args, [{"path": str(tmp_path / "missing")}])
+
+    assert filtered == []
