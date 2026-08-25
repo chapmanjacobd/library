@@ -1,4 +1,4 @@
-import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
+import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, shutil, socket, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -322,6 +322,20 @@ def _firefox_default_profile(root):
     return next((p for p in (profiles.get(s, "Path", fallback=None) for s in sections) if p), None)
 
 
+def copy_firefox_profile_for_selenium(source_profile, selenium_profile):
+    selenium_profile.mkdir(parents=True, exist_ok=True)
+    source_cookies = source_profile / "cookies.sqlite"
+    if source_cookies.exists():
+        for suffix in ("", "-wal", "-shm"):
+            src_file = source_cookies.with_suffix(source_cookies.suffix + suffix)
+            if src_file.exists():
+                shutil.copy2(src_file, selenium_profile / src_file.name)
+    for name in ("logins.json", "key4.db", "cert9.db", "permissions.sqlite"):
+        src_file = source_profile / name
+        if src_file.exists():
+            shutil.copy2(src_file, selenium_profile / name)
+
+
 def load_selenium(args, wire=False):
     if getattr(args, "driver", False):
         return
@@ -371,6 +385,16 @@ def load_selenium(args, wire=False):
 
         service = Service(log_path=tempfile.mktemp(".geckodriver.log"))
         options = Options()
+
+        _using_real_profile = bool(args.user_data_dir)
+        if _using_real_profile:
+            _real_profile = Path(args.user_data_dir)
+            _selenium_profile = Path(tempfile.mkdtemp(prefix="ff_selenium_")) / "profile"
+            copy_firefox_profile_for_selenium(_real_profile, _selenium_profile)
+            args.selenium_profile_dir = _selenium_profile
+            args.user_data_dir = str(_selenium_profile)
+            log.info("Selenium profile: %s (cookies from %s)", _selenium_profile, _real_profile)
+
         if args.user_data_dir:
             options.add_argument("--profile")
             options.add_argument(args.user_data_dir)
@@ -379,10 +403,9 @@ def load_selenium(args, wire=False):
         if xvfb is False:
             options.add_argument("--headless")
 
-        backup_profile_prefs(args)
         args.driver = webdriver.Firefox(service=service, options=options)
 
-        if not args.user_data_dir:
+        if not _using_real_profile:
             addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
             if getattr(args, "auto_pager", False):
                 addons.append(Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve())
@@ -476,6 +499,10 @@ def restore_profile_prefs(args):
 def quit_selenium(args):
     args.driver.quit()
     restore_profile_prefs(args)
+    _selenium_dir = getattr(args, "selenium_profile_dir", None)
+    if _selenium_dir:
+        for name in ("cookies.sqlite", "cookies.sqlite-wal", "cookies.sqlite-shm", "logins.json", "key4.db", "cert9.db", "permissions.sqlite"):
+            (_selenium_dir / name).unlink(missing_ok=True)
     if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
         with suppress(Exception):
             args.driver_display.stop()
