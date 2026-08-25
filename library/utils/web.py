@@ -336,6 +336,21 @@ def copy_firefox_profile_for_selenium(source_profile, selenium_profile):
             shutil.copy2(src_file, selenium_profile / name)
 
 
+SKIP_CHROMIUM_DIRS = {"Cache", "Code Cache", "GPUCache", "Service Worker", "Service Worker/CacheStorage", "Session Storage", "Sessions", "databases", "blob_storage", "File System", "IndexedDB", "WebStorage", "GamepadMappings", "safe_browsing", "SafetyTips", "Subresource Filter", "BudgetDatabase", "CELPuzzles", "Crowd Deny", "MEIPreload", "Segmentation Platform", "TranslateRanker", "TranslateScripts", "VideoDecodeStats"}
+
+
+def copy_chromium_profile_for_selenium(source_profile, selenium_profile):
+    source_profile = Path(source_profile)
+    selenium_profile = Path(selenium_profile)
+    for item in source_profile.iterdir():
+        if item.name in SKIP_CHROMIUM_DIRS or item.name in {"LOCK", "LOG", "LOG.old"} or item.name.startswith(".org.chromium."):
+            continue
+        if item.is_dir():
+            shutil.copytree(item, selenium_profile / item.name, ignore=shutil.ignore_patterns("*.lock", "LOCK"))
+        else:
+            shutil.copy2(item, selenium_profile / item.name)
+
+
 def load_selenium(args, wire=False):
     if getattr(args, "driver", False):
         return
@@ -426,9 +441,27 @@ def load_selenium(args, wire=False):
         from selenium.webdriver.chrome.options import Options
 
         options = Options()
+
+        _using_real_profile = bool(args.user_data_dir)
+        if _using_real_profile:
+            _real_profile = Path(args.user_data_dir)
+            _profile_name = _profile or "Default"
+            _real_profile_dir = _real_profile / _profile_name
+            _selenium_profile = Path(tempfile.mkdtemp(prefix="chrome_selenium_"))
+            copy_chromium_profile_for_selenium(_real_profile_dir, _selenium_profile / _profile_name)
+            for name in ("Local State",):
+                src_file = _real_profile / name
+                if src_file.exists():
+                    shutil.copy2(src_file, _selenium_profile / name)
+            args.selenium_profile_dir = _selenium_profile
+            args.user_data_dir = str(_selenium_profile)
+            log.info("Selenium profile: %s (cookies from %s)", _selenium_profile, _real_profile_dir)
+
         if args.user_data_dir:
             options.add_argument(f"--user-data-dir={args.user_data_dir}")
-            if _profile:
+            if _using_real_profile:
+                options.add_argument(f"--profile-directory={_profile_name}")
+            elif _profile:
                 options.add_argument(f"--profile-directory={_profile}")
         else:
             options.add_experimental_option(
@@ -444,7 +477,7 @@ def load_selenium(args, wire=False):
         if xvfb is False:
             options.add_argument("--headless=new")
 
-        if not args.user_data_dir:
+        if not _using_real_profile:
             addons = [Path("~/.local/lib/ublock_origin.crx").expanduser().resolve()]
             if getattr(args, "auto_pager", False):
                 addons.append(Path("~/.local/lib/autopager.crx").expanduser().resolve())
@@ -457,52 +490,14 @@ def load_selenium(args, wire=False):
                     else:
                         log.exception("Could not install chrome extension. Missing file %s", addon_path)
 
-        backup_profile_prefs(args)
         args.driver = webdriver.Chrome(options=options)
-
-
-firefox_profile_prefs = ("user.js", "prefs.js")
-
-
-def selenium_profile_prefs(args):
-    if getattr(args, "chrome", False):
-        # chromedriver writes experimental prefs + exit state into these;
-        # actual tab session data lives in <profile>/Sessions and is untouched
-        profile_subdir = getattr(args, "profile_directory", None) or "Default"
-        return ("Local State", str(Path(profile_subdir) / "Preferences"))
-    return firefox_profile_prefs
-
-
-def backup_profile_prefs(args):
-    if not getattr(args, "user_data_dir", None):
-        return
-    profile_dir = Path(args.user_data_dir)
-    args.profile_prefs_backup = {
-        name: (profile_dir / name).read_bytes() if (profile_dir / name).exists() else None
-        for name in selenium_profile_prefs(args)
-    }
-
-
-def restore_profile_prefs(args):
-    backup = getattr(args, "profile_prefs_backup", None)
-    if not backup:
-        return
-    profile_dir = Path(args.user_data_dir)
-    for name, content in backup.items():
-        target = profile_dir / name
-        if content is None:
-            target.unlink(missing_ok=True)
-        else:
-            target.write_bytes(content)
 
 
 def quit_selenium(args):
     args.driver.quit()
-    restore_profile_prefs(args)
     _selenium_dir = getattr(args, "selenium_profile_dir", None)
     if _selenium_dir:
-        for name in ("cookies.sqlite", "cookies.sqlite-wal", "cookies.sqlite-shm", "logins.json", "key4.db", "cert9.db", "permissions.sqlite"):
-            (_selenium_dir / name).unlink(missing_ok=True)
+        shutil.rmtree(_selenium_dir, ignore_errors=True)
     if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
         with suppress(Exception):
             args.driver_display.stop()
