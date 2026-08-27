@@ -1961,9 +1961,19 @@ torrents_add = """library torrents-add DATABASE PATH ...
 """
 
 
-torrents_start = """library torrents-start [--prefix /mnt/d/] PATH ...
+torrents_start = """library torrents-start [--prefix /mnt/d/] [--scan] PATH ...
 
     Start torrent files in qBittorrent-nox
+
+    By default the temp/download paths are derived from the configured drives and
+    prefixes (and optional tracker subdirectories). With --scan, the temp and download
+    drive prefixes are searched to locate each torrent's files on disk. If
+    --tracker-dirnames is also set, the tracker subdirectories of each prefix are
+    searched as well. Files found under the temp/downloading prefix are used as the
+    download_path (temp), and files under the download/seeding prefix as the save_path,
+    so qBittorrent hash-scans and moves any incomplete data into place. Torrents with
+    no file matches are logged, skipped, and their .torrent files are left in place.
+    --scan overrides the --tracker-dirnames layout when choosing save paths.
 """
 
 torrents_dump = """library torrents-dump PATH ...

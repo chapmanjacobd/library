@@ -2717,6 +2717,12 @@ def torrents_start(parser):
     parser.add_argument(
         "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
     )
+    parser.add_argument(
+        "--scan",
+        action="store_true",
+        help="Scan the temp/download drives (and their prefixes) to find where each torrent's files are, "
+        "and set both the temp and download paths to that location (overrides --tracker-dirnames)",
+    )
 
 
 def qBittorrent_torrents(parent_parser):

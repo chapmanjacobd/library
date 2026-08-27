@@ -367,12 +367,13 @@ def library(args=None) -> None:
     log.debug(sys.argv)
 
     if hasattr(args, "func"):
+        subcommand = sys.argv[1] if len(sys.argv) >= 2 else ""
         if len(sys.argv) >= 2:
             del sys.argv[1]
         try:
             return args.func()
         except Exception:
-            print("Bug found in", " ".join(sys.argv), file=sys.stderr)
+            print("Bug found in", subcommand, " ".join(sys.argv), file=sys.stderr)
             raise
     else:
         try:

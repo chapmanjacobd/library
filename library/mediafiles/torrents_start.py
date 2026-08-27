@@ -1,4 +1,4 @@
-import getpass, shutil, time
+import getpass, os, shutil, time
 from pathlib import Path
 from time import sleep
 
@@ -102,28 +102,92 @@ def start_qBittorrent(args):
     return qbt_client
 
 
+def scan_torrent_location(torrent, roots, max_depth=3):
+    if torrent.num_files() == 0:
+        return None, None
+    first_file = Path(next(iter(torrent.files())).path)
+    for root in roots:
+        root = Path(root)
+        if not root.is_dir():
+            continue
+        for dirpath, dirnames, _filenames in os.walk(root):
+            depth = len(Path(dirpath).relative_to(root).parts)
+            if depth > max_depth:
+                dirnames[:] = []
+                continue
+            if (Path(dirpath) / first_file).exists():
+                return root, Path(dirpath)
+    return None, None
+
+
+def torrent_paths(args, torrent, temp_prefix, download_prefix):
+    if args.scan:
+        roots = [temp_prefix, download_prefix]
+        if args.tracker_dirnames:
+            tracker = get_tracker_domain(torrent)
+            if tracker:
+                roots += [temp_prefix / tracker, download_prefix / tracker]
+        root, location = scan_torrent_location(torrent, roots)
+        if not location:
+            return None, None
+        log.debug("Found files for %s at %s (root %s)", torrent.name(), location, root)
+
+        if root == temp_prefix or temp_prefix in root.parents:
+            # files live under the temp/downloading prefix: keep them as the temp path,
+            # and let the download prefix be the final save path
+            return download_prefix, location
+        # files live under the download/seeding prefix: use them as the final save path,
+        # and the temp prefix as where any incomplete data would go
+        return location, temp_prefix
+
+    download_path = download_prefix
+    temp_path = temp_prefix
+    if args.tracker_dirnames:
+        tracker = get_tracker_domain(torrent)
+        if tracker:
+            download_path /= tracker
+            temp_path /= tracker
+    return download_path, temp_path
+
+
 def torrents_start():
     args = parse_args()
 
     qbt_client = start_qBittorrent(args)
 
     if args.temp_drive and Path(args.temp_drive).is_absolute():
-        temp_prefix = Path(args.temp_drive)
+        temp_drive = Path(args.temp_drive)
     else:
-        temp_prefix = Path(args.download_drive)
-    temp_prefix /= args.temp_prefix
-    download_prefix = Path(args.download_drive) / args.download_prefix
+        temp_drive = Path(args.download_drive)
 
-    for path in args.paths:
+    if "download_drive" in args.defaults and args.temp_drive:
+        # --temp-drive set but not --download-drive: use the same drive for both prefixes
+        download_drive = temp_drive
+    else:
+        download_drive = Path(args.download_drive)
+    temp_prefix = temp_drive / args.temp_prefix
+    download_prefix = download_drive / args.download_prefix
+
+    paths = []
+    for p in args.paths:
+        p = Path(p)
+        if p.is_dir():
+            paths.extend(p.glob("*.torrent"))
+        else:
+            paths.append(p)
+
+    for path in paths:
         torrent = torrent_decode(path)
 
-        download_path = download_prefix
-        temp_path = temp_prefix
-        if args.tracker_dirnames:
-            tracker = get_tracker_domain(torrent)
-            if tracker:
-                download_path /= tracker
-                temp_path /= tracker
+        download_path, temp_path = torrent_paths(args, torrent, temp_prefix, download_prefix)
+        if download_path is None:
+            log.warning(
+                "Skipping %s: no file matches under %s or %s (torrent file left in place)",
+                path,
+                temp_prefix,
+                download_prefix,
+            )
+            continue
 
         qbt_client.torrents_add(
             torrent_files=path,
