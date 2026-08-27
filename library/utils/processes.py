@@ -246,16 +246,16 @@ def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
 
 
 def cmd_interactive(*command, strict=True) -> subprocess.CompletedProcess:
-    return_code = os.spawnvpe(os.P_WAIT, command[0], command, os.environ)
+    result = subprocess.run(command, check=False)
 
-    if return_code != 0:
-        msg = f"[{shlex.join(command)}] exited {return_code}"
+    if result.returncode != 0:
+        msg = f"[{shlex.join(command)}] exited {result.returncode}"
         if strict:
             raise RuntimeError(msg)
         else:
             log.info(msg)
 
-    return subprocess.CompletedProcess(command, return_code)
+    return result
 
 
 def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
