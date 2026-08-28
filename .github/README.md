@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.004; 102 subcommands)
+    library (v3.2.005; 102 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -2196,12 +2196,13 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     By default the temp/download paths are derived from the configured drives and
     prefixes (and optional tracker subdirectories). With --scan, the temp and download
-    drive prefixes are searched to locate each torrent's files on disk. Files found
-    under the temp/downloading prefix are used as the download_path (temp), and files
-    under the download/seeding prefix as the save_path, so qBittorrent hash-scans and
-    moves any incomplete data into place. Torrents with no file matches are logged,
-    skipped, and their .torrent files are left in place. --scan overrides any
-    --tracker-dirnames layout.
+    drive prefixes are searched to locate each torrent's files on disk. If
+    --tracker-dirnames is also set, the tracker subdirectories of each prefix are
+    searched as well. Files found under the temp/downloading prefix are used as the
+    download_path (temp), and files under the download/seeding prefix as the save_path,
+    so qBittorrent hash-scans and moves any incomplete data into place. Torrents with
+    no file matches are logged, skipped, and their .torrent files are left in place.
+    --scan overrides the --tracker-dirnames layout when choosing save paths.
 
 
 </details>
