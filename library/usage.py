@@ -1991,6 +1991,18 @@ torrents_info = """library torrents-info
 
         library torrents query
 
+    Positional torrent searches use the path aligned with torrent status by default.
+    Search a specific path field or both fields with --path-search:
+
+        library torrents --dl --path-search save /mnt/d4/
+        library torrents --dl --path-search both /mnt/d4/
+
+    Find incomplete torrents whose temp and final paths use different drives.
+    --different-drives searches both path fields unless --path-search is specified:
+
+        library torrents --dl --different-drives
+        library torrents --dl --different-drives /mnt/d4/
+
     Aggregate torrent info (torrents-status)
 
         library torrents -pa

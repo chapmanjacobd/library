@@ -2795,6 +2795,16 @@ def qBittorrent_torrents(parent_parser):
         help="Include torrents with files currently in use by processes",
     )
     parser.add_argument("--private", action=argparse.BooleanOptionalAction, help="Match only private torrents")
+    parser.add_argument(
+        "--different-drives",
+        action=argparse.BooleanOptionalAction,
+        help="Include torrents whose incomplete and final paths are on different mountpoints",
+    )
+    parser.add_argument(
+        "--path-search",
+        choices=["status", "download", "save", "both"],
+        help="Path used by positional torrent searches: status, download, save, or both",
+    )
 
     parser.add_argument(
         "--sizes",

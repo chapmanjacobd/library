@@ -297,6 +297,8 @@ def filter_torrents_by_criteria(args, torrents):
 
     if args.private is not None:
         torrents = [t for t in torrents if args.private is t.private]
+    if args.different_drives:
+        torrents = [t for t in torrents if torrent_paths_on_different_drives(t)]
     if args.no_tagged:
         tags = set(args.no_tagged)
         torrents = [t for t in torrents if tags.isdisjoint(t.tags.split(", "))]
@@ -309,7 +311,7 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if strings.glob_match_all(
                 args.torrent_search,
-                [t.name, t.comment, t.save_path if t.state_enum.is_complete else t.download_path, t.hash],
+                [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash],
             )
         ]
     if args.torrent_exclude:
@@ -318,7 +320,7 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if not strings.glob_match_any(
                 args.torrent_exclude,
-                [t.name, t.comment, t.save_path if t.state_enum.is_complete else t.download_path, t.hash],
+                [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash],
             )
         ]
     if args.torrent_include:
@@ -327,7 +329,7 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if strings.glob_match_any(
                 args.torrent_include,
-                [t.name, t.comment, t.save_path if t.state_enum.is_complete else t.download_path, t.hash],
+                [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash],
             )
         ]
     if args.file_search:
@@ -500,6 +502,25 @@ def map_value_status(t, status):
     }
 
     return MAP_VALUE.get(status, t.state == status)
+
+
+def torrent_paths_for_search(args, t):
+    path_search = getattr(args, "path_search", None)
+    if path_search is None:
+        path_search = "both" if getattr(args, "different_drives", False) else "status"
+    if path_search == "download":
+        return [t.download_path]
+    if path_search == "save":
+        return [t.save_path]
+    if path_search == "both":
+        return [t.download_path, t.save_path]
+    return [t.save_path if t.state_enum.is_complete else t.download_path]
+
+
+def torrent_paths_on_different_drives(t):
+    if not t.download_path or not t.save_path:
+        return False
+    return path_utils.mountpoint(t.download_path) != path_utils.mountpoint(t.save_path)
 
 
 def set_torrent_paths(qbt_client, t, temp_path, download_path):
