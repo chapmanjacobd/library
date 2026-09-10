@@ -89,8 +89,9 @@ def test_torrent_paths_for_search(path_search, expected):
 @pytest.mark.parametrize(
     ("different_drives", "expected"),
     [
-        (False, ["/old/temp"]),
+        (None, ["/old/temp"]),
         (True, ["/old/temp", "/old/save"]),
+        (False, ["/old/temp", "/old/save"]),
     ],
 )
 def test_torrent_paths_for_search_defaults_to_status_or_both(different_drives, expected):
@@ -182,3 +183,33 @@ def test_filter_torrents_by_criteria_can_select_different_drives(monkeypatch):
     args = Arguments(defaults=Arguments(), avg_sizes=lambda _size: True, different_drives=True)
 
     assert [t.name for t in torrents_info.filter_torrents_by_criteria(args, torrents)] == ["different"]
+
+
+def test_filter_torrents_by_criteria_can_select_same_drives(monkeypatch):
+    monkeypatch.setattr(torrents_info, "torrent_files", lambda _torrent: [])
+    monkeypatch.setattr(
+        torrents_info.path_utils,
+        "mountpoint",
+        lambda path: "/mnt/d4" if path.startswith("/mnt/d4") else "/mnt/d5",
+    )
+    torrents = [
+        SimpleNamespace(
+            name="different",
+            comment="",
+            hash="abc",
+            save_path="/mnt/d5/seeding",
+            download_path="/mnt/d4/downloading",
+            state_enum=SimpleNamespace(is_complete=False),
+        ),
+        SimpleNamespace(
+            name="same",
+            comment="",
+            hash="def",
+            save_path="/mnt/d4/seeding",
+            download_path="/mnt/d4/downloading",
+            state_enum=SimpleNamespace(is_complete=False),
+        ),
+    ]
+    args = Arguments(defaults=Arguments(), avg_sizes=lambda _size: True, different_drives=False)
+
+    assert [t.name for t in torrents_info.filter_torrents_by_criteria(args, torrents)] == ["same"]

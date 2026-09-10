@@ -2003,6 +2003,10 @@ torrents_info = """library torrents-info
         library torrents --dl --different-drives
         library torrents --dl --different-drives /mnt/d4/
 
+    Find incomplete torrents whose temp and final paths use the same drive:
+
+        library torrents --dl --same-drives
+
     Aggregate torrent info (torrents-status)
 
         library torrents -pa

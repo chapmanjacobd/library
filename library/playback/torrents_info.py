@@ -303,8 +303,10 @@ def filter_torrents_by_criteria(args, torrents):
 
     if args.private is not None:
         torrents = [t for t in torrents if args.private is t.private]
-    if args.different_drives:
-        torrents = [t for t in torrents if torrent_paths_on_different_drives(t)]
+    if args.different_drives is not None:
+        torrents = [
+            t for t in torrents if torrent_paths_on_different_drives(t) is args.different_drives
+        ]
     if args.no_tagged:
         tags = set(args.no_tagged)
         torrents = [t for t in torrents if tags.isdisjoint(t.tags.split(", "))]
@@ -512,8 +514,10 @@ def map_value_status(t, status):
 
 def torrent_paths_for_search(args, t):
     path_search = getattr(args, "path_search", None)
+    if path_search is None and getattr(args, "different_drives", None) is not None:
+        path_search = "both"
     if path_search is None:
-        path_search = "both" if getattr(args, "different_drives", False) else "status"
+        path_search = "status"
     if path_search == "download":
         return [t.download_path]
     if path_search == "save":

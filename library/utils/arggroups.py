@@ -2795,11 +2795,21 @@ def qBittorrent_torrents(parent_parser):
         help="Include torrents with files currently in use by processes",
     )
     parser.add_argument("--private", action=argparse.BooleanOptionalAction, help="Match only private torrents")
-    parser.add_argument(
+    drive_filter = parser.add_mutually_exclusive_group()
+    drive_filter.add_argument(
         "--different-drives",
-        action=argparse.BooleanOptionalAction,
+        dest="different_drives",
+        action="store_true",
         help="Include torrents whose incomplete and final paths are on different mountpoints",
     )
+    drive_filter.add_argument(
+        "--no-different-drives",
+        "--same-drives",
+        dest="different_drives",
+        action="store_false",
+        help="Include torrents whose incomplete and final paths are on the same mountpoint",
+    )
+    parser.set_defaults(different_drives=None)
     parser.add_argument(
         "--path-search",
         choices=["status", "download", "save", "both"],
