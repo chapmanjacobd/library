@@ -502,6 +502,17 @@ def map_value_status(t, status):
     return MAP_VALUE.get(status, t.state == status)
 
 
+def set_torrent_paths(qbt_client, t, temp_path, download_path):
+    save_path = download_path if download_path is not None else t.save_path
+    if save_path:
+        print("      ", t.save_path, "==>", save_path)
+        qbt_client.torrents_set_location(str(save_path), torrent_hashes=[t.hash])
+
+    if temp_path is not None:
+        print("      ", t.download_path, "-->", temp_path)
+        qbt_client.torrents_set_download_path(str(temp_path), torrent_hashes=[t.hash])
+
+
 def torrents_info():
     args = parse_args()
 
@@ -914,21 +925,6 @@ def torrents_info():
         k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]
     )
     if args.move or alt_move_syntax:
-
-        def set_temp_path(t, temp_path):
-            if temp_path is None:
-                return
-
-            print("      ", t.download_path, "-->", temp_path)
-            qbt_client.torrents_set_download_path(str(temp_path), torrent_hashes=[t.hash])
-
-        def set_download_path(t, download_path):
-            if download_path is None:
-                return
-
-            print("      ", t.save_path, "==>", download_path)
-            qbt_client.torrents_set_save_path(str(download_path), torrent_hashes=[t.hash])
-
         for idx, t in enumerate(torrents):
             print("Moving", idx + 1, "of", len(torrents))
 
@@ -993,28 +989,25 @@ def torrents_info():
             log.debug("download_path %s", download_path)
 
             new_path = download_path if t.state_enum.is_complete else temp_path
+            if new_path is None:
+                new_path = t.save_path if t.state_enum.is_complete else t.download_path
             if args.simulate:
                 print("Moving", t.content_path, "to", new_path)
                 continue
 
             content_path = Path(t.content_path) if t.content_path else None
-            if content_path and content_path.exists():
+            if content_path and content_path.exists() and new_path is not None:
                 if content_path.is_file():
                     print("Moving file", content_path, "to", new_path)
                     merge_mv.move(args, [str(content_path)], str(new_path))
                 else:
-                    new_path /= content_path.name
+                    new_path = Path(new_path) / content_path.name
                     print("Moving folder", content_path, "to", new_path)
                     merge_mv.move(args, [str(content_path)], str(new_path))
 
             if not (args.delete_files or args.delete_rows):
                 # update metadata
-                if t.state_enum.is_complete:  # temp path first
-                    set_temp_path(t, temp_path)
-                    set_download_path(t, download_path)
-                else:  # download path first
-                    set_download_path(t, download_path)
-                    set_temp_path(t, temp_path)
+                set_torrent_paths(qbt_client, t, temp_path, download_path)
 
                 if not originally_stopped:
                     qbt_client.torrents_start(torrent_hashes=[t.hash])
