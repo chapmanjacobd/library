@@ -47,6 +47,12 @@ def parse_args():
         const="73%",
         help="Delete incomplete files from matching torrents",
     )
+    parser.add_argument(
+        "--reset-progress",
+        "--reset",
+        action="store_true",
+        help="Delete matching torrent files and recheck progress without removing the torrent",
+    )
     parser.add_argument("--move", type=Path, help="Directory to move folders/files")
     arggroups.mmv_folders(parser)
     parser.add_argument(
@@ -523,6 +529,26 @@ def torrent_paths_on_different_drives(t):
     return path_utils.mountpoint(t.download_path) != path_utils.mountpoint(t.save_path)
 
 
+def reset_torrent_progress(args, qbt_client, torrent):
+    originally_stopped = bool(torrent.state_enum.is_stopped)
+    qbt_client.torrents_stop(torrent_hashes=[torrent.hash])
+
+    paths = set()
+    for file in torrent_files(torrent):
+        for base_path in (torrent.download_path, torrent.save_path):
+            if base_path:
+                paths.add(Path(base_path) / file.name)
+
+    for file_path in paths:
+        if file_path.exists() and not file_path.is_dir():
+            log.info("Deleting file: %s", file_path)
+            file_path.unlink(missing_ok=True)
+
+    qbt_client.torrents_recheck(torrent_hashes=[torrent.hash])
+    if not originally_stopped:
+        qbt_client.torrents_start(torrent_hashes=[torrent.hash])
+
+
 def set_torrent_paths(qbt_client, t, temp_path, download_path):
     save_path = download_path if download_path is not None else t.save_path
     if save_path:
@@ -941,6 +967,11 @@ def torrents_info():
                         else:
                             log.warning("Keeping %s incomplete file: %s", strings.percent(1 - file.progress), file_path)
                         break  # Stop after deleting first valid path
+
+    if args.reset_progress:
+        print("Resetting progress of", len(torrents))
+        for t in torrents:
+            reset_torrent_progress(args, qbt_client, t)
 
     alt_move_syntax = any(
         k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]

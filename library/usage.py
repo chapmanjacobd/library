@@ -2043,6 +2043,7 @@ torrents_info = """library torrents-info
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
     When --delete-incomplete 80% is provided, any files that were downloaded less than 80% are deleted
+    When --reset-progress is provided, the downloaded files are deleted and progress is reset without removing the torrents
 """
 
 torrents_remaining = """library torrents-remaining
