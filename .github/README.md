@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.005; 102 subcommands)
+    library (v3.2.006; 102 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -3041,6 +3041,18 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Search for specific torrent
 
         library torrents query
+
+    Positional torrent searches use the path aligned with torrent status by default.
+    Search a specific path field or both fields with --path-search:
+
+        library torrents --dl --path-search save /mnt/d4/
+        library torrents --dl --path-search both /mnt/d4/
+
+    Find incomplete torrents whose temp and final paths use different drives.
+    --different-drives searches both path fields unless --path-search is specified:
+
+        library torrents --dl --different-drives
+        library torrents --dl --different-drives /mnt/d4/
 
     Aggregate torrent info (torrents-status)
 
