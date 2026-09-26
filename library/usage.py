@@ -1976,9 +1976,13 @@ torrents_start = """library torrents-start [--prefix /mnt/d/] [--scan] PATH ...
     --scan overrides the --tracker-dirnames layout when choosing save paths.
 """
 
-torrents_dump = """library torrents-dump PATH ...
+torrents_dump = """library torrents-dump [--trackers] PATH ...
 
     View torrent file metadata via libtorrent
+
+    Aggregate torrent metadata by tracker domain:
+
+        library torrents-dump --trackers PATH ...
 """
 
 torrents_info = """library torrents-info

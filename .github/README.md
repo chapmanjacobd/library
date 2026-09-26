@@ -2178,9 +2178,13 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Print torrent file info</summary>
 
     $ library torrents-dump -h
-    usage: library torrents-dump PATH ...
+    usage: library torrents-dump [--trackers] PATH ...
 
     View torrent file metadata via libtorrent
+
+    Aggregate torrent metadata by tracker domain:
+
+        library torrents-dump --trackers PATH ...
 
 
 </details>
@@ -3054,6 +3058,10 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         library torrents --dl --different-drives
         library torrents --dl --different-drives /mnt/d4/
 
+    Find incomplete torrents whose temp and final paths use the same drive:
+
+        library torrents --dl --same-drives
+
     Aggregate torrent info (torrents-status)
 
         library torrents -pa
@@ -3094,6 +3102,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
     When --delete-incomplete 80% is provided, any files that were downloaded less than 80% are deleted
+    When --reset-progress is provided, the downloaded files are deleted and progress is reset without removing the torrents
 
 
 </details>
