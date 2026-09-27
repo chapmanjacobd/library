@@ -2027,6 +2027,10 @@ torrents_info = """library torrents-info
 
         library torrents --dl --progress=+10% --force-start
 
+    Find torrents with a recorded completion timestamp
+
+        library torrents --completed
+
     Stop completed downloads
 
         library torrents -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop

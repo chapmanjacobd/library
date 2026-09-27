@@ -194,6 +194,8 @@ def filter_torrents_by_activity(args, torrents):
 
     if args.complete:
         torrents = [t for t in torrents if t.state_enum.is_complete]
+    if args.completed:
+        torrents = [t for t in torrents if t.completion_on > 0]
     if args.incomplete:
         torrents = [t for t in torrents if not t.state_enum.is_complete]
 

@@ -2764,7 +2764,6 @@ def qBittorrent_torrents(parent_parser):
 
     parser.add_argument(
         "--complete",
-        "--completed",
         "--uploading",
         "--upload",
         "--up",
@@ -2772,6 +2771,11 @@ def qBittorrent_torrents(parent_parser):
         "--seeding",
         action="store_true",
         help="Include completed torrents",
+    )
+    parser.add_argument(
+        "--completed",
+        action="store_true",
+        help="Include torrents with a recorded completion timestamp",
     )
     parser.add_argument(
         "--incomplete",

@@ -26,6 +26,22 @@ def test_avg_sizes_treats_zero_file_torrent_as_zero(monkeypatch):
     assert average_sizes == [0]
 
 
+def test_filter_torrents_by_activity_distinguishes_completion_timestamp_from_state():
+    torrents = [
+        SimpleNamespace(
+            completion_on=123,
+            state_enum=SimpleNamespace(is_complete=False),
+        ),
+        SimpleNamespace(
+            completion_on=0,
+            state_enum=SimpleNamespace(is_complete=True),
+        ),
+    ]
+    args = Arguments(complete=False, completed=True)
+
+    assert torrents_info.filter_torrents_by_activity(args, torrents) == [torrents[0]]
+
+
 def test_set_torrent_paths_updates_save_and_temp_paths():
     calls = []
 
