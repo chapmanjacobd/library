@@ -288,14 +288,14 @@ def catt_stop(args) -> None:
     catt_device = []
     if args.chromecast_device:
         catt_device = ["-d", args.chromecast_device]
-    processes.cmd("catt", *catt_device, "stop")
+    processes.cmd("catt", *catt_device, "stop", strict=False)
 
 
 def catt_pause(args) -> None:
     catt_device = []
     if args.chromecast_device:
         catt_device = ["-d", args.chromecast_device]
-    processes.cmd("catt", *catt_device, "play_toggle")
+    processes.cmd("catt", *catt_device, "play_toggle", strict=False)
 
 
 def kill_process(name) -> None:
