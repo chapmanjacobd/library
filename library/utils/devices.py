@@ -8,6 +8,18 @@ from library.utils.log_utils import log
 webbrowser.register("termux-open-url '%s'", None)
 
 
+def catt_default_device() -> str:
+    """catt's own configured speaker, i.e. options.device in ~/.config/catt/catt.cfg."""
+    config = Path.home() / ".config" / "catt" / "catt.cfg"
+    if not config.exists():
+        return ""
+    for line in config.read_text().splitlines():
+        key, _, value = line.partition("=")
+        if key.strip() == "device":
+            return value.strip()
+    return ""
+
+
 def get_ip_of_chromecast(device_name) -> str:
     from pychromecast import discovery
 

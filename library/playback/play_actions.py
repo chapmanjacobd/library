@@ -252,6 +252,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
     if args.chromecast:
         from catt.api import CattDevice
 
+        args.chromecast_device = args.chromecast_device or devices.catt_default_device()
         args.cc = CattDevice(args.chromecast_device, lazy=True)
         args.cc_ip = devices.get_ip_of_chromecast(args.chromecast_device)
 
@@ -502,7 +503,7 @@ def watch() -> None:
 
 
 def listen() -> None:
-    args = parse_args(SC.listen, default_chromecast="Xylo and Orchestra")
+    args = parse_args(SC.listen)  # no --cast-to means catt's own default speaker
     args.profiles = [DBType.audio]
     process_playqueue(args)
 
