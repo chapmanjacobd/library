@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.006; 102 subcommands)
+    library (v3.2.007; 102 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -3077,6 +3077,10 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Force-start incomplete downloads
 
         library torrents --dl --progress=+10% --force-start
+
+    Find torrents with a recorded completion timestamp
+
+        library torrents --completed
 
     Stop completed downloads
 
