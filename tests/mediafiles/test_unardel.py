@@ -67,7 +67,7 @@ def test_unardel_unarchives_each_archive_once_and_rewrites_media_paths(tmp_path,
     )
     calls = []
 
-    def fake_unar_delete(path, single_file_flatten=False, flatten=True):
+    def fake_unar_delete(path, single_file_flatten=False, _flatten=True):
         calls.append((path, single_file_flatten))
         return str(output_path), [{"path": str(wrapper_path), "new_path": str(output_path)}]
 

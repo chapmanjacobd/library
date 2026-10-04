@@ -73,14 +73,23 @@ def check_shrink(args, m) -> list:
 
 
 def replace_media_paths(media, path_updates):
+    updates_by_path = {update["path"]: update for update in path_updates}
     updated_media = []
     for item in media:
         path = item["path"]
-        for update in path_updates:
-            old_path = update["path"]
-            if path == old_path or path.startswith(old_path + os.sep):
-                path = update["new_path"] + path[len(old_path) :]
-                break  # each item exists at one location only
+        match = updates_by_path.get(path)
+        if match is None:
+            ancestor = os.path.dirname(path)
+            while ancestor:
+                match = updates_by_path.get(ancestor)
+                if match is not None:
+                    break
+                parent = os.path.dirname(ancestor)
+                if parent == ancestor:
+                    break
+                ancestor = parent
+        if match is not None:
+            path = match["new_path"] + path[len(match["path"]) :]
         updated_media.append({**item, "path": path} if path != item["path"] else item)
     return updated_media
 
@@ -140,15 +149,18 @@ def unardel() -> None:
     if args.no_confirm or devices.confirm("Proceed?"):
         path_updates = []
         for m in media:
-            if m.get("compressed_size") and os.path.exists(m["archive_path"]):
-                if m["archive_path"] not in uncompressed_archives:
-                    uncompressed_archives.add(m["archive_path"])
+            if (
+                m.get("compressed_size")
+                and os.path.exists(m["archive_path"])
+                and m["archive_path"] not in uncompressed_archives
+            ):
+                uncompressed_archives.add(m["archive_path"])
 
-                    if args.simulate:
-                        log.info("Unarchiving %s", m["archive_path"])
-                    else:
-                        _, updates = processes.unar_delete(m["archive_path"], single_file_flatten=True)
-                        path_updates.extend(updates)
+                if args.simulate:
+                    log.info("Unarchiving %s", m["archive_path"])
+                else:
+                    _, updates = processes.unar_delete(m["archive_path"], single_file_flatten=True)
+                    path_updates.extend(updates)
 
         media = replace_media_paths(media, path_updates)
 

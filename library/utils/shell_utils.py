@@ -496,6 +496,9 @@ def flatten_wrapper_folder(output_path):
                     os.rmdir(entry_path)
                     if rename_move_file(temp_dst, dst) is not None:
                         path_updates.append({"path": src, "new_path": dst})
+                    else:
+                        os.makedirs(entry_path, exist_ok=True)
+                        rename_move_file(temp_dst, src)
             else:
                 os.rmdir(entry_path)
     return path_updates
