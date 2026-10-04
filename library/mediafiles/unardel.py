@@ -72,6 +72,19 @@ def check_shrink(args, m) -> list:
     return []
 
 
+def replace_media_paths(media, path_updates):
+    updated_media = []
+    for item in media:
+        path = item["path"]
+        for update in path_updates:
+            old_path = update["path"]
+            if path == old_path or path.startswith(old_path + os.sep):
+                path = update["new_path"] + path[len(old_path) :]
+                break  # each item exists at one location only
+        updated_media.append({**item, "path": path} if path != item["path"] else item)
+    return updated_media
+
+
 def unardel() -> None:
     args = parse_args()
     media = collect_media(args)
@@ -125,14 +138,8 @@ def unardel() -> None:
     uncompressed_archives = set()
     new_free_space = 0
     if args.no_confirm or devices.confirm("Proceed?"):
+        path_updates = []
         for m in media:
-            log.info(
-                "%s freed. Processing %s (%s)",
-                strings.file_size(new_free_space),
-                m["path"],
-                strings.file_size(m["size"]),
-            )
-
             if m.get("compressed_size") and os.path.exists(m["archive_path"]):
                 if m["archive_path"] not in uncompressed_archives:
                     uncompressed_archives.add(m["archive_path"])
@@ -140,7 +147,18 @@ def unardel() -> None:
                     if args.simulate:
                         log.info("Unarchiving %s", m["archive_path"])
                     else:
-                        processes.unar_delete(m["archive_path"], single_file_flatten=True)
+                        _, updates = processes.unar_delete(m["archive_path"], single_file_flatten=True)
+                        path_updates.extend(updates)
+
+        media = replace_media_paths(media, path_updates)
+
+        for m in media:
+            log.info(
+                "%s freed. Processing %s (%s)",
+                strings.file_size(new_free_space),
+                m["path"],
+                strings.file_size(m["size"]),
+            )
 
             if not os.path.exists(m["path"]):
                 log.error("[%s]: FileNotFoundError", m["path"])

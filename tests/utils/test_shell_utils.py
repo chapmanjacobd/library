@@ -170,10 +170,57 @@ def test_flatten_wrapper_folder(tmp_path):
     file = wrapper / "file.txt"
     file.touch()
 
-    shell_utils.flatten_wrapper_folder(str(output_path))
+    path_updates = shell_utils.flatten_wrapper_folder(str(output_path))
 
     assert (output_path / "file.txt").exists()
     assert not wrapper.exists()
+    assert path_updates == [{"path": str(file), "new_path": str(output_path / "file.txt")}]
+
+
+def test_flatten_wrapper_folder_conflict_item(tmp_path):
+    # struct: output_path/wrapper/{file.txt, wrapper/}
+    output_path = tmp_path / "out"
+    output_path.mkdir()
+    wrapper = output_path / "wrapper"
+    wrapper.mkdir()
+    (wrapper / "file.txt").touch()
+    (wrapper / "wrapper").mkdir()
+
+    path_updates = shell_utils.flatten_wrapper_folder(str(output_path))
+
+    assert (output_path / "file.txt").exists()
+    assert (output_path / "wrapper").is_dir()
+    assert not (output_path / "wrapper.tmp").exists()
+    assert path_updates == [
+        {"path": str(wrapper / "file.txt"), "new_path": str(output_path / "file.txt")},
+        {"path": str(wrapper / "wrapper"), "new_path": str(output_path / "wrapper")},
+    ]
+
+
+def test_flatten_wrapper_folder_conflict_move_failure_skips_rmdir(tmp_path, monkeypatch):
+    output_path = tmp_path / "out"
+    output_path.mkdir()
+    wrapper = output_path / "wrapper"
+    wrapper.mkdir()
+    (wrapper / "file.txt").touch()
+    (wrapper / "wrapper").mkdir()
+
+    calls = []
+
+    def rename_or_fail(src, dst):
+        calls.append((src, dst))
+        if dst.endswith(".tmp"):
+            return None
+        return dst
+
+    monkeypatch.setattr(shell_utils, "rename_move_file", rename_or_fail)
+
+    path_updates = shell_utils.flatten_wrapper_folder(str(output_path))
+
+    assert [dst for _, dst in calls] == [str(output_path / "file.txt"), str(output_path / "wrapper.tmp")]
+    assert (wrapper / "wrapper").is_dir()  # os.rmdir not attempted on non-empty dir
+    assert not (output_path / "wrapper.tmp").exists()
+    assert path_updates == [{"path": str(wrapper / "file.txt"), "new_path": str(output_path / "file.txt")}]
 
 
 class FakeDirEntry:

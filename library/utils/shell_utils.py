@@ -467,6 +467,7 @@ fi
 
 
 def flatten_wrapper_folder(output_path):
+    path_updates = []
     entries = [e for e in os.listdir(output_path) if not e.startswith(".")]
     if len(entries) == 1:
         entry_path = os.path.join(output_path, entries[0])
@@ -483,14 +484,18 @@ def flatten_wrapper_folder(output_path):
                     continue
                 src = os.path.join(entry_path, item)
                 dst = os.path.join(output_path, item)
-                rename_move_file(src, dst)
+                if rename_move_file(src, dst) is not None:
+                    path_updates.append({"path": src, "new_path": dst})
 
             # Handle conflict item if it exists
             if conflict_item:
                 src = os.path.join(entry_path, conflict_item)
                 temp_dst = os.path.join(output_path, conflict_item + ".tmp")
-                rename_move_file(src, temp_dst)
-                os.rmdir(entry_path)
-                rename_move_file(temp_dst, os.path.join(output_path, conflict_item))
+                dst = os.path.join(output_path, conflict_item)
+                if rename_move_file(src, temp_dst) is not None:
+                    os.rmdir(entry_path)
+                    if rename_move_file(temp_dst, dst) is not None:
+                        path_updates.append({"path": src, "new_path": dst})
             else:
                 os.rmdir(entry_path)
+    return path_updates

@@ -52,7 +52,7 @@ def process_path(args, path) -> str | None:
         if args.simulate:
             log.info("Extracting images %s", path)
         else:
-            archive_dir = processes.unar_delete(path)
+            archive_dir, _ = processes.unar_delete(path)
             image_paths = shell_utils.rglob(str(archive_dir), consts.IMAGE_EXTENSIONS, quiet=True)[0]
             for p in image_paths:
                 process_path(args, p)

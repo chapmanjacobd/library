@@ -489,7 +489,7 @@ def unar_delete(archive_path, single_file_flatten=False, flatten=True):
         lsar_json = strings.safe_json_loads(lsar_output.stdout)
     except json.JSONDecodeError:
         log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
-        return None
+        return output_path, []
     part_files = lsar_json["lsarProperties"]["XADVolumes"]
 
     original_stats = os.stat(archive_path)
@@ -510,12 +510,13 @@ def unar_delete(archive_path, single_file_flatten=False, flatten=True):
                 archive_path,
                 excinfo.stderr.replace("Use the -p option to provide one.", "Use unar -p to extract."),
             )
-            return None
+            return output_path, []
         elif is_file_error:
             pass  # delete archive
         else:
             raise
 
+    path_updates = []
     is_flattened = False
     lsar_contents = lsar_json.get("lsarContents", [])
     files = [d for d in lsar_contents if not d.get("XADIsDirectory")]
@@ -530,15 +531,17 @@ def unar_delete(archive_path, single_file_flatten=False, flatten=True):
             extracted_file_path = path_utils.safe_join(output_path, rel_path)
             target_file_path = os.path.join(os.path.dirname(archive_path), parts[-1])
 
-            if os.path.exists(extracted_file_path):
-                shell_utils.rename_move_file(extracted_file_path, target_file_path)
+            if os.path.exists(extracted_file_path) and shell_utils.rename_move_file(
+                extracted_file_path, target_file_path
+            ) is not None:
+                path_updates.append({"path": extracted_file_path, "new_path": target_file_path})
                 os.utime(target_file_path, (original_stats.st_atime, original_stats.st_mtime))
                 shutil.rmtree(output_path)
                 output_path = os.path.dirname(archive_path)
                 is_flattened = True
 
     if not is_flattened and flatten:
-        shell_utils.flatten_wrapper_folder(output_path)
+        path_updates.extend(shell_utils.flatten_wrapper_folder(output_path))
         path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     try:
@@ -549,7 +552,7 @@ def unar_delete(archive_path, single_file_flatten=False, flatten=True):
     except Exception as excinfo:
         log.warning("Error deleting files: %s %s", excinfo, part_files)
 
-    return output_path
+    return output_path, path_updates
 
 
 def fzf_select(items, multi=True):

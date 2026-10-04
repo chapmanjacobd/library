@@ -112,7 +112,7 @@ def gen_arg_groups(args):
             else:
                 log.warning("No images found in %s", path)
         elif path_utils.ext(path) in consts.ARCHIVE_EXTENSIONS:
-            archive_dir = processes.unar_delete(path)
+            archive_dir, _ = processes.unar_delete(path)
             archive_image_paths = shell_utils.rglob(str(archive_dir), DEFAULT_EXTENSIONS, quiet=True)[0]
             if archive_image_paths:
                 yield archive_image_paths
