@@ -17,8 +17,12 @@ from library.utils.path_utils import path_tuple_from_url
 
 warnings.filterwarnings("ignore", category=bs4.XMLParsedAsHTMLWarning)
 
+HTML_MIME_TYPES = ("text/html", "text/xhtml", "application/xhtml+xml")
+XML_MIME_TYPES = ("text/xml", "application/xml")
+
 session = None
 cookie_jar = None
+internetarchive = None
 
 
 def _get_retry_adapter(args):
@@ -547,6 +551,16 @@ def url_to_local_path(url, response=None, output_prefix=None):
             else:
                 filename = filename_from_site
 
+    if not filename:
+        content_type = ""
+        if response:
+            content_type = response.headers.get("Content-Type", "").partition(";")[0].strip().lower()
+
+        if not content_type or content_type in HTML_MIME_TYPES:
+            filename = "index.html"
+        elif content_type in XML_MIME_TYPES or content_type.endswith("+xml"):
+            filename = "index.xml"
+
     output_path = filename
     if dir_path:
         output_path = path_utils.safe_join(dir_path, filename)
@@ -557,6 +571,32 @@ def url_to_local_path(url, response=None, output_prefix=None):
         output_path = path_utils.safe_join(output_prefix, output_path)
 
     return output_path
+
+
+def ensure_download_parent(path: Path) -> None:
+    parent = path.parent
+    while not parent.exists():
+        if parent == parent.parent:
+            return
+        parent = parent.parent
+
+    if parent.is_dir():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return
+    if not parent.is_file():
+        raise NotADirectoryError(parent)
+
+    legacy_path = parent.with_name(f"{parent.name}.library-file")
+    suffix = 1
+    while legacy_path.exists():
+        legacy_path = parent.with_name(f"{parent.name}.library-file.{suffix}")
+        suffix += 1
+
+    parent.rename(legacy_path)
+    parent.mkdir()
+    legacy_path.rename(parent / "index.html")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    log.warning("Moved existing file %s to %s to create a download directory", legacy_path, parent)
 
 
 def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
@@ -587,7 +627,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
             return None
 
         p = Path(output_path)
-        p.parent.mkdir(parents=True, exist_ok=True)
+        ensure_download_parent(p)
         if p.exists():
             if p.is_dir():
                 log.warning("[%s]: Skipping directory %s", url, p)
@@ -659,6 +699,71 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
     if not output_path or not Path(output_path).exists():
         return None
     return output_path
+
+
+def load_internetarchive():
+    global internetarchive
+
+    if internetarchive is None:
+        import internetarchive as ia
+
+        internetarchive = ia
+    return internetarchive
+
+
+def internet_archive_identifier(url: str) -> str | None:
+    parsed_url = urlparse(url)
+    if parsed_url.netloc.lower() not in {"archive.org", "www.archive.org"}:
+        return None
+
+    path_parts = parsed_url.path.split("/")
+    if len(path_parts) < 3 or path_parts[1].lower() != "details" or not path_parts[2]:
+        return None
+
+    return urllib.parse.unquote(path_parts[2])
+
+
+def download_internet_archive(args, url: str) -> str | None:
+    identifier = internet_archive_identifier(url)
+    if identifier is None:
+        raise ValueError(f"Not an Internet Archive details URL: {url}")
+
+    log.info("Downloading Internet Archive item %s", identifier)
+    ia = load_internetarchive()
+    from internetarchive.exceptions import AccountAPIError, AuthenticationError, InvalidChecksumError, ItemLocateError
+
+    try:
+        item = ia.get_item(identifier)
+        original_files = [f for f in item.get_files() if f.source == "original"]
+        if not original_files:
+            raise RuntimeError(f"Internet Archive item has no downloadable original files: {identifier}")
+
+        errors = item.download(
+            source="original",
+            checksum=True,
+            destdir=str(Path(args.prefix).expanduser()),
+            retries=args.http_download_retries,
+        )
+    except (
+        AccountAPIError,
+        AuthenticationError,
+        InvalidChecksumError,
+        ItemLocateError,
+        OSError,
+        requests.exceptions.RequestException,
+    ) as excinfo:
+        raise RuntimeError(f"Internet Archive download failed for {identifier}: {excinfo}") from excinfo
+
+    if errors:
+        raise RuntimeError(f"Internet Archive files failed to download for {identifier}: {', '.join(errors)}")
+
+    return str(Path(args.prefix).expanduser() / identifier)
+
+
+def download_link(args, url: str) -> str | None:
+    if internet_archive_identifier(url) is not None:
+        return download_internet_archive(args, url)
+    return download_url(args, url)
 
 
 def get_elements_forward(start, end):
@@ -1053,10 +1158,7 @@ def is_html(args, url, max_size=2 * 1024 * 1024):
             return False
 
         content_type = r.headers.get("Content-Type")
-        if content_type and not any(
-            s in content_type
-            for s in ("text/html", "text/xhtml", "text/xml", "application/xml", "application/xhtml+xml")
-        ):
+        if content_type and not any(s in content_type for s in HTML_MIME_TYPES + XML_MIME_TYPES):
             # log.debug('not is_html %s %s', content_type, url)
             return False
     except requests.exceptions.RetryError:

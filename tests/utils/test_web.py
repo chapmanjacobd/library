@@ -1,4 +1,5 @@
 import pathlib
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -20,6 +21,7 @@ from tests.utils import p
 
 def test_url_to_local_path():
     tests = [
+        ("http://example.com/", "example.com/index.html"),
         ("http://example.com/path/to/resource.html", "example.com/path/to/resource.html"),
         ("https://another-example.com/a/b/c/d/e/f/g.txt", "another-example.com/a/b/c/d/e/f/g.txt"),
         ("http://example.com/space%20in%20path/to/resource.html", "example.com/space in path/to/resource.html"),
@@ -42,6 +44,51 @@ def test_url_to_local_path():
         assert p(result) == p(expected)
 
 
+def test_ensure_download_parent_migrates_existing_file(tmp_path):
+    host_path = tmp_path / "example.com"
+    host_path.write_text("root page")
+    child_path = host_path / "nested" / "document.pdf"
+
+    web.ensure_download_parent(child_path)
+
+    assert child_path.parent.is_dir()
+    assert (host_path / "index.html").read_text() == "root page"
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://archive.org/details/example-item", "example-item"),
+        ("https://www.archive.org/details/example%20item?foo=bar", "example item"),
+        ("https://archive.org/download/example-item", None),
+        ("https://example.com/details/example-item", None),
+    ],
+)
+def test_internet_archive_identifier(url, expected):
+    assert web.internet_archive_identifier(url) == expected
+
+
+def test_download_link_uses_internet_archive(monkeypatch, tmp_path):
+    item = SimpleNamespace(
+        get_files=Mock(return_value=[SimpleNamespace(source="original")]),
+        download=Mock(return_value=[]),
+    )
+    ia = SimpleNamespace(get_item=Mock(return_value=item))
+    monkeypatch.setattr(web, "internetarchive", ia)
+
+    args = SimpleNamespace(prefix=str(tmp_path), http_download_retries=3)
+    result = web.download_link(args, "https://archive.org/details/example-item")
+
+    ia.get_item.assert_called_once_with("example-item")
+    item.download.assert_called_once_with(
+        source="original",
+        checksum=True,
+        destdir=str(tmp_path),
+        retries=3,
+    )
+    assert result == str(tmp_path / "example-item")
+
+
 class MockResponse:
     def __init__(self, headers):
         self.headers = headers
@@ -62,6 +109,24 @@ class MockResponse:
             None,
             {"Content-Disposition": 'attachment; filename="downloaded_file.txt"'},
             "example.com/path/to/resource/downloaded_file.txt",
+        ),
+        (
+            "http://example.com/",
+            None,
+            {"Content-Type": "text/html; charset=utf-8"},
+            "example.com/index.html",
+        ),
+        (
+            "http://example.com/",
+            None,
+            {"Content-Type": "application/xml"},
+            "example.com/index.xml",
+        ),
+        (
+            "http://example.com/",
+            None,
+            {"Content-Type": "application/pdf"},
+            "example.com",
         ),
         # No Content-Disposition, filename derived from URL
         ("http://example.com/path/to/resource.html", None, {}, "example.com/path/to/resource.html"),

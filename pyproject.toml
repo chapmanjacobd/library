@@ -8,6 +8,7 @@ dependencies = [
   "ipython>=9.0.0",
   "ffmpeg-python",
   "gallery-dl",
+  "internetarchive",
   "yt-dlp[default]",
   "natsort",
   "charset-normalizer",

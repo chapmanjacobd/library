@@ -1394,6 +1394,10 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
         library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
         https://en.wikipedia.org/wiki/Omelette
 
+    Download the filtered links. Internet Archive details pages use the Internet Archive downloader and preserve all original files:
+
+        library extract-links --download https://readrare.com/
+
     Read from local clipboard and filter out links based on nearby plain text
 
         library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport

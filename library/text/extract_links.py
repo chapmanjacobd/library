@@ -234,7 +234,7 @@ def print_or_download(args, d):
     url = d["link"]
     if args.download:
         try:
-            web.download_url(args, url)
+            web.download_link(args, url)
         except RuntimeError as excinfo:
             log.error("[%s]: %s", url, excinfo)
     else:
@@ -255,7 +255,7 @@ def extract_links() -> None:
                 url = web.url_encode(url).strip()
             if args.download:
                 try:
-                    web.download_url(args, url)
+                    web.download_link(args, url)
                 except RuntimeError as excinfo:
                     log.error("[%s]: %s", url, excinfo)
             else:

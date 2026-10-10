@@ -207,7 +207,7 @@ def download(args=None) -> None:
                 for i, dl_path in enumerate(dl_paths):
                     error = None
                     try:
-                        local_path = web.download_url(args, dl_path)
+                        local_path = web.download_link(args, dl_path)
                     except RuntimeError as excinfo:
                         local_path = None
                         error = str(excinfo)
