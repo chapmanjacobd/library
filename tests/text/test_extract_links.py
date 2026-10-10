@@ -26,3 +26,20 @@ def test_links_local_html(capsys):
 
     captured = capsys.readouterr().out.replace("\n", "")
     assert captured == "https://en.wikipedia.org/w/index.php?title=Tortang_kamote&action=edit&redlink=1"
+
+
+def test_links_local_html_excludes_tracking_urls(capsys):
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as temp_html:
+        temp_html.write(
+            b"""<a href="https://www.googletagmanager.com/gtag/js">Google tag manager</a>
+<a href="https://www.google-analytics.com/g/collect?v=2">Google Analytics</a>
+<link href="https://fonts.googleapis.com/css2?family=Roboto" rel="stylesheet">
+<link href="https://fonts.gstatic.com/s/roboto/v30/foo.woff2" rel="preload">
+<a href="https://example.com/document.pdf">Document</a>"""
+        )
+        temp_html.flush()
+
+        lb(["extract-links", "--local-html", temp_html.name])
+
+    captured = capsys.readouterr().out.replace("\n", "")
+    assert captured == "https://example.com/document.pdf"

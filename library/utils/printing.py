@@ -13,13 +13,14 @@ from library.utils.strings import duration, duration_short, file_size, relative_
 def print_overwrite(*text, **kwargs):
     if "file" not in kwargs:
         kwargs["file"] = sys.stderr
+    output = kwargs["file"]
 
     text = kwargs.pop("sep", " ").join(map(str, text))
     max_width = consts.TERMINAL_SIZE.columns - 1
     if len(text) > max_width:
         text = shorten_middle(text, max_width)
 
-    if consts.PYTEST_RUNNING or not sys.stdout.isatty():
+    if consts.PYTEST_RUNNING or not output.isatty():
         pass
     elif consts.IS_LINUX or consts.IS_MAC:
         print("\r" + text, end="\033[K", **kwargs)

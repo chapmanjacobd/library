@@ -35,6 +35,30 @@ CAST_NOW_PLAYING = str(Path(TEMP_DIR) / "catt_playing")
 SUB_TEMP_DIR = str(Path(TEMP_DIR) / "library_temp_subtitles" / random_string())
 DEFAULT_MPV_LISTEN_SOCKET = str(Path(TEMP_SCRIPT_DIR) / "mpv_socket")
 DEFAULT_MPV_WATCH_SOCKET = str(Path("~/.config/mpv/socket").expanduser().resolve())
+DEFAULT_LINK_PATH_EXCLUDES = [
+    "javascript:",
+    "mailto:",
+    "tel:",
+    "googletagmanager.com",
+    "google-analytics.com",
+    "analytics.google.com",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "doubleclick.net",
+    "googlesyndication.com",
+    "googleadservices.com",
+    "googletagservices.com",
+    "bat.bing.com",
+    "clarity.ms",
+    "cloudflareinsights.com",
+    "connect.facebook.net",
+    "pixel.facebook.com",
+    "hotjar.com",
+    "segment.io",
+    "mixpanel.com",
+    "amplitude.com",
+    "plausible.io",
+]
 
 mpv_dir = Path("~/.local/state/mpv/watch_later/").expanduser().resolve()
 if mpv_dir.exists():

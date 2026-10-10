@@ -1,7 +1,8 @@
+import io
 import unittest
 
 from library.__main__ import library as lb
-from library.utils import printing
+from library.utils import consts, printing
 from tests import utils
 from tests.utils import v_db
 
@@ -43,6 +44,19 @@ def test_col_naturalsize():
 def test_col_duration():
     assert printing.col_duration([{"t": 0, "t1": 1}], "t") == [{"t": "", "t1": 1}]
     assert printing.col_duration([{"t": 946684800, "t1": 1}], "t") == [{"t": "30 years and 7 days", "t1": 1}]
+
+
+def test_print_overwrite_uses_output_stream(monkeypatch):
+    class TTYBuffer(io.StringIO):
+        def isatty(self):
+            return True
+
+    output = TTYBuffer()
+    monkeypatch.setattr(consts, "PYTEST_RUNNING", False)
+
+    printing.print_overwrite("progress", file=output)
+
+    assert output.getvalue().endswith("progress\033[K")
 
 
 class SecondsToHHMMSSTestCase(unittest.TestCase):

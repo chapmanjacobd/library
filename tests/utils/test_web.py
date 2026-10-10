@@ -70,7 +70,7 @@ def test_internet_archive_identifier(url, expected):
 
 def test_download_link_uses_internet_archive(monkeypatch, tmp_path):
     item = SimpleNamespace(
-        get_files=Mock(return_value=[SimpleNamespace(source="original")]),
+        get_files=Mock(return_value=[SimpleNamespace(name="example.pdf", size=7, source="original")]),
         download=Mock(return_value=[]),
     )
     ia = SimpleNamespace(get_item=Mock(return_value=item))
@@ -81,11 +81,31 @@ def test_download_link_uses_internet_archive(monkeypatch, tmp_path):
 
     ia.get_item.assert_called_once_with("example-item")
     item.download.assert_called_once_with(
+        files=["example.pdf"],
         source="original",
         checksum=True,
         destdir=str(tmp_path),
         retries=3,
     )
+    assert result == str(tmp_path / "example-item")
+
+
+def test_download_link_skips_same_size_internet_archive_file(monkeypatch, tmp_path):
+    local_file = tmp_path / "example-item" / "example.pdf"
+    local_file.parent.mkdir()
+    local_file.write_bytes(b"1234567")
+
+    item = SimpleNamespace(
+        get_files=Mock(return_value=[SimpleNamespace(name="example.pdf", size=7, source="original")]),
+        download=Mock(),
+    )
+    ia = SimpleNamespace(get_item=Mock(return_value=item))
+    monkeypatch.setattr(web, "internetarchive", ia)
+
+    args = SimpleNamespace(prefix=str(tmp_path), http_download_retries=3)
+    result = web.download_link(args, "https://archive.org/details/example-item")
+
+    item.download.assert_not_called()
     assert result == str(tmp_path / "example-item")
 
 

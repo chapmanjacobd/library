@@ -1832,7 +1832,7 @@ def filter_links(parent_parser):
         "--path-exclude",
         "--exclude-path",
         nargs="+",
-        default=["javascript:", "mailto:", "tel:"],
+        default=consts.DEFAULT_LINK_PATH_EXCLUDES,
         help="path substrings for exclusion (any must match to exclude)",
     )
     parser.add_argument(

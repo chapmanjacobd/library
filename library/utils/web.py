@@ -1,4 +1,4 @@
-import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, shutil, socket, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
+import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, shutil, socket, sys, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -11,7 +11,7 @@ from bs4 import element
 from idna import encode as puny_encode
 
 from library.data.http_errors import HTTPStatus, HTTPTooManyRequests, raise_for_status
-from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, processes, strings
+from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, printing, processes, strings
 from library.utils.log_utils import clamp_index, log
 from library.utils.path_utils import path_tuple_from_url
 
@@ -732,18 +732,43 @@ def download_internet_archive(args, url: str) -> str | None:
     ia = load_internetarchive()
     from internetarchive.exceptions import AccountAPIError, AuthenticationError, InvalidChecksumError, ItemLocateError
 
+    current_file = None
+    progress_started = False
     try:
         item = ia.get_item(identifier)
         original_files = [f for f in item.get_files() if f.source == "original"]
         if not original_files:
             raise RuntimeError(f"Internet Archive item has no downloadable original files: {identifier}")
 
-        errors = item.download(
-            source="original",
-            checksum=True,
-            destdir=str(Path(args.prefix).expanduser()),
-            retries=args.http_download_retries,
-        )
+        destdir = str(Path(args.prefix).expanduser())
+        archive_root = Path(destdir).expanduser().resolve() / identifier
+        errors = []
+        for index, archive_file in enumerate(original_files, start=1):
+            current_file = archive_file.name
+            progress_started = True
+            local_path = archive_root / archive_file.name
+            if not local_path.resolve().is_relative_to(archive_root):
+                raise RuntimeError(f"Unsafe Internet Archive file path: {archive_file.name}")
+
+            remote_size = nums.safe_int(getattr(archive_file, "size", None))
+            if local_path.is_file() and remote_size is not None and local_path.stat().st_size == remote_size:
+                message = (
+                    f"Skipping Internet Archive item {identifier} ({index}/{len(original_files)}): "
+                    f"{archive_file.name} (same size)"
+                )
+                printing.print_overwrite(message)
+                continue
+
+            message = f"Downloading Internet Archive item {identifier} ({index}/{len(original_files)}): {archive_file.name}"
+            printing.print_overwrite(message)
+            file_errors = item.download(
+                files=[archive_file.name],
+                source="original",
+                checksum=True,
+                destdir=destdir,
+                retries=args.http_download_retries,
+            )
+            errors.extend(file_errors)
     except (
         AccountAPIError,
         AuthenticationError,
@@ -752,7 +777,11 @@ def download_internet_archive(args, url: str) -> str | None:
         OSError,
         requests.exceptions.RequestException,
     ) as excinfo:
-        raise RuntimeError(f"Internet Archive download failed for {identifier}: {excinfo}") from excinfo
+        target = f"{identifier}/{current_file}" if current_file else identifier
+        raise RuntimeError(f"Internet Archive download failed for {target}: {excinfo}") from excinfo
+    finally:
+        if progress_started:
+            print(file=sys.stderr)
 
     if errors:
         raise RuntimeError(f"Internet Archive files failed to download for {identifier}: {', '.join(errors)}")

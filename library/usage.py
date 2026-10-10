@@ -1398,6 +1398,9 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
 
         library extract-links --download https://readrare.com/
 
+    Common tracking and analytics URLs, including Google Tag Manager and Google Analytics,
+    are excluded by default. Use --path-exclude to replace the default exclusions when needed.
+
     Read from local clipboard and filter out links based on nearby plain text
 
         library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
