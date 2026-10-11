@@ -582,7 +582,11 @@ def timezone(s):
         raise SystemExit(3)
 
 
-def glob_match_any(search_terms, texts):
+def _glob_normalize(value, case_sensitive):
+    return str(value) if case_sensitive else str(value).casefold()
+
+
+def glob_match_any(search_terms, texts, case_sensitive=False):
     if isinstance(search_terms, str):
         search_terms = [search_terms]
     if isinstance(texts, str):
@@ -591,10 +595,10 @@ def glob_match_any(search_terms, texts):
     if not search_terms or not texts:
         return False
 
-    texts = [str(t).casefold() for t in texts if t]
+    texts = [_glob_normalize(t, case_sensitive) for t in texts if t]
 
     for search_term in search_terms:
-        search_pattern = "*" + str(search_term).casefold() + "*"
+        search_pattern = "*" + _glob_normalize(search_term, case_sensitive) + "*"
         for text in texts:
             if fnmatch(text, search_pattern):
                 return True
@@ -602,7 +606,7 @@ def glob_match_any(search_terms, texts):
     return False
 
 
-def glob_match_all(search_terms, texts):
+def glob_match_all(search_terms, texts, case_sensitive=False):
     if isinstance(search_terms, str):
         search_terms = [search_terms]
     if isinstance(texts, str):
@@ -611,10 +615,10 @@ def glob_match_all(search_terms, texts):
     if not search_terms or not texts:
         return False
 
-    processed_texts = [str(t).casefold() for t in texts if t]
+    processed_texts = [_glob_normalize(t, case_sensitive) for t in texts if t]
 
     for search_term in search_terms:
-        search_pattern = "*" + str(search_term).casefold() + "*"
+        search_pattern = "*" + _glob_normalize(search_term, case_sensitive) + "*"
         found_match = False
         for text in processed_texts:
             if fnmatch(text, search_pattern):

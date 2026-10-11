@@ -203,6 +203,36 @@ def test_download_url_handles_exhausted_http_retries(monkeypatch, tmp_path):
     assert web.download_url(args, "https://example.com/file.pdf") is None
 
 
+class _ShortStreamResponse:
+    status_code = 200
+    headers = {"Content-Type": "text/plain", "Content-Length": "100"}
+
+    def iter_content(self, chunk_size=1):
+        yield b"short"  # 5 bytes, less than the advertised Content-Length
+
+    def close(self):
+        pass
+
+
+def test_download_url_ignore_size(monkeypatch, tmp_path):
+    session = Mock()
+    session.get.return_value = _ShortStreamResponse()
+    monkeypatch.setattr(web, "session", session)
+
+    args = SimpleNamespace(
+        allow_insecure=False,
+        download_chunk_size=1024,
+        http_download_retries=0,
+        prefix=str(tmp_path),
+        ignore_size=True,
+    )
+
+    path = web.download_url(args, "https://example.com/file.txt")
+
+    assert path is not None
+    assert pathlib.Path(path).read_bytes() == b"short"
+
+
 class MockResponse:
     def __init__(self, headers):
         self.headers = headers

@@ -1689,6 +1689,11 @@ def download(parent_parser):
     )
     parser.add_argument("--download-chunk-size", type=nums.human_to_bytes, default="8MB")
     parser.add_argument(
+        "--ignore-size",
+        action="store_true",
+        help="Do not error when a downloaded file is smaller than its Content-Length",
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Fetch metadata for paths even if they are already in the media table",
@@ -1798,6 +1803,21 @@ def table_like_post(args):
         args.paths = ["\n".join(args.paths)]
 
 
+def spider(parent_parser):
+    parser = parent_parser.add_argument_group("Spider")
+    parser.add_argument(
+        "--recursive",
+        "--mirror",
+        "--crawl",
+        "-R",
+        action="store_true",
+        help="""Follow links recursively
+
+Only links within the same domain and parent directory as the given path are spidered.
+Links pointing elsewhere are still downloaded, but are not followed further.""",
+    )
+
+
 def filter_links(parent_parser):
     parser = parent_parser.add_argument_group("Filter Links")
     parser.add_argument(
@@ -1805,56 +1825,56 @@ def filter_links(parent_parser):
         "--include-path",
         nargs="+",
         default=[],
-        help="path substrings for inclusion (all must match to include)",
+        help="path substrings or globs for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--text-include",
         "--include-text",
         nargs="+",
         default=[],
-        help="link text substrings for inclusion (all must match to include)",
+        help="link text substrings or globs for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--after-include",
         "--include-after",
         nargs="+",
         default=[],
-        help="plain text substrings after URL for inclusion (all must match to include)",
+        help="plain text substrings or globs after URL for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--before-include",
         "--include-before",
         nargs="+",
         default=[],
-        help="plain text substrings before URL for inclusion (all must match to include)",
+        help="plain text substrings or globs before URL for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--path-exclude",
         "--exclude-path",
         nargs="+",
         default=consts.DEFAULT_LINK_PATH_EXCLUDES,
-        help="path substrings for exclusion (any must match to exclude)",
+        help="path substrings or globs for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--text-exclude",
         "--exclude-text",
         nargs="+",
         default=[],
-        help="link text substrings for exclusion (any must match to exclude)",
+        help="link text substrings or globs for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--after-exclude",
         "--exclude-after",
         nargs="+",
         default=[],
-        help="plain text substrings after URL for exclusion (any must match to exclude)",
+        help="plain text substrings or globs after URL for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--before-exclude",
         "--exclude-before",
         nargs="+",
         default=[],
-        help="plain text substrings before URL for exclusion (any must match to exclude)",
+        help="plain text substrings or globs before URL for exclusion (any must match to exclude)",
     )
 
     parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
@@ -1900,8 +1920,14 @@ def filter_links_post(args):
     if not args.no_url_encode:
         from library.utils.web import url_encode
 
-        args.path_include = [url_encode(s) for s in args.path_include]
-        args.path_exclude = [url_encode(s) for s in args.path_exclude]
+        def encode_pattern(pattern):
+            # Leave glob patterns intact so * survives url encoding
+            if "*" in pattern:
+                return pattern
+            return url_encode(pattern)
+
+        args.path_include = [encode_pattern(s) for s in args.path_include]
+        args.path_exclude = [encode_pattern(s) for s in args.path_exclude]
 
 
 def requests(parent_parser):

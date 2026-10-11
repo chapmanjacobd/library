@@ -143,6 +143,11 @@ download = r"""library download DATABASE [--prefix /mnt/d/] [--video (default) |
         library download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
         library download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
 
+    Recursively download a site (filesystem profile). Only links within the same domain and
+    parent directory as the seed are followed; other links are downloaded but not followed.
+
+        library download links.db --filesystem --recursive --prefix ~/mirror/ https://example.com/docs/
+
     Maximizing the variety of subdomains
 
         library download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
@@ -1398,6 +1403,13 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
 
         library extract-links --download https://readrare.com/
 
+    Mirror a site recursively. Only links within the same domain and parent directory as the given
+    path are followed; links pointing elsewhere are downloaded but not followed. Includes/excludes
+    accept globs, so you can prune whole subtrees while crawling:
+
+        library links --recursive --download https://example.com/docs/
+        library links -R --download https://example.com/docs/ --path-exclude '*/tag/*' '*/tags/*'
+
     Common tracking and analytics URLs, including Google Tag Manager and Google Analytics,
     are excluded by default. Use --path-exclude to replace the default exclusions when needed.
 
@@ -1450,6 +1462,10 @@ links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookie
         library links-add --path-include viewtopic.php --cookies-from-browser firefox \
         --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \
         plab.db https://plab/forum/tracker.php?o=(string replace ' ' \n -- 1 4 7 10 15)&s=2&tm=-1&f=(string replace ' ' \n -- 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762)
+
+    Recursively add every link on a site (glob excludes prune subtrees from the crawl)
+
+        library links-add links.db --recursive https://example.com/docs/ --path-exclude '*/tags/*'
 """
 
 links_update = """library links-update DATABASE

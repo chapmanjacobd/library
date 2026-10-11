@@ -62,7 +62,7 @@ deluxe = [
   'libtorrent; python_version < "3.14"',
   "tqdm",
   "wordllama>=0.2.7.post0",
-  "xattr",
+  'xattr; platform_system != "Windows"',
 ]
 fat = [
   "brotab",

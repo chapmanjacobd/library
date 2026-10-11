@@ -130,6 +130,7 @@ To compensate for this the script will only continue fetching pages until there 
     )
 
     arggroups.filter_links(parser)
+    arggroups.spider(parser)
 
     arggroups.requests(parser)
     arggroups.selenium(parser)
@@ -254,6 +255,8 @@ def extractor(args, playlist_path):
     new_media = set()
     end_of_playlist = False
     page_limit = args.backfill_pages or args.fixed_pages or args.max_pages
+    if args.recursive:
+        page_limit = 1
 
     if args.confirm_ready:
         if args.selenium:
@@ -283,7 +286,12 @@ def extractor(args, playlist_path):
         page_known = set()
         page_new = {}
         try:
-            for link_dict in extract_links.get_inner_urls(args, page_path):
+            link_iter = (
+                extract_links.crawl(args, [page_path])
+                if args.recursive
+                else extract_links.get_inner_urls(args, page_path)
+            )
+            for link_dict in link_iter:
                 link = link_dict.pop("link")
 
                 if link == args.stop_link:
@@ -302,7 +310,7 @@ def extractor(args, playlist_path):
                 printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
             print(file=sys.stderr)
 
-            if not (args.backfill_pages or args.fixed_pages):
+            if not args.recursive and not (args.backfill_pages or args.fixed_pages):
                 if (args.stop_known and len(page_known) > args.stop_known) or (
                     args.stop_new and args.stop_new >= len(page_new)
                 ):

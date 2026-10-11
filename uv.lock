@@ -2156,7 +2156,7 @@ deluxe = [
     { name = "selenium", version = "4.51.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "tqdm" },
     { name = "wordllama" },
-    { name = "xattr" },
+    { name = "xattr", marker = "sys_platform != 'win32'" },
 ]
 dev = [
     { name = "black" },
@@ -2247,7 +2247,7 @@ requires-dist = [
     { name = "tqdm", marker = "extra == 'deluxe'" },
     { name = "wcwidth" },
     { name = "wordllama", marker = "extra == 'deluxe'", specifier = ">=0.2.7.post0" },
-    { name = "xattr", marker = "extra == 'deluxe'" },
+    { name = "xattr", marker = "sys_platform != 'win32' and extra == 'deluxe'" },
     { name = "yt-dlp", extras = ["default"] },
 ]
 provides-extras = ["dev", "test", "deluxe", "fat"]

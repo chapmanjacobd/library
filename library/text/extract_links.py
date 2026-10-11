@@ -1,5 +1,6 @@
 import json
-from urllib.parse import urljoin
+from collections import deque
+from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 from library import usage
 from library.data.http_errors import HTTPStatus
@@ -25,6 +26,7 @@ def parse_args():
     arggroups.requests(parser)
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
+    arggroups.spider(parser)
 
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     arggroups.download(parser)
@@ -44,60 +46,69 @@ def parse_args():
 
 
 def is_desired_url(args, link, link_text, before, after) -> bool:
-    include_cond = all if args.strict_include else any
-    exclude_cond = all if args.strict_exclude else any
+    case_sensitive = args.case_sensitive
 
-    link_lower = link if args.case_sensitive else link.lower()
-    link_text_lower = link_text if args.case_sensitive else link_text.lower()
+    def include_match(patterns, text) -> bool:
+        if args.strict_include:
+            return strings.glob_match_all(patterns, [text], case_sensitive)
+        return strings.glob_match_any(patterns, [text], case_sensitive)
 
-    if args.path_include and not include_cond(inc in link_lower for inc in args.path_include):
-        log.debug("no match path-include: %s", link_lower)
+    def exclude_match(patterns, text) -> bool:
+        if args.strict_exclude:
+            return strings.glob_match_all(patterns, [text], case_sensitive)
+        return strings.glob_match_any(patterns, [text], case_sensitive)
+
+    link_match = link if case_sensitive else link.lower()
+    link_text_match = link_text if case_sensitive else link_text.lower()
+
+    if args.path_include and not include_match(args.path_include, link_match):
+        log.debug("no match path-include: %s", link_match)
         return False
-    if args.path_exclude and exclude_cond(ex in link_lower for ex in args.path_exclude):
-        log.debug("matched path-exclude: %s", link_lower)
+    if args.path_exclude and exclude_match(args.path_exclude, link_match):
+        log.debug("matched path-exclude: %s", link_match)
         return False
 
-    if args.text_exclude and exclude_cond(ex in link_text_lower for ex in args.text_exclude):
-        log.debug("matched text-exclude: %s", link_text_lower)
+    if args.text_exclude and exclude_match(args.text_exclude, link_text_match):
+        log.debug("matched text-exclude: %s", link_text_match)
         return False
-    if args.text_include and not include_cond(inc in link_text_lower for inc in args.text_include):
-        log.debug("no match text-include: %s", link_text_lower)
+    if args.text_include and not include_match(args.text_include, link_text_match):
+        log.debug("no match text-include: %s", link_text_match)
         return False
 
     if args.before_exclude or args.before_include:
         if args.before_include and not before:
             return False
 
-        before_text = before if args.case_sensitive else before.lower()
+        before_match = before if case_sensitive else before.lower()
 
-        if args.before_exclude and exclude_cond(ex in before_text for ex in args.before_exclude):
-            log.debug("matched before-exclude: %s", before_text)
+        if args.before_exclude and exclude_match(args.before_exclude, before_match):
+            log.debug("matched before-exclude: %s", before_match)
             return False
-        if args.before_include and not include_cond(inc in before_text for inc in args.before_include):
-            log.debug("no match before-include: %s", before_text)
+        if args.before_include and not include_match(args.before_include, before_match):
+            log.debug("no match before-include: %s", before_match)
             return False
 
         if args.before_exclude or args.before_include:  # just logging
-            log.info("  before: %s", before_text)
+            log.info("  before: %s", before_match)
 
     if args.after_exclude or args.after_include:
         if args.after_include and not after:
             return False
 
-        after_text = after if args.case_sensitive else after.lower()
+        after_match = after if case_sensitive else after.lower()
 
-        if args.after_exclude and exclude_cond(ex in after_text for ex in args.after_exclude):
-            log.debug("matched after-exclude: %s", after_text)
+        if args.after_exclude and exclude_match(args.after_exclude, after_match):
+            log.debug("matched after-exclude: %s", after_match)
             return False
-        if args.after_include and not include_cond(inc in after_text for inc in args.after_include):
-            log.debug("no match after-include: %s", after_text)
+        if args.after_include and not include_match(args.after_include, after_match):
+            log.debug("no match after-include: %s", after_match)
             return False
 
         if args.after_exclude or args.after_include:  # just logging
-            log.info("  after: %s", after_text)
+            log.info("  after: %s", after_match)
 
     if args.text_exclude or args.text_include:  # just logging
-        log.info("  text: `%s`", link_text_lower.strip())
+        log.info("  text: `%s`", link_text_match.strip())
 
     return True
 
@@ -205,8 +216,9 @@ def get_inner_urls(args, url):
                 yield from parse_inner_urls(args, url, markup)
     else:
         if args.local_html:
-            markup = pathlib.Path(url).read_text()
-            url = "file://" + url
+            local_path = url.removeprefix("file://")
+            markup = pathlib.Path(unquote(local_path)).read_text()
+            url = "file://" + local_path
         else:
             try:
                 r = web.session.get(url, timeout=120)
@@ -228,6 +240,56 @@ def get_inner_urls(args, url):
 
     if is_error:
         return None
+
+
+def url_parent_prefix(url: str) -> str:
+    """Return scheme://netloc/parent/ for a seed URL (dropping the final file segment)."""
+    parsed = urlparse(url)
+    path = parsed.path
+    if not path.endswith("/"):
+        path = path.rsplit("/", 1)[0] + "/"
+    return f"{parsed.scheme}://{parsed.netloc}{path}"
+
+
+def is_within_parent(parent_prefix: str, link: str) -> bool:
+    parent = urlparse(parent_prefix)
+    child = urlparse(urldefrag(link)[0])
+    # Ignore scheme so http->https redirects within the same host are still followed
+    return child.netloc == parent.netloc and child.path.startswith(parent.path)
+
+
+def crawl(args, seeds):
+    """Yield filtered link dicts reachable from seeds, spidering only within each seed's parent directory.
+
+    Links pointing outside the seed domain/parent are still yielded (so they can be
+    downloaded) but are not followed.
+    """
+    prefixes = [url_parent_prefix(seed) for seed in seeds]
+    queue = deque(seeds)
+    spidered = set()
+    yielded = set()
+
+    while queue:
+        url = queue.popleft()
+        url_key = urldefrag(url)[0]
+        if url_key in spidered:
+            continue
+        spidered.add(url_key)
+
+        for d in get_inner_urls(args, url):
+            link = d["link"]
+            link_key = urldefrag(link)[0]
+
+            if link_key not in yielded:
+                yielded.add(link_key)
+                yield d
+
+            if (
+                link_key not in spidered
+                and any(is_within_parent(prefix, link) for prefix in prefixes)
+                and (args.local_html or web.is_html(args, link))
+            ):
+                queue.append(link)
 
 
 def print_or_download(args, d):
@@ -265,9 +327,13 @@ def extract_links() -> None:
     if args.selenium:
         web.load_selenium(args)
     try:
-        for url in shell_utils.gen_paths(args):
-            for d in iterables.return_unique(get_inner_urls, lambda d: d["link"])(args, url):
+        if args.recursive:
+            for d in crawl(args, list(shell_utils.gen_paths(args))):
                 print_or_download(args, d)
+        else:
+            for url in shell_utils.gen_paths(args):
+                for d in iterables.return_unique(get_inner_urls, lambda d: d["link"])(args, url):
+                    print_or_download(args, d)
 
     finally:
         if args.selenium:

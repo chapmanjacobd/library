@@ -11,6 +11,29 @@ STORAGE_PREFIX = "tests/data/"
 dl_db = "tests/data/dl.db"
 
 
+def test_download_links_recursive(temp_db, crawl_server, tmp_path):
+    db1 = temp_db()
+    lb(["links-add", db1, "--no-extract", crawl_server])
+    lb(
+        [
+            "dl",
+            db1,
+            "--filesystem",
+            "--recursive",
+            "--path-exclude",
+            "*/tag/*",
+            "external.example.com",
+            f"--prefix={tmp_path}",
+            crawl_server,
+        ]
+    )
+
+    downloaded = {p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*") if p.is_file()}
+    assert any(path.endswith("a.html") for path in downloaded)
+    assert any(path.endswith("sub/b.html") for path in downloaded)
+    assert any(path.endswith("sub/c.html") for path in downloaded)
+
+
 @pytest.mark.skipif(consts.VOLKSWAGEN, reason="This helps protect our community")
 def test_yt():
     tube_add([dl_db, URL])

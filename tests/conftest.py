@@ -1,4 +1,6 @@
-import os, shutil, sys, tempfile
+import functools
+import http.server
+import os, shutil, socketserver, sys, tempfile, threading
 from io import StringIO
 from pathlib import Path
 
@@ -94,6 +96,35 @@ def temp_file_tree(request):
         return temp_dir
 
     return _create_temp_file_tree
+
+
+class _QuietHTTPHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+
+
+@pytest.fixture
+def crawl_server(tmp_path):
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "tag").mkdir()
+    (tmp_path / "index.html").write_text(
+        '<a href="/a.html">a</a><a href="/tag/index.html">t</a><a href="https://external.example.com/x">e</a>'
+    )
+    (tmp_path / "a.html").write_text('<a href="/sub/b.html">b</a><img src="/img.png">')
+    (tmp_path / "sub" / "b.html").write_text('<a href="/a.html">cycle</a><a href="/sub/c.html">c</a>')
+    (tmp_path / "sub" / "c.html").write_text("<p>leaf</p>")
+    (tmp_path / "tag" / "index.html").write_text('<a href="/tag/deep.html">d</a>')
+    (tmp_path / "tag" / "deep.html").write_text("<p>tag</p>")
+    (tmp_path / "img.png").write_text("png")
+
+    handler = functools.partial(_QuietHTTPHandler, directory=str(tmp_path))
+    httpd = socketserver.TCPServer(("127.0.0.1", 0), handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{httpd.server_address[1]}/"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
 
 
 @pytest.fixture

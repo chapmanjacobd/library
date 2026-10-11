@@ -35,6 +35,7 @@ def parse_args():
     arggroups.requests(parser)
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
+    arggroups.spider(parser)
 
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
@@ -87,6 +88,9 @@ def download(args=None) -> None:
 
     db_playlists.create(args)
     db_media.create(args)
+
+    if args.recursive:
+        args.links = True
 
     m_columns = db_utils.columns(args, "media")
 
@@ -180,7 +184,11 @@ def download(args=None) -> None:
                 if args.links:
                     dl_paths = []
                     try:
-                        for link_dict in get_inner_urls(args, original_path):
+                        if args.recursive:
+                            link_iter = extract_links.crawl(args, [original_path])
+                        else:
+                            link_iter = get_inner_urls(args, original_path)
+                        for link_dict in link_iter:
                             dl_paths.append(link_dict["link"])
                     except requests.HTTPError as excinfo:
                         log.warning(

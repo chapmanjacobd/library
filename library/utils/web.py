@@ -694,7 +694,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
                     if chunk:
                         f.write(chunk)
 
-            if remote_size:
+            if remote_size and not getattr(args, "ignore_size", False):
                 downloaded_size = os.path.getsize(output_path)
                 if downloaded_size < remote_size:
                     msg = f"Incomplete download ({strings.percent(downloaded_size / remote_size)}) {output_path}"
