@@ -86,7 +86,7 @@ lb = "library.__main__:library"
 library = "library.__main__:library"
 
 [build-system]
-requires = ["uv_build>=0.12.19,<0.13"]
+requires = ["uv_build>=0.12.19"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
