@@ -125,7 +125,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.009; 102 subcommands)
+    library (v3.2.010; 102 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -3498,4 +3498,5 @@ You can expand all by running this in your browser console:
 ```
 
 Be sure to check out [https://www.unli.xyz/diskprices/](https://www.unli.xyz/diskprices/) for all your storage needs
+
 

@@ -30,7 +30,7 @@ dependencies = [
   'pyreadline3; platform_system == "Windows"',
 ]
 description = "xk media library"
-version = "3.2.009"
+version = "3.2.010"
 license = {file = "LICENSE"}
 name = "library"
 readme = ".github/README.md"
