@@ -32,6 +32,16 @@ local media subcommands:
 
 Optional: library[deluxe] deps: `choco install exiftool rust`
 
+Torrent metadata support requires the `libtorrent` Python bindings. PyPI
+currently provides Windows wheels for Python 3.12 and 3.13, so use Python 3.13
+and install the deluxe extra:
+
+```powershell
+py -3.13 -m pip install "library[deluxe]"
+```
+
+There is no official Scoop package for the Python bindings.
+
 <details>
   <summary><h3>Alternative environment: msys2</h3></summary>
 
@@ -74,4 +84,3 @@ Optional: library[deluxe] deps: `choco install exiftool rust`
     ```
 
 </details>
-

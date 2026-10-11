@@ -24,6 +24,23 @@ Required: `ffmpeg`
 
 Some features work better with: `mpv`, `fd-find`, `fish`
 
+Torrent metadata commands (`torrents-add` and `torrents-dump`) require the
+`libtorrent` Python bindings. They are included by `library[deluxe]` when using
+Python 3.12 or 3.13; Python 3.14 wheels are not available yet, so use Python
+3.13 for torrent support.
+
+If the PyPI wheel is unavailable for your Python or platform, these system
+packages provide the bindings:
+
+* Debian/Ubuntu: `sudo apt install python3-libtorrent`
+* Fedora: `sudo dnf install rb_libtorrent-python3`
+* macOS/Homebrew: `brew install libtorrent-rasterbar`
+
+The Debian, Fedora, and Homebrew packages are built for their system or
+Homebrew Python and may not be importable from a separate uv virtualenv. There
+is no official Scoop package for the Python bindings; on Windows, use Python
+3.13 and `pip install "library[deluxe]"`.
+
 ## Getting started
 
 <details><summary>Local media</summary>
@@ -3435,5 +3452,4 @@ You can expand all by running this in your browser console:
 ```
 
 Be sure to check out [https://www.unli.xyz/diskprices/](https://www.unli.xyz/diskprices/) for all your storage needs
-
 
