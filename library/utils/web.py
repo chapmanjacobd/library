@@ -10,7 +10,13 @@ import bs4, requests, urllib3
 from bs4 import element
 from idna import encode as puny_encode
 
-from library.data.http_errors import HTTPStatus, HTTPTooManyRequests, raise_for_status
+from library.data.http_errors import (
+    HTTPStatus,
+    HTTPTooManyRequests,
+    RecoverableError,
+    UnrecoverableError,
+    raise_for_status,
+)
 from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, printing, processes, strings
 from library.utils.log_utils import clamp_index, log
 from library.utils.path_utils import path_tuple_from_url
@@ -19,6 +25,7 @@ warnings.filterwarnings("ignore", category=bs4.XMLParsedAsHTMLWarning)
 
 HTML_MIME_TYPES = ("text/html", "text/xhtml", "application/xhtml+xml")
 XML_MIME_TYPES = ("text/xml", "application/xml")
+INTERNET_ARCHIVE_NO_RETRIES = -1
 
 session = None
 cookie_jar = None
@@ -76,6 +83,10 @@ def _get_internet_archive_session(args):
             return super().mount_http_adapter(protocol, max_retries, status_forcelist, host)
 
     return LibraryArchiveSession(http_adapter_kwargs={"max_retries": retry})
+
+
+def _is_internet_archive_flag(value) -> bool:
+    return str(value).lower() in {"1", "true", "yes"}
 
 
 def parse_cookies_from_browser(input_str):
@@ -706,6 +717,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
         log.error("%s %s", url, excinfo)
     except (
         requests.exceptions.ConnectionError,
+        requests.exceptions.RetryError,
         urllib3.exceptions.MaxRetryError,
         urllib3.exceptions.NameResolutionError,
         socket.gaierror,
@@ -754,10 +766,44 @@ def download_internet_archive(args, url: str) -> str | None:
 
     current_file = None
     progress_started = False
+    access_restricted = False
     try:
         item = ia.get_item(identifier, archive_session=_get_internet_archive_session(args))
-        original_files = [f for f in item.get_files() if f.source == "original"]
+        item_metadata = getattr(item, "item_metadata", {}) or {}
+        metadata = item_metadata.get("metadata", {}) or getattr(item, "metadata", {}) or {}
+        access_restricted = _is_internet_archive_flag(metadata.get("access-restricted-item"))
+
+        if _is_internet_archive_flag(item_metadata.get("servers_unavailable")):
+            msg = f"RecoverableError: Internet Archive item servers unavailable: {identifier}"
+            log.warning(msg)
+            raise RecoverableError(msg)
+        if _is_internet_archive_flag(item_metadata.get("nodownload")):
+            msg = f"RecoverableError: Internet Archive item marked nodownload: {identifier}"
+            log.warning(msg)
+            raise RecoverableError(msg)
+        if _is_internet_archive_flag(item_metadata.get("is_dark")):
+            msg = f"UnrecoverableError: Internet Archive item is dark: {identifier}"
+            log.warning(msg)
+            raise UnrecoverableError(msg)
+
+        original_files = []
+        private_files = []
+        for archive_file in item.get_files():
+            if archive_file.source != "original":
+                continue
+            if archive_file.name in {f"{identifier}_files.xml", "__ia_thumb.jpg"}:
+                log.info("Skipping Internet Archive generated file %s", archive_file.name)
+                continue
+            if str(getattr(archive_file, "private", "")).lower() == "true":
+                private_files.append(archive_file)
+                log.info("Skipping private Internet Archive file %s", archive_file.name)
+                continue
+            original_files.append(archive_file)
+
         if not original_files:
+            if private_files:
+                log.info("Internet Archive item %s has no downloadable public original files", identifier)
+                return str(Path(args.prefix).expanduser() / identifier)
             raise RuntimeError(f"Internet Archive item has no downloadable original files: {identifier}")
 
         destdir = str(Path(args.prefix).expanduser())
@@ -786,7 +832,8 @@ def download_internet_archive(args, url: str) -> str | None:
                 source="original",
                 checksum=True,
                 destdir=destdir,
-                retries=args.http_download_retries,
+                # The IA client treats 0, False, and None as its default retry count.
+                retries=INTERNET_ARCHIVE_NO_RETRIES,
             )
             errors.extend(file_errors)
     except (
@@ -798,13 +845,17 @@ def download_internet_archive(args, url: str) -> str | None:
         requests.exceptions.RequestException,
     ) as excinfo:
         target = f"{identifier}/{current_file}" if current_file else identifier
-        raise RuntimeError(f"Internet Archive download failed for {target}: {excinfo}") from excinfo
+        access_message = " (access-restricted-item=true; item may require a loan)" if access_restricted else ""
+        raise RuntimeError(f"Internet Archive download failed for {target}{access_message}: {excinfo}") from excinfo
     finally:
         if progress_started:
             print(file=sys.stderr)
 
     if errors:
-        raise RuntimeError(f"Internet Archive files failed to download for {identifier}: {', '.join(errors)}")
+        access_message = " (access-restricted-item=true; item may require a loan)" if access_restricted else ""
+        raise RuntimeError(
+            f"Internet Archive files failed to download for {identifier}{access_message}: {', '.join(errors)}"
+        )
 
     return str(Path(args.prefix).expanduser() / identifier)
 

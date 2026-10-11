@@ -3,8 +3,10 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
 
 import pytest
+import requests
 from bs4 import BeautifulSoup
 
+from library.data.http_errors import RecoverableError, UnrecoverableError
 from library.utils import web
 from library.utils.path_utils import safe_unquote
 from library.utils.web import (
@@ -96,7 +98,7 @@ def test_download_link_uses_internet_archive(monkeypatch, tmp_path):
         source="original",
         checksum=True,
         destdir=str(tmp_path),
-        retries=3,
+        retries=web.INTERNET_ARCHIVE_NO_RETRIES,
     )
     assert result == str(tmp_path / "example-item")
 
@@ -118,6 +120,87 @@ def test_download_link_skips_same_size_internet_archive_file(monkeypatch, tmp_pa
 
     item.download.assert_not_called()
     assert result == str(tmp_path / "example-item")
+
+
+def test_download_link_skips_private_internet_archive_files(monkeypatch, tmp_path):
+    private_file = SimpleNamespace(name="example_events.json", source="original", private="true")
+    files_metadata = SimpleNamespace(name="example-item_files.xml", source="original", format="Metadata")
+    thumbnail = SimpleNamespace(name="__ia_thumb.jpg", source="original", format="Item Tile")
+    public_file = SimpleNamespace(name="example.pdf", size=7, source="original")
+    item = SimpleNamespace(
+        get_files=Mock(return_value=[private_file, files_metadata, thumbnail, public_file]),
+        download=Mock(return_value=[]),
+    )
+    ia = SimpleNamespace(get_item=Mock(return_value=item))
+    monkeypatch.setattr(web, "internetarchive", ia)
+
+    args = SimpleNamespace(prefix=str(tmp_path), http_download_retries=3)
+    result = web.download_link(args, "https://archive.org/details/example-item")
+
+    item.download.assert_called_once_with(
+        files=["example.pdf"],
+        source="original",
+        checksum=True,
+        destdir=str(tmp_path),
+        retries=web.INTERNET_ARCHIVE_NO_RETRIES,
+    )
+    assert result == str(tmp_path / "example-item")
+
+
+@pytest.mark.parametrize(
+    ("flag", "exception_type", "message"),
+    [
+        ("servers_unavailable", RecoverableError, "servers unavailable"),
+        ("nodownload", RecoverableError, "marked nodownload"),
+        ("is_dark", UnrecoverableError, "is dark"),
+    ],
+)
+def test_download_link_handles_internet_archive_item_flags(
+    monkeypatch, tmp_path, flag, exception_type, message
+):
+    item = SimpleNamespace(
+        item_metadata={flag: "true", "metadata": {}},
+        get_files=Mock(),
+        download=Mock(),
+    )
+    ia = SimpleNamespace(get_item=Mock(return_value=item))
+    monkeypatch.setattr(web, "internetarchive", ia)
+
+    args = SimpleNamespace(prefix=str(tmp_path), http_download_retries=3)
+    with pytest.raises(exception_type, match=message):
+        web.download_link(args, "https://archive.org/details/example-item")
+
+    item.get_files.assert_not_called()
+    item.download.assert_not_called()
+
+
+def test_download_link_explains_access_restricted_item_errors(monkeypatch, tmp_path):
+    item = SimpleNamespace(
+        item_metadata={"metadata": {"access-restricted-item": "true"}},
+        get_files=Mock(return_value=[SimpleNamespace(name="example.pdf", source="original")]),
+        download=Mock(side_effect=requests.exceptions.HTTPError("403 Forbidden")),
+    )
+    ia = SimpleNamespace(get_item=Mock(return_value=item))
+    monkeypatch.setattr(web, "internetarchive", ia)
+
+    args = SimpleNamespace(prefix=str(tmp_path), http_download_retries=3)
+    with pytest.raises(RuntimeError, match="access-restricted-item=true"):
+        web.download_link(args, "https://archive.org/details/example-item")
+
+
+def test_download_url_handles_exhausted_http_retries(monkeypatch, tmp_path):
+    session = Mock()
+    session.get.side_effect = requests.exceptions.RetryError("too many 429 error responses")
+    monkeypatch.setattr(web, "session", session)
+
+    args = SimpleNamespace(
+        allow_insecure=False,
+        download_chunk_size=1024,
+        http_download_retries=3,
+        prefix=str(tmp_path),
+    )
+
+    assert web.download_url(args, "https://example.com/file.pdf") is None
 
 
 class MockResponse:
