@@ -7,8 +7,6 @@ dependencies = [
   "sqlite-utils>=3.38",
   "ipython>=9.0.0",
   "ffmpeg-python",
-  "gallery-dl",
-  "internetarchive",
   "yt-dlp[default]",
   "natsort",
   "charset-normalizer",
@@ -45,9 +43,12 @@ deluxe = [
   "aiohttp",
   "annoy",
   "catt",
+  "cdx_toolkit",
   "curl-cffi",
+  "gallery-dl",
   "geopandas",
   "img2pdf",
+  "internetarchive",
   "ocrmypdf",
   "openpyxl",
   "paramiko",
@@ -185,6 +186,7 @@ ignore = [
   "UP015",
   "UP017",
   "UP031",
+  "CPY001",
 ]
 select = ["ALL"]
 # Allow unused variables when underscore-prefixed.

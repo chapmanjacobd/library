@@ -649,6 +649,19 @@ wheels = [
 ]
 
 [[package]]
+name = "cdx-toolkit"
+version = "0.9.39"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "warcio" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/92/ab18e28629867f3af01f64974ef75075dd5775ad9cbd1dca42faba1504af/cdx_toolkit-0.9.39.tar.gz", hash = "sha256:7fd85cd5b00ec3ac57bfa21e7f70ba633e1df59760eb54dae3a85e63596af4bc", size = 92815, upload-time = "2026-06-01T11:49:02.752Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/93/22/5cda1ba55a88188b5b19ae60961244759b8b0cc5fe97fb29516afef32adf/cdx_toolkit-0.9.39-py3-none-any.whl", hash = "sha256:577ae9a9578f33ce4bae6c887074f0f70331bf4d6a66a26d1e20836b3004e431", size = 32685, upload-time = "2026-06-01T11:49:01.507Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -2107,9 +2120,7 @@ dependencies = [
     { name = "charset-normalizer" },
     { name = "ffmpeg-python" },
     { name = "ftfy" },
-    { name = "gallery-dl" },
     { name = "humanize" },
-    { name = "internetarchive" },
     { name = "ipython" },
     { name = "lxml" },
     { name = "markdown-it-py" },
@@ -2137,9 +2148,12 @@ deluxe = [
     { name = "aiohttp" },
     { name = "annoy" },
     { name = "catt" },
+    { name = "cdx-toolkit" },
     { name = "curl-cffi" },
+    { name = "gallery-dl" },
     { name = "geopandas" },
     { name = "img2pdf" },
+    { name = "internetarchive" },
     { name = "libtorrent", marker = "python_full_version < '3.14'" },
     { name = "ocrmypdf", version = "16.13.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "ocrmypdf", version = "17.13.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
@@ -2191,17 +2205,18 @@ requires-dist = [
     { name = "brotab", marker = "extra == 'fat'" },
     { name = "camelot-py", marker = "extra == 'fat'", specifier = ">=0.11.0" },
     { name = "catt", marker = "extra == 'deluxe'" },
+    { name = "cdx-toolkit", marker = "extra == 'deluxe'" },
     { name = "charset-normalizer" },
     { name = "curl-cffi", marker = "extra == 'deluxe'" },
     { name = "ffmpeg-python" },
     { name = "freezegun", marker = "extra == 'test'" },
     { name = "ftfy" },
-    { name = "gallery-dl" },
+    { name = "gallery-dl", marker = "extra == 'deluxe'" },
     { name = "geopandas", marker = "extra == 'deluxe'" },
     { name = "ghostscript", marker = "extra == 'fat'" },
     { name = "humanize" },
     { name = "img2pdf", marker = "extra == 'deluxe'" },
-    { name = "internetarchive" },
+    { name = "internetarchive", marker = "extra == 'deluxe'" },
     { name = "ipython", specifier = ">=9.0.0" },
     { name = "isort", marker = "extra == 'dev'" },
     { name = "libtorrent", marker = "python_full_version < '3.14' and extra == 'deluxe'" },
@@ -5697,6 +5712,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/59/67cd42db7c549c0c106d2b56d2d2ec1915c459e0a92722029efc5359e871/urwid-3.0.5.tar.gz", hash = "sha256:24be27ffafdb68c09cd95dc21b60ccfd02843320b25ce5feee1708b34fad5a23", size = 860746, upload-time = "2026-02-02T14:38:43.958Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/09/6a/efd8ad30ab250a4ad23dc7c07437b374921042cb35215e468d49977822f7/urwid-3.0.5-py3-none-any.whl", hash = "sha256:f188144261224fdfc9b56b4222869bd0eac90fd7895cf1e376129cdc7e13bc84", size = 296957, upload-time = "2026-02-02T14:38:42.044Z" },
+]
+
+[[package]]
+name = "warcio"
+version = "1.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/20/78/df7e1c40a3751ea966be84eb6645270831e511f9932740b5251ace028cfa/warcio-1.8.1.tar.gz", hash = "sha256:76f71b22159ca3c043521e10ee8a2478d167672ad1d137c7c15e40b0d5c73ccd", size = 65772, upload-time = "2026-03-31T16:10:32.196Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/be/d92c0899bd52c7f82fc0f8caa8fb3c624e6d1006ee208c710060cda216c2/warcio-1.8.1-py2.py3-none-any.whl", hash = "sha256:82345c5914d36cb5e0513210dbf759e3db348bf8d0f7762996ccce3a5ce6e87b", size = 41578, upload-time = "2026-03-31T16:10:31.059Z" },
 ]
 
 [[package]]

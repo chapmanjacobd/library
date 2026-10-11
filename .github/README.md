@@ -10,7 +10,9 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 [![Downloads](https://static.pepy.tech/badge/library)](https://pepy.tech/project/library)
 
-## Install
+## Getting started
+
+<details><summary>Install</summary>
 
 Linux recommended but [Windows setup instructions](./Windows.md) available.
 
@@ -23,6 +25,13 @@ Should also work on Mac OS.
 Required: `ffmpeg`
 
 Some features work better with: `mpv`, `fd-find`, `fish`
+
+Optional Python extras are grouped under `library[deluxe]`. This includes
+`gallery-dl` (used by `gallery-add`), `internetarchive` (used for Internet
+Archive downloads), and `cdx_toolkit` (used by the `--webcache`/`--wayback`
+CDX extractor):
+
+    pip install "library[deluxe]"
 
 Torrent metadata commands (`torrents-add` and `torrents-dump`) require the
 `libtorrent` Python bindings. They are included by `library[deluxe]` when using
@@ -41,7 +50,7 @@ Homebrew Python and may not be importable from a separate uv virtualenv. There
 is no official Scoop package for the Python bindings; on Windows, use Python
 3.13 and `pip install "library[deluxe]"`.
 
-## Getting started
+</details>
 
 <details><summary>Local media</summary>
 
@@ -814,6 +823,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \
         plab.db https://plab/forum/tracker.php?o=(string replace ' ' \n -- 1 4 7 10 15)&s=2&tm=-1&f=(string replace ' ' \n -- 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762)
 
+    Recursively add every link on a site (glob excludes prune subtrees from the crawl)
+
+        library links-add links.db --recursive https://example.com/docs/ --path-exclude '*/tags/*'
+
+    Add every archived link for a site from the Internet Archive CDX index
+
+        library links-add links.db --webcache https://example.com/docs/
+
 
 </details>
 
@@ -1150,6 +1167,24 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Download the filtered links. Internet Archive details pages use the Internet Archive downloader and preserve all original files:
 
         library extract-links --download https://readrare.com/
+
+    Mirror a site recursively. Only links within the same domain and parent directory as the given
+    path are followed; links pointing elsewhere are downloaded but not followed. Includes/excludes
+    accept globs, so you can prune whole subtrees while crawling:
+
+        library links --recursive --download https://example.com/docs/
+        library links -R --download https://example.com/docs/ --path-exclude '*/tag/*' '*/tags/*'
+
+    Extract links from a web archive CDX index instead of crawling live pages. Internet Archive
+    Wayback snapshots are emitted by default. Wayback URLs are collapsed to their original
+    archived URL while crawling: sibling pages that only exist under a different timestamp are
+    still followed, but multiple captures of the same page are collapsed so only one copy of
+    each page is downloaded. Use --webcache-from/--webcache-to to target a time period:
+
+        library links --webcache https://example.com/docs/
+        library links --webcache --recursive --download https://example.com/docs/
+        library links --webcache --webcache-source cc https://example.com/docs/
+        library links --webcache --webcache-from 2020 --webcache-to 2021 https://example.com/docs/
 
     Common tracking and analytics URLs, including Google Tag Manager and Google Analytics,
     are excluded by default. Use --path-exclude to replace the default exclusions when needed.
@@ -2516,6 +2551,17 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
         library download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
+
+    Recursively download a site (filesystem profile). Only links within the same domain and
+    parent directory as the seed are followed; other links are downloaded but not followed.
+
+        library download links.db --filesystem --recursive --prefix ~/mirror/ https://example.com/docs/
+
+    Download a site's archived pages from the Internet Archive Wayback Machine using the CDX API.
+    `--webcache` implies `--links`; add `--recursive` to also parse the archived pages for
+    further links:
+
+        library download links.db --filesystem --webcache --prefix ~/mirror/ https://example.com/docs/
 
     Maximizing the variety of subdomains
 

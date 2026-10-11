@@ -2,9 +2,6 @@ import os
 from pathlib import Path
 from types import ModuleType
 
-import gallery_dl
-from gallery_dl.job import Job
-
 from library.mediadb import db_media, db_playlists
 from library.utils import consts, printing, strings
 from library.utils.log_utils import log
@@ -142,52 +139,57 @@ def download(args, m):
     )
 
 
-class UrlJob(Job):
-    resolve = 1  # depth of queue resolution
+def url_job_class(gallery_dl):
+    # gallery_dl is an optional (deluxe) dependency, so the Job base class
+    # can only be resolved once gallery_dl has been imported
+    class UrlJob(gallery_dl.job.Job):
+        resolve = 1  # depth of queue resolution
 
-    def __init__(self, url, parent=None, resolve=None):
-        super().__init__(url, parent)
-        self.results = []
-        self.visited = set()
-        if resolve is not None:
-            self.resolve = resolve
+        def __init__(self, url, parent=None, resolve=None):
+            super().__init__(url, parent)
+            self.results = []
+            self.visited = set()
+            if resolve is not None:
+                self.resolve = resolve
 
-        if self.resolve > 0:
-            self.handle_queue = self.handle_queue_resolve
+            if self.resolve > 0:
+                self.handle_queue = self.handle_queue_resolve
 
-    def handle_url(self, url, kwdict):
-        self.results.append((url, kwdict))
-
-    def handle_queue(self, url, kwdict):
-        # unresolved queue entry
-        self.results.append((url, kwdict))
-
-    def handle_queue_resolve(self, url, kwdict):
-        if url in self.visited:
-            return
-        self.visited.add(url)
-
-        cls = kwdict.get("_extractor")
-        if cls:
-            extr = cls.from_url(url)
-        else:
-            extr = self.extractor.find(url)
-
-        if not extr:
+        def handle_url(self, url, kwdict):
             self.results.append((url, kwdict))
-            return
 
-        job = self.__class__(extr, self, self.resolve - 1)
-        job.results = self.results  # shared accumulator
-        job.visited = self.visited  # shared visited set
-        job.run()
+        def handle_queue(self, url, kwdict):
+            # unresolved queue entry
+            self.results.append((url, kwdict))
+
+        def handle_queue_resolve(self, url, kwdict):
+            if url in self.visited:
+                return
+            self.visited.add(url)
+
+            cls = kwdict.get("_extractor")
+            if cls:
+                extr = cls.from_url(url)
+            else:
+                extr = self.extractor.find(url)
+
+            if not extr:
+                self.results.append((url, kwdict))
+                return
+
+            job = self.__class__(extr, self, self.resolve - 1)
+            job.results = self.results  # shared accumulator
+            job.visited = self.visited  # shared visited set
+            job.run()
+
+    return UrlJob
 
 
 def get_playlist_metadata(args, playlist_path):
     gallery_dl = load_module_level_gallery_dl(args)
 
     added_media_count = 0
-    job = UrlJob(playlist_path)
+    job = url_job_class(gallery_dl)(playlist_path)
     job.run()
 
     is_playlist = len(job.results) > 1

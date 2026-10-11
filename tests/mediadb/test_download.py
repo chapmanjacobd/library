@@ -2,7 +2,6 @@ import pytest
 
 from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
-from library.utils import consts
 from tests.utils import connect_db_args
 
 URL = "https://www.youtube.com/watch?v=5DqJwmzG6Fk"
@@ -34,7 +33,7 @@ def test_download_links_recursive(temp_db, crawl_server, tmp_path):
     assert any(path.endswith("sub/c.html") for path in downloaded)
 
 
-@pytest.mark.skipif(consts.VOLKSWAGEN, reason="This helps protect our community")
+@pytest.mark.skip("network: too dependent on YouTube/Google services")
 def test_yt():
     tube_add([dl_db, URL])
     lb(

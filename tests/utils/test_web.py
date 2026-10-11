@@ -70,6 +70,66 @@ def test_internet_archive_identifier(url, expected):
     assert web.internet_archive_identifier(url) == expected
 
 
+@pytest.mark.parametrize(
+    ("url", "is_wayback", "timestamp", "original"),
+    [
+        (
+            "https://web.archive.org/web/20200101000000id_/https://example.com/dir/page.html",
+            True,
+            "20200101000000",
+            "https://example.com/dir/page.html",
+        ),
+        (
+            "https://web.archive.org/web/20200101000000/https://example.com/dir/page.html",
+            True,
+            "20200101000000",
+            "https://example.com/dir/page.html",
+        ),
+        (
+            "http://web.archive.org/web/20200101000000/http:/example.com/dir/page.html",
+            True,
+            "20200101000000",
+            "http://example.com/dir/page.html",
+        ),
+        (
+            "https://web.archive.org/web/20200101000000id_/https:/example.com/dir/page.html",
+            True,
+            "20200101000000",
+            "https://example.com/dir/page.html",
+        ),
+        ("https://example.com/dir/page.html", False, None, None),
+    ],
+)
+def test_wayback_url_helpers(url, is_wayback, timestamp, original):
+    assert web.is_wayback_url(url) is is_wayback
+    assert web.wayback_timestamp(url) == timestamp
+    assert web.wayback_original_url(url) == original
+    assert web.wayback_normalize(url) == (original or url)
+
+
+def test_wayback_snapshot_and_replay_url():
+    snapshot = "https://web.archive.org/web/20200101000000id_/https://example.com/dir/page.html"
+    replay = "https://web.archive.org/web/20200101000000/https://example.com/dir/page.html"
+
+    assert web.wayback_snapshot_url("20200101000000", "https://example.com/dir/page.html") == snapshot
+    assert web.wayback_replay_url(snapshot) == replay
+    # a URL that is already a replay URL is left alone
+    assert web.wayback_replay_url(replay) == replay
+    # non-Wayback URLs are untouched
+    assert web.wayback_replay_url("https://example.com/x") == "https://example.com/x"
+
+
+def test_wayback_normalize_dedups_scheme_mangling():
+    # https:/example.com and https://example.com are the same page for dedup purposes
+    mangled = "https://web.archive.org/web/20200101000000id_/https:/example.com/dir/page.html"
+    clean = "https://web.archive.org/web/20200101000000id_/https://example.com/dir/page.html"
+    assert web.wayback_normalize(mangled) == web.wayback_normalize(clean) == "https://example.com/dir/page.html"
+
+    # ...but the http page is a different original and must not dedup against the https page
+    http_mangled = "https://web.archive.org/web/20200101000000id_/http:/example.com/dir/page.html"
+    assert web.wayback_normalize(http_mangled) == "http://example.com/dir/page.html"
+
+
 def test_download_link_uses_internet_archive(monkeypatch, tmp_path):
     item = SimpleNamespace(
         get_files=Mock(return_value=[SimpleNamespace(name="example.pdf", size=7, source="original")]),

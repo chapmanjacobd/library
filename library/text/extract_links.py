@@ -220,8 +220,10 @@ def get_inner_urls(args, url):
             markup = pathlib.Path(unquote(local_path)).read_text()
             url = "file://" + local_path
         else:
+            # fetch the replay form so served HTML links stay within the Wayback Machine
+            fetch_url = web.wayback_replay_url(url) if web.is_wayback_url(url) else url
             try:
-                r = web.session.get(url, timeout=120)
+                r = web.session.get(fetch_url, timeout=120)
             except Exception as excinfo:
                 if "too many 429 error" in str(excinfo):
                     raise
@@ -242,9 +244,75 @@ def get_inner_urls(args, url):
         return None
 
 
+def cdx_query(url: str) -> str:
+    """Return the CDX query for a seed: its domain and parent directory."""
+    parsed = urlparse(web.wayback_normalize(url))
+    path = parsed.path
+    if not path.endswith("/"):
+        path = path.rsplit("/", 1)[0] + "/"
+    return f"{parsed.netloc}{path}*"
+
+
+def get_cdx_urls(args, url):
+    """Yield archived captures under a seed's domain/parent from a CDX index (--webcache)."""
+    cdx_toolkit = web.load_cdx_toolkit()
+
+    source = args.webcache_source
+    query = cdx_query(url)
+    log.info("Querying CDX (%s): %s", source, query)
+
+    fetcher = cdx_toolkit.CDXFetcher(source=source)
+    kwargs = {"limit": args.webcache_limit}
+    if args.webcache_from:
+        kwargs["from_ts"] = args.webcache_from
+    if args.webcache_to:
+        kwargs["to"] = args.webcache_to
+    if args.webcache_filter:
+        kwargs["filter"] = list(args.webcache_filter)
+
+    for obj in fetcher.iter(query, **kwargs):
+        original = obj["url"]
+        if source == "ia" and obj.get("timestamp"):
+            link = web.wayback_snapshot_url(obj["timestamp"], original)
+        else:
+            link = original
+
+        for k, v in args.url_renames.items():
+            link = link.replace(k, v)
+
+        mime = str(obj.get("mime") or "")
+        link_text = strings.remove_consecutive_whitespace(mime)
+
+        if is_desired_url(args, link, link_text, "", ""):
+            yield {"link": link, "link_text": link_text, "before_text": "", "after_text": "", "mime": mime}
+
+
+def iter_links(args, url):
+    """Yield link dicts for a single URL, using the CDX extractor when --webcache is set."""
+    if getattr(args, "webcache", False) and not web.is_wayback_url(url):
+        yield from get_cdx_urls(args, url)
+    else:
+        yield from get_inner_urls(args, url)
+
+
+def dedup_key(url: str) -> str:
+    return web.wayback_normalize(urldefrag(url)[0])
+
+
+def is_followable(args, link, d) -> bool:
+    if args.local_html:
+        return True
+
+    mime = d.get("mime")
+    if mime:
+        return any(s in mime for s in web.HTML_MIME_TYPES + web.XML_MIME_TYPES)
+
+    return web.is_html(args, link)
+
+
 def url_parent_prefix(url: str) -> str:
     """Return scheme://netloc/parent/ for a seed URL (dropping the final file segment)."""
-    parsed = urlparse(url)
+    parsed = urlparse(web.wayback_normalize(url))
     path = parsed.path
     if not path.endswith("/"):
         path = path.rsplit("/", 1)[0] + "/"
@@ -253,7 +321,7 @@ def url_parent_prefix(url: str) -> str:
 
 def is_within_parent(parent_prefix: str, link: str) -> bool:
     parent = urlparse(parent_prefix)
-    child = urlparse(urldefrag(link)[0])
+    child = urlparse(urldefrag(web.wayback_normalize(link))[0])
     # Ignore scheme so http->https redirects within the same host are still followed
     return child.netloc == parent.netloc and child.path.startswith(parent.path)
 
@@ -262,10 +330,14 @@ def crawl(args, seeds):
     """Yield filtered link dicts reachable from seeds, spidering only within each seed's parent directory.
 
     Links pointing outside the seed domain/parent are still yielded (so they can be
-    downloaded) but are not followed.
+    downloaded) but are not followed. Wayback Machine URLs are collapsed to their
+    original archived URL: sibling pages that only exist under a different timestamp
+    are still followed, but multiple captures of the same page are collapsed so only
+    one copy of each page is downloaded.
     """
     prefixes = [url_parent_prefix(seed) for seed in seeds]
     queue = deque(seeds)
+    scheduled = set()
     spidered = set()
     yielded = set()
 
@@ -276,20 +348,30 @@ def crawl(args, seeds):
             continue
         spidered.add(url_key)
 
-        for d in get_inner_urls(args, url):
+        if not (getattr(args, "webcache", False) and not web.is_wayback_url(url)):
+            # only mark the original as seen when its page content is actually processed
+            original = dedup_key(url)
+            scheduled.add(original)
+            yielded.add(original)
+
+        for d in iter_links(args, url):
             link = d["link"]
             link_key = urldefrag(link)[0]
+            link_original = dedup_key(link)
 
-            if link_key not in yielded:
-                yielded.add(link_key)
+            if link_original not in yielded:
+                yielded.add(link_original)
                 yield d
 
-            if (
-                link_key not in spidered
-                and any(is_within_parent(prefix, link) for prefix in prefixes)
-                and (args.local_html or web.is_html(args, link))
-            ):
-                queue.append(link)
+            if link_key in spidered or link_original in scheduled:
+                continue
+            if not any(is_within_parent(prefix, link) for prefix in prefixes):
+                continue
+            if not is_followable(args, link, d):
+                continue
+
+            scheduled.add(link_original)
+            queue.append(link)
 
 
 def print_or_download(args, d):
@@ -332,7 +414,7 @@ def extract_links() -> None:
                 print_or_download(args, d)
         else:
             for url in shell_utils.gen_paths(args):
-                for d in iterables.return_unique(get_inner_urls, lambda d: d["link"])(args, url):
+                for d in iterables.return_unique(iter_links, lambda d: d["link"])(args, url):
                     print_or_download(args, d)
 
     finally:

@@ -89,7 +89,7 @@ def download(args=None) -> None:
     db_playlists.create(args)
     db_media.create(args)
 
-    if args.recursive:
+    if args.recursive or args.webcache:
         args.links = True
 
     m_columns = db_utils.columns(args, "media")
@@ -122,7 +122,7 @@ def download(args=None) -> None:
         media_printer.media_printer(args, media)
         return
 
-    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d["link"])
+    get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
     if args.safe and args.profile == DBType.image:
         gallery_backend.load_module_level_gallery_dl(args)
     for m in media:

@@ -30,6 +30,7 @@ INTERNET_ARCHIVE_NO_RETRIES = -1
 session = None
 cookie_jar = None
 internetarchive = None
+cdx_toolkit = None
 
 
 def _get_retry_adapter(args):
@@ -733,6 +734,23 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
     return output_path
 
 
+def load_cdx_toolkit():
+    global cdx_toolkit
+
+    if cdx_toolkit is None:
+        try:
+            import cdx_toolkit as _cdx_toolkit
+        except ModuleNotFoundError:
+            log.error(
+                "cdx_toolkit is required for --webcache. Install with pip install cdx_toolkit"
+                " or pip install library[deluxe]"
+            )
+            raise
+
+        cdx_toolkit = _cdx_toolkit
+    return cdx_toolkit
+
+
 def load_internetarchive():
     global internetarchive
 
@@ -1213,6 +1231,54 @@ def url_encode(href):
         with suppress(Exception):
             href = href.replace(up.netloc, puny_encode(up.netloc).decode(), 1)
     return href
+
+
+WAYBACK_URL_RE = re.compile(
+    r"^https?://web\.archive\.org/web/(?P<timestamp>\d{4,14})(?P<modifier>[a-z_]*)"
+    r"/(?P<original>.+)$",
+    re.IGNORECASE,
+)
+
+
+def is_wayback_url(url: str) -> bool:
+    return WAYBACK_URL_RE.match(url) is not None
+
+
+def wayback_timestamp(url: str) -> str | None:
+    match = WAYBACK_URL_RE.match(url)
+    return match.group("timestamp") if match else None
+
+
+def wayback_original_url(url: str) -> str | None:
+    """Return the archived URL from a Wayback Machine URL, or None if not a Wayback URL."""
+    match = WAYBACK_URL_RE.match(url)
+    if not match:
+        return None
+
+    original = match.group("original")
+    # treat http:/ and http:// Wayback URLs as equivalent
+    original = original.replace("http:///", "http://").replace("https:///", "https://")
+    if not original.startswith(("http://", "https://")):
+        original = original.replace("http:/", "http://", 1).replace("https:/", "https://", 1)
+    return original
+
+
+def wayback_normalize(url: str) -> str:
+    """Collapse a Wayback Machine URL to its original archived URL (for scope and dedup)."""
+    return wayback_original_url(url) or url
+
+
+def wayback_snapshot_url(timestamp: str, original: str) -> str:
+    """Build a directly-downloadable Wayback Machine snapshot URL."""
+    return f"https://web.archive.org/web/{timestamp}id_/{original}"
+
+
+def wayback_replay_url(url: str) -> str:
+    """Return the Wayback replay URL (modifier stripped) so served HTML links stay within the archive."""
+    match = WAYBACK_URL_RE.match(url)
+    if not match:
+        return url
+    return f"https://web.archive.org/web/{match.group('timestamp')}/{match.group('original')}"
 
 
 def is_subpath(parent_url, child_url):

@@ -47,7 +47,9 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 [![Downloads](https://static.pepy.tech/badge/library)](https://pepy.tech/project/library)
 
-## Install
+## Getting started
+
+<details><summary>Install</summary>
 
 Linux recommended but [Windows setup instructions](./Windows.md) available.
 
@@ -60,6 +62,13 @@ Should also work on Mac OS.
 Required: `ffmpeg`
 
 Some features work better with: `mpv`, `fd-find`, `fish`
+
+Optional Python extras are grouped under `library[deluxe]`. This includes
+`gallery-dl` (used by `gallery-add`), `internetarchive` (used for Internet
+Archive downloads), and `cdx_toolkit` (used by the `--webcache`/`--wayback`
+CDX extractor):
+
+    pip install "library[deluxe]"
 
 Torrent metadata commands (`torrents-add` and `torrents-dump`) require the
 `libtorrent` Python bindings. They are included by `library[deluxe]` when using
@@ -78,7 +87,7 @@ Homebrew Python and may not be importable from a separate uv virtualenv. There
 is no official Scoop package for the Python bindings; on Windows, use Python
 3.13 and `pip install "library[deluxe]"`.
 
-## Getting started
+</details>
 
 <details><summary>Local media</summary>
 

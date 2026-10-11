@@ -255,7 +255,7 @@ def extractor(args, playlist_path):
     new_media = set()
     end_of_playlist = False
     page_limit = args.backfill_pages or args.fixed_pages or args.max_pages
-    if args.recursive:
+    if args.recursive or args.webcache:
         page_limit = 1
 
     if args.confirm_ready:
@@ -289,10 +289,11 @@ def extractor(args, playlist_path):
             link_iter = (
                 extract_links.crawl(args, [page_path])
                 if args.recursive
-                else extract_links.get_inner_urls(args, page_path)
+                else extract_links.iter_links(args, page_path)
             )
             for link_dict in link_iter:
                 link = link_dict.pop("link")
+                link_dict.pop("mime", None)
 
                 if link == args.stop_link:
                     end_of_playlist = True

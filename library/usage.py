@@ -148,6 +148,12 @@ download = r"""library download DATABASE [--prefix /mnt/d/] [--video (default) |
 
         library download links.db --filesystem --recursive --prefix ~/mirror/ https://example.com/docs/
 
+    Download a site's archived pages from the Internet Archive Wayback Machine using the CDX API.
+    `--webcache` implies `--links`; add `--recursive` to also parse the archived pages for
+    further links:
+
+        library download links.db --filesystem --webcache --prefix ~/mirror/ https://example.com/docs/
+
     Maximizing the variety of subdomains
 
         library download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
@@ -1410,6 +1416,17 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
         library links --recursive --download https://example.com/docs/
         library links -R --download https://example.com/docs/ --path-exclude '*/tag/*' '*/tags/*'
 
+    Extract links from a web archive CDX index instead of crawling live pages. Internet Archive
+    Wayback snapshots are emitted by default. Wayback URLs are collapsed to their original
+    archived URL while crawling: sibling pages that only exist under a different timestamp are
+    still followed, but multiple captures of the same page are collapsed so only one copy of
+    each page is downloaded. Use --webcache-from/--webcache-to to target a time period:
+
+        library links --webcache https://example.com/docs/
+        library links --webcache --recursive --download https://example.com/docs/
+        library links --webcache --webcache-source cc https://example.com/docs/
+        library links --webcache --webcache-from 2020 --webcache-to 2021 https://example.com/docs/
+
     Common tracking and analytics URLs, including Google Tag Manager and Google Analytics,
     are excluded by default. Use --path-exclude to replace the default exclusions when needed.
 
@@ -1466,6 +1483,10 @@ links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookie
     Recursively add every link on a site (glob excludes prune subtrees from the crawl)
 
         library links-add links.db --recursive https://example.com/docs/ --path-exclude '*/tags/*'
+
+    Add every archived link for a site from the Internet Archive CDX index
+
+        library links-add links.db --webcache https://example.com/docs/
 """
 
 links_update = """library links-update DATABASE

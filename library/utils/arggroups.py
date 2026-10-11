@@ -1816,6 +1816,53 @@ def spider(parent_parser):
 Only links within the same domain and parent directory as the given path are spidered.
 Links pointing elsewhere are still downloaded, but are not followed further.""",
     )
+    parser.add_argument(
+        "--webcache",
+        "--wayback",
+        action="store_true",
+        help="""Extract links from a web archive CDX index instead of fetching pages live
+
+Queries the CDX API for archived captures under each given path's domain and parent
+directory. By default Internet Archive Wayback URLs are emitted. Combine with
+--recursive to also parse archived pages for further links.""",
+    )
+    parser.add_argument(
+        "--webcache-source",
+        choices=["ia", "cc"],
+        default="ia",
+        help="""Which CDX index to query
+
+ia (default): Internet Archive Wayback Machine
+cc: Common Crawl""",
+    )
+    parser.add_argument(
+        "--webcache-limit",
+        type=int,
+        default=1000,
+        help="Maximum number of captures to request per CDX query",
+    )
+    parser.add_argument(
+        "--webcache-from",
+        help="""Only include captures on or after this timestamp
+
+Format: 2006, 200601, 20060102, or 20060102150405. Intended for targeting a specific
+time period of an archived site.""",
+    )
+    parser.add_argument(
+        "--webcache-to",
+        help="""Only include captures on or before this timestamp
+
+Format: 2006, 200601, 20060102, or 20060102150405. Intended for targeting a specific
+time period of an archived site.""",
+    )
+    parser.add_argument(
+        "--webcache-filter",
+        action="append",
+        help="""CDX server filter expression. May be repeated
+
+Internet Archive syntax: --webcache-filter status:200
+Common Crawl syntax: --webcache-filter =status:200""",
+    )
 
 
 def filter_links(parent_parser):

@@ -36,3 +36,30 @@ def test_links_add_recursive(temp_db, crawl_server):
     assert f"{crawl_server}sub/c.html" in media
     assert "https://external.example.com/x" in media
     assert f"{crawl_server}tag/deep.html" not in media
+
+
+def test_links_add_webcache(temp_db, monkeypatch):
+    from types import SimpleNamespace
+
+    from library.utils import web
+
+    class FakeFetcher:
+        def __init__(self, source=None):
+            assert source == "ia"
+
+        def iter(self, query, limit=None, filter=None):
+            assert query == "example.com/docs/*"
+            yield {"url": "https://example.com/docs/a.html", "timestamp": "20200101000000", "mime": "text/html"}
+
+    monkeypatch.setattr(web, "cdx_toolkit", SimpleNamespace(CDXFetcher=FakeFetcher))
+
+    db1 = temp_db()
+    lb(["links-add", db1, "--webcache", "https://example.com/docs/page.html"])
+
+    args = connect_db_args(db1)
+    media = {d["path"] for d in args.db.query("SELECT path FROM media")}
+    assert "https://web.archive.org/web/20200101000000id_/https://example.com/docs/a.html" in media
+
+    # the CDX mime must not leak into the media schema
+    columns = {row[1] for row in args.db.execute("PRAGMA table_info(media)").fetchall()}
+    assert "mime" not in columns
