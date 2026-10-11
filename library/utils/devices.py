@@ -9,7 +9,7 @@ webbrowser.register("termux-open-url '%s'", None)
 
 
 def catt_default_device() -> str:
-    """catt's own configured speaker, i.e. options.device in ~/.config/catt/catt.cfg."""
+    """Catt's own configured speaker, i.e. options.device in ~/.config/catt/catt.cfg."""
     config = Path.home() / ".config" / "catt" / "catt.cfg"
     if not config.exists():
         return ""

@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.007; 102 subcommands)
+    library (v3.2.008; 102 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1129,6 +1129,13 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
         https://en.wikipedia.org/wiki/Omelette
+
+    Download the filtered links. Internet Archive details pages use the Internet Archive downloader and preserve all original files:
+
+        library extract-links --download https://readrare.com/
+
+    Common tracking and analytics URLs, including Google Tag Manager and Google Analytics,
+    are excluded by default. Use --path-exclude to replace the default exclusions when needed.
 
     Read from local clipboard and filter out links based on nearby plain text
 
@@ -3428,4 +3435,5 @@ You can expand all by running this in your browser console:
 ```
 
 Be sure to check out [https://www.unli.xyz/diskprices/](https://www.unli.xyz/diskprices/) for all your storage needs
+
 
