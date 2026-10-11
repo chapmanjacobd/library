@@ -79,7 +79,18 @@ def test_download_link_uses_internet_archive(monkeypatch, tmp_path):
     args = SimpleNamespace(prefix=str(tmp_path), http_download_retries=3)
     result = web.download_link(args, "https://archive.org/details/example-item")
 
-    ia.get_item.assert_called_once_with("example-item")
+    ia.get_item.assert_called_once()
+    assert ia.get_item.call_args.args == ("example-item",)
+    archive_session = ia.get_item.call_args.kwargs["archive_session"]
+    retry = archive_session.get_adapter("https://archive.org").max_retries
+    assert retry.backoff_factor == 3
+    assert retry.backoff_jitter == 2
+    assert retry.backoff_max == 22 * 60
+    archive_session.mount_http_adapter(max_retries=3)
+    retry = archive_session.get_adapter("https://archive.org").max_retries
+    assert retry.backoff_factor == 3
+    assert retry.backoff_jitter == 2
+    assert retry.backoff_max == 22 * 60
     item.download.assert_called_once_with(
         files=["example.pdf"],
         source="original",

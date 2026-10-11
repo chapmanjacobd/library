@@ -29,10 +29,18 @@ def _get_retry_adapter(args):
     import requests.adapters
 
     same_host_threads = getattr(args, "threads", None) or 10
+    retry = _get_retry(args)
+
+    return requests.adapters.HTTPAdapter(max_retries=retry, pool_maxsize=same_host_threads, pool_block=True)
+
+
+def _get_retry(args):
+    import requests.adapters
+
     http_retries = getattr(args, "http_retries", 8)
     http_max_redirects = getattr(args, "http_max_redirects", 4)
 
-    retry = requests.adapters.Retry(
+    return requests.adapters.Retry(
         total=http_retries,
         connect=http_retries,
         read=http_retries,
@@ -55,7 +63,19 @@ def _get_retry_adapter(args):
         ],
     )
 
-    return requests.adapters.HTTPAdapter(max_retries=retry, pool_maxsize=same_host_threads, pool_block=True)
+
+def _get_internet_archive_session(args):
+    from internetarchive.session import ArchiveSession
+
+    retry = _get_retry(args)
+
+    class LibraryArchiveSession(ArchiveSession):
+        def mount_http_adapter(self, protocol=None, max_retries=None, status_forcelist=None, host=None):
+            if isinstance(max_retries, (int, float)):
+                max_retries = retry
+            return super().mount_http_adapter(protocol, max_retries, status_forcelist, host)
+
+    return LibraryArchiveSession(http_adapter_kwargs={"max_retries": retry})
 
 
 def parse_cookies_from_browser(input_str):
@@ -735,7 +755,7 @@ def download_internet_archive(args, url: str) -> str | None:
     current_file = None
     progress_started = False
     try:
-        item = ia.get_item(identifier)
+        item = ia.get_item(identifier, archive_session=_get_internet_archive_session(args))
         original_files = [f for f in item.get_files() if f.source == "original"]
         if not original_files:
             raise RuntimeError(f"Internet Archive item has no downloadable original files: {identifier}")
