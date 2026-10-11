@@ -32,7 +32,7 @@ dependencies = [
   'pyreadline3; platform_system == "Windows"',
 ]
 description = "xk media library"
-dynamic = ["version"]
+version = "3.2.007"
 license = {file = "LICENSE"}
 name = "library"
 readme = ".github/README.md"
@@ -84,16 +84,14 @@ repository = "https://github.com/chapmanjacobd/library/"
 lb = "library.__main__:library"
 library = "library.__main__:library"
 
-[tool.pdm]
-version = {source = "file", path = "library/__main__.py"}
-
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["uv_build>=0.12.19,<0.13"]
+build-backend = "uv_build"
 
-[tool.pdm.build]
-includes = ["library"]
-excludes = ["tests"]
+[tool.uv.build-backend]
+module-root = ""
+module-name = "library"
+source-exclude = ["tests/**"]
 
 [tool.black]
 line-length = 120

@@ -684,7 +684,7 @@ disk_usage = """library disk-usage DATABASE [--sort-groups-by (priority) | path 
         | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
         | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
         | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
-        | /home/xk/github/xk/lb/.pdm-python     |  15 Bytes |         |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
 
     Only include files with a specific depth
 

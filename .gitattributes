@@ -3,4 +3,4 @@
 
 .git*       export-ignore
 *.db        export-ignore
-pdm.lock    -diff
+uv.lock    -diff

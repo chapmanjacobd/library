@@ -2320,7 +2320,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
         | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
         | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
-        | /home/xk/github/xk/lb/.pdm-python     |  15 Bytes |         |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
 
     Only include files with a specific depth
 
@@ -3428,5 +3428,4 @@ You can expand all by running this in your browser console:
 ```
 
 Be sure to check out [https://www.unli.xyz/diskprices/](https://www.unli.xyz/diskprices/) for all your storage needs
-
 

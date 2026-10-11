@@ -2,10 +2,9 @@ import argparse, importlib, os, sys, textwrap
 
 from tabulate import tabulate
 
+from library._version import __version__
 from library.utils import argparse_utils, iterables
 from library.utils.log_utils import log
-
-__version__ = "3.2.007"
 
 progs = {
     "Create database subcommands": {

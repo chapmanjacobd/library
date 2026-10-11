@@ -7,7 +7,7 @@
 /TODO
 /.ruff_cache/
 /__pypackages__/
-/.pdm-python
+/.venv/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
