@@ -22,12 +22,8 @@ def print_overwrite(*text, **kwargs):
 
     if consts.PYTEST_RUNNING or not output.isatty():
         pass
-    elif consts.IS_LINUX or consts.IS_MAC:
-        print("\r" + text, end="\033[K", **kwargs)
-    elif consts.IS_WINDOWS:
-        print("\r" + text, end="", **kwargs)
     else:
-        print(text, **kwargs)
+        print("\r" + text, end="\033[K", **kwargs)
 
 
 class MultilineOverwriteConsole:
