@@ -59,7 +59,7 @@ deluxe = [
   "qbittorrent-api",
   "scikit-learn",
   "selenium",
-  "libtorrent",
+  'libtorrent; python_version < "3.14"',
   "tqdm",
   "wordllama>=0.2.7.post0",
   "xattr",

@@ -16,7 +16,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - run: |
           sudo apt-get update -q -q
@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        nv: [ {os: windows-latest, py: "3.14"}, {os: macos-latest, py: "3.13"} ]
+        nv: [ {os: windows-latest, py: "3.15"}, {os: macos-latest, py: "3.14"} ]
 
     runs-on: ${{ matrix.nv.os }}
     timeout-minutes: 20

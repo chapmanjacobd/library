@@ -28,7 +28,8 @@ def fast_function_top_level():
 
 def test_with_timeout_success():
     # Use top-level function for multiprocessing compatibility
-    decorated_func = processes.with_timeout(2)(fast_function_top_level)
+    # Pool startup can take several seconds on macOS CI.
+    decorated_func = processes.with_timeout(10)(fast_function_top_level)
     assert decorated_func() == "success"
 
 
