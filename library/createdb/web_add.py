@@ -1,4 +1,9 @@
-import concurrent.futures, json, random, sys, time
+import concurrent.futures
+import json
+import random
+import re
+import sys
+import time
 from contextlib import suppress
 from urllib.parse import urlparse
 
@@ -27,6 +32,11 @@ from library.utils import (
 )
 from library.utils.consts import DBType
 from library.utils.log_utils import log
+
+HTML_SIZE_RE = re.compile(
+    r"(?<![\w.])(?P<size>\d+(?:\.\d+)?\s*(?:bytes?|[kmgtpe](?:i?b)?|b))\s*$",
+    re.IGNORECASE,
+)
 
 
 def parse_args(action, **kwargs):
@@ -129,7 +139,8 @@ def add_basic_metadata(args, m):
             try:
                 web_stats = web.stat(m["path"])
                 if web_stats:
-                    m["size"] = web_stats.st_size
+                    if web_stats.st_size:
+                        m["size"] = web_stats.st_size
                     m["time_modified"] = web_stats.st_mtime
             except FileNotFoundError:
                 m["time_deleted"] = consts.now()
@@ -142,6 +153,18 @@ def add_basic_metadata(args, m):
 
     web.sleep(args)
     return m
+
+
+def extract_html_size(m) -> int | None:
+    after_text = m.get("after_text")
+    if not after_text:
+        return None
+
+    match = HTML_SIZE_RE.search(after_text)
+    if not match:
+        return None
+
+    return nums.human_to_bytes(match.group("size"))
 
 
 def spider(args, paths: list):
@@ -206,6 +229,10 @@ def spider(args, paths: list):
             new_paths[path] = None  # add key to map; title: None
 
         media = [consolidate_media(args, k) | (v or {}) for k, v in new_paths.items()]
+        for m in media:
+            html_size = extract_html_size(m)
+            if html_size is not None:
+                m["size"] = html_size
         new_media_count += len(media)
 
         # get basic metadata
