@@ -37,6 +37,7 @@ HTML_SIZE_RE = re.compile(
     r"(?<![\w.])(?P<size>\d+(?:\.\d+)?\s*(?:bytes?|[kmgtpe](?:i?b)?|b))\s*$",
     re.IGNORECASE,
 )
+HTML_BYTES_RE = re.compile(r"(?<!\S)(?P<size>\d+)\s*$")
 
 
 def parse_args(action, **kwargs):
@@ -161,10 +162,11 @@ def extract_html_size(m) -> int | None:
         return None
 
     match = HTML_SIZE_RE.search(after_text)
-    if not match:
-        return None
+    if match:
+        return nums.human_to_bytes(match.group("size"))
 
-    return nums.human_to_bytes(match.group("size"))
+    match = HTML_BYTES_RE.search(after_text)
+    return int(match.group("size")) if match else None
 
 
 def spider(args, paths: list):

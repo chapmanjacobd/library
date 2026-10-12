@@ -26,7 +26,9 @@ def test_web_add(temp_db):
         ("02-Sep-2017 01:28 125K", nums.human_to_bytes("125K")),
         ("10-May-2016 19:12 23M", nums.human_to_bytes("23M")),
         ("10-May-2016 19:12 1.5 GiB", nums.human_to_bytes("1.5 GiB")),
+        ("14-Feb-2013 16:34 480", 480),
         ("28-Feb-2021 09:44 -", None),
+        ("10-May-2016 19:12", None),
         ("unrelated text", None),
     ],
 )
