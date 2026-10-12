@@ -58,6 +58,11 @@ def process_path(args, path) -> str | None:
                 process_path(args, p)
             return archive_dir
 
+    if args.simulate:
+        command = ["magick", str(path), "-resize", f"{args.max_image_width}x{args.max_image_height}>", str(output_path)]
+        print(shlex.join(command))
+        return str(path)
+
     path, output_path = devices.clobber(args, path, output_path)
     if path is None:
         return output_path
@@ -65,15 +70,12 @@ def process_path(args, path) -> str | None:
     path = WebPath(path)
     output_path = Path(output_path)
 
-    output_path.parent.mkdir(exist_ok=True, parents=True)
+    if not args.simulate:
+        output_path.parent.mkdir(exist_ok=True, parents=True)
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
 
     command = ["magick", str(path), "-resize", f"{args.max_image_width}x{args.max_image_height}>", str(output_path)]
-
-    if args.simulate:
-        print(shlex.join(command))
-        return str(path)
 
     try:
         original_stats = path.stat()

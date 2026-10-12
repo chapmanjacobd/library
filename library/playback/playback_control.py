@@ -307,6 +307,9 @@ def kill_process(name) -> None:
 
 def playback_stop() -> None:
     args = parse_args(usage.stop)
+    if args.simulate:
+        print("Would stop playback")
+        return
 
     playing = _now_playing(args)
     if playing["mpv"]:
@@ -324,6 +327,10 @@ def playback_stop() -> None:
 
 def playback_pause() -> None:
     args = parse_args(usage.pause)
+    if args.simulate:
+        print("Would pause playback")
+        return
+
     playing = _now_playing(args)
 
     if playing["catt"]:
@@ -337,6 +344,9 @@ def playback_pause() -> None:
 
 def playback_next() -> None:
     args = parse_args(usage.next)
+    if args.simulate:
+        print("Would advance playback")
+        return
 
     playing = _now_playing(args)
 
@@ -358,6 +368,9 @@ def playback_next() -> None:
 
 def playback_seek() -> None:
     args = parse_args(usage.seek)
+    if args.simulate:
+        print("Would seek playback by", args.time)
+        return
 
     playing = _now_playing(args)
 

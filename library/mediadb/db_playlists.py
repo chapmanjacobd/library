@@ -97,6 +97,9 @@ def get_id(args, playlist_path) -> int:
 
 def _add(args, entry):
     playlists_id = get_id(args, entry["path"])
+    if getattr(args, "simulate", False):
+        return playlists_id
+
     if playlists_id:
         entry["id"] = playlists_id
         entry["time_modified"] = consts.now()
@@ -135,6 +138,9 @@ def get_parentpath_playlists_id(args, playlist_path) -> int | None:
 
 
 def mark_media_deleted(args, playlist_paths) -> int:
+    if getattr(args, "simulate", False):
+        return 0
+
     playlist_paths = iterables.conform(playlist_paths)
 
     deleted_playlist_count = 0
@@ -177,6 +183,9 @@ def mark_media_deleted(args, playlist_paths) -> int:
 
 
 def delete_subpath_playlists(args, playlist_path, replacement_playlist_id=None) -> int | None:
+    if getattr(args, "simulate", False):
+        return 0
+
     subpath_filter = """
         COALESCE(time_deleted, 0)=0
         AND path LIKE ?
@@ -249,6 +258,9 @@ def media_exists(args, path, playlist_path) -> bool:
 
 
 def update_more_frequently(args, playlist_path) -> None:
+    if getattr(args, "simulate", False):
+        return
+
     if "playlists" not in args.db.table_names():
         return
 
@@ -277,6 +289,9 @@ def update_more_frequently(args, playlist_path) -> None:
 
 
 def update_less_frequently(args, playlist_path) -> None:
+    if getattr(args, "simulate", False):
+        return
+
     if "playlists" not in args.db.table_names():
         return
 

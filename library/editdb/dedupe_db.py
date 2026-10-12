@@ -33,6 +33,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def dedupe_rows(args, tablename, primary_keys, business_keys):
+    if args.simulate:
+        log.info("Would remove duplicate rows from %s", tablename)
+        return
+
     with args.db.conn:
         args.db.conn.execute(
             f"""
@@ -107,6 +111,9 @@ def dedupe_db() -> None:
                 ),
             )
             log.info("%s (%s rows)", col, len(data))
+
+            if args.simulate:
+                continue
 
             with args.db.conn:
 

@@ -149,25 +149,40 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         tables = []
 
     if getattr(args, "delete_files", False):
-        marked = post_actions.delete_media(args, [d["path"] for d in media])
-        log.warning(f"Deleted {marked} files")
+        if args.simulate:
+            log.warning("Would delete %s files", len(media))
+        else:
+            marked = post_actions.delete_media(args, [d["path"] for d in media])
+            log.warning(f"Deleted {marked} files")
 
     if getattr(args, "delete_rows", False) or "D" in print_args:
-        with args.db.conn:
-            for d in media:
-                args.db["media"].delete_where("path = ?", [d["path"]])
-        log.warning(f"Deleted {len(media)} rows")
+        if args.simulate:
+            log.warning("Would delete %s rows", len(media))
+        else:
+            with args.db.conn:
+                for d in media:
+                    args.db["media"].delete_where("path = ?", [d["path"]])
+            log.warning(f"Deleted {len(media)} rows")
 
     if "r" in print_args:
-        marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
-        log.warning(f"Marked {marked} metadata records as deleted")
+        if args.simulate:
+            log.warning("Would mark metadata records as deleted")
+        else:
+            marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
+            log.warning(f"Marked {marked} metadata records as deleted")
     elif getattr(args, "mark_deleted", False) or "d" in print_args:
-        marked = db_media.mark_media_deleted(args, [d["path"] for d in media])
-        log.warning(f"Marked {marked} metadata records as deleted")
+        if args.simulate:
+            log.warning("Would mark %s metadata records as deleted", len(media))
+        else:
+            marked = db_media.mark_media_deleted(args, [d["path"] for d in media])
+            log.warning(f"Marked {marked} metadata records as deleted")
 
     if getattr(args, "mark_watched", False) or "w" in print_args:
-        marked = db_history.add(args, [d["path"] for d in media], mark_done=True)
-        log.warning(f"Marked {marked} metadata records as watched")
+        if args.simulate:
+            log.warning("Would mark %s metadata records as watched", len(media))
+        else:
+            marked = db_history.add(args, [d["path"] for d in media], mark_done=True)
+            log.warning(f"Marked {marked} metadata records as watched")
 
     total_duration = sum(nums.safe_int(m.get("duration")) or 0 for m in media)
     if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):

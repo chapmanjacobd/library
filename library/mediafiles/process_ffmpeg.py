@@ -80,6 +80,10 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
 
     output_path = web.gen_output_path(args, path, target_extension=".XXXXXXX")  # max target ext len
 
+    if args.simulate:
+        print("ffmpeg", path, output_path)
+        return str(path)
+
     path, output_path = devices.clobber(args, path, output_path)
     if path is None:
         return output_path
@@ -87,11 +91,8 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
     path = WebPath(path)
     output_path = Path(output_path)
 
-    output_path.parent.mkdir(exist_ok=True, parents=True)
-
-    if args.simulate and consts.PYTEST_RUNNING:
-        print("ffmpeg", path, output_path)
-        return str(path)
+    if not args.simulate:
+        output_path.parent.mkdir(exist_ok=True, parents=True)
 
     try:
         original_stats = path.stat()

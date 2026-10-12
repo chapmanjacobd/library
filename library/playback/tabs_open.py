@@ -54,7 +54,8 @@ def play(args, media):
 
 def tabs_open() -> None:
     args = parse_args()
-    db_history.create(args)
+    if not args.simulate:
+        db_history.create(args)
 
     from library.utils.path_utils import domain_from_url
 

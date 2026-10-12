@@ -34,6 +34,9 @@ def exists(args, media_id) -> bool:
 
 
 def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_done=None):
+    if getattr(args, "simulate", False):
+        return 0
+
     media_ids = media_ids or []
     if paths:
         for path in paths:
@@ -54,6 +57,9 @@ def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_
 
 
 def remove(args, paths=None, media_ids=None):
+    if getattr(args, "simulate", False):
+        return
+
     media_ids = media_ids or []
     if paths:
         for path in paths:

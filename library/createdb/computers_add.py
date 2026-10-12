@@ -115,6 +115,10 @@ def computer_add(args, hostnames):
 def computers_add():
     args = parse_args()
 
+    if args.simulate:
+        print("Would gather system info from:", *args.hostnames, sep="\n")
+        return
+
     db_playlists.create(args)
     db_media.create(args)
 

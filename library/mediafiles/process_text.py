@@ -219,6 +219,19 @@ def process_path(args, path) -> str | None:
     if args.clean_path:
         output_path = path_utils.clean_path(os.fsencode(output_path))
 
+    if args.simulate:
+        command = [
+            "ebook-convert",
+            str(path),
+            str(output_path),
+            "--minimum-line-height=105",
+            "--unsmarten-punctuation",
+        ]
+        if ext == "pdf" and get_calibre_version() >= (7, 19, 0):
+            command += ["--pdf-engine", "pdftohtml"]
+        print(shlex.join(command))
+        return str(path)
+
     if os.path.isdir(output_path):
         # we need to make sure the target folder is empty because we possibly call rmtree later
         existing_rename = devices.alt_name(output_path)
@@ -231,7 +244,8 @@ def process_path(args, path) -> str | None:
     path = Path(path)
     output_path = Path(output_path)
 
-    output_path.parent.mkdir(exist_ok=True, parents=True)
+    if not args.simulate:
+        output_path.parent.mkdir(exist_ok=True, parents=True)
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
 
@@ -255,10 +269,6 @@ def process_path(args, path) -> str | None:
 
     if ext == "pdf" and get_calibre_version() >= (7, 19, 0):
         command += ["--pdf-engine", "pdftohtml"]
-
-    if args.simulate:
-        print(shlex.join(command))
-        return str(path)
 
     try:
         original_stats = path.stat()

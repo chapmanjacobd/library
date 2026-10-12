@@ -569,6 +569,10 @@ def set_torrent_paths(qbt_client, t, temp_path, download_path):
 def torrents_info():
     args = parse_args()
 
+    if args.simulate:
+        print("Simulation: no torrent changes made")
+        return
+
     def shorten(s, width):
         return s if args.verbose >= consts.LOG_INFO else strings.shorten(s, width)
 

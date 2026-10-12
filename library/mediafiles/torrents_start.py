@@ -153,6 +153,11 @@ def torrent_paths(args, torrent, temp_prefix, download_prefix):
 def torrents_start():
     args = parse_args()
 
+    if args.simulate:
+        for path in args.paths:
+            print("Would start torrent", path)
+        return
+
     qbt_client = start_qBittorrent(args)
 
     if args.temp_drive and Path(args.temp_drive).is_absolute():

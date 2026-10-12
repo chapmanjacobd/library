@@ -93,6 +93,10 @@ def process_path(args, input_path):
         suffix = "." + ".".join(params) + ".pdf"
         output_path = input_path.with_suffix(suffix)
 
+    if args.simulate:
+        print("pdf-edit", input_path, output_path)
+        return
+
     input_images = pdf2image.convert_from_path(input_path)
     print(f"Loaded {len(input_images)} pages")
 

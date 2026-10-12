@@ -15,7 +15,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import os
+import os, shlex
 
 from library import usage
 from library.folders import merge_mv
@@ -112,7 +112,10 @@ def mergerfs_cp_file(args, merger_fs_src, destination):
         if os.path.exists(source):
             found_file = True
             destination = os.path.join(srcmount, os.path.relpath(destination, args.mergerfs_mount))
-            processes.cmd(*args.cp_args, source, destination, strict=False, quiet=False, error_verbosity=2)
+            if args.simulate:
+                print(shlex.join([*args.cp_args, source, destination]))
+            else:
+                processes.cmd(*args.cp_args, source, destination, strict=False, quiet=False, error_verbosity=2)
 
     if not found_file:
         print(f"Could not find srcmount of {merger_fs_src}")

@@ -705,6 +705,10 @@ def play(args, m, media_len) -> None:
 
 
 def play_list(args, media):
+    if args.simulate:
+        print("Would play:", *(m["path"] for m in media), sep="\n")
+        return
+
     try:
         playlist = MediaPrefetcher(args, media)
         playlist.fetch()

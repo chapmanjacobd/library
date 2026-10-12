@@ -72,7 +72,8 @@ def get_duplicates(args) -> list[dict]:
 
 def merge_online_local() -> None:
     args = parse_args()
-    args.db["media"].rebuild_fts()
+    if not args.simulate:
+        args.db["media"].rebuild_fts()
     duplicates = get_duplicates(args)
 
     tbl = deepcopy(duplicates[: int(args.limit)])
@@ -101,8 +102,9 @@ def merge_online_local() -> None:
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
             db_media.add(args, objects.dict_filter_bool(entry))  # type: ignore
-            with args.db.conn:
-                args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
+            if not args.simulate:
+                with args.db.conn:
+                    args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
             merged.append(webpath)
 
         print(len(merged), "merged")

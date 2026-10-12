@@ -45,8 +45,11 @@ def gen_pillow_compats(input_paths):
 
 
 def convert_to_image_pdf(args, image_paths, pdf_path):
-    import img2pdf
+    if args.simulate:
+        print("img2pdf", *image_paths, pdf_path)
+        return pdf_path
 
+    import img2pdf
     image_stats = os.stat(image_paths[0])
     creation_date = utc_from_local_timestamp(image_stats.st_ctime)
     modified_date = utc_from_local_timestamp(image_stats.st_mtime)
@@ -93,6 +96,9 @@ def gen_arg_groups(args):
     local_paths = []
     for path in args.paths:
         if path.startswith("http"):
+            if args.simulate:
+                log.info("Downloading %s", path)
+                continue
             path = web.download_url(args, path)
             if path:
                 local_paths.append(os.path.realpath(path))
@@ -112,6 +118,9 @@ def gen_arg_groups(args):
             else:
                 log.warning("No images found in %s", path)
         elif path_utils.ext(path) in consts.ARCHIVE_EXTENSIONS:
+            if args.simulate:
+                log.info("Extracting images %s", path)
+                continue
             archive_dir, _ = processes.unar_delete(path)
             archive_image_paths = shell_utils.rglob(str(archive_dir), DEFAULT_EXTENSIONS, quiet=True)[0]
             if archive_image_paths:

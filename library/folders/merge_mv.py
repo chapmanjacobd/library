@@ -291,9 +291,10 @@ def merge_mv(defaults_override=None):
         mmv_folders(args, mcp_file, args.paths, args.destination)
     else:
         mmv_folders(args, mmv_file, args.paths, args.destination, shortcut_allowed=True)
-        for p in args.paths:
-            if os.path.isdir(p):
-                path_utils.bfs_removedirs(p)
+        if not args.simulate:
+            for p in args.paths:
+                if os.path.isdir(p):
+                    path_utils.bfs_removedirs(p)
 
 
 def move(args, srcs: list, dest: str):

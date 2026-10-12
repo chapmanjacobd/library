@@ -86,8 +86,9 @@ def download(args=None) -> None:
 
     args = parse_args()
 
-    db_playlists.create(args)
-    db_media.create(args)
+    if not args.simulate:
+        db_playlists.create(args)
+        db_media.create(args)
 
     if args.recursive or args.webcache:
         args.links = True
@@ -96,15 +97,16 @@ def download(args=None) -> None:
 
     if "limit" in args.defaults and "media" in args.db.table_names() and "webpath" in m_columns:
         if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (SELECT webpath FROM media) LIMIT 1"):
-            with args.db.conn:
-                args.db.conn.execute(
-                    """
-                    DELETE from media WHERE path in (
-                        SELECT webpath FROM media
-                        WHERE error IS NULL OR error NOT LIKE 'Media check failed%'
-                    ) AND webpath is NULL
-                    """
-                )
+            if not args.simulate:
+                with args.db.conn:
+                    args.db.conn.execute(
+                        """
+                        DELETE from media WHERE path in (
+                            SELECT webpath FROM media
+                            WHERE error IS NULL OR error NOT LIKE 'Media check failed%'
+                        ) AND webpath IS NULL
+                        """
+                    )
 
     args.blocklist_rules = []
     if "blocklist" in args.db.table_names():
@@ -120,6 +122,9 @@ def download(args=None) -> None:
 
     if args.print:
         media_printer.media_printer(args, media)
+        return
+    if args.simulate:
+        print("Would download:", *(m["path"] for m in media), sep="\n")
         return
 
     get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])

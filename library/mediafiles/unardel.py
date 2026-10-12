@@ -178,7 +178,13 @@ def unardel() -> None:
 
             if args.move and not m.get("time_deleted"):
                 dest = path_utils.relative_from_mountpoint(m["path"], args.move)
-                shell_utils.rename_move_file(m["path"], dest)
+                if args.simulate:
+                    shell_utils.rename_move_file(m["path"], dest, simulate=True)
+                else:
+                    shell_utils.rename_move_file(m["path"], dest)
             elif args.move_broken and m.get("time_deleted") and os.path.exists(m["path"]):
                 dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
-                shell_utils.rename_move_file(m["path"], dest)
+                if args.simulate:
+                    shell_utils.rename_move_file(m["path"], dest, simulate=True)
+                else:
+                    shell_utils.rename_move_file(m["path"], dest)

@@ -36,13 +36,21 @@ def parse_args():
 
 def add_to_blocklist(args, p):
     p = p.pop()
-    args.db["blocklist"].insert({"key": args.match_column, "value": p}, alter=True, replace=True, pk=["key", "value"])
+    if args.simulate:
+        print("Would add to blocklist:", p)
+    else:
+        args.db["blocklist"].insert(
+            {"key": args.match_column, "value": p}, alter=True, replace=True, pk=["key", "value"]
+        )
 
 
 def remove_from_blocklist(args, p):
     p = p.pop()
-    with args.db.conn:
-        args.db["blocklist"].delete([args.match_column, p])
+    if args.simulate:
+        print("Would remove from blocklist:", p)
+    else:
+        with args.db.conn:
+            args.db["blocklist"].delete([args.match_column, p])
 
 
 def block(args=None) -> None:
@@ -69,6 +77,8 @@ def block(args=None) -> None:
                 # prevent Expression tree is too large (max depth 1000)
                 blocklist_chunked = iterables.chunks(blocklist, consts.SQLITE_PARAM_LIMIT // 100)
                 for chunk in blocklist_chunked:
+                    if args.simulate:
+                        continue
                     columns = [t[0] for t in chunk]
                     values = [t[1] for t in chunk]
                     try:
@@ -140,27 +150,28 @@ def block(args=None) -> None:
         for p in playlist_paths:
             add_to_blocklist(args, [p])
 
-        with args.db.conn:
-            args.db.conn.execute(
-                f"""UPDATE playlists
-                SET time_deleted={consts.APPLICATION_START}
-                WHERE path IN ("""
-                + ",".join(["?"] * len(playlist_paths))
-                + ")",
-                (*playlist_paths,),
-            )
-        with args.db.conn:
-            args.db.conn.execute(
-                f"""UPDATE media
-                SET time_deleted={consts.APPLICATION_START}
-                WHERE path LIKE 'http%'
-                AND playlists_id in (
-                    SELECT id from playlists
+        if not args.simulate:
+            with args.db.conn:
+                args.db.conn.execute(
+                    f"""UPDATE playlists
+                    SET time_deleted={consts.APPLICATION_START}
                     WHERE path IN ("""
-                + ",".join(["?"] * len(playlist_paths))
-                + "))",
-                (*playlist_paths,),
-            )
+                    + ",".join(["?"] * len(playlist_paths))
+                    + ")",
+                    (*playlist_paths,),
+                )
+            with args.db.conn:
+                args.db.conn.execute(
+                    f"""UPDATE media
+                    SET time_deleted={consts.APPLICATION_START}
+                    WHERE path LIKE 'http%'
+                    AND playlists_id in (
+                        SELECT id from playlists
+                        WHERE path IN ("""
+                    + ",".join(["?"] * len(playlist_paths))
+                    + "))",
+                    (*playlist_paths,),
+                )
 
         playlist_media = list(
             args.db.query(
@@ -179,10 +190,12 @@ def block(args=None) -> None:
         paths_to_delete = [d["path"] for d in playlist_media]
         if paths_to_delete:
             print(paths_to_delete)
-            if devices.confirm(
+            if not args.simulate and devices.confirm(
                 f"Would you like to delete these {len(paths_to_delete)} local files ({strings.file_size(total_size)})?",
             ):
                 post_actions.delete_media(args, paths_to_delete)
+            elif args.simulate:
+                print("Would delete local files:", *paths_to_delete, sep="\n")
         return
 
     select_sql = ", ".join(s for s in columns if s in m_columns)

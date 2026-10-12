@@ -60,6 +60,9 @@ def search_db() -> None:
     args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
     if args.delete_rows:  # TODO: replace with media_printer?
+        if args.simulate:
+            print("Would delete matching rows")
+            return
         deleted_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(
@@ -69,6 +72,9 @@ def search_db() -> None:
             deleted_count += cursor.rowcount
         print(f"Deleted {deleted_count} rows")
     elif args.mark_deleted:
+        if args.simulate:
+            print("Would mark matching rows as deleted")
+            return
         modified_row_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(

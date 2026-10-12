@@ -80,6 +80,10 @@ def get_deleted_media(args) -> list[dict]:
 
 
 def mark_media_undownloaded(args, deleted_media) -> None:
+    if args.simulate:
+        print("Would mark", len(deleted_media), "media records as downloadable")
+        return
+
     m_columns = db_utils.columns(args, "media")
 
     media = deepcopy(deleted_media)
@@ -122,7 +126,9 @@ def redownload() -> None:
     paths = [d["path"] for d in deleted_media]
     redownload_ids = [d["extractor_id"] for d in deleted_media if d.get("extractor_id")]
     print(len(redownload_ids), "tube ids found")
-    if deleted_media and devices.confirm("Redownload media?"):  # type: ignore
+    if deleted_media and args.simulate:
+        print("Would redownload", len(deleted_media), "media records")
+    elif deleted_media and devices.confirm("Redownload media?"):  # type: ignore
         if len(redownload_ids) > 0:
             download_archive = Path(args.download_archive).expanduser().resolve()
             if download_archive.exists():

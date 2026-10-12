@@ -393,6 +393,10 @@ def filter_file(path, sieve) -> None:
 
 def trash(args, path: Path | str, detach=True) -> None:
     if path and Path(path).exists():
+        if getattr(args, "simulate", False):
+            print("trash", path)
+            return
+
         if str(path).startswith("/net/"):
             Path(path).unlink(missing_ok=True)
             return

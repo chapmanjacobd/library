@@ -30,9 +30,10 @@ def mv_to_keep_folder(args, src: str) -> str:
     if src == dest:
         return src
 
-    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    if not getattr(args, "simulate", False):
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
 
-    if dest and hasattr(args, "db") and args.db:
+    if dest and not getattr(args, "simulate", False) and hasattr(args, "db") and args.db:
         with args.db.conn:
             args.db.conn.execute("DELETE FROM media where path = ?", [dest])  # remove any existing records
             args.db.conn.execute("UPDATE media set path = ? where path = ?", [dest, src])
@@ -47,11 +48,11 @@ def delete_media(args, paths) -> int:
             continue
 
         if getattr(args, "prefix", False):
-            Path(p).unlink(missing_ok=True)
+            devices.unlink(args, p)
         else:
             shell_utils.trash(args, p, detach=len(paths) < 30)
 
-    if hasattr(args, "db") and args.db:
+    if not getattr(args, "simulate", False) and hasattr(args, "db") and args.db:
         return db_media.mark_media_deleted(args, paths)
     else:
         return len(paths)
@@ -83,7 +84,7 @@ def post_act(
 
     player_exit_code = getattr(player_process, "returncode", None) or 0
 
-    if record_history and player_exit_code == 0 and args.db:
+    if record_history and player_exit_code == 0 and args.db and not getattr(args, "simulate", False):
         db_history.add(args, [media_file], mark_done=True)
 
     def handle_ask_action(ask_action: str):
@@ -162,6 +163,9 @@ def post_act(
         normal_action(args, media_file, action)
     elif external_cmd:
         log_action(player_exit_code_cmd.upper() + " " + external_cmd)
+        if args.simulate:
+            print("Would run:", external_cmd, media_file)
+            return
         if external_cmd in ["pass", "mark-watched"]:
             pass
         elif external_cmd in ["soft-delete", "mark-deleted"]:

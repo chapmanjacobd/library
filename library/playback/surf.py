@@ -32,7 +32,10 @@ def list_tabs(args) -> list:
 
 def open_tabs(_args, urls) -> None:
     for url in urls:
-        processes.cmd(media_player.get_browser(), url)
+        if _args.simulate:
+            print("Would open:", url)
+        else:
+            processes.cmd(media_player.get_browser(), url)
 
 
 def streaming_tab_loader() -> None:

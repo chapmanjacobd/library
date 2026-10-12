@@ -27,6 +27,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def delete_playlists(args, playlists) -> None:
+    if args.simulate:
+        print(f"Would delete {len(playlists)} playlists")
+        return
+
     deleted_media_count = 0
     try:
         online_media = [p for p in playlists if p.startswith("http")]

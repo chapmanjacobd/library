@@ -352,7 +352,10 @@ def get_fs_duplicates(args) -> list[dict]:
                 del path_media_map[path]
             else:
                 path_media_map[path]["hash"] = file_hash
-                args.db["media"].upsert(path_media_map[path], pk=["path"], alter=True)  # save sample-hash back to db
+                if not args.simulate:
+                    args.db["media"].upsert(
+                        path_media_map[path], pk=["path"], alter=True
+                    )  # save sample-hash back to db
         media = [
             path_media_map[d["path"]] for d in media if d["path"] in path_media_map
         ]  # replace media with path_media_map in original order (args.sort)
@@ -495,9 +498,12 @@ def dedupe_media() -> None:
             if path.startswith("http"):
                 pass
             elif args.dedupe_cmd:
-                processes.cmd(
-                    *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]
-                )  # follows rmlint interface
+                if args.simulate:
+                    print("Would run", args.dedupe_cmd, d["duplicate_path"], d["keep_path"])
+                else:
+                    processes.cmd(
+                        *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]
+                    )  # follows rmlint interface
             else:
                 shell_utils.trash(args, path, detach=False)
             db_media.mark_media_deleted(args, path)

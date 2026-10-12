@@ -79,13 +79,16 @@ def args_post(args, parser, create_db=False):
     args.action = (get_caller_name() or "").replace("_", "-")
 
     if create_db:
-        Path(args.database).touch()
-        args.db = db_utils.connect(args)
-        try:
-            with args.db.conn:  # type: ignore
-                args.db.conn.execute("PRAGMA application_id = 0x" + bytes("XKLB", "ASCII").hex())  # type: ignore
-        except sqlite3.OperationalError:
-            pass
+        if getattr(args, "simulate", False):
+            args.db = db_utils.connect(args, memory=True)
+        else:
+            Path(args.database).touch()
+            args.db = db_utils.connect(args)
+            try:
+                with args.db.conn:  # type: ignore
+                    args.db.conn.execute("PRAGMA application_id = 0x" + bytes("XKLB", "ASCII").hex())  # type: ignore
+            except sqlite3.OperationalError:
+                pass
     elif getattr(args, "database", False):
         args.db = db_utils.connect(args)
 

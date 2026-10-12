@@ -254,6 +254,10 @@ def scan_path(args, path_str: str) -> int:
 
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)
+    if args.simulate:
+        print(f"[{path}] Would add {len(new_files)} media files")
+        return len(new_files)
+
     if new_files:
         print(f"[{path}] Adding {len(new_files)} new media")
         # log.debug(new_files)

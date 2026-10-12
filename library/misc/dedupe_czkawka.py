@@ -232,6 +232,9 @@ def side_by_side_mpv(args, left_side, right_side):
 
 def mv_to_keep_folder(args, d) -> None:
     keep_path = Path(args.keep_dir)
+    if args.simulate:
+        print("Would move:", d["path"], "==>", keep_path / Path(d["path"]).name)
+        return
     keep_path.mkdir(exist_ok=True)
 
     media_file = d["path"]
@@ -272,6 +275,9 @@ def group_and_delete(args, groups):
 
         group = extract_group_data(group_content)
         if group is None:
+            continue
+        if args.simulate:
+            print("Would process duplicate group:", *(d["path"] for d in group), sep="\n")
             continue
 
         def delete_dupe(d, detach=is_interactive):

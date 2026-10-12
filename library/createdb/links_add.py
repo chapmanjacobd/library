@@ -246,6 +246,9 @@ def count_pages(args, page_limit):
 
 
 def update_category(args, path):
+    if args.simulate:
+        print("Would update category for:", path)
+        return
     with args.db.conn:
         args.db.conn.execute("UPDATE media SET category = ? WHERE path = ?", [args.category, path])
 

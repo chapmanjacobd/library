@@ -70,13 +70,17 @@ def make_souffle(args, media):
 def play(args, media):
     links = [m["url"] for m in media]
     paths = [m["path"] for m in media]
+    if args.simulate:
+        print("Would open:", *links, sep="\n")
+        return
     devices.browse(args.browser, links)
     db_history.add(args, paths, time_played=consts.APPLICATION_START, mark_done=True)
 
 
 def links_open() -> None:
     args = parse_args()
-    db_history.create(args)
+    if not args.simulate:
+        db_history.create(args)
 
     args.db.register_function(domain_from_url, deterministic=True)
 

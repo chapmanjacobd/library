@@ -171,7 +171,8 @@ def check_shrink(args, m) -> list:
                 m["duration"] = None
                 if args.delete_unplayable:
                     log.warning("Deleting unplayable (ffprobe): %s", m["path"])
-                    Path(m["path"]).unlink(missing_ok=True)
+                    if not args.simulate:
+                        Path(m["path"]).unlink(missing_ok=True)
                     return []
         if m["duration"] is None or not m["duration"] > 0:
             log.debug("[%s]: Invalid duration", m["path"])
@@ -238,7 +239,8 @@ def check_shrink(args, m) -> list:
                 m["duration"] = None
                 if args.delete_unplayable:
                     log.warning("Deleting unplayable (ffprobe): %s", m["path"])
-                    Path(m["path"]).unlink(missing_ok=True)
+                    if not args.simulate:
+                        Path(m["path"]).unlink(missing_ok=True)
                     return []
         if m["duration"] is None or not m["duration"] > 0 or m["ext"] in consts.SKIP_MEDIA_CHECK:
             log.debug("[%s]: Invalid duration", m["path"])
@@ -296,7 +298,7 @@ def check_shrink(args, m) -> list:
 
             for p in part_files:
                 dest = path_utils.relative_from_mountpoint(p, args.move_broken)
-                shell_utils.rename_move_file(p, dest)
+                shell_utils.rename_move_file(p, dest, simulate=args.simulate)
     else:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     # TODO?: csv, json => parquet
@@ -391,7 +393,7 @@ def process_media() -> None:
             if not os.path.exists(m["path"]):
                 log.error("[%s]: FileNotFoundError", m["path"])
                 m["time_deleted"] = consts.APPLICATION_START
-                if args.database:
+                if args.database and not args.simulate:
                     with suppress(sqlite3.OperationalError), args.db.conn:
                         args.db.conn.execute(
                             "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]

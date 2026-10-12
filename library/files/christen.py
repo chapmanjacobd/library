@@ -42,7 +42,7 @@ def rename_path(args, base, b) -> None:
 
     if b != fixed.encode():
         printable_p = b.decode("utf-8", "backslashreplace")
-        if args.run:
+        if args.run and not args.simulate:
             p = base / fsdecode(b)
             if not p.is_file():
                 log.info("Skipping non-file: %s", printable_p)
@@ -86,4 +86,5 @@ def christen() -> None:
         for p in subpaths:
             rename_path(args, base, p)
 
-        path_utils.bfs_removedirs(base)
+        if not args.simulate:
+            path_utils.bfs_removedirs(base)

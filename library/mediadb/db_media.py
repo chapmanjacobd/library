@@ -201,6 +201,9 @@ def consolidate(v: dict) -> dict | None:
 
 
 def add(args, entry):
+    if getattr(args, "simulate", False):
+        return
+
     if "path" not in entry:
         entry["path"] = entry.get("webpath")
     if not entry.get("path"):
@@ -249,6 +252,9 @@ def add(args, entry):
 
 
 def mark_media_undeleted(args, paths) -> int:
+    if getattr(args, "simulate", False):
+        return 0
+
     paths = iterables.conform(paths)
 
     modified_row_count = 0
@@ -270,6 +276,9 @@ def mark_media_undeleted(args, paths) -> int:
 
 
 def mark_media_deleted(args, paths) -> int:
+    if getattr(args, "simulate", False):
+        return 0
+
     paths = iterables.conform(paths)
 
     modified_row_count = 0
@@ -324,7 +333,8 @@ def update_media(args, media, mark_deleted=True):
             log.debug("mark_deleted: %s", t.elapsed())
 
     new_media = [d for d in media if d["path"] in new_files]
-    args.db["media"].insert_all(new_media, pk=["playlists_id", "path"], alter=True, replace=True)
+    if not getattr(args, "simulate", False):
+        args.db["media"].insert_all(new_media, pk=["playlists_id", "path"], alter=True, replace=True)
     return None
 
 
@@ -358,6 +368,10 @@ def download_add(
     mark_deleted=False,
     delete_webpath_entry=None,
 ) -> None:
+    if getattr(args, "simulate", False):
+        print("Would update download metadata:", webpath)
+        return
+
     if delete_webpath_entry is None:
         delete_webpath_entry = mark_deleted or not error
 

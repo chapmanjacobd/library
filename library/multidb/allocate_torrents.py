@@ -263,6 +263,10 @@ def allocate_torrents():
     total_size = sum(t["size"] for t in allocated_torrents)
     print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")
 
+    if args.simulate:
+        print("Would allocate and start downloads")
+        return
+
     if not args.print and (args.no_confirm or devices.confirm("Allocate and start downloads?")):
         import paramiko.ssh_exception
 

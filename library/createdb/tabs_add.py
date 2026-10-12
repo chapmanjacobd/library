@@ -52,11 +52,12 @@ def get_new_paths(args, paths) -> list[str]:
     else:
         if existing:
             print(f"Updating frequency for {len(existing)} existing paths")
-            with args.db.conn:  # type: ignore
-                for p in list(existing):
-                    args.db.conn.execute(  # type: ignore
-                        "DELETE from history WHERE media_id IN (select id from media where path = ?)", [p]
-                    )
+            if not args.simulate:
+                with args.db.conn:  # type: ignore
+                    for p in list(existing):
+                        args.db.conn.execute(  # type: ignore
+                            "DELETE from history WHERE media_id IN (select id from media where path = ?)", [p]
+                        )
             db_media.mark_media_deleted(args, list(existing))
 
     paths = iterables.conform([path.strip() for path in paths])
@@ -156,8 +157,9 @@ def tabs_shuffle() -> None:
         max_time = d["time_last_played"]
         time_played = randint(min_time, max_time)
 
-        with args.db.conn:  # type: ignore
-            args.db.conn.execute(  # type: ignore
-                "DELETE from history WHERE media_id = ? and time_played = ?", [d["id"], d["time_last_played"]]
-            )
+        if not args.simulate:
+            with args.db.conn:  # type: ignore
+                args.db.conn.execute(  # type: ignore
+                    "DELETE from history WHERE media_id = ? and time_played = ?", [d["id"], d["time_last_played"]]
+                )
         db_history.add(args, [d["path"]], time_played=time_played, mark_done=True)
