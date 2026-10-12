@@ -222,6 +222,7 @@ def download(args=None) -> None:
 
                     local_paths = [local_path]
                     if local_path and args.process:
+                        result = None
                         extension = local_path.rsplit(".", 1)[-1].lower()
                         if extension in consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS:
                             result = process_ffmpeg.process_path(args, local_path)

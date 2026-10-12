@@ -1,4 +1,4 @@
-import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, shutil, socket, sys, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
+import argparse, datetime, functools, http.cookiejar, json, os, pathlib, random, re, shutil, socket, sys, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -323,6 +323,29 @@ def get_browser_profile_path(browser_name, profile=None):
     return None
 
 
+def _chromium_last_used_profile(browser_dir):
+    state_path = Path(browser_dir) / "Local State"
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        state = {}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as excinfo:
+        log.warning("Could not read Chromium profile state %s: %s", state_path, excinfo)
+        state = {}
+
+    profile_state = state.get("profile") if isinstance(state, dict) else None
+    profile = profile_state.get("last_used") if isinstance(profile_state, dict) else None
+    if isinstance(profile, str) and (Path(browser_dir) / profile).is_dir():
+        return profile
+
+    profile_dirs = sorted(
+        path.name
+        for path in Path(browser_dir).iterdir()
+        if path.is_dir() and (path.name == "Default" or path.name.startswith("Profile "))
+    )
+    return profile_dirs[0] if profile_dirs else None
+
+
 def _firefox_default_profile(root):
     import configparser
 
@@ -399,8 +422,11 @@ def load_selenium(args, wire=False):
         resolved = get_browser_profile_path(browser_name, profile)
         if resolved:
             args.user_data_dir = resolved
-            args.profile_directory = profile
-            _profile = profile
+            if browser_name in {"chrome", "chromium", "brave", "edge", "opera", "vivaldi", "whale"}:
+                _profile = profile or _chromium_last_used_profile(resolved)
+            else:
+                _profile = profile
+            args.profile_directory = _profile
             log.info("Using browser profile: %s", resolved)
             if browser_name == "firefox" and not getattr(args, "chrome", False):
                 args.firefox = True

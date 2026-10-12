@@ -33,6 +33,20 @@ def test_download_links_recursive(temp_db, crawl_server, tmp_path):
     assert any(path.endswith("sub/c.html") for path in downloaded)
 
 
+def test_download_process_preserves_unsupported_extension(temp_db, crawl_server, tmp_path):
+    lb(
+        [
+            "dl",
+            temp_db(),
+            "--filesystem",
+            "--process",
+            "--force",
+            f"--prefix={tmp_path}",
+            f"{crawl_server}index.html",
+        ]
+    )
+
+
 @pytest.mark.skip("network: too dependent on YouTube/Google services")
 def test_yt():
     tube_add([dl_db, URL])

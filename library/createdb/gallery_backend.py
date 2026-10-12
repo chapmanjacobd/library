@@ -156,11 +156,11 @@ def url_job_class(gallery_dl):
                 self.handle_queue = self.handle_queue_resolve
 
         def handle_url(self, url, kwdict):
-            self.results.append((url, kwdict))
+            self.results.append((url, kwdict, self))
 
         def handle_queue(self, url, kwdict):
             # unresolved queue entry
-            self.results.append((url, kwdict))
+            self.results.append((url, kwdict, self))
 
         def handle_queue_resolve(self, url, kwdict):
             if url in self.visited:
@@ -174,13 +174,13 @@ def url_job_class(gallery_dl):
                 extr = self.extractor.find(url)
 
             if not extr:
-                self.results.append((url, kwdict))
+                self.results.append((url, kwdict, self))
                 return
 
             job = self.__class__(extr, self, self.resolve - 1)
             job.results = self.results  # shared accumulator
             job.visited = self.visited  # shared visited set
-            job.run()
+            self.status |= job.run()
 
     return UrlJob
 
@@ -194,9 +194,9 @@ def get_playlist_metadata(args, playlist_path):
 
     is_playlist = len(job.results) > 1
 
-    for webpath, info in job.results:
-        errors = parse_gdl_job_status(job.status, playlist_path)
-        extractor_key = "gdl_" + job.extractor.category
+    for webpath, info, result_job in job.results:
+        errors = parse_gdl_job_status(result_job.status, webpath, ignore_errors=args.ignore_errors)
+        extractor_key = "gdl_" + result_job.extractor.category
 
         if not info:
             log.error("No info returned from image extractor %s", extractor_key)

@@ -1,4 +1,6 @@
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -77,3 +79,41 @@ def test_is_supported_single_arg():
 
     rows = list(db.query("select is_supported('https://www.reddit.com') as r"))
     assert rows[0]["r"] in (0, 1)
+
+
+def test_get_playlist_metadata_uses_child_status_and_extractor(monkeypatch):
+    class Extractor:
+        def __init__(self, category):
+            self.category = category
+
+        @classmethod
+        def from_url(cls, _url):
+            return cls("child")
+
+    class Job:
+        def __init__(self, extractor, parent=None):
+            self.extractor = Extractor("root") if isinstance(extractor, str) else extractor
+            self.parent = parent
+            self.status = 0
+
+        def run(self):
+            if self.extractor.category == "root":
+                self.handle_queue("https://example.com/child", {"_extractor": Extractor})
+            else:
+                self.status = 4
+                self.handle_url("https://example.com/image.jpg", {"title": "image"})
+            return self.status
+
+    fake_gallery_dl = SimpleNamespace(job=SimpleNamespace(Job=Job))
+    monkeypatch.setattr(gallery_backend, "load_module_level_gallery_dl", lambda _args: fake_gallery_dl)
+    monkeypatch.setattr(gallery_backend.db_playlists, "add", Mock(return_value=1))
+    monkeypatch.setattr(gallery_backend.db_media, "exists", Mock(return_value=False))
+    playlist_media_add = Mock()
+    monkeypatch.setattr(gallery_backend.db_media, "playlist_media_add", playlist_media_add)
+
+    args = SimpleNamespace(ignore_errors=False)
+    assert gallery_backend.get_playlist_metadata(args, "https://example.com/album") == 1
+
+    info = playlist_media_add.call_args.args[2]
+    assert info["extractor_key"] == "gdl_child"
+    assert playlist_media_add.call_args.kwargs["error"] == "HTTPError"

@@ -671,6 +671,22 @@ def test_parse_cookies_from_browser():
         web.parse_cookies_from_browser("chrome+invalid_keyring")
 
 
+def test_chromium_last_used_profile(tmp_path):
+    (tmp_path / "Profile 1").mkdir()
+    (tmp_path / "Local State").write_text(
+        '{"profile": {"last_used": "Profile 1"}}',
+        encoding="utf-8",
+    )
+
+    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"
+
+
+def test_chromium_profile_falls_back_to_existing_profile(tmp_path):
+    (tmp_path / "Profile 1").mkdir()
+
+    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"
+
+
 def test_is_index():
     assert web.is_index("http://example.com/")
     assert web.is_index("http://example.com/dir/")
