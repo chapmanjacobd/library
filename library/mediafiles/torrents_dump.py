@@ -3,13 +3,23 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from library import usage
 from library.createdb import torrents_add
 from library.utils import arggroups, argparse_utils, printing, strings
 
+USAGE = {
+    'torrents_dump': """library torrent dump [--trackers] PATH ...
+
+    View torrent file metadata via libtorrent
+
+    Aggregate torrent metadata by tracker domain:
+
+        library torrent dump --trackers PATH ...
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.torrents_dump)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['torrents_dump'])
     arggroups.debug(parser)
 
     parser.add_argument("--trackers", action="store_true", help="Aggregate torrent metadata by tracker")

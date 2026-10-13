@@ -10,7 +10,7 @@ paths = ["test.gif", "test.opus"]
 
 def test_sample_compare():
     with pytest.raises(SystemExit):
-        lb(["sample-compare"] + [os.path.join("tests/data", p) for p in paths])
+        lb(['file', 'compare'] + [os.path.join("tests/data", p) for p in paths])
 
 
 def test_sample_cmp_missing_file(caplog, tmp_path):

@@ -12,7 +12,7 @@ from tests.utils import get_default_args
 
 def test_web_url(capsys):
     url = "http://everythingthathappened.today/september/assets/images/18-4.jpg"
-    lb(["process-image", "--simulate", url])
+    lb(['shrink', 'image', "--simulate", url])
     captured = capsys.readouterr().out
     assert url in captured
 
@@ -68,4 +68,4 @@ def test_process_image():
 def test_incomplete_file_delete(temp_file_tree):
     file_tree = {"file.jpg": "4"}
     src1 = temp_file_tree(file_tree)
-    lb(["process-image", "--delete-unplayable", str(Path(src1, "file.jpg"))])
+    lb(['shrink', 'image', "--delete-unplayable", str(Path(src1, "file.jpg"))])

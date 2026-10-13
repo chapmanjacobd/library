@@ -22,6 +22,6 @@ from library.__main__ import library as lb
     ],
 )
 def test_lb_columns(args, stdout, capsys):
-    lb(["columns", *args])
+    lb(['table', 'columns', *args])
     captured = capsys.readouterr().out
     assert all(l in captured for l in stdout)

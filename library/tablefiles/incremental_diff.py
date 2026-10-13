@@ -1,14 +1,27 @@
 import argparse
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, file_utils, web
 from library.utils.argparse_utils import ArgparseList
 from library.utils.log_utils import log
 from library.utils.printing import print_df
 
+USAGE = {
+    'incremental_diff': """library table diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
+
+    See data differences in an incremental way to quickly see how two different files differ.
+
+    Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
+
+    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID are then compared.
+    If you are comparing SQLite files you can use `--sort id,name` to achieve the same effect.
+
+    To diff everything at once run with `--batch-size inf`
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(description="Diff two table-like files", usage=usage.incremental_diff)
+    parser = argparse_utils.ArgumentParser(description="Diff two table-like files", usage=USAGE['incremental_diff'])
     parser.add_argument("--mimetype1", "--filetype1")
     parser.add_argument("--encoding1")
     parser.add_argument("--mimetype2", "--filetype2")

@@ -2,12 +2,65 @@ import argparse, os, shutil, tempfile
 from copy import deepcopy
 from pathlib import Path
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, devices, iterables, printing, sqlgroups, strings
+
+USAGE = {
+    'mv_list': """library folder move list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
+
+    Free up space on a specific disk. Find candidates for moving data to a different mount point
+
+
+    The program takes a mount point and a library database file. If you don't have a database file you can create one like this
+
+        library database add filesystem --filesystem d.db ~/d/
+
+    This also works with library audio and video databases
+
+        library folder move list /mnt/d/ video.db
+
+    The program prints a table with a sorted list of folders which are good candidates for moving.
+    Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
+    The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
+
+        ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+        ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+        ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+        ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+        ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+        ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+
+        Type "done" when finished
+        Type "more" to see more files
+        Paste a folder (and press enter) to toggle selection
+        Type "*" to select all files in the most recently printed table
+
+    Then it gives you a prompt
+
+        Paste a path:
+
+    Wherein you can copy and paste paths you want to move from the table and the program keeps track for you.
+
+        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+        26 selected paths: 162.1 GB ; future free space: 486.9 GB
+
+    You can also press the up arrow or paste it again to remove it from the list
+
+        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+        25 selected paths: 159.9 GB ; future free space: 484.7 GB
+
+    After you are done selecting folders you can press ctrl-d and it saves the list to a tmp file
+
+        Paste a path: done
+
+            Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+
+                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+""",
+}
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.mv_list)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['mv_list'])
     arggroups.sql_fs(parser)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="25", lower=4, upper=4000)

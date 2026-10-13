@@ -1,15 +1,23 @@
 import argparse, concurrent.futures, os, shlex, shutil, subprocess
 from pathlib import Path
 
-from library import usage
 from library.mediafiles import process_image
 from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils, web
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+USAGE = {
+    'process_text': """library shrink text PATH ...
+
+    Repackage documents (PDF, ePub, etc) into HTML+AVIF to save space
+
+    Requires Calibre
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.process_text)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['process_text'])
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)

@@ -1,7 +1,6 @@
 import argparse, concurrent.futures, os
 from shutil import which
 
-from library import usage
 from library.utils import (
     arggroups,
     argparse_utils,
@@ -18,9 +17,16 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+USAGE = {
+    'unardel': """library archive extract PATH ...
+
+    Extract from archives and delete all source archives
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.unardel)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['unardel'])
     arggroups.files(parser, no_db=True)
 
     parser.add_argument("--continue-from", help="Skip media until specific file path is seen")

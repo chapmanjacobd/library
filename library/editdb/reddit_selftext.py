@@ -1,14 +1,20 @@
 import argparse, html
 from urllib.parse import urlparse
 
-from library import usage
 from library.mediadb import db_media
 from library.utils import arggroups, argparse_utils, db_utils, log_utils
 from library.utils.log_utils import log
 
+USAGE = {
+    'reddit_selftext': """library database enrich reddit-selftext DATABASE
+
+    Extract URLs from reddit selftext from the reddit_posts table to the media table
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.reddit_selftext)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['reddit_selftext'])
     arggroups.debug(parser)
 
     arggroups.database(parser)

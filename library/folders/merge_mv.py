@@ -2,7 +2,6 @@ import concurrent.futures, os, shutil
 from pathlib import Path
 from collections.abc import Iterable
 
-from library import usage
 from library.folders import filter_src
 from library.folders.filter_src import process_time_filters, track_moved
 from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils
@@ -10,9 +9,54 @@ from library.utils.consts import DBType
 from library.utils.log_utils import log
 from library.utils.shell_utils import rglob_gen
 
+USAGE = {
+    'merge_mv': """library folder merge [move | copy | relative-move | relative-copy] SOURCE ... DEST [--simulate] [--ext EXT]
+
+    merging-move: combine file trees
+
+    The destination is ALWAYS a folder by default (`--dest-folder`).
+    Use `--dest-bsd` to mimick BSD/GNU default `mv` behavior
+    Use `--dest-file` to mimick BSD/GNU `mv --no-target-directory`
+
+    By default it won't matter if source folders end with a path separator or not
+
+        library folder merge move folder1  folder2/  # folder1 is merged with folder2/
+        library folder merge move folder1/ folder2/  # folder1 is merged with folder2/
+
+    --bsd mode: an ending path separator determines if each source is to be placed within or merged with the destination
+
+        library folder merge move --bsd folder1/ folder2/  # folder1 is merged with folder2/
+        library folder merge move --bsd folder1  folder2/  # folder1 is moved to folder2/folder1/
+
+    --parent mode: always include the parent folder name when merging
+
+        library folder merge move --parent folder1  folder2/  # folder1 is moved to folder2/folder1/
+        library folder merge move --parent folder1/ folder2/  # folder1 is moved to folder2/folder1/
+        library folder merge move --parent file1.txt folder2/ # file1 is moved to folder2/file1_parent_folder/file1.txt
+
+    nb. This tool, like other library subcommands, only works on files. Empty folders are not moved to the destination
+
+    Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move smallest files first
+
+        lb database filesystem list /src/dir/ -u size -pf | lb folder merge move - /dest/dir/ --relative-to=/src/dir/ --dry-run
+
+        Move fresh music to your phone every Sunday
+
+        # move last week music back to their source folders
+        library folder merge move /mnt/d/sync/weekly/ /
+
+        # move new music for this week
+        library folder merge relative-move (
+            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
+""",
+}
+
 
 def parse_args(defaults_override=None):
-    parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['merge_mv'])
     arggroups.mmv_folders(parser)
     parser.add_argument(
         "--move-sizes",

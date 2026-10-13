@@ -1,12 +1,47 @@
 import shutil
 
-from library import usage
 from library.utils import arggroups, argparse_utils, devices, strings
 from library.utils.devices import get_mount_stats
 
+USAGE = {
+    'disk_free': r"""library filesystem free mounts [MOUNTPOINT ...]
+
+    Print total disk usage and disk free stats
+
+        library filesystem free mounts
+""",
+    'mount_stats': r"""library filesystem stats mounts MOUNTPOINT ...
+
+    Print relative use and free for multiple mount points
+
+        lb filesystem mounts stats (fd -td -d1 'd[0-9]+$' /mnt)
+        Relative disk dependence:
+        /mnt/d1: ###### 8.1%
+        /mnt/d2: ######### 12.2%
+        /mnt/d3: ######### 12.2%
+        /mnt/d4: ####### 9.5%
+        /mnt/d5: ####### 9.5%
+        /mnt/d6: ######### 12.2%
+        /mnt/d7: ######### 12.2%
+        /mnt/d8: ######### 12.2%
+        /mnt/d9: ######### 12.2%
+
+        Relative free space:
+        /mnt/d1: ##### 6.9%
+        /mnt/d2: ########### 13.8%
+        /mnt/d3: ######## 10.4%
+        /mnt/d4: ######## 10.5%
+        /mnt/d5: ###### 8.7%
+        /mnt/d6: ######### 11.8%
+        /mnt/d7: ######### 11.9%
+        /mnt/d8: ######### 12.2%
+        /mnt/d9: ########### 13.8%
+""",
+}
+
 
 def disk_free() -> None:
-    parser = argparse_utils.ArgumentParser(usage=usage.disk_free)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['disk_free'])
     arggroups.debug(parser)
 
     parser.add_argument("mounts", nargs="*", action=argparse_utils.ArgparseArgsOrStdin)
@@ -30,7 +65,7 @@ def disk_free() -> None:
 
 
 def mount_stats() -> None:
-    parser = argparse_utils.ArgumentParser(usage=usage.mount_stats)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['mount_stats'])
     arggroups.debug(parser)
 
     parser.add_argument("mounts", nargs="*", action=argparse_utils.ArgparseArgsOrStdin)

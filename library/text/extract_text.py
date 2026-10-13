@@ -2,19 +2,36 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup, element
 
-from library import usage
 from library.createdb import fs_add_metadata
 from library.data.http_errors import HTTPStatus
 from library.utils import arggroups, argparse_utils, devices, iterables, printing, shell_utils, strings, web
 from library.utils.log_utils import log
 
+USAGE = {
+    'extract_text': r"""library text extract PATH ... [--filter-links]
+
+    Sorting suggestions
+
+        library text extract --filter-links --local-html (cb -t text/html | psub) | library text sort cluster --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+
+    Select text by CSS selector
+
+        library text extract --selenium https://aaronson.org/full-moon-albums/ --select .album-artist,.album-title --sep ' - ' | \
+            library database add links ~/mc/music.db -c p1 --skip-extract -
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.extract_text)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['extract_text'])
     arggroups.requests(parser)
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     arggroups.selenium(parser)
-    parser.add_argument("--skip-links", action="store_true")
+    parser.add_argument(
+        "--filter-links",
+        action="store_true",
+        help="Exclude text found inside anchor elements",
+    )
 
     parser.add_argument("--download", "--save", "--write", action="store_true")
 
@@ -56,7 +73,7 @@ def select_all(args, html_content):
                 parent_name = parent.name if parent else None
 
                 if parent_name == "a":
-                    if not args.skip_links:
+                    if not args.filter_links:
                         yield strings.un_paragraph(descendant.get_text(strip=True))
                 else:
                     yield strings.un_paragraph(descendant.get_text(strip=True))

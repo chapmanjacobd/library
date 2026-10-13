@@ -32,7 +32,7 @@ def db1(temp_db):
 
 
 def test_dedupe_nothing(db1):
-    lb(["dedupe-dbs", db1, "media", "--bk=path,title"])
+    lb(['database', 'dedupe', db1, "media", "--bk=path,title"])
 
     args = connect_db_args(db1)
     media = list(args.db.query("SELECT * FROM media"))
@@ -42,7 +42,7 @@ def test_dedupe_nothing(db1):
 
 def test_dedupe_no_bk(db1):
     with pytest.raises(SystemExit):
-        lb(["dedupe-dbs", db1, "media", "--pk=path"])
+        lb(['database', 'dedupe', db1, "media", "--pk=path"])
 
 
 def test_dedupe_composite_and_nullable_primary_keys(temp_db):
@@ -62,7 +62,7 @@ def test_dedupe_composite_and_nullable_primary_keys(temp_db):
             ],
         )
 
-    lb(["dedupe-dbs", db, "duplicates", "--pk=first_key,second_key", "--bk=business_key"])
+    lb(['database', 'dedupe', db, "duplicates", "--pk=first_key,second_key", "--bk=business_key"])
 
     rows = list(
         args.db.query("SELECT first_key, second_key, business_key FROM duplicates ORDER BY business_key, rowid")
@@ -92,7 +92,7 @@ flags = [
 
 @pytest.mark.parametrize(("flags", "expected"), flags)
 def test_dedupe(db1, flags, expected):
-    lb(["dedupe-dbs", db1, "media", *flags.split(" ")])
+    lb(['database', 'dedupe', db1, "media", *flags.split(" ")])
 
     args = connect_db_args(db1)
     media = list(args.db.query("SELECT * FROM media"))

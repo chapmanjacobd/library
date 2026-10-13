@@ -107,12 +107,12 @@ def test_sort_like_sql():
     ],
 )
 def test_lb_mcda(args, stdout, capsys):
-    lb(["mcda", *args])
+    lb(['table', 'rank', *args])
     captured = capsys.readouterr().out
     assert all(l in captured for l in stdout)
 
 
 def test_mcda_end_row_checks_row_count(capsys):
-    lb(["mcda", "--end-row", "4", "tests/data/test.xml"])
+    lb(['table', 'rank', "--end-row", "4", "tests/data/test.xml"])
 
     assert "(limited by --end-row 4)" not in capsys.readouterr().out

@@ -1,14 +1,33 @@
 import argparse, json, os
 from pathlib import Path
 
-from library import usage
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, nums
 from library.utils.objects import traverse_obj
 
+USAGE = {
+    'nicotine_import': """library database import nicotine DATABASE PATH ...
+
+    Load records from Nicotine+ File Lists
+
+        library database import nicotine ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/*
+
+    By default we track deletions when only one file list is specified
+
+        library database import nicotine ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/user1
+        Marking 508387 orphaned metadata records as deleted
+
+        library database import nicotine ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/user2
+        Marking 31862 metadata records as undeleted
+        Marking 216495 orphaned metadata records as deleted
+
+        If this is undesirable, pass the `--no-track-deleted` flag
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.nicotine_import)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['nicotine_import'])
     parser.add_argument("--track-deleted", default=True, action=argparse.BooleanOptionalAction)
     arggroups.debug(parser)
 

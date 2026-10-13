@@ -52,7 +52,9 @@ links_db = p("tests/data/links.db")
 if not Path(links_db).exists():
     lb(
         [
-            "links-add",
+            "database",
+            "add",
+            "links",
             links_db,
             "-c=p1",
             "--insert-only",
@@ -79,8 +81,8 @@ def _stale(path, max_age=6 * 60 * 60):
 v_db = p("tests/data/video.db")
 if not Path(v_db).exists() or _stale(v_db):
     Path(v_db).unlink(missing_ok=True)
-    lb(["fs-add", v_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
-    lb(["links-db", v_db, "--insert-only", "https://test/?tags%5B%5D="])
+    lb(['database', 'add', 'filesystem', v_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
+    lb(['database', 'add', 'links', v_db, "--insert-only", "https://test/?tags%5B%5D="])
 
 
 tube_db = p("tests/data/tube.db")

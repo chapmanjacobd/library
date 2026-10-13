@@ -3,7 +3,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
-from library import usage
 from library.createdb import fs_add, fs_add_metadata, tube_backend
 from library.folders import big_dirs
 from library.mediadb import db_history, db_media
@@ -26,11 +25,100 @@ from library.utils.consts import SC, DBType
 from library.utils.log_utils import Timer, log
 
 
+def play(action: str) -> str:
+    action = {
+        "watch": "play video",
+        "listen": "play audio",
+        "read": "play text",
+        "view": "play images",
+        "media": "play media",
+    }.get(action, action)
+    return f"""library {action} DATABASE [optional args]
+
+    Control playback
+
+        To stop playback press Ctrl-C in either the terminal or mpv
+
+        Or use `lb playback next` or `lb playback stop`
+
+        Or create global shortcuts in your desktop environment by sending commands to mpv_socket
+        echo 'playlist-next force' | socat - {consts.DEFAULT_MPV_LISTEN_SOCKET}  # library play audio default
+        echo 'playlist-next force' | socat - {consts.DEFAULT_MPV_WATCH_SOCKET}  # library play video default
+
+        If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
+        mpv --playlist=(lb play video videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb play video videos.db --ext mp4 -p f)  # BASH, all videos
+
+    Print an aggregate report of deleted media
+
+        library database filesystem list -w time_deleted!=0 -pa
+        path         count  duration               size
+        ---------  -------  ------------------  -------
+        Aggregate      337  2 days and 5 hours  1.6 GiB
+
+    Print an aggregate report of media that has no duration information (ie.
+    online media or corrupt local media)
+
+        library {action} -w 'duration is null' -pa
+
+    Print a list of filenames which have below 1280px resolution
+
+        library {action} -w 'width<1280' -pf
+
+    View how much time you have played
+
+        library {action} -w play_count'>'0 -pa
+
+    View all the columns
+
+        library {action} -p -L 1 --cols '*'
+
+    Open ipython with all of your media
+
+        library {action} -vv -p --cols '*'
+        ipdb> len(media)
+        462219
+
+    View most recent files
+
+        library {action} web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        path                                                                                                                      width    height       size  time_modified
+        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
+        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
+        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
+        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
+        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
+        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
+        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
+        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
+        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
+        10 media (limited by --limit 10)
+
+    How I use it
+
+        lb play audio ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb play video ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+
+        When sorting videos
+        focus_under_mouse
+        lb play video ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {{}} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        focus_follows_mouse
+
+        On-the-go mobile smartphone mode (Android)
+        repeat lb play video ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+"""
+
+
+USAGE = {"watch": play("watch")}
+
+
 def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
-    parser = argparse_utils.ArgumentParser(usage=usage.play(action))
+    parser = argparse_utils.ArgumentParser(usage=play(action))
     arggroups.sql_fs(parser)
     arggroups.files(parser)
     arggroups.playback(parser)

@@ -4,7 +4,6 @@ from functools import partial
 from pathlib import Path
 from shutil import which
 
-from library import usage
 from library.createdb.fs_add_metadata import extract_image_metadata_chunk, extract_metadata
 from library.createdb.subtitle import clean_up_temp_dirs
 from library.mediadb import db_media, db_playlists, playlists
@@ -21,6 +20,72 @@ from library.utils import (
 )
 from library.utils.consts import SC, DBType
 from library.utils.log_utils import log
+
+USAGE = {
+    'fs_add': """library database add filesystem [--media-type TYPE] DATABASE PATH ...
+
+    The default database type is video
+
+        library database add filesystem tv.db ./tv/
+        library database add filesystem --media-type video tv.db ./tv/  # equivalent
+
+    You can also create audio databases. Both audio and video use ffmpeg to read metadata
+
+        library database add filesystem --media-type audio audio.db ./music/
+
+    Image uses ExifTool
+
+        library database add filesystem --media-type image image.db ./photos/
+
+    Text reads files and saves their contents into a searchable database
+
+        library database add filesystem --media-type text text.db ./documents_and_books/
+
+    Create a text database and scan with OCR and speech-recognition
+
+        library database add filesystem --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
+
+    Create a video database and read internal/external subtitle files into a searchable database
+
+        library database add filesystem --scan-subtitles tv.search.db ./tv/ ./movies/
+
+    Decode media to check for corruption (slow)
+
+        library database add filesystem --check-corrupt
+        # See media-check command for full options
+
+    Normally only relevant filetypes are included. You can scan all files with this flag
+
+        library database add filesystem --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
+        # I use that with this to keep my folders organized
+        library play video -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
+
+    Remove path roots with --force
+
+        library database add filesystem audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+
+        library database add filesystem --force audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+        [/mnt/d/Youtube] Building file list...
+        [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
+
+    If you run out of RAM, for example scanning large VR videos, you can lower the number of threads via --threads
+
+        library database add filesystem vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15% --delete-corrupt 20% ./vr/ --threads 3
+
+    Move files on import
+
+        library database add filesystem audio.db --move ~/library/ ./added_folder/
+        This runs destination paths through `library file normalize` and moves files relative to the added folder root
+""",
+    'fs_update': """library database update filesystem DATABASE
+
+    Update each saved path
+
+        library database update filesystem video.db
+""",
+}
 
 
 def parse_args(action, usage):
@@ -327,7 +392,7 @@ def fs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(SC.fs_add, usage.fs_add)
+    args = parse_args(SC.fs_add, USAGE['fs_add'])
 
     db_playlists.create(args)
     db_media.create(args)
@@ -339,7 +404,7 @@ def fs_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(SC.fs_update, usage.fs_update)
+    args = parse_args(SC.fs_update, USAGE['fs_update'])
 
     fs_playlists = list(
         args.db.query(

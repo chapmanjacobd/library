@@ -5,7 +5,6 @@ from random import randint, shuffle
 from statistics import mean, median
 from time import sleep
 
-from library import usage
 from library.folders import merge_mv
 from library.mediafiles import torrents_start
 from library.utils import (
@@ -24,9 +23,84 @@ from library.utils import (
 from library.utils.log_utils import log
 from library.utils.path_utils import fqdn_from_url, tld_from_url
 
+USAGE = {
+    'torrents_info': """library torrent info
+
+    List torrents in qBittorrent-nox
+
+        library torrent info
+
+    Search for specific torrent
+
+        library torrent info query
+
+    Positional torrent searches use the path aligned with torrent status by default.
+    Search a specific path field or both fields with --path-search:
+
+        library torrent info --dl --path-search save /mnt/d4/
+        library torrent info --dl --path-search both /mnt/d4/
+
+    Find incomplete torrents whose temp and final paths use different drives.
+    --different-drives searches both path fields unless --path-search is specified:
+
+        library torrent info --dl --different-drives
+        library torrent info --dl --different-drives /mnt/d4/
+
+    Find incomplete torrents whose temp and final paths use the same drive:
+
+        library torrent info --dl --same-drives
+
+    Aggregate torrent info (torrents-status)
+
+        library torrent info -pa
+
+    Aggregate tracker errors
+
+        library torrent info --errored --trackers
+
+    Search for specific file
+
+        library torrent info query -v --file-search query2
+
+    Force-start incomplete downloads
+
+        library torrent info --dl --progress=+10% --force-start
+
+    Find torrents with a recorded completion timestamp
+
+        library torrent info --completed
+
+    Stop completed downloads
+
+        library torrent info -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
+
+    Stop incomplete downloads
+
+        library torrent info --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
+        library torrent info --time-active=+45days --inactive --progress=0 --stop
+
+    Move files
+
+        Use --move OR any combination of --temp-drive, --temp-path, --download-drive, --download-path
+
+            library torrent info --temp-drive /mnt/d/
+
+        Unset default prefixes
+
+            library torrent info --no-tracker-dirname --temp-prefix '' --download-prefix '' --move /home/xk/
+            library torrent info --no-tracker-dirname --temp-prefix seeding --move /home/xk/
+
+    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --delete-rows is provided, the metadata is removed from qBittorrent
+    When --delete-files is provided, the downloaded files are deleted
+    When --delete-incomplete 80% is provided, any files that were downloaded less than 80% are deleted
+    When --reset-progress is provided, the downloaded files are deleted and progress is reset without removing the torrents
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.torrents_info)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['torrents_info'])
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_torrents(parser)
     arggroups.qBittorrent_paths(parser)
@@ -410,7 +484,7 @@ def filter_torrents(args, torrents):
     torrents = filter_torrents_by_activity(args, torrents)
     torrents = filter_torrents_by_criteria(args, torrents)
 
-    if args.limit and not "a" in args.print:
+    if args.limit and "a" not in arggroups.get_compact_print_args(args):
         torrents = torrents[: args.limit]
 
     if not torrents:
@@ -701,7 +775,7 @@ def torrents_info():
 
     torrents = filter_torrents(args, torrents)
 
-    if args.print and "a" in args.print:
+    if args.print and "a" in arggroups.get_compact_print_args(args):
         interesting_states = [
             # 'uploading',
             "activeUP",
@@ -746,7 +820,7 @@ def torrents_info():
     elif args.print:
         ignore_trackers = ("** [DHT] **", "** [PeX] **", "** [LSD] **")
         for t in torrents:
-            if "tr" in args.print:
+            if "tr" in arggroups.get_compact_print_args(args):
                 for tr in qbt_client.torrents_trackers(t.hash):
                     try:
                         if tr.url not in ignore_trackers:
@@ -776,7 +850,7 @@ def torrents_info():
                 log.warning("%s files do not exist", t.name)
                 continue
 
-            if "f" in args.print:
+            if "f" in arggroups.get_compact_print_args(args):
                 for f in torrent_files(t):
                     file_path = Path(base_path) / f.name
                     print(file_path)

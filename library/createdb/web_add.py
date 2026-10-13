@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 import requests
 
-from library import usage
 from library.createdb import av, fs_add_metadata
 from library.files import sample_hash
 from library.mediadb import db_media, db_playlists
@@ -32,6 +31,42 @@ from library.utils import (
 )
 from library.utils.consts import DBType
 from library.utils.log_utils import log
+
+USAGE = {
+    'web_add': """library database add web [--filesystem | --video | --audio | --image | --text] DATABASE URL ...
+
+    Scan open directories (multiple profiles can be selected or none at all)
+
+        library database add web open_dir.db http://1.1.1.1/  # simple spider
+        library database add web open_dir.db --filesystem http://1.1.1.1/
+        library database add web open_dir.db --video http://1.1.1.1/
+        library database add web open_dir.db --filesystem --video http://1.1.1.1/
+
+    Re-scan using a different profile
+
+        library database filesystem list v.db -w 'size is null' --ext wmv,3gp,mp4 -pf | library database add web --media --force --video v.db -
+
+    Check download size of all videos matching some criteria
+
+        library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'height<720' -E preview -pa
+
+        path         count  download_duration                  size    avg_size
+        ---------  -------  ----------------------------  ---------  ----------
+        Aggregate     5694  2 years, 7 months and 5 days  724.4 GiB   130.3 MiB
+
+    Download all videos matching some criteria
+
+        library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'height<720' -E preview
+
+    Stream directly to mpv
+
+        library play video open_dir.db
+""",
+    'web_update': """library database update web DATABASE
+
+    Update saved open directories
+""",
+}
 
 HTML_SIZE_RE = re.compile(
     r"(?<![\w.])(?P<size>\d+(?:\.\d+)?\s*(?:bytes?|[kmgtpe](?:i?b)?|b))\s*$",
@@ -292,7 +327,7 @@ def web_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(consts.SC.web_add, usage=usage.web_add)
+    args = parse_args(consts.SC.web_add, usage=USAGE['web_add'])
 
     db_playlists.create(args)
     db_media.create(args)
@@ -331,7 +366,7 @@ def web_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(consts.SC.web_add, usage=usage.web_update)
+    args = parse_args(consts.SC.web_add, usage=USAGE['web_update'])
 
     web_playlists = db_playlists.get_all(
         args,

@@ -3,7 +3,7 @@ from tests.utils import v_db
 
 
 def test_search_db(capsys):
-    lb(["sdb", v_db, "media", "test.gif"])
+    lb(['database', 'search', v_db, "media", "test.gif"])
     captured = capsys.readouterr().out
     assert "image/gif" in captured.replace("\n", "")
     assert len(captured) > 150

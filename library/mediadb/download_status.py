@@ -1,13 +1,25 @@
 import argparse
 from collections import defaultdict
 
-from library import usage
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, consts, db_utils, nums, sqlgroups
 
+USAGE = {
+    'download_status': """library database download status DATABASE
+
+    Print download queue groups
+
+        library database download status video.db
+
+    Simulate --safe flag
+
+        library database download status video.db --safe
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.download_status)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['download_status'])
     arggroups.sql_fs(parser)
     parser.set_defaults(print="p")
 

@@ -1,12 +1,20 @@
-from library import usage
 from library.utils import arggroups, argparse_utils, file_utils, nums, web
 from library.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from library.utils.log_utils import log
 from library.utils.printing import print_df, print_series
 
+USAGE = {
+    'eda': """library table analyze PATH ... [--table STR] [--end-row INT] [--repl]
+
+    Perform Exploratory Data Analysis (EDA) on one or more files
+
+    Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(description="Perform EDA on one or more files", usage=usage.eda)
+    parser = argparse_utils.ArgumentParser(description="Perform EDA on one or more files", usage=USAGE['eda'])
 
     parser.add_argument("--groupby", "--group-by", "-g", action="store_true")
     arggroups.table_like(parser)

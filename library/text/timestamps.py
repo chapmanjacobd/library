@@ -2,9 +2,30 @@ import datetime
 
 from dateutil.parser import parse
 
-from library import usage
 from library.utils import arggroups, argparse_utils, nums, strings
 from library.utils.log_utils import log
+
+USAGE = {
+    'timestamps': """library text timestamps ARGS_OR_STDIN
+
+    Parse timestamps
+        library text timestamps 'October 2017 3pm'
+        2017-10-01T15:00:00
+""",
+    'times': """library text times ARGS_OR_STDIN
+
+    Parse times
+        library text times 'October 2017 3pm'
+        15:00:00
+""",
+    'dates': """library text dates ARGS_OR_STDIN
+
+    Parse dates
+
+        library text dates 'October 2017'
+        2017-10-01
+""",
+}
 
 
 def print_timestamp(n):
@@ -13,7 +34,7 @@ def print_timestamp(n):
 
 
 def timestamps(defaults_override=None, usage_override=None):
-    parser = argparse_utils.ArgumentParser(usage=usage_override or usage.timestamps)
+    parser = argparse_utils.ArgumentParser(usage=usage_override or USAGE['timestamps'])
     parser.add_argument("--from-unix", "--unix", "-u", action="store_true", help="Parse from UNIX time")
     parser.add_argument("--from-timezone", "--from-tz", "-fz", help="Convert from timezone")
 
@@ -139,8 +160,8 @@ YDM  09/08/07
 
 
 def times():
-    timestamps({"to_time_only": True}, usage_override=usage.times)
+    timestamps({"to_time_only": True}, usage_override=USAGE['times'])
 
 
 def dates():
-    timestamps({"to_date_only": True}, usage_override=usage.dates)
+    timestamps({"to_date_only": True}, usage_override=USAGE['dates'])

@@ -3,7 +3,6 @@ from contextlib import suppress
 from copy import deepcopy
 from pathlib import Path
 
-from library import usage
 from library.utils import (
     arggroups,
     argparse_utils,
@@ -19,12 +18,47 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+USAGE = {
+    'now': """library playback now
+
+    Print now playing
+""",
+    'stop': """library playback stop
+
+    Stop playback (close mpv, turn off chromecast, etc)
+""",
+    'pause': """library playback pause
+
+    Pause playback (pause mpv, pause chromecast, etc)
+""",
+    'next': """library playback next
+
+    Go to the next track in the playqueue, optionally delete the currently playing media
+""",
+    'seek': """library playback seek
+
+    Seek to an exact time
+
+        library playback seek 5:30     # 5 minutes, 30 seconds
+        library playback seek 5:30:00  # 5 hours, 30 minutes
+
+    Seek forward or backward a relative duration
+
+        library playback seek +5:00    # 5 minutes forward
+        library playback seek +5:      # 5 minutes forward
+        library playback seek +5       # 5 seconds forward
+        library playback seek 5        # 5 seconds forward
+
+        library playback seek -5       # 5 seconds backward
+""",
+}
+
 
 def parse_args(usage) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
-    if parser.prog == "library next":
+    if "playback next" in usage:
         arggroups.capability_delete(parser)
-    if parser.prog == "library seek":
+    if "playback seek" in usage:
         parser.add_argument("time")
 
     parser.add_argument("--mpv-socket", help="Use a custom mpv socket location")
@@ -259,7 +293,7 @@ def source_now_playing(playing, source) -> str:
 
 
 def playback_now() -> None:
-    args = parse_args(usage.now)
+    args = parse_args(USAGE['now'])
     playing = _now_playing(args)
 
     if playing["mpv"] and playing["catt"]:
@@ -306,7 +340,7 @@ def kill_process(name) -> None:
 
 
 def playback_stop() -> None:
-    args = parse_args(usage.stop)
+    args = parse_args(USAGE['stop'])
     if args.simulate:
         print("Would stop playback")
         return
@@ -326,7 +360,7 @@ def playback_stop() -> None:
 
 
 def playback_pause() -> None:
-    args = parse_args(usage.pause)
+    args = parse_args(USAGE['pause'])
     if args.simulate:
         print("Would pause playback")
         return
@@ -343,7 +377,7 @@ def playback_pause() -> None:
 
 
 def playback_next() -> None:
-    args = parse_args(usage.next)
+    args = parse_args(USAGE['next'])
     if args.simulate:
         print("Would advance playback")
         return
@@ -367,7 +401,7 @@ def playback_next() -> None:
 
 
 def playback_seek() -> None:
-    args = parse_args(usage.seek)
+    args = parse_args(USAGE['seek'])
     if args.simulate:
         print("Would seek playback by", args.time)
         return

@@ -2,7 +2,6 @@ import argparse, math, operator, os, random, shutil, sys, tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from library import usage
 from library.utils import (
     arggroups,
     argparse_utils,
@@ -17,9 +16,86 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+USAGE = {
+    'scatter': """library folder scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
+
+    Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
+
+        library folder scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Reduce number of files per folder (creates more folders)
+
+        library folder scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
+
+    Multi-device re-bin: balance by size
+
+        library folder scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs.db subfolder/of/mergerfs/mnt
+        Current path distribution:
+        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
+        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
+        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
+        │ /mnt/d1 │        12793 │ 169.5 GB     │ 4.5 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d2 │        13226 │ 177.9 GB     │ 4.7 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d3 │            1 │ 717.6 kB     │ 717.6 kB      │ Jan 31         │ Jul 18 2022     │ yesterday      │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d4 │           82 │ 1.5 GB       │ 12.5 MB       │ Jan 31         │ Apr 22 2022     │ yesterday      │
+        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
+
+        Simulated path distribution:
+        5845 files should be moved
+        20257 files should not be moved
+        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
+        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
+        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
+        │ /mnt/d1 │         9989 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d2 │        10185 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d3 │         1186 │ 53.6 GB      │ 30.8 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d4 │         1216 │ 49.5 GB      │ 29.5 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d5 │         1146 │ 53.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d6 │         1198 │ 48.8 GB      │ 30.6 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d7 │         1182 │ 52.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
+        ### Move 1182 files to /mnt/d7 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpmr1628ij / /mnt/d7
+        ### Move 1198 files to /mnt/d6 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmp9yd75f6j / /mnt/d6
+        ### Move 1146 files to /mnt/d5 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpfrj141jj / /mnt/d5
+        ### Move 1185 files to /mnt/d3 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpqh2euc8n / /mnt/d3
+        ### Move 1134 files to /mnt/d4 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
+
+    Multi-device re-bin: balance device inodes for specific subfolder
+
+        library folder scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
+
+    Multi-device re-bin: only consider the most recent 100 files
+
+        library folder scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs.db /
+
+    Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
+
+        library folder scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
+
+    This tool is intended for local use. If transferring many small files across the network something like
+    [fpart](https://github.com/martymac/fpart) or [fpsync](https://www.fpart.org/fpsync/) is better.
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.scatter)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['scatter'])
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--max-files-per-folder", "--max-files-per-directory", type=int)
     parser.add_argument("--policy")

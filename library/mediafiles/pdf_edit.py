@@ -3,12 +3,26 @@
 import argparse, io
 from pathlib import Path
 
-from library import usage
 from library.utils import arggroups, argparse_utils, devices, shell_utils
+
+USAGE = {
+    'pdf_edit': """library document edit pdf PATH ...
+
+    Increase brightness
+
+        library document edit pdf --brightness 120 scan001.pdf --output-path brighter_scan.pdf
+        library document edit pdf -b 120 scan001.pdf -o brighter_scan.pdf
+
+    Increase or decrease brightness, contrast, color contrast, and sharpness
+
+        library document edit pdf --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
+        library document edit pdf -b 105 -c 120 -C 80 -s 110 scan001.pdf
+""",
+}
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.pdf_edit)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['pdf_edit'])
     parser.add_argument(
         "--autolevels",
         "--equalize",

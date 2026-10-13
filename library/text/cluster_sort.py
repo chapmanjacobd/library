@@ -1,7 +1,6 @@
 import argparse, difflib, json
 from pathlib import Path
 
-from library import usage
 from library.tablefiles import eda, mcda
 from library.utils import (
     arggroups,
@@ -20,9 +19,55 @@ from library.utils import (
 from library.utils.consts import DBType
 from library.utils.log_utils import Timer, log
 
+USAGE = {
+    'cluster_sort': """library text sort cluster [input_path | stdin] [output_path | stdout]
+
+    Group lines of text into sorted output
+
+        echo 'red apple
+        broccoli
+        yellow
+        green
+        orange apple
+        red apple' | library text sort cluster
+
+        orange apple
+        red apple
+        red apple
+        broccoli
+        green
+        yellow
+
+    Show the groupings
+
+        echo 'red apple
+        broccoli
+        yellow
+        green
+        orange apple
+        red apple' | library text sort cluster --print-groups
+
+        [
+            {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
+            {'grouped_paths': ['broccoli', 'green', 'yellow']}
+        ]
+
+    Auto-sort images into directories
+
+        echo 'image1.jpg
+        image2.jpg
+        image3.jpg' | library text sort cluster --image --move-groups
+
+    Print similar paths
+
+        library database filesystem list 0day.db -pa --cluster --print-groups
+
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.cluster_sort)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['cluster_sort'])
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(

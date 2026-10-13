@@ -14,7 +14,7 @@ green
 orange apple
 red apple"""
     ):
-        lb(["cluster-sort"])
+        lb(['text', 'sort', 'cluster'])
 
     captured = capsys.readouterr().out
     assert (
@@ -38,7 +38,7 @@ green
 orange apple
 red apple"""
     ):
-        lb(["cluster-sort", "--print-groups"])
+        lb(['text', 'sort', 'cluster', "--print-groups"])
     captured = capsys.readouterr().out
     assert json.loads(captured) == [
         {"common_path": "*apple*red", "grouped_paths": ["orange apple", "red apple", "red apple"]},
@@ -55,7 +55,7 @@ green
 orange apple
 red apple"""
     ):
-        lb(["cluster-sort", "--print-groups", "--tfidf"])
+        lb(['text', 'sort', 'cluster', "--print-groups", "--tfidf"])
 
     captured = capsys.readouterr().out
     assert json.loads(captured) == [
@@ -73,7 +73,7 @@ green
 orange apple
 red apple"""
     ):
-        lb(["cluster-sort", "--duplicates", "--print-groups"])
+        lb(['text', 'sort', 'cluster', "--duplicates", "--print-groups"])
     captured = capsys.readouterr().out
     assert json.loads(captured) == [
         {"common_path": "*apple*red#0", "grouped_paths": ["orange apple", "red apple", "red apple"]},

@@ -10,7 +10,7 @@ green
 orange apple
 red apple"""
     ):
-        lb(["regex-sort"])
+        lb(['text', 'sort', 'regex'])
 
     captured = capsys.readouterr().out
     assert_unchanged(captured.strip().split("\n"))
@@ -25,7 +25,7 @@ green
 orange apple
 red apple"""
     ):
-        lb(["regex-sort", "--line-sort", "dup,natsort"])
+        lb(['text', 'sort', 'regex', "--line-sort", "dup,natsort"])
 
     captured = capsys.readouterr().out
     assert_unchanged(captured.strip().split("\n"))

@@ -2,14 +2,85 @@ import fractions, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from shutil import which
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, nums, path_utils, printing, processes, shell_utils, strings
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+USAGE = {
+    'media_check': """library file check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
+
+    Defaults to decode 0.5 second per 10% of each file
+
+        library file check ./video.mp4
+
+    Decode all the frames of each file to evaluate how corrupt it is
+    (scantime is very slow; about 150 seconds for an hour-long file)
+
+        library file check --full-scan ./video.mp4
+
+    Decode all the packets of each file to evaluate how corrupt it is
+    (scantime is about one second of each file but only accurate for formats where 1 packet == 1 frame)
+
+        library file check --full-scan --gap 0 ./video.mp4
+
+    Decode all audio of each file to evaluate how corrupt it is
+    (scantime is about four seconds per file)
+
+        library file check --full-scan --audio ./video.mp4
+
+    Decode at least one frame at the start and end of each file to evaluate how corrupt it is
+    (scantime is about one second per file)
+
+        library file check --chunk-size 5% --gap 99.9% ./video.mp4
+
+    Decode 3s every 5% of a file to evaluate how corrupt it is
+    (scantime is about three seconds per file)
+
+        library file check --chunk-size 3 --gap 5% ./video.mp4
+
+    Delete the file if 20 percent or more of checks fail
+
+        library file check --delete-corrupt 20% ./video.mp4
+
+    To scan a large folder use `fsadd`. I recommend something like this two-stage approach
+
+        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
+        library file check (library database filesystem list tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+
+    This runs in one command via `--full-scan-if-corrupt`:
+
+        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
+
+    Corruption stats
+
+        library database filesystem list tmp.db -w 'corruption>15' -pa
+        path         count  duration             avg_duration         size    avg_size
+        ---------  -------  -------------------  --------------  ---------  ----------
+        Aggregate      907  15 days and 9 hours  24 minutes      130.6 GiB   147.4 MiB
+
+    Corruption graph
+
+        sqlite --raw-lines tmp.db 'select corruption from media' | lowcharts hist --min 10 --intervals 10
+
+        Samples = 931; Min = 10.0; Max = 100.0
+        Average = 39.1; Variance = 1053.103; STD = 32.452
+        each ∎ represents a count of 6
+        [ 10.0 ..  19.0] [561] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+        [ 19.0 ..  28.0] [ 69] ∎∎∎∎∎∎∎∎∎∎∎
+        [ 28.0 ..  37.0] [ 33] ∎∎∎∎∎
+        [ 37.0 ..  46.0] [ 18] ∎∎∎
+        [ 46.0 ..  55.0] [ 14] ∎∎
+        [ 55.0 ..  64.0] [ 12] ∎∎
+        [ 64.0 ..  73.0] [ 15] ∎∎
+        [ 73.0 ..  82.0] [ 18] ∎∎∎
+        [ 82.0 ..  91.0] [ 50] ∎∎∎∎∎∎∎∎
+        [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.media_check)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['media_check'])
     arggroups.capability_delete(parser)
     arggroups.media_check(parser)
     arggroups.debug(parser)

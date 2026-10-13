@@ -140,12 +140,12 @@ def test_flags_covered(o):
 @mock.patch("library.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize(("flags", "count", "first"), fs_flags)
 def test_fs_flags(play_mocked, flags, count, first):
-    for subcommand in ["media"]:
+    for subcommand in [["play", "media"]]:
         if count == 0:
             with pytest.raises(SystemExit):
-                lb([subcommand, v_db, *shlex.split(flags)])
+                lb([*subcommand, v_db, *shlex.split(flags)])
         else:
-            lb([subcommand, v_db, *shlex.split(flags), "-u", "path"])
+            lb([*subcommand, v_db, *shlex.split(flags), "-u", "path"])
             out = play_mocked.call_args[0][1]
 
             assert len(out) == count
@@ -158,12 +158,12 @@ def test_fs_flags(play_mocked, flags, count, first):
 @mock.patch("library.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize(("flags", "count", "first"), media_flags)
 def test_media_flags(play_mocked, flags, count, first):
-    for subcommand in ["media", "wt"]:
+    for subcommand in [["play", "media"], ["play", "video"]]:
         if count == 0:
             with pytest.raises(SystemExit):
-                lb([subcommand, v_db, *shlex.split(flags)])
+                lb([*subcommand, v_db, *shlex.split(flags)])
         else:
-            lb([subcommand, v_db, *shlex.split(flags), "-u", "path"])
+            lb([*subcommand, v_db, *shlex.split(flags), "-u", "path"])
             out = play_mocked.call_args[0][1]
 
             assert len(out) == count
@@ -188,8 +188,8 @@ printing_flags = [
 @mock.patch("library.playback.media_printer.media_printer", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize("flags", printing_flags)
 def test_print_flags(print_mocked, flags):
-    for subcommand in ["media"]:
-        lb([subcommand, v_db, *shlex.split(flags)])
+    for subcommand in [["play", "media"]]:
+        lb([*subcommand, v_db, *shlex.split(flags)])
         out = print_mocked.call_args[0][1]
         assert out is not None, f"Test failed for {flags}"
 
@@ -205,7 +205,7 @@ def test_fs_direct_paths_apply_sort_and_limit(play_mocked, temp_file_tree):
         )
     )
 
-    lb(["media", str(temp_dir / "a.mp4"), str(temp_dir / "z.mp4"), "-u", "path", "desc", "-L", "1"])
+    lb(["play", "media", str(temp_dir / "a.mp4"), str(temp_dir / "z.mp4"), "-u", "path", "desc", "-L", "1"])
     out = play_mocked.call_args[0][1]
 
     assert [Path(m["path"]).name for m in out] == ["z.mp4"]

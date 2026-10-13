@@ -113,7 +113,7 @@ def _figure_by_title(title):
     ],
 )
 def test_lb_plot(args, stdout, capsys):
-    lb(["plot", *args])
+    lb(['table', 'plot', *args])
     captured = capsys.readouterr().out
     assert all(l in captured for l in stdout)
 
@@ -122,7 +122,7 @@ def test_lb_plot_auto_labels():
     plt.close("all")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "tests/data/test.xml",
@@ -143,7 +143,7 @@ def test_lb_plot_units_formatter(tmp_path):
     df.write_text("size,duration\n1000,10\n2000000,30\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -166,7 +166,7 @@ def test_lb_plot_explicit_label_wins():
     plt.close("all")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "tests/data/test.xml",
@@ -186,7 +186,7 @@ def test_lb_plot_auto_title():
     plt.close("all")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "tests/data/test.xml",
@@ -203,7 +203,7 @@ def test_lb_plot_auto_title_hist():
     plt.close("all")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "tests/data/test.xml",
@@ -220,7 +220,7 @@ def test_lb_plot_explicit_title_wins():
     plt.close("all")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "tests/data/test.xml",
@@ -240,7 +240,7 @@ def test_lb_plot_hist_counts(tmp_path):
     df.write_text("duration\n1\n2\n3\n4\n5\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -266,7 +266,7 @@ def test_lb_plot_auto_mode_generates_multiple_figures(tmp_path):
         "b,400,15,1600003000\n"
         "c,500,25,1600004000\n"
     )
-    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    lb(['table', 'plot', "--no-show-kitty", "--no-show-external", str(df)])
     titles = [ax.get_title() for num in plt.get_fignums() for ax in plt.figure(num).axes]
 
     assert len(plt.get_fignums()) >= 6
@@ -282,7 +282,7 @@ def test_lb_plot_auto_mode_skips_key_columns(tmp_path):
     plt.close("all")
     df = tmp_path / "data.csv"
     df.write_text("id,category\n1,a\n2,a\n3,b\n4,b\n")
-    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    lb(['table', 'plot', "--no-show-kitty", "--no-show-external", str(df)])
     titles = [ax.get_title() for num in plt.get_fignums() for ax in plt.figure(num).axes]
 
     assert titles == ["Common Values of Category"]
@@ -292,7 +292,7 @@ def test_lb_plot_auto_mode_save(tmp_path):
     plt.close("all")
     df = tmp_path / "data.csv"
     df.write_text("a,b\n1,2\n2,4\n3,6\n")
-    lb(["plot", "--no-show-kitty", "--no-show-external", "--save", str(df)])
+    lb(['table', 'plot', "--no-show-kitty", "--no-show-external", "--save", str(df)])
     saved = [p for p in tmp_path.iterdir() if p.suffix == ".png"]
     assert saved
     assert any("distribution" in p.name for p in saved)
@@ -304,7 +304,7 @@ def test_lb_plot_explicit_mode_overrides_auto(tmp_path):
     df.write_text("a,b\n1,2\n2,4\n3,6\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -326,7 +326,7 @@ def test_lb_plot_fresh_figure_per_file(tmp_path):
     f2.write_text("x,y\n3,9\n4,16\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(f1),
@@ -346,7 +346,7 @@ def test_lb_plot_separator_between_commands(tmp_path):
     df.write_text("a,b\n1,10\n2,20\n3,30\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -370,7 +370,7 @@ def test_lb_plot_where_filters_rows(tmp_path):
     df.write_text("size,duration\n100,10\n500,30\n2048,60\n1024,20\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -392,7 +392,7 @@ def test_lb_plot_classify_expression(tmp_path):
     df.write_text("size,duration\n100,10\n500,30\n2048,60\n1024,20\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -413,7 +413,7 @@ def test_lb_plot_classify_bins(tmp_path):
     df.write_text("size,duration\n100,10\n500,30\n2048,60\n1024,20\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -437,7 +437,7 @@ def test_lb_plot_groupby_count_and_top(tmp_path):
     df.write_text("category,size\nc,100\nb,200\na,300\na,400\nb,500\nb,600\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -458,7 +458,7 @@ def test_lb_plot_groupby_mean(tmp_path):
     df.write_text("category,size,duration\na,100,10\na,300,30\nb,50,5\nb,150,15\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -479,7 +479,7 @@ def test_lb_plot_human_units(tmp_path):
     df.write_text("size,duration\n2GB,90s\n1GB,2min\n500MB,5s\n")
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -501,7 +501,7 @@ def test_lb_plot_groupby_missing_column(tmp_path, caplog):
     with pytest.raises(SystemExit):
         lb(
             [
-                "plot",
+                "table", "plot",
                 "--no-show-kitty",
                 "--no-show-external",
                 str(df),
@@ -533,7 +533,7 @@ def _write_normal(tmp_path, seed=7):
 def test_lb_plot_auto_detects_lognormal(tmp_path):
     plt.close("all")
     df = _write_lognormal(tmp_path)
-    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    lb(['table', 'plot', "--no-show-kitty", "--no-show-external", str(df)])
     ax = _figure_by_title("Size Distribution (Log-normal)")
     assert ax.get_xscale() == "log"
     assert len(ax.lines) == 1  # fitted lognormal PDF overlay
@@ -542,7 +542,7 @@ def test_lb_plot_auto_detects_lognormal(tmp_path):
 def test_lb_plot_auto_overlays_pdf_for_normal(tmp_path):
     plt.close("all")
     df = _write_normal(tmp_path)
-    lb(["plot", "--no-show-kitty", "--no-show-external", str(df)])
+    lb(['table', 'plot', "--no-show-kitty", "--no-show-external", str(df)])
     ax = _figure_by_title("A Distribution")
     assert ax.get_xscale() == "linear"
     assert len(ax.lines) == 1  # fitted normal PDF overlay
@@ -553,7 +553,7 @@ def test_lb_plot_scale_off_disables_detection(tmp_path):
     df = _write_lognormal(tmp_path)
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "--scale",
@@ -571,7 +571,7 @@ def test_lb_plot_scale_log_forces_log_scale(tmp_path):
     df = _write_normal(tmp_path)
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "--scale",
@@ -588,7 +588,7 @@ def test_lb_plot_manual_hist_detects_lognormal(tmp_path):
     df = _write_lognormal(tmp_path)
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             str(df),
@@ -607,7 +607,7 @@ def test_lb_plot_manual_hist_forced_log(tmp_path):
     df = _write_normal(tmp_path)
     lb(
         [
-            "plot",
+            "table", "plot",
             "--no-show-kitty",
             "--no-show-external",
             "--scale",

@@ -1,12 +1,21 @@
 import json, sys
 
-from library import usage
 from library.utils import arg_utils, arggroups, argparse_utils, printing, processes, strings
 from library.utils.log_utils import log
 
+USAGE = {
+    'json_keys_rename': """library text rename-keys json --new-key 'old key substring' (stdin)
+
+    Rename/filter keys in JSON
+
+        echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | library text rename-keys json --country 'place of birth'
+        {"country": "Yo Mama"}
+""",
+}
+
 
 def parse_utils():
-    parser = argparse_utils.ArgumentParser(usage=usage.json_keys_rename)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['json_keys_rename'])
     arggroups.debug(parser)
 
     args, unknown_args = parser.parse_known_args()

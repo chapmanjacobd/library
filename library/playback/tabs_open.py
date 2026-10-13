@@ -1,15 +1,79 @@
 import argparse, math
 
-from library import usage
 from library.mediadb import db_history
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, consts, db_utils, devices, processes
 from library.utils.log_utils import log
 from library.utils.sqlgroups import construct_tabs_query
 
+USAGE = {
+    'tabs_open': """library tabs open DATABASE
+
+    Tabs runs **once per day**. Configure it with `crontab`:
+
+        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+
+    If things aren't working you can use `at` to simulate a similar environment as `cron`
+
+        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
+
+    Also, if you're just testing things out be aware that `tabs-add` assumes that you visited the
+    website right before adding it; eg. `tabs-add --frequency yearly` today opens the tab no sooner
+    than one year later (at most). Override this default:
+
+        library database add tabs --allow-immediate ...
+
+    To re-"play" some tabs, delete some history
+
+        library database history ~/lb/tabs.db --played-within '1 day' -L inf -p --delete-rows
+        library tabs ~/lb/tabs.db
+
+    You can also invoke tabs manually
+
+        library tabs -L 1  # open one tab
+
+    Print URLs
+
+        library tabs -w "frequency='yearly'" -p
+
+    View how many yearly tabs you have
+
+        library tabs -w "frequency='yearly'" -p a
+
+    Delete URLs
+
+        library tabs -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+
+        library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
+        Removed 1 metadata records
+
+        library tabs -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.tabs_open)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['tabs_open'])
 
     arggroups.sql_fs(parser)
     parser.add_argument("--max-same-domain", type=int, help="Limit to N tabs per domain")

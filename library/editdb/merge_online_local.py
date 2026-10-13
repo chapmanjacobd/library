@@ -1,15 +1,23 @@
 import argparse, os
 from copy import deepcopy
 
-from library import usage
 from library.mediadb import db_media
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, consts, devices, objects
 from library.utils.log_utils import log
 
+USAGE = {
+    'merge_online_local': """library database merge online-local DATABASE
+
+    If you have downloaded YouTube or other online media, you can dedupe
+    your database and combine the online and local media records as long as your
+    files have the youtube-dl / yt-dlp id in the filename.
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.merge_online_local)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['merge_online_local'])
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="100")
     arggroups.debug(parser)
 

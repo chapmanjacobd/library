@@ -1,11 +1,17 @@
 import argparse
 
-from library import usage
 from library.utils import arggroups, argparse_utils
+
+USAGE = {
+    'export_text': """library document export text DATABASE
+
+    Generate HTML files from SQLite databases
+""",
+}
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.export_text)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['export_text'])
     parser.add_argument("--format", choices=["html"], default="html")
     arggroups.debug(parser)
 

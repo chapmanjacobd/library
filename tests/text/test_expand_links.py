@@ -18,5 +18,5 @@ from library.__main__ import library as lb
     ],
 )
 def test_main(capsys, argv, expected):
-    lb(["expand-links", *shlex.split(argv)])
+    lb(['text', 'expand', 'links', *shlex.split(argv)])
     assert capsys.readouterr().out.strip() == expected.replace(" ", "%20")

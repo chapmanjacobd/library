@@ -2,14 +2,24 @@ import hashlib, shlex
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, nums
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+USAGE = {
+    'sample_hash': """library file hash [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+    Calculate hashes for large files by reading only small segments of each file
+
+        library file hash ./my_file.mkv
+
+    The threads flag seems to be faster for rotational media but slower on SSDs
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.sample_hash)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['sample_hash'])
     arggroups.sample_hash_bytes(parser)
     arggroups.debug(parser)
     parser.set_defaults(same_file_threads=8)

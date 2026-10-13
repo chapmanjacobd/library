@@ -6,14 +6,22 @@ from pathlib import Path
 
 import regex
 
-from library import usage
 from library.data import wordbank
 from library.utils import arggroups, argparse_utils, iterables, printing
 import string
 
+USAGE = {
+    'nouns': """library text nouns (stdin)
+
+    Extract compound nouns and phrases from unstructured mixed HTML plain text
+
+        xsv select text hn_comment_202210242109.csv | library text nouns | sort | uniq -c | sort --numeric-sort
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.nouns)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['nouns'])
     parser.add_argument("--html-strip", "--strip-html", action="store_true", help="Strip HTML tags")
     parser.add_argument("--unique", "-u", action="store_true", help="Deduplicate output")
     parser.add_argument("--all", "-a", action="store_true", help="Show all output, even non-dictionary words")

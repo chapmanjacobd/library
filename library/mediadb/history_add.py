@@ -1,8 +1,19 @@
 from pathlib import Path
 
-from library import usage
 from library.mediadb import db_history
 from library.utils import arggroups, argparse_utils, consts, shell_utils
+
+USAGE = {
+    'history_add': """library database history add DATABASE PATH ...
+
+    Add history
+
+        library database history add links.db $urls $paths
+        library database history add links.db (cb)
+
+    Items that don't already exist in the database are counted under "skipped"
+""",
+}
 
 
 def parse_args(**kwargs):
@@ -21,7 +32,7 @@ def parse_args(**kwargs):
 
 
 def history_add() -> None:
-    args = parse_args(usage=usage.history_add)
+    args = parse_args(usage=USAGE['history_add'])
 
     history_exists = set()
     history_new = set()

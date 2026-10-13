@@ -1,12 +1,28 @@
 import argparse
 
-from library import usage
 from library.utils import arggroups, argparse_utils
 from library.utils.log_utils import log
 
+USAGE = {
+    'dedupe_db': """library database dedupe DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
+
+    Dedupe your database (not to be confused with the dedupe subcommand)
+
+    It should not need to be said but *backup* your database before trying this tool!
+
+    Dedupe-DB removes duplicate rows based on non-primary-key business keys
+
+        library database dedupe ./video.db media --bk path
+
+    By default all non-primary and non-business key columns are upserted unless --only-columns is provided
+    If --primary-keys is not provided table metadata primary keys are used
+    If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.dedupe_db)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['dedupe_db'])
     parser.add_argument("--skip-upsert", action="store_true")
     parser.add_argument("--skip-0", action="store_true")
     parser.add_argument(

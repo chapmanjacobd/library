@@ -1,13 +1,48 @@
 import argparse
 
-from library import usage
 from library.mediadb import db_history
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, sqlgroups, strings
 
+USAGE = {
+    'history': """library database history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [PATH ...] [(all) watching watched created modified deleted]
+
+    View playback history
+
+        library database history web_add.image.db
+        In progress:
+        play_count  time_last_played    playhead    path                                     title
+        ------------  ------------------  ----------  ---------------------------------------  -----------
+                0  today, 20:48        2 seconds   https://siliconpr0n.org/map/COPYING.txt  COPYING.txt
+
+    Show only completed history
+
+        library database history web_add.image.db --completed
+
+    Show only completed history
+
+        library database history web_add.image.db --in-progress
+
+    Delete history
+
+        Delete two hours of history
+        library database history web_add.image.db --played-within '2 hours' -L inf --delete-rows
+
+        Delete all history
+        library database history web_add.image.db -L inf --delete-rows
+
+        Delete history for exact paths
+            library database history ~/mc/links.db --delete-rows https://example.com/article
+            cb | library database history ~/mc/links.db --delete-rows -
+
+        See also: library database stats -h
+                  library database history add -h
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.history)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['history'])
     arggroups.sql_fs(parser)
     arggroups.frequency(parser)
     arggroups.history(parser)

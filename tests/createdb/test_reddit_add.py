@@ -14,17 +14,17 @@ reddit_db = "tests/data/reddit.db"
 @pytest.mark.skip("Requires reddit auth")
 class TestReddit(unittest.TestCase):
     def setUp(self):
-        lb(["reddit_add", reddit_db, "https://old.reddit.com/user/BuonaparteII/", "--limit", "10"])
-        lb(["reddit_add", reddit_db, "https://old.reddit.com/r/pytest/", "--limit", "1"])
+        lb(['database', 'add', 'reddit', reddit_db, "https://old.reddit.com/user/BuonaparteII/", "--limit", "10"])
+        lb(['database', 'add', 'reddit', reddit_db, "https://old.reddit.com/r/pytest/", "--limit", "1"])
 
     @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
-        lb(["wt", reddit_db])
+        lb(['play', 'video', reddit_db])
         out = play_mocked.call_args[0][1]
         assert len(out) > 0
 
     def test_redditupdate(self):
-        lb(["reddit_update", reddit_db, "--lookback", "2", "--limit", "2"])
+        lb(['database', 'update', 'reddit', reddit_db, "--lookback", "2", "--limit", "2"])
         db = connect(Namespace(database=reddit_db, verbose=2))
         assert db
 
@@ -35,10 +35,10 @@ class TestReddit(unittest.TestCase):
         assert len(media) > 0
 
     def test_print(self):
-        lb(["wt", reddit_db, "-p"])
-        lb(["dl", reddit_db, "-p"])
-        lb(["pl", reddit_db])
-        lb(["ds", reddit_db])
+        lb(['play', 'video', reddit_db, "-p"])
+        lb(['dl', reddit_db, "-p"])
+        lb(['database', 'playlists', reddit_db])
+        lb(['database', 'download', 'status', reddit_db])
 
 
 def test_slim_post_data_uses_overridden_url():

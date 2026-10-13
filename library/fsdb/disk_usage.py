@@ -1,7 +1,6 @@
 import os
 from collections import defaultdict
 
-from library import usage
 from library.fsdb import folder_stats
 from library.playback import media_printer
 from library.utils import (
@@ -18,9 +17,65 @@ from library.utils import (
     strings,
 )
 
+USAGE = {
+    'disk_usage': """library database filesystem usage DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library database filesystem usage du.db --size=-1Ki
+        library database filesystem usage du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library database filesystem usage du.db --depth 19
+        library database filesystem usage du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library database filesystem usage extensions du.db
+        library database filesystem usage du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
+""",
+}
+
 
 def parse_args(defaults_override=None):
-    parser = argparse_utils.ArgumentParser(usage=usage.disk_usage)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['disk_usage'])
     arggroups.files(parser)
     arggroups.sql_fs(parser)
     parser.set_defaults(hide_deleted=True)
@@ -323,7 +378,7 @@ def disk_usage(defaults_override=None):
     num_files = len(files)
 
     summary = iterables.list_dict_summary(files)
-    if args.limit and not "a" in args.print:
+    if args.limit and "a" not in arggroups.get_compact_print_args(args):
         args.subset = args.subset[: args.limit]
 
     if args.group_by_extensions:

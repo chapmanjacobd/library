@@ -1,4 +1,4 @@
-command: merge-mv --file-over-file skip --parent --dest-bsd /src1/file4.txt:parent
+command: folder merge move --file-over-file skip --parent --dest-bsd /src1/file4.txt:parent
   /dest/file4.txt:clobber_file
 dest_after:
   file4.txt:

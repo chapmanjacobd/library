@@ -16,7 +16,7 @@ def test_file_over_file(file_over_file, temp_file_tree):
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     dest_inodes = read_relative_file_tree_dict(dest, inodes=False)
 
-    cmd = ["merge-mv"]
+    cmd = ["folder", "merge", "move"]
     cmd += ["--file-over-file", file_over_file]
     cmd += [src1, dest]
 
@@ -50,7 +50,7 @@ def test_file_over_folder(file_over_folder, temp_file_tree):
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     dest_inodes = read_relative_file_tree_dict(dest, inodes=False)
 
-    cmd = ["merge-mv"]
+    cmd = ["folder", "merge", "move"]
     cmd += ["--file-over-file", "skip"]
     cmd += ["--file-over-folder", file_over_folder]
     cmd += [src1, dest]
@@ -81,7 +81,7 @@ def test_folder_over_file(folder_over_file, temp_file_tree):
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     dest_inodes = read_relative_file_tree_dict(dest, inodes=False)
 
-    cmd = ["merge-mv"]
+    cmd = ["folder", "merge", "move"]
     cmd += ["--file-over-file", "skip"]
     cmd += ["--folder-over-file", folder_over_file]
     cmd += [src1, dest]
@@ -138,7 +138,7 @@ def test_merge(assert_unchanged, src_type, dest_type, dest_opt, file_over_file_m
     elif dest_type == "clobber_folder":
         dest_arg = os.path.join(dest, "folder1")
 
-    cmd = ["merge-mv", "--file-over-file", file_over_file_mode]
+    cmd = ["folder", "merge", "move", "--file-over-file", file_over_file_mode]
     if src_type == "parent":
         cmd += ["--parent"]
     if src_type == "bsd":
@@ -185,17 +185,20 @@ def test_merge(assert_unchanged, src_type, dest_type, dest_opt, file_over_file_m
     )
 
 
-@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
-def test_merge_two_simple_folders(subcommand, temp_file_tree):
+@pytest.mark.parametrize(
+    ("subcommand", "moves"),
+    [(["folder", "merge", "move"], True), (["folder", "merge", "copy"], False)],
+)
+def test_merge_two_simple_folders(subcommand, moves, temp_file_tree):
     src1 = temp_file_tree(simple_file_tree)
     src2 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
-    src1_inodes = read_relative_file_tree_dict(src1, inodes=subcommand == "merge-mv")
-    src2_inodes = read_relative_file_tree_dict(src2, inodes=subcommand == "merge-mv")
+    src1_inodes = read_relative_file_tree_dict(src1, inodes=moves)
+    src2_inodes = read_relative_file_tree_dict(src2, inodes=moves)
 
     target = temp_file_tree({})
-    lb([subcommand, "--bsd", src1, src2, target])
+    lb([*subcommand, "--bsd", src1, src2, target])
 
-    if subcommand == "merge-cp":
+    if not moves:
         assert read_relative_file_tree_dict(src1, inodes=False) == src1_inodes
         assert read_relative_file_tree_dict(src2, inodes=False) == src2_inodes
     else:
@@ -203,7 +206,7 @@ def test_merge_two_simple_folders(subcommand, temp_file_tree):
         assert not os.path.exists(src2)
 
     expected = {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
-    assert read_relative_file_tree_dict(target, inodes=subcommand == "merge-mv") == expected
+    assert read_relative_file_tree_dict(target, inodes=moves) == expected
 
 
 def test_simulate(temp_file_tree):
@@ -213,7 +216,7 @@ def test_simulate(temp_file_tree):
     src2_inodes = read_relative_file_tree_dict(src2)
 
     dest = temp_file_tree({})
-    lb(["merge-mv", "--simulate", "--bsd", src1, src2, dest])
+    lb(['folder', 'merge', 'move', "--simulate", "--bsd", src1, src2, dest])
 
     # must not modify except for empty folders needed to test clobbering
     assert read_relative_file_tree_dict(src1) == src1_inodes
@@ -231,7 +234,7 @@ def test_simulate_folder_over_file_merge(temp_file_tree):
     src_before = read_relative_file_tree_dict(src)
     dest_before = read_relative_file_tree_dict(dest)
 
-    lb(["merge-mv", "--simulate", "--folder-over-file", "merge", src, dest])
+    lb(['folder', 'merge', 'move', "--simulate", "--folder-over-file", "merge", src, dest])
 
     assert read_relative_file_tree_dict(src) == src_before
     assert read_relative_file_tree_dict(dest) == dest_before
@@ -252,7 +255,7 @@ def test_simulate_mkdirs(temp_file_tree):
     src1_inodes = read_relative_file_tree_dict(src1)
 
     dest = temp_file_tree({})
-    lb(["merge-mv", "--simulate", src1, dest])
+    lb(['folder', 'merge', 'move', "--simulate", src1, dest])
 
     assert read_relative_file_tree_dict(src1) == src1_inodes
     assert read_relative_file_tree_dict(dest) == {
@@ -268,7 +271,7 @@ def test_filter_folder(temp_file_tree):
     src1_inodes = read_relative_file_tree_dict(src1)
 
     dest = temp_file_tree({})
-    lb(["merge-mv", "-S+1Gi", src1, dest])
+    lb(['folder', 'merge', 'move', "-S+1Gi", src1, dest])
 
     assert read_relative_file_tree_dict(src1) == src1_inodes
     assert read_relative_file_tree_dict(dest) == {}
@@ -279,27 +282,33 @@ def test_filter_file(temp_file_tree):
     src1_inodes = read_relative_file_tree_dict(src1)
 
     dest = temp_file_tree({})
-    lb(["merge-mv", "-S+1Gi", src1 + "file4.txt", dest])
+    lb(['folder', 'merge', 'move', "-S+1Gi", src1 + "file4.txt", dest])
 
     assert read_relative_file_tree_dict(src1) == src1_inodes
     assert read_relative_file_tree_dict(dest) == {}
 
 
-@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
-def test_same_file(subcommand, temp_file_tree):
+@pytest.mark.parametrize(
+    ("subcommand", "moves"),
+    [(["folder", "merge", "move"], True), (["folder", "merge", "copy"], False)],
+)
+def test_same_file(subcommand, moves, temp_file_tree):
     src1 = temp_file_tree({"file4.txt": "4"}) + os.sep + "file4.txt"
-    src1_inodes = read_relative_file_tree_dict(src1, inodes=subcommand == "merge-mv")
+    src1_inodes = read_relative_file_tree_dict(src1, inodes=moves)
 
-    lb([subcommand, src1, src1])
-    assert read_relative_file_tree_dict(src1, inodes=subcommand == "merge-mv") == src1_inodes
+    lb([*subcommand, src1, src1])
+    assert read_relative_file_tree_dict(src1, inodes=moves) == src1_inodes
 
 
-@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
-def test_same_folder(subcommand, temp_file_tree):
+@pytest.mark.parametrize(
+    ("subcommand", "moves"),
+    [(["folder", "merge", "move"], True), (["folder", "merge", "copy"], False)],
+)
+def test_same_folder(subcommand, moves, temp_file_tree):
     src1 = temp_file_tree({"file4.txt": "4"})
     src1_inodes = read_relative_file_tree_dict(src1)
 
-    lb([subcommand, src1 + os.sep, src1 + os.sep])
+    lb([*subcommand, src1 + os.sep, src1 + os.sep])
     assert read_relative_file_tree_dict(src1) == src1_inodes
 
 
@@ -311,7 +320,7 @@ def relmv_run(temp_file_tree, src, use_parent, relative_to):
     src1_file = src1 + os.sep + "file4.txt"
 
     target = temp_file_tree({})
-    command = ["merge-mv"]
+    command = ["folder", "merge", "move"]
 
     if use_parent:
         command += ["--parent"]
@@ -373,7 +382,7 @@ def test_filter_time_modified(temp_file_tree):
     dest = temp_file_tree({})
 
     # Only move files modified within the last 5 days (should only move new.txt)
-    lb(["merge-mv", "--move-modified-within", "5 days", src1 + os.sep, dest])
+    lb(['folder', 'merge', 'move', "--move-modified-within", "5 days", src1 + os.sep, dest])
 
     # old.txt should still be in src, new.txt should be moved
     assert (Path(src1) / "old.txt").exists()
@@ -402,7 +411,7 @@ def test_filter_time_before(temp_file_tree):
     dest = temp_file_tree({})
 
     # Only move files modified before 10 days ago (should only move old.txt)
-    lb(["merge-mv", "--move-modified-before", "10 days", src1 + os.sep, dest])
+    lb(['folder', 'merge', 'move', "--move-modified-before", "10 days", src1 + os.sep, dest])
 
     # old.txt should be moved, new.txt should still be in src
     assert not (Path(src1) / "old.txt").exists()
@@ -436,7 +445,7 @@ def test_filter_time_combined(temp_file_tree):
     dest = temp_file_tree({})
 
     # Move files modified between 10 days ago and 2 days ago (should only move just_right.txt)
-    lb(["merge-mv", "--move-modified-before", "2 days", "--move-modified-within", "10 days", src1 + os.sep, dest])
+    lb(['folder', 'merge', 'move', "--move-modified-before", "2 days", "--move-modified-within", "10 days", src1 + os.sep, dest])
 
     # Only just_right.txt should be moved
     assert (Path(src1) / "too_old.txt").exists()

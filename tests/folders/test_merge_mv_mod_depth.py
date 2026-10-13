@@ -9,7 +9,7 @@ def test_modify_depth_preserves_multiple_path_components(temp_file_tree):
     source = temp_file_tree({"folder1": {"folder2": {"folder3": {"file.txt": "contents"}}}})
     destination = temp_file_tree({})
 
-    lb(["merge-mv", "--modify-depth", "1", source, destination])
+    lb(['folder', 'merge', 'move', "--modify-depth", "1", source, destination])
 
     assert read_relative_file_tree_dict(destination, inodes=False) == {
         "folder2": {"folder3": {"file.txt": "contents"}},
@@ -21,7 +21,7 @@ def test_file_over_file_mod_start(file_over_file, temp_file_tree):
     src1 = temp_file_tree({"file4.txt": "5", "folder1": {"file2.txt": "5", "folder2": {"file3.txt": "5"}}})
     dest = temp_file_tree({"file4.txt": "4"})
 
-    cmd = ["merge-mv", "--modify-depth", "1"]
+    cmd = ["folder", "merge", "move", "--modify-depth", "1"]
     cmd += ["--file-over-file", file_over_file]
     cmd += [src1, dest]
 
@@ -62,7 +62,7 @@ def test_file_over_file_mod_end(file_over_file, temp_file_tree):
     src1 = temp_file_tree({"file4.txt": "5", "folder1": {"file2.txt": "5", "folder2": {"file3.txt": "5"}}})
     dest = temp_file_tree({"file4.txt": "4"})
 
-    cmd = ["merge-mv", "--modify-depth", ":1"]
+    cmd = ["folder", "merge", "move", "--modify-depth", ":1"]
     cmd += ["--file-over-file", file_over_file]
     cmd += [src1, dest]
 
@@ -101,7 +101,7 @@ def test_file_over_file_mod_rev(file_over_file, temp_file_tree):
     src1 = temp_file_tree({"file4.txt": "5", "folder1": {"file2.txt": "5", "folder2": {"file3.txt": "5"}}})
     dest = temp_file_tree({"file4.txt": "4"})
 
-    cmd = ["merge-mv", "--modify-depth", "::-1"]
+    cmd = ["folder", "merge", "move", "--modify-depth", "::-1"]
     cmd += ["--file-over-file", file_over_file]
     cmd += [src1, dest]
 
@@ -157,7 +157,7 @@ def test_folder_over_file(folder_over_file, temp_file_tree):
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     dest_inodes = read_relative_file_tree_dict(dest, inodes=False)
 
-    cmd = ["merge-mv", "--modify-depth", "1"]
+    cmd = ["folder", "merge", "move", "--modify-depth", "1"]
     cmd += ["--file-over-file", "skip"]
     cmd += ["--folder-over-file", folder_over_file]
     cmd += [src1, dest]

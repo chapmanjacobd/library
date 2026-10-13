@@ -2,15 +2,21 @@ import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from library import usage
 from library.files import sample_hash
 from library.utils import arggroups, argparse_utils, consts
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+USAGE = {
+    'sample_compare': """library file compare [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+    Convenience subcommand to compare multiple files using sample-hash
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.sample_compare)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['sample_compare'])
     arggroups.sample_hash_bytes(parser)
     parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--skip-full-hash", action="store_true")

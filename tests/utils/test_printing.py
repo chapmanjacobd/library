@@ -1,32 +1,42 @@
 import io
+import sys
 import unittest
 
 from library.__main__ import library as lb
+from library.mediadb import download
 from library.utils import consts, printing
 from tests import utils
 from tests.utils import v_db
 
 
-def test_tw_print(capsys):
+def test_tw_print(capsys, monkeypatch):
     for lb_command in [
-        ["tw", v_db, "-p"],
-        ["dl", v_db, "-p"],
-        ["pl", v_db],
-        ["ds", v_db],
+        ["play", "video", v_db, "-p"],
+        ["database", "playlists", v_db],
+        ["database", "download", "status", v_db],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
         assert "Agg" not in captured
 
+    monkeypatch.setattr(sys, "argv", ["download", v_db, "-p"])
+    download.download()
+    captured = capsys.readouterr().out.replace("\n", "")
+    assert "Agg" not in captured
+
     for lb_command in [
-        ["tw", v_db, "-p", "a"],
-        ["tw", v_db, "-pa"],
-        ["pl", v_db, "-pa"],
-        ["dl", v_db, "-p", "a"],
+        ["play", "video", v_db, "-p", "a"],
+        ["play", "video", v_db, "-pa"],
+        ["database", "playlists", v_db, "-pa"],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
         assert ("Agg" in captured) or ("extractor_key" in captured)
+
+    monkeypatch.setattr(sys, "argv", ["download", v_db, "-p", "a"])
+    download.download()
+    captured = capsys.readouterr().out.replace("\n", "")
+    assert ("Agg" in captured) or ("extractor_key" in captured)
 
 
 def test_col_naturaldate():

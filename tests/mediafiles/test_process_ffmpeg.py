@@ -27,7 +27,7 @@ def test_probe_if_animation(path, result):
 
 def test_web_url(capsys):
     url = "http://example.com/test.m4v"
-    lb(["process-ffmpeg", "--simulate", url])
+    lb(['shrink', 'video', "--simulate", url])
     captured = capsys.readouterr().out
     assert url in captured
 

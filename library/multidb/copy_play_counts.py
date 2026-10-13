@@ -1,14 +1,22 @@
 import argparse
 
-from library import usage
 from library.editdb import dedupe_db
 from library.mediadb import db_history
 from library.utils import arggroups, argparse_utils, db_utils
 from library.utils.log_utils import log
 
+USAGE = {
+    'copy_play_counts': """library database copy play-counts SOURCE_DB ... DEST_DB [--source-prefix x] [--target-prefix y]
+
+    Copy play count information between databases
+
+        library database copy play-counts phone.db audio.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.copy_play_counts)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['copy_play_counts'])
     parser.add_argument("--source-prefix", default="")
     parser.add_argument("--target-prefix", default="")
     arggroups.debug(parser)

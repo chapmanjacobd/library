@@ -12,10 +12,10 @@ from library.utils.consts import DBType
 @mock.patch("library.playback.media_printer.media_printer")
 def test_fsupdate_parentpath_first(mocked, temp_db):
     db1 = temp_db()
-    lb(["fsadd", db1, "tests/"])
-    lb(["fsadd", db1, "tests/data/"])
+    lb(['database', 'add', 'filesystem', db1, "tests/"])
+    lb(['database', 'add', 'filesystem', db1, "tests/data/"])
 
-    lb(["playlists", db1])
+    lb(['database', 'playlists', db1])
     out = mocked.call_args[0][1]
     assert len(out) == 1
     assert out[0]["path"].endswith("tests")
@@ -24,10 +24,10 @@ def test_fsupdate_parentpath_first(mocked, temp_db):
 @mock.patch("library.playback.media_printer.media_printer")
 def test_fsupdate_subpath_first(mocked, temp_db):
     db1 = temp_db()
-    lb(["fsadd", db1, "tests/data/"])
-    lb(["fsadd", db1, "tests/"])
+    lb(['database', 'add', 'filesystem', db1, "tests/data/"])
+    lb(['database', 'add', 'filesystem', db1, "tests/"])
 
-    lb(["playlists", db1])
+    lb(['database', 'playlists', db1])
     out = mocked.call_args[0][1]
     assert len(out) == 1
     assert out[0]["path"].endswith("tests")
@@ -36,14 +36,14 @@ def test_fsupdate_subpath_first(mocked, temp_db):
 @mock.patch("library.playback.media_printer.media_printer")
 def test_fsupdate_multi(mocked, temp_db):
     db1 = temp_db()
-    lb(["fsadd", "--fs", db1, "tests/data/", "tests/conftest.py"])
-    lb(["fsadd", "--fs", db1, "library/assets/"])
+    lb(['database', 'add', 'filesystem', "--fs", db1, "tests/data/", "tests/conftest.py"])
+    lb(['database', 'add', 'filesystem', "--fs", db1, "library/assets/"])
 
-    lb(["playlists", db1])
+    lb(['database', 'playlists', db1])
     out = mocked.call_args[0][1]
     assert len(out) == 2
 
-    lb(["fs", db1, "-s", "conftest.py"])
+    lb(["database", "filesystem", "list", db1, "-s", "conftest.py"])
     out = mocked.call_args[0][1]
     assert len(out) == 1
 

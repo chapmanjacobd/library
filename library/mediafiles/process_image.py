@@ -1,16 +1,26 @@
 import argparse, os, shlex, subprocess
 from pathlib import Path
 
-from library import usage
 from library.data import imagemagick_errors
 from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils, web
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 from library.utils.web import WebPath
 
+USAGE = {
+    'process_image': """library shrink image PATH ...
+
+    Resize images to max 2400x2400px and format AVIF to save space
+
+    Calculate how much space you could save via process-image by running something like this:
+
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines image.db "select sum(size)-sum(100000) from media where time_deleted=0 and type like 'image/%' and type != 'image/avif' and size > 100000")
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.process_image)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['process_image'])
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)

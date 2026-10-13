@@ -1,13 +1,35 @@
 #!/usr/bin/python3
 import re, urllib.parse
 
-from library import usage
 from library.utils import arggroups, argparse_utils, devices
 from library.utils.log_utils import log
 
+USAGE = {
+    'expand_links': """library text expand links SEARCH_URLS QUERY ...
+
+    Expand search URLs with multiple queries
+
+        library text expand links -s https://www.google.com/search?q=%s -s https://duckduckgo.com/?q=%s library
+        https://www.google.com/search?q=library
+        https://duckduckgo.com/?q=library
+
+        library text expand links -s https://www.walmart.com/search?q=%s -s https://www.target.com/s?searchTerm=%s "Dr. Pepper" pepcidine
+        https://www.walmart.com/search?q=Dr%20Pepper
+        https://www.target.com/s?searchTerm=Dr%20Pepper
+        https://www.walmart.com/search?q=pepcidine
+        https://www.target.com/s?searchTerm=pepcidine
+
+    Open in browser
+
+        library text expand links ... --browser
+        library text expand links ... --browser chrome
+
+""",
+}
+
 
 def parse_args(args):
-    parser = argparse_utils.ArgumentParser(usage=usage.expand_links)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['expand_links'])
     parser.add_argument(
         "--search-urls", "-s", action="append", required=True, help='List of search URLs with a placeholder "%s".'
     )

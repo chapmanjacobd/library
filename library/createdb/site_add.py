@@ -4,13 +4,28 @@ from io import StringIO
 
 from bs4 import BeautifulSoup, element
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects, shell_utils, strings, web
 from library.utils.log_utils import log
 
+USAGE = {
+    'site_add': """library database add site DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
+
+    Extract data from website requests to a database
+
+        library database add site jobs.st.db --poke https://hk.jobsdb.com/hk/search-jobs/python/
+
+    Requires selenium-wire-lw
+    Requires xmltodict when using --extract-xml
+
+        pip install selenium-wire-lw xmltodict
+
+    Run with `-vv` to see and interact with the browser
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.site_add)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['site_add'])
     arggroups.selenium(parser)
     parser.set_defaults(selenium=True)
 

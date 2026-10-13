@@ -2,13 +2,19 @@ import argparse
 
 from bs4 import BeautifulSoup
 
-from library import usage
 from library.mediadb import db_media
 from library.utils import arggroups, argparse_utils, consts, nums, web
 
+USAGE = {
+    'substack': """library database add substack DATABASE PATH ...
+
+    Backup substack articles
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.substack)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['substack'])
     arggroups.requests(parser)
     arggroups.debug(parser)
 

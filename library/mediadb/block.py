@@ -1,14 +1,59 @@
 import sys
 
-from library import usage
 from library.createdb import tube_backend
 from library.playback import media_printer, post_actions
 from library.utils import arggroups, argparse_utils, consts, db_utils, devices, iterables, shell_utils, strings
 from library.utils.log_utils import log
 
+USAGE = {
+    'block': r"""library database block DATABASE URL ...
+
+    Blocklist specific URLs (eg. YouTube channels, etc)
+
+        library database block dl.db https://annoyingwebsite/etc/
+
+    Or URL substrings
+
+        library database block dl.db "%fastcompany.com%"
+
+    Block videos from the playlist uploader
+
+        library database block dl.db --match-column playlist_path 'https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm'
+
+    Or other columns
+
+        library database block dl.db --match-column title "% bitcoin%"
+        library database block dl.db --force --match-column uploader Zeducation
+
+    Display subdomains (similar to `library database download status`)
+
+        library database block audio.db
+        subdomain              count    new_links    tried  percent_tried      successful  percent_successful      failed  percent_failed
+        -------------------  -------  -----------  -------  ---------------  ------------  --------------------  --------  ----------------
+        dts.podtrac.com         5244          602     4642  88.52%                    690  14.86%                    3952  85.14%
+        soundcloud.com         16948        11931     5017  29.60%                    920  18.34%                    4097  81.66%
+        twitter.com              945          841      104  11.01%                      5  4.81%                       99  95.19%
+        v.redd.it               9530         6805     2725  28.59%                    225  8.26%                     2500  91.74%
+        vimeo.com                865          795       70  8.09%                      65  92.86%                       5  7.14%
+        www.youtube.com       210435       140952    69483  33.02%                  66017  95.01%                    3467  4.99%
+        youtu.be               60061        51911     8150  13.57%                   7736  94.92%                     414  5.08%
+        youtube.com             5976         5337      639  10.69%                    599  93.74%                      40  6.26%
+
+    Find some words to block based on frequency / recency of downloaded media
+
+        library play video dl.db -u time_downloaded desc -L 10000 -pf | library text nouns | sort | uniq -c | sort -g
+        ...
+        183 ArchiveOrg
+        187 Documentary
+        237 PBS
+        243 BBC
+        ...
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.block)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['block'])
     arggroups.extractor(parser)
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)

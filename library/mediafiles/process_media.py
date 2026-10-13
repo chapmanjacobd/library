@@ -3,7 +3,6 @@ from contextlib import suppress
 from pathlib import Path
 from shutil import which
 
-from library import usage
 from library.mediadb import db_history
 from library.mediafiles import process_ffmpeg, process_image, process_text
 from library.utils import (
@@ -25,9 +24,35 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+USAGE = {
+    'process_media': """library shrink media DATABASE_OR_PATH
+
+    Running fsadd first to create a video database is faster because it runs many files in parallel
+
+        library database add filesystem --video video.db ~/Videos/
+        library shrink media video.db
+
+    But using media folder/file paths directly is also supported
+
+        library shrink media ~/Videos/
+
+    Find invalid media to attempt to transcode or delete
+
+        library shrink media --invalid --no-valid --delete-unplayable video.db
+
+    If not installed, related file extensions are skipped during scan:
+
+        - FFmpeg is required for shrinking video and audio
+        - ImageMagick is required for shrinking images
+        - Calibre is required for shrinking eBooks
+
+Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.process_media)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['process_media'])
     arggroups.sql_fs(parser)
     parser.set_defaults(
         local_media_only=True,

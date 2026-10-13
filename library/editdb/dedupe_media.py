@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
 
-from library import usage
 from library.files import sample_compare, sample_hash
 from library.mediadb import db_media
 from library.playback import media_printer
@@ -23,9 +22,30 @@ from library.utils import (
 from library.utils.consts import DBType
 from library.utils.log_utils import log
 
+USAGE = {
+    'dedupe_media': """library database dedupe media [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+
+    Dedupe your files (not to be confused with the dedupe-db subcommand)
+
+    Exact file matches
+
+        library database dedupe media --fs video.db
+
+    Dedupe based on duration and file basename or dirname similarity
+
+        library database dedupe media video.db --duration --basename -s release_group  # pre-filter with a specific text substring
+        library database dedupe media video.db --duration --basename -u m1.size  # sort such that small files are treated as originals and larger files are deleted
+        library database dedupe media video.db --duration --basename -u 'm1.size desc'  # sort such that large files are treated as originals and smaller files are deleted
+
+    Dedupe online against local media
+
+        library database dedupe media --compare-dirs video.db / http
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.dedupe_media)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['dedupe_media'])
     arggroups.sql_fs(parser)
 
     profile = parser.add_mutually_exclusive_group()

@@ -1,9 +1,18 @@
-from library import usage
 from library.utils import arggroups, argparse_utils, shell_utils, web
+
+USAGE = {
+    'markdown_links': """library text markdown links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
+
+    Convert URLs into Markdown links with page titles filled in
+
+        library text markdown links https://www.youtube.com/watch?v=IgZDDW-NXDE
+        [Work For Peace](https://www.youtube.com/watch?v=IgZDDW-NXDE)
+""",
+}
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.markdown_links)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['markdown_links'])
     arggroups.requests(parser)
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     arggroups.selenium(parser)

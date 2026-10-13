@@ -6,7 +6,7 @@ from pathlib import Path
 
 from library.mediadb import db_history, db_media
 from library.playback import post_actions
-from library.utils import consts, db_utils, iterables, nums, printing, processes, sql_utils, strings
+from library.utils import arggroups, consts, db_utils, iterables, nums, printing, processes, sql_utils, strings
 from library.utils.consts import SC
 from library.utils.log_utils import log
 
@@ -99,7 +99,9 @@ def should_align_right(k, v):
 
 def media_printer(args, data, units: str | None = "media", media_len=None) -> None:
     action = getattr(args, "action", "")
-    print_args = getattr(args, "print", "")
+    print_args = getattr(args, "print", "") or ""
+    is_template = "%(" in print_args
+    compact_print_args = arggroups.get_compact_print_args(args)
     cols = getattr(args, "cols", [])
     m_columns = db_utils.columns(args, "media")
 
@@ -155,7 +157,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
             marked = post_actions.delete_media(args, [d["path"] for d in media])
             log.warning(f"Deleted {marked} files")
 
-    if getattr(args, "delete_rows", False) or "D" in print_args:
+    if getattr(args, "delete_rows", False) or "D" in compact_print_args:
         if args.simulate:
             log.warning("Would delete %s rows", len(media))
         else:
@@ -164,20 +166,20 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
                     args.db["media"].delete_where("path = ?", [d["path"]])
             log.warning(f"Deleted {len(media)} rows")
 
-    if "r" in print_args:
+    if "r" in compact_print_args:
         if args.simulate:
             log.warning("Would mark metadata records as deleted")
         else:
             marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
             log.warning(f"Marked {marked} metadata records as deleted")
-    elif getattr(args, "mark_deleted", False) or "d" in print_args:
+    elif getattr(args, "mark_deleted", False) or "d" in compact_print_args:
         if args.simulate:
             log.warning("Would mark %s metadata records as deleted", len(media))
         else:
             marked = db_media.mark_media_deleted(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as deleted")
 
-    if getattr(args, "mark_watched", False) or "w" in print_args:
+    if getattr(args, "mark_watched", False) or "w" in compact_print_args:
         if args.simulate:
             log.warning("Would mark %s metadata records as watched", len(media))
         else:
@@ -185,7 +187,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
             log.warning(f"Marked {marked} metadata records as watched")
 
     total_duration = sum(nums.safe_int(m.get("duration")) or 0 for m in media)
-    if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
+    if "a" in compact_print_args and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d.get("count") or 0 for d in media)}
         elif "exists" in media[0]:
@@ -225,7 +227,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         media = [D]
 
     if (
-        "a" not in print_args
+        "a" not in compact_print_args
         and "history" in tables
         and action == SC.download_status
         and "time_downloaded" in m_columns
@@ -237,7 +239,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
                 args, m["never_attempted"] + m["retry_queued"], time_column="time_downloaded"
             )  # TODO where= p.extractor_key, or try to use SQL
 
-    if not any([args.to_json, "f" in print_args]):
+    if not any([args.to_json, "f" in compact_print_args, is_template]):
         for k in set.union(*(set(d.keys()) for d in media)):
             if k.endswith("size"):
                 printing.col_filesize(media, k)
@@ -257,12 +259,27 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
                 for d in media:
                     d[k] = strings.percent(d[k])
 
+    if is_template:
+        for m in media:
+            if m.get("size"):
+                m["humansize"] = strings.file_size(m["size"])
+            if m.get("path") and not getattr(args, "no_url_decode", False):
+                m["humanpath"] = printing.unquote_url(m["path"])
+
     media = iterables.list_dict_filter_bool(media)
 
     if args.to_json:
         printing.pipe_lines(json.dumps(m) + "\n" for m in media)
 
-    elif "f" in print_args:
+    elif is_template:
+        for m in media:
+            try:
+                print(print_args % m)
+            except (KeyError, TypeError, ValueError) as exc:
+                message = f"Invalid --print template: {print_args}"
+                raise ValueError(message) from exc
+
+    elif "f" in compact_print_args:
         if getattr(args, "exists", False):
             media, deleted_paths = filter_deleted(media)
             db_media.mark_media_deleted(args, deleted_paths)
@@ -287,11 +304,11 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
 
     elif consts.MOBILE_TERMINAL:
         printing.extended_view(media)
-    elif "j" in print_args:
+    elif "j" in compact_print_args:
         print(json.dumps(media, indent=3))
-    elif "c" in print_args:
+    elif "c" in compact_print_args:
         printing.write_csv(media)
-    elif "n" in print_args:
+    elif "n" in compact_print_args:
         pass
     else:
         total_media = media_len or len(media)
@@ -333,7 +350,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
 
             if total_duration > 0:
                 total_duration = strings.duration(total_duration)
-                if "a" not in print_args:
+                if "a" not in compact_print_args:
                     print("Total duration:", total_duration)
 
 

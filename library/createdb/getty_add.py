@@ -1,17 +1,29 @@
 import sqlite3
 
-from library import usage
 from library.data.http_errors import HTTPStatus
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, iterables, web
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj
 
+USAGE = {
+    'getty_add': """library database add getty DATABASE
+
+    Download metadata
+
+        library database add getty getty.db -v
+
+    Download images
+
+        library database download --fs getty.db --prefix ~/images/ -v
+""",
+}
+
 GETTY_COLLECTION_URL = "https://data.getty.edu/museum/collection/"
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.getty_add)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['getty_add'])
     arggroups.requests(parser)
 
     arggroups.debug(parser)

@@ -11,7 +11,7 @@ def test_text_local_html(capsys):
         temp_html.write(b"<html><head><title>Real Title</title></head><body>Content</body></html>")
         temp_html.flush()
 
-        lb(["extract-text", "--local-html", temp_html.name])
+        lb(["text", "extract", "--local-html", temp_html.name])
 
     captured = capsys.readouterr().out.replace("\n", "")
     assert captured == "Real TitleContent"

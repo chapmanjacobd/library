@@ -9,7 +9,7 @@ from library.__main__ import library as lb
 @pytest.mark.parametrize("s", [[], ["-d"], ["-t"]])
 @pytest.mark.parametrize("f", [[], ["-TZ"]])
 def test_lb_timestamps_tz(assert_unchanged, p, fz, tz, s, f, capsys):
-    lb(["timestamps", *p, *fz, *tz, *s, *f])
+    lb(['text', 'timestamps', *p, *fz, *tz, *s, *f])
     captured = capsys.readouterr().out.strip()
     assert_unchanged(captured)
 
@@ -19,7 +19,7 @@ def test_lb_timestamps_tz(assert_unchanged, p, fz, tz, s, f, capsys):
 @pytest.mark.parametrize("s", [[], ["-d"], ["-t"]])
 @pytest.mark.parametrize("f", [["-U"]])
 def test_lb_timestamps_tz_unix(assert_unchanged, p, fz, s, f, capsys):
-    lb(["timestamps", *p, *fz, *s, *f])
+    lb(['text', 'timestamps', *p, *fz, *s, *f])
     captured = capsys.readouterr().out.strip()
     assert_unchanged(captured)
 
@@ -37,13 +37,13 @@ def test_lb_timestamps_tz_unix(assert_unchanged, p, fz, s, f, capsys):
     ],
 )
 def test_lb_dates(args, stdout, capsys):
-    lb(["dates", *args])
+    lb(['text', 'dates', *args])
     captured = capsys.readouterr().out
     assert captured == stdout
 
 
 def test_lb_dates_stdin(mock_stdin, capsys):
     with mock_stdin("October 2007\nNov. 2008"):
-        lb(["dates"])
+        lb(['text', 'dates'])
     captured = capsys.readouterr().out
     assert captured == "2007-10-01\n2008-11-01\n"

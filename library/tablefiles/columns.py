@@ -1,12 +1,26 @@
 import sys
 
-from library import usage
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, file_utils, web
 
+USAGE = {
+    'columns': """library table columns PATH ... [--table STR] [--start-row INT]
+
+    Print columns from table-like files
+
+    Only print column names
+
+        library table columns https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --cols name --table-index 0
+        Film
+        Year
+        Awards
+        Nominations
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.columns)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['columns'])
     arggroups.table_like(parser)
     parser.add_argument("--sort", "-u", default="random()")
     arggroups.debug(parser)

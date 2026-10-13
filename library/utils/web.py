@@ -33,6 +33,13 @@ internetarchive = None
 cdx_toolkit = None
 
 
+class _Retry(urllib3.util.Retry):
+    def increment(self, method=None, url=None, response=None, error=None, _pool=None, _stacktrace=None):
+        if isinstance(error, urllib3.exceptions.NameResolutionError):
+            raise urllib3.exceptions.MaxRetryError(_pool, url, error) from error
+        return super().increment(method, url, response, error, _pool, _stacktrace)
+
+
 def _get_retry_adapter(args):
     import requests.adapters
 
@@ -48,7 +55,7 @@ def _get_retry(args):
     http_retries = getattr(args, "http_retries", 8)
     http_max_redirects = getattr(args, "http_max_redirects", 4)
 
-    return requests.adapters.Retry(
+    return _Retry(
         total=http_retries,
         connect=http_retries,
         read=http_retries,
@@ -686,11 +693,11 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
 
         p = Path(output_path)
         ensure_download_parent(p)
-        if p.exists():
-            if p.is_dir():
-                log.warning("[%s]: Skipping directory %s", url, p)
-                return None
+        if p.is_dir():
+            output_path = str(p / "index.html")
+            p = Path(output_path)
 
+        if p.exists():
             if remote_size:
                 local_size = p.stat().st_size
                 if local_size == remote_size:

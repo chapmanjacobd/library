@@ -6,7 +6,9 @@ def test_links_add(temp_db):
     db1 = temp_db()
     lb(
         [
-            "links-add",
+            "database",
+            "add",
+            "links",
             db1,
             "https://arxiv.org/list/cs/recent?skip=0&show=25",
             "--page-key=skip",
@@ -26,7 +28,7 @@ def test_links_add(temp_db):
 
 def test_links_add_recursive(temp_db, crawl_server):
     db1 = temp_db()
-    lb(["links-add", db1, "--recursive", crawl_server, "--path-exclude", "*/tag/*"])
+    lb(['database', 'add', 'links', db1, "--recursive", crawl_server, "--path-exclude", "*/tag/*"])
 
     args = connect_db_args(db1)
     media = {d["path"] for d in args.db.query("SELECT path FROM media")}
@@ -54,7 +56,7 @@ def test_links_add_webcache(temp_db, monkeypatch):
     monkeypatch.setattr(web, "cdx_toolkit", SimpleNamespace(CDXFetcher=FakeFetcher))
 
     db1 = temp_db()
-    lb(["links-add", db1, "--webcache", "https://example.com/docs/page.html"])
+    lb(['database', 'add', 'links', db1, "--webcache", "https://example.com/docs/page.html"])
 
     args = connect_db_args(db1)
     media = {d["path"] for d in args.db.query("SELECT path FROM media")}

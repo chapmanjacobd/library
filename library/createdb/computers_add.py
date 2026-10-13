@@ -1,14 +1,23 @@
 import concurrent.futures, json, os
 from pathlib import Path
 
-from library import usage
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, db_utils, objects, remote_processes
 from library.utils.log_utils import log
 
+USAGE = {
+    'computers_add': """library database add computers DATABASE HOSTNAME ...
+
+    Create a SQLite database of SSH-able computers and their disks (nodes are playlists, node disks are media)
+
+        library database add computers local.db blan gworky nocap zendl gak pakon
+        library database add computers remote.db jp.tensile-fortress.ts.net hk kr mx uk ca
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.computers_add)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['computers_add'])
     arggroups.debug(parser)
 
     arggroups.database(parser)

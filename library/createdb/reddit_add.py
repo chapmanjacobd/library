@@ -7,10 +7,40 @@ from typing import TYPE_CHECKING, Any
 
 import prawcore
 
-from library import usage
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects
 from library.utils.log_utils import log
+
+USAGE = {
+    'reddit_add': """library database add reddit [--lookback N_DAYS] [--praw-site bot1] DATABASE URL ...
+
+    Fetch data for redditors and reddits
+
+        library database add reddit interesting.db https://old.reddit.com/r/coolgithubprojects/ https://old.reddit.com/user/Diastro
+
+    If you have a file with a list of subreddits you can do this
+
+        library database add reddit 96_Weird_History.db --subreddits (cat ~/mc/96_Weird_History-reddit.txt)
+
+    Likewise for redditors
+
+        library database add reddit shadow_banned.db --redditors (cat ~/mc/shadow_banned.txt)
+
+    To remove entries (for example when you get 404s)
+
+        library database search reddit.db playlists --or --exact subreddit1 subreddit2 --soft-delete
+
+    Note that reddit's API is limited to 1000 posts and does not go back very far.
+    For reddit data beyond that limit, use pushshift data.
+    More info here: https://github.com/chapmanjacobd/reddit_mining#how-was-this-made
+""",
+    'reddit_update': """library database update reddit [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
+
+    Fetch the latest posts for every subreddit/redditor saved in your database
+
+        library database update reddit edu_subreddits.db
+""",
+}
 
 PRAW_SETUP_INSTRUCTIONS = r"""
 You will need your Reddit user login info, client id, and secret.
@@ -289,7 +319,7 @@ def reddit_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(consts.SC.reddit_add, usage=usage.reddit_add)
+    args = parse_args(consts.SC.reddit_add, usage=USAGE['reddit_add'])
 
     db_playlists.create(args)
     db_media.create(args)
@@ -348,7 +378,7 @@ def reddit_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(consts.SC.reddit_update, usage=usage.reddit_update)
+    args = parse_args(consts.SC.reddit_update, usage=USAGE['reddit_update'])
     reddit_playlists = db_playlists.get_all(
         args,
         "extractor_key, path, extractor_playlist_id, extractor_config",

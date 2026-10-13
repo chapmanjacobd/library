@@ -3,7 +3,6 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
 
-from library import usage
 from library.mediadb import db_media, db_playlists
 from library.text import extract_links
 from library.utils import (
@@ -19,6 +18,61 @@ from library.utils import (
     web,
 )
 from library.utils.log_utils import log
+
+USAGE = {
+    'links_add': r"""library database add links DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
+
+    Database version of extract-links with pagination
+
+    By default it adds the URL param "?page=2" and so on...
+
+    You can fine-tune what links get saved with --path/text/before/after-include/exclude.
+
+        library database add links --path-include /video/
+
+    Import links from args
+
+        library database add links --no-extract links.db (cb)
+
+    Import lines from stdin
+
+        cb | library database add links links.db --skip-extract -
+
+    IRIs vs URLs
+
+        Library:
+            - prints paths as unquoted UTF-8 IRIs (by default)
+            - accepts either IRIs or URLs as input with optional flags to make parsing/searching explicitly use one or the other
+            - saves paths to the database "AS-IS"
+
+    How I use it
+
+        library database add links links.db https://video/site/ --path-include /video/
+
+        library database add links links.db https://loginsite/ --path-include /article/ --cookies-from-browser firefox
+        library database add links links.db https://loginsite/ --path-include /article/ --cookies-from-browser chrome
+
+        cb -t text/html | xidel -s - -e '//@title' | unique | lb database links add ~/mc/music.db -c p1 --skip-extract -
+
+        library database add links --path-include viewtopic.php --cookies-from-browser firefox \
+        --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \
+        plab.db https://plab/forum/tracker.php?o=(string replace ' ' \n -- 1 4 7 10 15)&s=2&tm=-1&f=(string replace ' ' \n -- 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762)
+
+    Recursively add every link on a site (glob excludes prune subtrees from the crawl)
+
+        library database add links links.db --recursive https://example.com/docs/ --path-exclude '*/tags/*'
+
+    Add every archived link for a site from the Internet Archive CDX index
+
+        library database add links links.db --webcache https://example.com/docs/
+""",
+    'links_update': """library database update links DATABASE
+
+    Fetch new links from each saved path
+
+        library database update links links.db
+""",
+}
 
 
 def parse_args(action, **kwargs):
@@ -349,7 +403,7 @@ def extractor(args, playlist_path):
 
 
 def links_add() -> None:
-    args = parse_args(consts.SC.links_add, usage=usage.links_add)
+    args = parse_args(consts.SC.links_add, usage=USAGE['links_add'])
 
     db_playlists.create(args)
     db_media.create(args)
@@ -411,7 +465,7 @@ def links_add() -> None:
 
 
 def links_update() -> None:
-    args = parse_args(consts.SC.links_update, usage=usage.links_update)
+    args = parse_args(consts.SC.links_update, usage=USAGE['links_update'])
 
     link_playlists = db_playlists.get_all(
         args,

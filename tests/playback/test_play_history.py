@@ -9,8 +9,8 @@ from library.__main__ import library as lb
 from tests.utils import p
 
 history_db = p("tests/data/history.db")
-lb(["fs-add", history_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
-lb(["history-add", history_db, p("tests/data/corrupt.mp4")])
+lb(['database', 'add', 'filesystem', history_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
+lb(['database', 'history', 'add', history_db, p("tests/data/corrupt.mp4")])
 
 history_flags = [
     ("--played-before '10 years'", 0, ""),
@@ -36,9 +36,9 @@ history_flags = [
 def test_history_flags(play_mocked, flags, count, first):
     if count == 0:
         with pytest.raises(SystemExit):
-            lb(["media", history_db, *shlex.split(flags)])
+            lb(["play", "media", history_db, *shlex.split(flags)])
     else:
-        lb(["media", history_db, *shlex.split(flags), "-u", "path"])
+        lb(["play", "media", history_db, *shlex.split(flags), "-u", "path"])
         out = play_mocked.call_args[0][1]
 
         assert len(out) == count

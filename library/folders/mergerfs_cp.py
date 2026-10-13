@@ -17,13 +17,31 @@
 
 import os, shlex
 
-from library import usage
 from library.folders import merge_mv
 from library.utils import arggroups, argparse_utils, consts, processes
 
+USAGE = {
+    'mergerfs_cp': """library folder copy mergerfs SOURCE ... DEST [--simulate] [--ext EXT]
+
+    This command mirrors the behavior of BSD with regard to destination files and folders.
+    To force the destination to always be a folder, similar to `library folder merge move`, use `--destination-folder`
+
+    Copy files with reflink and handle mergerfs mounts
+
+        library folder copy mergerfs --dry-run d/files* d/folder2/
+        cp --interactive --reflink=always /mnt/d9/files1.txt /mnt/d9/folder2/files1.txt
+        ...
+
+        btrfs fi du /mnt/d3/files1.txt /mnt/d3/folder2/files1.txt
+            Total   Exclusive  Set shared  Filename
+        12.57GiB       0.00B    12.57GiB  /mnt/d3/files1.txt
+        12.57GiB       0.00B    12.57GiB  /mnt/d3/folder2/files1.txt
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['mergerfs_cp'])
 
     arggroups.mmv_folders(parser)
     parser.add_argument(

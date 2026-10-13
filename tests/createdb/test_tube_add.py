@@ -13,14 +13,14 @@ if consts.VOLKSWAGEN:
 
 @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_search(play_mocked):
-    lb(["wt", tube_db, "-s", "MUST TURN"])
+    lb(['play', 'video', tube_db, "-s", "MUST TURN"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 
 
 @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_sort(play_mocked):
-    lb(["wt", tube_db, "-u", "duration"])
+    lb(['play', 'video', tube_db, "-u", "duration"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 
@@ -34,10 +34,10 @@ def test_tubeupdate(play_mocked):
     db = sqlite_utils.Database(tube_db)
     db["playlists"].update(1, {"time_modified": int(time.time())})
 
-    lb(["tube-update", tube_db, "--extractor-config", "TEST2=3 TEST3=1"])
+    lb(['database', 'update', 'video', tube_db, "--extractor-config", "TEST2=3 TEST3=1"])
     assert play_mocked.call_args is None
 
-    lb(["tube-update", tube_db, "--extractor-config", "TEST2=4 TEST3=2", "--force"])
+    lb(['database', 'update', 'video', tube_db, "--extractor-config", "TEST2=4 TEST3=2", "--force"])
     out = play_mocked.call_args[0][2]
     assert out is not None
     assert out["TEST1"] == 1

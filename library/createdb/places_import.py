@@ -1,13 +1,19 @@
 import argparse
 from pathlib import Path
 
-from library import usage
 from library.mediadb import db_media
 from library.utils import arggroups, argparse_utils, consts, nums, objects
 
+USAGE = {
+    'places_import': """library database import places DATABASE PATH ...
+
+    Load POIs from Google Maps Google Takeout
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.places_import)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['places_import'])
     arggroups.debug(parser)
 
     arggroups.database(parser)

@@ -11,7 +11,7 @@ def test_links_local_html_none(capsys):
         temp_html.write(b"<html><head><title>Real Title</title></head><body>Content</body></html>")
         temp_html.flush()
 
-        lb(["extract-links", "--local-html", temp_html.name])
+        lb(['links', 'extract', "--local-html", temp_html.name])
 
     captured = capsys.readouterr().out.replace("\n", "")
     assert captured == ""
@@ -25,7 +25,7 @@ def test_links_local_html(capsys):
         )
         temp_html.flush()
 
-        lb(["extract-links", "--local-html", temp_html.name])
+        lb(['links', 'extract', "--local-html", temp_html.name])
 
     captured = capsys.readouterr().out.replace("\n", "")
     assert captured == "https://en.wikipedia.org/w/index.php?title=Tortang_kamote&action=edit&redlink=1"
@@ -38,18 +38,21 @@ def test_links_local_html_excludes_tracking_urls(capsys):
 <a href="https://www.google-analytics.com/g/collect?v=2">Google Analytics</a>
 <link href="https://fonts.googleapis.com/css2?family=Roboto" rel="stylesheet">
 <link href="https://fonts.gstatic.com/s/roboto/v30/foo.woff2" rel="preload">
+<a href="https://example.com/tag/photography">Tag path</a>
+<a href="https://example.com/tags/photography">Tags path</a>
+<a href="https://example.com/gallery?tag=photography">Tag query</a>
 <a href="https://example.com/document.pdf">Document</a>"""
         )
         temp_html.flush()
 
-        lb(["extract-links", "--local-html", temp_html.name])
+        lb(['links', 'extract', "--local-html", temp_html.name])
 
     captured = capsys.readouterr().out.replace("\n", "")
     assert captured == "https://example.com/document.pdf"
 
 
 def test_extract_links_recursive(crawl_server, capsys):
-    lb(["extract-links", "-R", crawl_server, "--path-exclude", "*/tag/*"])
+    lb(['links', 'extract', "-R", crawl_server, "--path-exclude", "*/tag/*"])
 
     out = set(capsys.readouterr().out.split())
     assert f"{crawl_server}a.html" in out
@@ -62,7 +65,7 @@ def test_extract_links_recursive(crawl_server, capsys):
 
 def test_extract_links_recursive_only_spiders_within_parent(crawl_server, capsys):
     # a link to a page in a sibling directory is downloaded but not followed
-    lb(["extract-links", "-R", f"{crawl_server}sub/b.html", "--path-exclude", "*/tag/*"])
+    lb(['links', 'extract', "-R", f"{crawl_server}sub/b.html", "--path-exclude", "*/tag/*"])
 
     out = set(capsys.readouterr().out.split())
     assert f"{crawl_server}a.html" in out  # yielded (downloaded) from sub/b.html
@@ -71,7 +74,7 @@ def test_extract_links_recursive_only_spiders_within_parent(crawl_server, capsys
 
 
 def test_extract_links_not_recursive_is_single_page(crawl_server, capsys):
-    lb(["extract-links", crawl_server])
+    lb(['links', 'extract', crawl_server])
 
     out = set(capsys.readouterr().out.split())
     assert f"{crawl_server}a.html" in out
@@ -79,7 +82,7 @@ def test_extract_links_not_recursive_is_single_page(crawl_server, capsys):
 
 
 def test_extract_links_glob_include(crawl_server, capsys):
-    lb(["extract-links", crawl_server, "--path-include", "*/a.html"])
+    lb(['links', 'extract', crawl_server, "--path-include", "*/a.html"])
 
     out = capsys.readouterr().out.split()
     assert out == [f"{crawl_server}a.html"]
@@ -139,7 +142,7 @@ def test_extract_links_webcache(monkeypatch, capsys):
 
     monkeypatch.setattr(web, "cdx_toolkit", SimpleNamespace(CDXFetcher=FakeFetcher))
 
-    lb(["extract-links", "--webcache", "https://example.com/docs/page.html"])
+    lb(['links', 'extract', "--webcache", "https://example.com/docs/page.html"])
 
     out = capsys.readouterr().out.split()
     assert captured["source"] == "ia"
@@ -160,7 +163,7 @@ def test_extract_links_webcache_cc_source(monkeypatch, capsys):
 
     monkeypatch.setattr(web, "cdx_toolkit", SimpleNamespace(CDXFetcher=FakeFetcher))
 
-    lb(["extract-links", "--webcache", "--webcache-source", "cc", "https://example.com/docs/page.html"])
+    lb(['links', 'extract', "--webcache", "--webcache-source", "cc", "https://example.com/docs/page.html"])
 
     out = capsys.readouterr().out.split()
     assert out == ["https://example.com/docs/a.html"]
@@ -180,7 +183,7 @@ def test_extract_links_webcache_time_range(monkeypatch, capsys):
 
     monkeypatch.setattr(web, "cdx_toolkit", SimpleNamespace(CDXFetcher=FakeFetcher))
 
-    lb(["extract-links", "--webcache", "--webcache-from", "2020", "--webcache-to", "2021", "https://example.com/docs/page.html"])
+    lb(['links', 'extract', "--webcache", "--webcache-from", "2020", "--webcache-to", "2021", "https://example.com/docs/page.html"])
 
     out = capsys.readouterr().out.split()
     assert captured["from_ts"] == "2020"
@@ -217,7 +220,7 @@ def test_extract_links_webcache_recursive(monkeypatch, capsys):
     monkeypatch.setattr(web, "cdx_toolkit", SimpleNamespace(CDXFetcher=FakeFetcher))
     monkeypatch.setattr(extract_links, "get_inner_urls", fake_get_inner_urls)
 
-    lb(["extract-links", "--webcache", "--recursive", seed])
+    lb(['links', 'extract', "--webcache", "--recursive", seed])
 
     out = set(capsys.readouterr().out.split())
     assert wayback_snapshot("2020", seed) in out

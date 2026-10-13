@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from library import usage
 from library.folders import big_dirs
 from library.text import cluster_sort
 from library.utils import (
@@ -17,9 +16,52 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+USAGE = {
+    'similar_folders': """library folder similar (--filter-names | --filter-counts | --filter-sizes | --filter-durations) PATH ...
+
+    Find similar folders based on foldernames, similar size, and similar number of files
+
+        library folder similar --filter-names --filter-counts --filter-sizes ~/d/
+
+        group /home/xk/d/dump/datasets/*vector          total_size    median_size      files
+        ----------------------------------------------  ------------  -------------  -------
+        /home/xk/d/dump/datasets/vector/output/         1.8 GiB       89.5 KiB          1980
+        /home/xk/d/dump/datasets/vector/output2/        1.8 GiB       89.5 KiB          1979
+
+    Find similar folders based on ONLY foldernames, using the full path
+
+        library folder similar --filter-names --full-path ~/d/
+
+    Find similar folders based on ONLY number of files
+
+        library folder similar --filter-counts ~/d/
+
+    Find similar folders based on ONLY median size
+
+        library folder similar --filter-sizes ~/d/
+
+    Find similar folders based on ONLY total size
+
+        library folder similar --filter-sizes --total-size ~/d/
+
+    Read paths from dbs
+
+        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -v
+
+    Print only paths
+
+        library folder similar ~/d/ -pf
+        /home/xk/d/dump/datasets/vector/output/
+        /home/xk/d/dump/datasets/vector/output2/
+
+    How I use it
+        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -FS=+8G --filter-names --filter-counts --filter-durations
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.similar_folders)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['similar_folders'])
     arggroups.files(parser, no_db=True)
     arggroups.group_folders(parser)
     arggroups.text_filtering(parser)
@@ -209,7 +251,7 @@ def similar_folders():
         if args.only_duplicates:
             media = media[1:]
 
-        if "f" in args.print:
+        if "f" in arggroups.get_compact_print_args(args):
             for d in media:
                 printing.pipe_print(d["path"])
         else:

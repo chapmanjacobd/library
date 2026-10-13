@@ -56,7 +56,7 @@ def test_merge(assert_unchanged, src_type, dest_type, temp_file_tree):
     dest_before = read_relative_file_tree_dict(dest, inodes=False)
     dest_before = objects.replace_key_in_dict(dest_before, path_utils.basename(dest), "dest")
 
-    cmd = ["mergerfs-cp"]
+    cmd = ["folder", "copy", "mergerfs"]
     cmd += ["--file-over-file", "delete-dest"]
     if src_type == "folder_bsd":
         cmd += ["--bsd"]
@@ -92,7 +92,7 @@ def test_dupe_replace(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     target_inodes = read_relative_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp", "--parent", src1, target])
+    lb(['folder', 'copy', 'mergerfs', "--parent", src1, target])
 
     assert read_relative_file_tree_dict(src1, inodes=False) == src1_inodes
     assert read_relative_file_tree_dict(target, inodes=False) == target_inodes | {Path(src1).name: src1_inodes}
@@ -104,7 +104,7 @@ def test_file_replace(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     target_inodes = read_relative_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp", "--file-over-file", "delete-dest", os.path.join(src1, "file4.txt"), target])
+    lb(['folder', 'copy', 'mergerfs', "--file-over-file", "delete-dest", os.path.join(src1, "file4.txt"), target])
 
     assert read_relative_file_tree_dict(src1, inodes=False) == src1_inodes
     assert read_relative_file_tree_dict(target, inodes=False) == target_inodes | src1_inodes
@@ -118,7 +118,9 @@ def test_file_replace_file(temp_file_tree):
     target_inodes = read_relative_file_tree_dict(target, inodes=False)
     lb(
         [
-            "mergerfs-cp",
+            "folder",
+            "copy",
+            "mergerfs",
             "--file-over-file",
             "delete-dest",
             os.path.join(src1, "file4.txt"),
@@ -136,7 +138,7 @@ def test_dupe_replace_tree(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     dest_inodes = read_relative_file_tree_dict(dest, inodes=False)
-    lb(["mergerfs-cp", "--file-over-file", "delete-dest", src1 + os.sep, dest])
+    lb(['folder', 'copy', 'mergerfs', "--file-over-file", "delete-dest", src1 + os.sep, dest])
 
     assert read_relative_file_tree_dict(src1, inodes=False) == src1_inodes
     assert read_relative_file_tree_dict(dest, inodes=False) == dest_inodes | src1_inodes
@@ -148,7 +150,7 @@ def test_folder_conflict_replace(temp_file_tree):
 
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
     dest_inodes = read_relative_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp", src1 + os.sep, target])
+    lb(['folder', 'copy', 'mergerfs', src1 + os.sep, target])
 
     assert read_relative_file_tree_dict(src1, inodes=False) == src1_inodes
     assert read_relative_file_tree_dict(target, inodes=False) == {"file1": {"file1_1": "4", "file1": "5"}}

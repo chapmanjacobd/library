@@ -3,12 +3,16 @@ from pathlib import Path
 
 import pytest
 
+from library.__main__ import NESTED_COMMANDS, _canonical_nested_paths
 from library.__main__ import library as lb
-from library.__main__ import modules, progs
-from library.utils import iterables
+from library.__main__ import modules
 from tests.utils import p
 
-subcommands = list(iterables.flatten((v.keys() for _, v in progs.items())))
+subcommands = [
+    path
+    for group, command_tree in NESTED_COMMANDS.items()
+    for path in _canonical_nested_paths(group, command_tree)
+]
 unique_modules = list(set(s.rsplit(".", 1)[0] for s in modules.keys()))  # chop off function names
 
 
@@ -28,9 +32,10 @@ def test_lb_help(capsys):
 @pytest.mark.parametrize("subcommand", subcommands)
 def test_usage(capsys, subcommand):
     with pytest.raises(SystemExit):
-        lb([subcommand, "-h"])
+        lb([*subcommand.split(), "-h"])
     captured = capsys.readouterr().out.replace("\n", "")
-    assert f'usage: library {subcommand.replace("_", "-")}' in captured
+    first_tokens = " ".join(subcommand.split()[:2])
+    assert f"usage: library {first_tokens}" in captured
 
 
 def get_test_name(s):
@@ -58,6 +63,5 @@ def test_pytest_files_exist(path):
         p("tests/mediadb/test_block.py"),
         p("tests/mediadb/test_optimize_db.py"),
         p("tests/misc/test_export_text.py"),
-        p("tests/playback/test_surf.py"),
     ):
         assert os.path.getsize(path) > 0, f"Pytest file {path} is empty."

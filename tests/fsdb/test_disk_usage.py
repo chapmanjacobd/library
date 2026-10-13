@@ -1,9 +1,9 @@
 import json
+import sys
 from types import SimpleNamespace
 
 import pytest
 
-from library.__main__ import library as lb
 from library.fsdb import disk_usage, folder_stats
 from library.utils import consts
 from tests.utils import connect_db_args, v_db
@@ -17,18 +17,20 @@ elif consts.IS_MAC:
     platform = "mac"
 
 
-def test_disk_usage(assert_unchanged, capsys):
-    lb(["du", v_db, "-td", "--parents", "--depth=2", "--to-json"])
+def test_disk_usage(assert_unchanged, capsys, monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["disk-usage", v_db, "-td", "--parents", "--depth=2", "--to-json"])
+    disk_usage.disk_usage()
     captured = capsys.readouterr().out
     assert_unchanged(
         [json.loads(line) for line in captured.strip().split("\n")], basename=f"test_disk_usage.{platform}"
     )
 
 
-def test_disk_usage_min_depth(capsys):
+def test_disk_usage_min_depth(capsys, monkeypatch):
     from pathlib import Path
 
-    lb(["du", v_db, "-td", "--parents", "--min-depth=3", "--to-json"])
+    monkeypatch.setattr(sys, "argv", ["disk-usage", v_db, "-td", "--parents", "--min-depth=3", "--to-json"])
+    disk_usage.disk_usage()
     paths = {json.loads(line)["path"] for line in capsys.readouterr().out.strip().split("\n")}
 
     cwd = Path.cwd()

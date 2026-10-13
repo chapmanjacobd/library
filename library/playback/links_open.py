@@ -1,15 +1,51 @@
 import argparse
 from collections import Counter
 
-from library import usage
 from library.mediadb import db_history, db_media
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, consts, devices, processes, sqlgroups, web
 from library.utils.path_utils import domain_from_url
 
+USAGE = {
+    'links_open': """library links open DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
+
+    Open links from a links db
+
+        wget https://github.com/chapmanjacobd/library-examples/raw/main/music.korea.ln.db
+        library links open music.korea.ln.db
+
+    Only open links once
+
+        library links open ln.db -w 'time_modified=0'
+
+    Print a preview instead of opening tabs
+
+        library links open ln.db -p
+        library links open ln.db --cols time_modified -p
+
+    Delete rows
+
+        Make sure you have the right search query
+        library links open ln.db "query" -p -L inf
+        library links open ln.db "query" -pa  # view total
+
+        library links open ln.db "query" -pd  # mark as deleted
+
+    Custom search engine
+
+        library links open ln.db --title --prefix 'https://duckduckgo.com/?q='
+
+    Skip local media
+
+        library links open dl.db --online
+        library links open dl.db -w 'path like "http%"'  # equivalent
+
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.links_open)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['links_open'])
     arggroups.sql_fs(parser)
 
     parser.add_argument("--path", action="store_true")
@@ -88,7 +124,7 @@ def links_open() -> None:
         [
             args.cluster_sort,
             args.regex_sort,
-            "a" in args.print,
+            "a" in arggroups.get_compact_print_args(args),
         ]
     )
 
@@ -117,7 +153,7 @@ def links_open() -> None:
                 counts[domain] += 1
         media = new_media
 
-    if not "a" in args.print:
+    if "a" not in arggroups.get_compact_print_args(args):
         if is_whole_db_query:
             media = media[: args.limit]
         media = make_souffle(args, media)

@@ -73,7 +73,7 @@ def db1(temp_db):
 
 def test_dedupe_no_bk(db1):
     with pytest.raises(argparse.ArgumentError):
-        lb(["dedupe-media", db1])
+        lb(['database', 'dedupe', 'media', db1])
 
 
 flags = [
@@ -87,7 +87,7 @@ flags = [
 
 @pytest.mark.parametrize(("flags", "deleted"), flags)
 def test_dedupe(db1, flags, deleted):
-    lb(["dedupe-media", db1, *flags.split(" ")])
+    lb(['database', 'dedupe', 'media', db1, *flags.split(" ")])
 
     args = connect_db_args(db1)
     media = list(d["path"] for d in args.db.query("SELECT path FROM media WHERE time_deleted>0"))

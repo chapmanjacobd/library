@@ -1,7 +1,6 @@
 import argparse, os, shlex, subprocess
 from pathlib import Path
 
-from library import usage
 from library.data import ffmpeg_errors
 from library.mediafiles import process_image
 from library.utils import arggroups, argparse_utils, consts, devices, nums, path_utils, processes, web
@@ -10,9 +9,53 @@ from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 from library.utils.web import WebPath
 
+USAGE = {
+    'process_ffmpeg': """library shrink video PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
+
+    Resize videos to max 1440x960px AV1 and/or Opus to save space
+
+    Convert audio to Opus. Optionally split up long tracks into multiple files.
+
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process --audio
+
+    Use --always-split to _always_ split files if silence is detected
+
+        library shrink audio --always-split audiobook.m4a
+
+    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
+
+        library shrink audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+    Calculate how much space you could save via process-ffmpeg by running something like this:
+
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/video.db "select sum(size)-sum(duration*100000) from media where time_deleted=0 and video_count>=1 and video_codecs != 'av1' and size/duration > 100000")
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/audio.db "select sum(size)-sum(duration*18000) from media where time_deleted=0 and video_count=0 and audio_count>=1 and audio_codecs != 'opus' and size/duration > 18000")
+""",
+}
+
+_PROCESS_AUDIO_USAGE = """library shrink audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
+
+    Convert audio to Opus to save space
+
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library shrink audio
+
+    Use --always-split to _always_ split files if silence is detected
+
+        library shrink audio --always-split audiobook.m4a
+
+    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
+
+        library shrink audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+    Calculate how much space you could save:
+
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/audio.db "select sum(size)-sum(duration*18000) from media where time_deleted=0 and video_count=0 and audio_count>=1 and audio_codecs != 'opus' and size/duration > 18000")
+"""
+
 
 def parse_args(defaults_override=None) -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.process_ffmpeg)
+    audio_only = bool((defaults_override or {}).get("audio_only"))
+    parser = argparse_utils.ArgumentParser(usage=_PROCESS_AUDIO_USAGE if audio_only else USAGE['process_ffmpeg'])
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-dest")
     arggroups.process_ffmpeg(parser)

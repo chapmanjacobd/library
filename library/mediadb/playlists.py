@@ -1,14 +1,45 @@
 import argparse, os, sqlite3
 
-from library import usage
 from library.mediadb import db_playlists
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, db_utils
 from library.utils.sqlgroups import construct_playlists_query
 
+USAGE = {
+    'playlists': """library database playlists DATABASE
+
+    List of Playlists
+
+        library database playlists
+
+    Search playlists
+
+        library database playlists audio.db badfinger
+        path                                                        extractor_key    title                             count
+        ----------------------------------------------------------  ---------------  ------------------------------  -------
+        https://music.youtube.com/channel/UCyJzUJ95hXeBVfO8zOA0GZQ  ydl_Youtube      Uploads from Badfinger - Topic      226
+
+    Aggregate Report of Videos in each Playlist
+
+        library database playlists -p a
+
+
+    Print only playlist urls
+
+        Useful for piping to other utilities like xargs or GNU Parallel.
+        library database playlists -p f
+        https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
+
+    Remove a playlist/channel and all linked videos
+
+        library database playlists --delete-rows https://vimeo.com/canal180
+
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.playlists)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['playlists'])
 
     arggroups.sql_fs(parser)
 
@@ -91,7 +122,7 @@ def playlists() -> None:
         order by count, p.path
         """
 
-    if "a" in args.print:
+    if "a" in arggroups.get_compact_print_args(args):
         query = f"""
         select
             'Aggregate of playlists' path

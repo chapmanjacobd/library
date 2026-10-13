@@ -1,11 +1,34 @@
-from library import usage
 from library.folders.similar_folders import cluster_folders, map_and_name
 from library.utils import arggroups, argparse_utils, file_utils, filter_engine, nums, printing, shell_utils, strings
 from library.utils.log_utils import log
 
+USAGE = {
+    'similar_files': """library file similar (--filter-names | --filter-sizes | --filter-durations) PATH ...
+
+    Find similar files using filenames and size
+
+        library file similar --filter-names --filter-sizes ~/d/
+
+    Find similar files based on ONLY foldernames, using the full path
+
+        library file similar --filter-names --full-path ~/d/
+
+    Find similar files based on ONLY size
+
+        library file similar --filter-sizes ~/d/
+
+    Read paths from dbs
+
+        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library file similar --from-json -v
+
+    How I use it
+        library file similar --filter-names --filter-durations --estimated-duplicates 3 .
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.similar_files)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['similar_files'])
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
     arggroups.files(parser, no_db=True)
@@ -140,7 +163,7 @@ def similar_files():
         if args.only_duplicates:
             media = media[1:]
 
-        if "f" in args.print:
+        if "f" in arggroups.get_compact_print_args(args):
             for d in media:
                 printing.pipe_print(d["path"])
         else:

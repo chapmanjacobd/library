@@ -6,15 +6,47 @@ import natsort
 import regex as re
 from natsort import ns
 
-from library import usage
 from library.tablefiles import mcda
 from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, printing, processes, strings
 from library.utils.log_utils import log
 from library.utils.objects import Reverser
 
+USAGE = {
+    'regex_sort': r"""library text sort regex [input_path | stdin] [output_path | stdout]
+
+    regex-sort is effectively a text-processing pipeline with the following steps:
+
+    line_splitter -- split lines into "words" (--regex)
+    word_sorter -- sort words within each line (--word-sort)
+    line_sorter -- sort lines (--line-sort)
+
+    Examples:
+
+        If your data has a lot of repeating rows, sort by dup count:
+            --line-sort dup,natsort
+
+        You can use any matching regex to produce sorting words:
+            --regex \b\w\w+\b  # word boundaries (default)
+            --regex \b\d+\b    # digits
+            --regex '.{3}'     # char counts
+
+            --regex '.{3}' --line-sort dup,natsort -v
+            (0, ((' Ja',), ('Sva',), ('aye',), ('lba',), ('n M',), ('rd ',)))  # Svalbard and Jan Mayen
+            (0, ((' La',), ('Sri',), ('nka',)))  # Sri Lanka
+            (0, ((' Ma',), ('San',), ('rin',)))  # San Marino
+            (0, ((' Ri',), ('Pue',), ('rto',)))  # Puerto Rico
+            (0, (('And',), ('orr',)))  # Andorra
+            (0, (('Arm',), ('eni',)))  # Armenia
+
+        You can use 'mcda' as a strategy for ranking multiple sort score criteria:
+            --word-sorts '-dup, mcda, count, -len, -lastindex, alpha' \\  # count, -len, -lastindex, alpha are weighted by entropy
+            --line-sorts '-allunique, alpha, mcda, alldup, dupmode, line'  # alldup, dupmode, line are weighted by entropy
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.regex_sort)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['regex_sort'])
     arggroups.text_filtering(parser)
     arggroups.regex_sort(parser)
     arggroups.debug(parser)

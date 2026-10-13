@@ -1,12 +1,25 @@
 from pathlib import Path
 
-from library import usage
 from library.utils import arg_utils, arggroups, argparse_utils, db_utils
 from library.utils.log_utils import log
 
+USAGE = {
+    'row_add': """library database add row DATABASE [--table-name TABLE_NAME] --COLUMN-NAME VALUE
+
+    Add a row to sqlite
+
+        library database add row t.db --test_b 1 --test-a 2
+
+        ### media (1 rows)
+        |   test_b |   test_a |
+        |----------|----------|
+        |        1 |        2 |
+""",
+}
+
 
 def parse_utils():
-    parser = argparse_utils.ArgumentParser(description="Add arbitrary rows to a SQLite db", usage=usage.row_add)
+    parser = argparse_utils.ArgumentParser(description="Add arbitrary rows to a SQLite db", usage=USAGE['row_add'])
     parser.add_argument("--table-name", "--table", "-t", default="media")
     parser.add_argument(
         "--verbose",

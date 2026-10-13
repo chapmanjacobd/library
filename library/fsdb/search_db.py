@@ -1,11 +1,35 @@
 import argparse, json
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, filter_engine
+
+USAGE = {
+    'search_db': """library database search DATABASE TABLE SEARCH ... [--delete-rows]
+
+    Search all columns in a SQLite table. If the table does not exist, uses the table which startswith (if only one match)
+
+        library database search tests/data/video.db media test.gif --to-json | jq
+        {
+            "id": 4,
+            "playlists_id": 1,
+            "size": 2145,
+            "time_created": 1713852795,
+            "time_modified": 1713852795,
+            "time_downloaded": 1723276940,
+            "video_count": 1,
+            "width": 82,
+            "height": 82,
+            "subtitle_count": 4,
+            "path": "/home/xk/github/xk/lb/tests/data/test.gif",
+            "type": "image/gif",
+            "video_codecs": "gif",
+            "fps": 10.0
+        }
+""",
+}
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.search_db)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['search_db'])
     arggroups.sql_fs(parser)
     arggroups.debug(parser)
 

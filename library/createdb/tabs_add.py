@@ -2,15 +2,46 @@ import argparse, sys
 from datetime import datetime, timedelta, timezone
 from random import randint
 
-from library import usage
 from library.mediadb import db_history, db_media
 from library.utils import arggroups, argparse_utils, consts, iterables
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+USAGE = {
+    'tabs_add': r"""library database add tabs [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URL ...
+
+    Adding one URL
+
+        library database add tabs -f daily tabs.db https://wiby.me/surprise/
+
+        Depending on your shell you may need to escape the URL (add quotes)
+
+        If you use Fish shell know that you can enable features to make pasting easier
+            set -U fish_features stderr-nocaret qmark-noglob regex-easyesc ampersand-nobg-in-token
+
+        Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with long args
+            echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
+
+    Importing from a line-delimitated file
+
+        library database add tabs -f yearly -c reddit tabs.db (cat ~/mc/yearly-subreddit.cron)
+
+""",
+    'tabs_shuffle': """library tabs shuffle DATABASE
+
+    Moves each tab to a random day-of-the-week by default
+
+    Shuffle monthly tabs, etc., like so:
+
+        library tabs shuffle tabs.db -d  31 -f monthly
+        library tabs shuffle tabs.db -d  90 -f quarterly
+        library tabs shuffle tabs.db -d 365 -f yearly
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.tabs_add)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['tabs_add'])
     arggroups.extractor(parser)
     arggroups.frequency(parser)
 
@@ -104,7 +135,7 @@ def tabs_add(args=None) -> None:
 
 
 def tabs_shuffle() -> None:
-    parser = argparse_utils.ArgumentParser(usage=usage.tabs_shuffle)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['tabs_shuffle'])
     parser.add_argument("--days", "-d", type=int, default=7)
     parser.add_argument(
         "--frequency",

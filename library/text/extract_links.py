@@ -2,7 +2,6 @@ import json
 from collections import deque
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
-from library import usage
 from library.data.http_errors import HTTPStatus
 from library.utils import (
     arggroups,
@@ -19,18 +18,74 @@ from library.utils import (
 from library.utils.log_utils import log
 import pathlib
 
+USAGE = {
+    'extract_links': """library links extract PATH ... [--case-sensitive] [--scroll] [--local-html] [--file FILE]
 
-def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.extract_links)
-    arggroups.extractor(parser)
+    Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
+
+        library links extract https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
+        https://en.wikipedia.org/wiki/Omelette
+
+    Mirror a site recursively. Only links within the same domain and parent directory as the given
+    path are followed; links pointing elsewhere are downloaded but not followed. Includes/excludes
+    accept globs, so you can prune whole subtrees while crawling:
+
+        library links download --recursive https://example.com/docs/
+        library links download -R https://example.com/docs/ --path-exclude '*/tag/*' '*/tags/*'
+
+    Extract links from a web archive CDX index instead of crawling live pages. Internet Archive
+    Wayback snapshots are emitted by default. Wayback URLs are collapsed to their original
+    archived URL while crawling: sibling pages that only exist under a different timestamp are
+    still followed, but multiple captures of the same page are collapsed so only one copy of
+    each page is downloaded. Use --webcache-from/--webcache-to to target a time period:
+
+        library links extract --webcache https://example.com/docs/
+        library links download --webcache --recursive https://example.com/docs/
+        library links extract --webcache --webcache-source cc https://example.com/docs/
+        library links extract --webcache --webcache-from 2020 --webcache-to 2021 https://example.com/docs/
+
+    Common tracking and analytics URLs, including Google Tag Manager and Google Analytics,
+    plus /tag/, /tags/, and ?tag= URLs, are excluded by default. Use --path-exclude to
+    replace the default exclusions when needed.
+
+    Read from local clipboard and filter out links based on nearby plain text
+
+        library links extract --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
+        # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
+
+    Use --selenium for sites require JavaScript
+
+        library links extract --selenium https://archive.org/search?query=subject%3A%22Archive.org+Census%22 --path-include census
+
+        Run with `-vv` to see the browser that normally loads in the background
+""",
+    'links_download': """library links download PATH ... [optional args]
+
+    Extract links from the given pages and download them.
+
+    Follow same-domain links recursively, or read a web archive CDX index, with the same
+    options as `library links extract`:
+
+        library links download --recursive https://example.com/docs/
+        library links download --webcache https://example.com/docs/
+""",
+    'direct_download': """library download URL ... [optional args]
+
+    Download the given URLs directly without extracting links from pages.
+""",
+}
+
+
+def parse_args(usage=None, *, download: bool = False):
+    parser = argparse_utils.ArgumentParser(usage=usage or USAGE['extract_links'])
+    arggroups.extractor(parser, no_extract=False)
     arggroups.requests(parser)
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
     arggroups.spider(parser)
 
-    parser.add_argument("--download", action="store_true", help="Download filtered links")
     arggroups.download(parser)
-    parser.set_defaults(profile=consts.DBType.filesystem)
+    parser.set_defaults(profile=consts.DBType.filesystem, download=download)
 
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)
@@ -390,20 +445,24 @@ def print_or_download(args, d):
             printing.pipe_print(url)
 
 
-def extract_links() -> None:
-    args = parse_args()
+def _download_paths(args) -> None:
+    for url in shell_utils.gen_paths(args):
+        if args.url_encode:
+            url = web.url_encode(url).strip()
+        if args.download:
+            try:
+                web.download_link(args, url)
+            except RuntimeError as excinfo:
+                log.error("[%s]: %s", url, excinfo)
+        else:
+            printing.pipe_print(url)
+
+
+def extract_links(*, download: bool = False) -> None:
+    args = parse_args(USAGE['links_download'] if download else USAGE['extract_links'], download=download)
 
     if args.no_extract:
-        for url in shell_utils.gen_paths(args):
-            if args.url_encode:
-                url = web.url_encode(url).strip()
-            if args.download:
-                try:
-                    web.download_link(args, url)
-                except RuntimeError as excinfo:
-                    log.error("[%s]: %s", url, excinfo)
-            else:
-                printing.pipe_print(url)
+        _download_paths(args)
         return
 
     if args.selenium:
@@ -420,3 +479,13 @@ def extract_links() -> None:
     finally:
         if args.selenium:
             web.quit_selenium(args)
+
+
+def links_download() -> None:
+    extract_links(download=True)
+
+
+def direct_download() -> None:
+    args = parse_args(USAGE['direct_download'], download=True)
+    args.no_extract = True
+    _download_paths(args)

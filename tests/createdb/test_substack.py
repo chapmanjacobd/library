@@ -4,7 +4,7 @@ from tests.utils import connect_db_args
 
 def test_substack_add(temp_db):
     db1 = temp_db()
-    lb(["substack", db1, "https://www.astralcodexten.com/p/contra-kriss-on-nerds-and-hipsters"])
+    lb(['database', 'add', 'substack', db1, "https://www.astralcodexten.com/p/contra-kriss-on-nerds-and-hipsters"])
 
     args = connect_db_args(db1)
     media = list(args.db.query("SELECT * FROM media"))

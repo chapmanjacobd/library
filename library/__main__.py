@@ -1,9 +1,9 @@
-import argparse, importlib, os, sys, textwrap
+import argparse, difflib, importlib, os, sys, textwrap
 
 from tabulate import tabulate
 
 from library._version import __version__
-from library.utils import argparse_utils, iterables
+from library.utils import argparse_utils
 from library.utils.log_utils import log
 
 progs = {
@@ -26,11 +26,25 @@ progs = {
         "row_add": "Add arbitrary data to SQLite",
         "computers_add": "Add computer info to SQLite",
         "torrents_add": "Add torrent info to SQLite",
+        "cp-mergerfs": "folder copy mergerfs",
+        "mcp": "folder copy mergerfs",
+        "large-folders": "folder large",
+        "mu": "filesystem stats mounts",
+        "mount-usage": "filesystem stats mounts",
+        "df": "filesystem free mounts",
+        "free": "filesystem free mounts",
+        "unarchive": "archive extract",
+        "unar": "archive extract",
+        "dedupe-czkawka": "file dedupe czkawka",
+        "h": "help search",
+        "help": "help search",
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
         "regex_sort": "Sort text by regex split and corpus comparison",
         "extract_links": "Extract inner links from lists of web links",
+        "links_download": "Download links from lists of web links",
+        "direct_download": "Download URLs directly",
         "extract_text": "Extract human text from lists of web links",
         "markdown_links": "Extract titles from lists of web links",
         "expand_links": "Expand search urls with query text",
@@ -55,7 +69,6 @@ progs = {
         "christen": "Clean file paths",
         "sample_hash": "Calculate a hash based on small file segments",
         "sample_compare": "Compare files using sample-hash and other shortcuts",
-        "filesystem": "Find files by mimetype and size",
         "similar_files": "Find similar files based on filename and size",
     },
     "Tabular data subcommands": {
@@ -84,6 +97,7 @@ progs = {
         "allocate_torrents": "Use computers.db and torrents.db to allocate torrents",
     },
     "Filesystem Database subcommands": {
+        "filesystem": "Find files by mimetype and size",
         "disk_usage": "Show disk usage",
         "search_db": "Search a SQLite database",
     },
@@ -91,6 +105,7 @@ progs = {
         "block": "Block a channel",
         "playlists": "List stored playlists",
         "download": "Download media",
+        "download_links": "Download links found in pages",
         "download_status": "Show download status",
         "redownload": "Re-download deleted/lost media",
         "history": "Show and manage playback history",
@@ -108,7 +123,6 @@ progs = {
         "pause": "Pause all playback",
         "tabs_open": "Open your tabs for the day",
         "links_open": "Open links from link dbs",
-        "surf": "Auto-load browser tabs in a streaming way (stdin)",
         "torrents_info": "List torrents (qBittorrent-nox)",
         "torrents_remaining": "Overview of torrents by drive (qBittorrent-nox)",
     },
@@ -138,20 +152,39 @@ progs = {
 
 
 def usage() -> str:
-    subcommands_list = []
-    for category, category_progs in progs.items():
-        subcommands_list.append(f"\n    {category}:\n")
-        category_progs_text = tabulate(
-            [(key.replace("_", "-"), value) for key, value in category_progs.items()],
-            tablefmt="rounded_grid",
-            showindex=False,
-        )
-        subcommands_list.append(textwrap.indent(category_progs_text, "    "))
-        subcommands_list.append("\n")
+    target_paths = _canonical_target_paths()
+    grouped_commands = []
+    seen = set()
 
-    subcommands = list(iterables.flatten((v.keys() for k, v in progs.items())))
-    return f"""library (v{__version__}; {len(subcommands)} subcommands)
-{''.join(subcommands_list)}"""
+    for category, category_progs in progs.items():
+        commands = []
+        for command, description in category_progs.items():
+            target = _resolve_target(command)
+            path = target_paths.get(target) if target else None
+            if path is None or path in seen:
+                continue
+            seen.add(path)
+            commands.append((path, description))
+        if commands:
+            grouped_commands.append((category, commands))
+
+    other_commands = []
+    for path in _canonical_nested_paths_for_all_groups():
+        if path in seen:
+            continue
+        other_commands.append((path, path.removeprefix(f"{path.split()[0]} ")))
+    if other_commands:
+        grouped_commands.append(("Other subcommands", other_commands))
+
+    tables = []
+    for category, commands in grouped_commands:
+        tables.append(f"\n    {category}:\n")
+        table = tabulate(commands, tablefmt="rounded_grid", showindex=False)
+        tables.append(textwrap.indent(table, "    "))
+        tables.append("\n")
+
+    count = len(_canonical_nested_paths_for_all_groups())
+    return f"library (v{__version__}; {count} subcommands)\n{''.join(tables)}"
 
 
 def print_help(parser) -> None:
@@ -206,7 +239,7 @@ modules = {
     "library.folders.mount_stats.disk_free": ["df", "free"],
     "library.folders.mount_stats.mount_stats": ["mu", "mount-usage"],
     "library.folders.big_dirs.big_dirs": ["large-folders"],
-    "library.fsdb.filesystem.filesystem": ["fs", "files", "files-info"],
+    "library.fsdb.filesystem.filesystem": ["files", "files-info"],
     "library.fsdb.disk_usage.disk_usage": ["du", "usage"],
     "library.fsdb.disk_usage.extensions": ["exts"],
     "library.fsdb.disk_usage.mimetypes": ["types"],
@@ -214,6 +247,7 @@ modules = {
     "library.fsdb.search_db.search_db": ["s", "sdb", "search-dbs"],
     "library.mediadb.block.block": [],
     "library.mediadb.download.download": ["dl"],
+    "library.mediadb.download.download_links": [],
     "library.mediadb.download_status.download_status": ["ds", "dl-status"],
     "library.mediadb.history.history": ["hi", "log"],
     "library.mediadb.history_add.history_add": ["add-history"],
@@ -223,7 +257,7 @@ modules = {
     "library.mediadb.redownload.redownload": ["re-dl", "re-download"],
     "library.mediadb.search.search": ["sc", "search-captions"],
     "library.mediafiles.media_check.media_check": ["check_media"],
-    "library.mediafiles.process_media.process_media": ["shrink"],
+    "library.mediafiles.process_media.process_media": [],
     "library.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video", "video-process"],
     "library.mediafiles.process_ffmpeg.process_audio": ["audio-process"],
     "library.mediafiles.process_image.process_image": ["image-process"],
@@ -240,29 +274,30 @@ modules = {
     "library.multidb.merge_dbs.merge_dbs": ["merge-db"],
     "library.multidb.allocate_torrents.allocate_torrents": [],
     "library.playback.links_open.links_open": ["open-links"],
-    "library.playback.play_actions.media": ["db", "open"],
+    "library.playback.play_actions.media": ["open"],
     "library.playback.play_actions.listen": ["lt", "tubelisten", "tl"],
     "library.playback.play_actions.read": ["books", "docs"],
     "library.playback.play_actions.view": ["images", "see", "look"],
     "library.playback.play_actions.watch": ["wt", "tubewatch", "tw", "entries"],
     "library.playback.playback_control.playback_next": ["next"],
     "library.playback.playback_control.playback_now": ["now"],
-    "library.playback.playback_control.playback_pause": ["pause", "play"],
+    "library.playback.playback_control.playback_pause": ["pause"],
     "library.playback.playback_control.playback_seek": ["ffwd", "rewind", "seek"],  # TODO: make rewind negative...
     "library.playback.playback_control.playback_stop": ["stop"],
-    "library.playback.surf.streaming_tab_loader": ["surf"],
-    "library.playback.tabs_open.tabs_open": ["tb", "tabs", "open_tabs"],
-    "library.playback.torrents_info.torrents_info": ["torrent-info", "torrents", "torrent"],
+    "library.playback.tabs_open.tabs_open": ["tb", "open_tabs"],
+    "library.playback.torrents_info.torrents_info": ["torrent-info", "torrents"],
     "library.playback.torrents_remaining.torrents_remaining": ["torrent-remaining"],
     "library.tablefiles.eda.eda": ["preview"],
     "library.tablefiles.incremental_diff.incremental_diff": ["diff"],
     "library.tablefiles.columns.columns": [],
-    "library.tablefiles.markdown_tables.markdown_tables": ["tables", "table"],
+    "library.tablefiles.markdown_tables.markdown_tables": ["tables"],
     "library.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "library.tablefiles.plot.plot": ["plots", "chart", "graph"],
     "library.text.cluster_sort.cluster_sort": ["cs"],
     "library.text.regex_sort.regex_sort": ["rs", "resort"],
-    "library.text.extract_links.extract_links": ["links", "links_extract"],
+    "library.text.extract_links.extract_links": ["links_extract"],
+    "library.text.extract_links.links_download": [],
+    "library.text.extract_links.direct_download": [],
     "library.text.extract_text.extract_text": ["text", "text_extract"],
     "library.text.markdown_links.markdown_links": ["markdown-urls"],
     "library.text.expand_links.expand_links": ["search-urls", "search-links"],
@@ -275,6 +310,397 @@ modules = {
 }
 
 
+NESTED_COMMANDS = {
+    "play": {
+        "media": "media",
+        "video": "watch",
+        "audio": "listen",
+        "text": "read",
+        "images": "view",
+    },
+    "playback": {
+        "next": "playback-next",
+        "now": "playback-now",
+        "pause": "playback-pause",
+        "seek": "playback-seek",
+        "stop": "playback-stop",
+    },
+    "database": {
+        "add": {
+            "filesystem": "fs-add",
+            "video": "tube-add",
+            "web": "web-add",
+            "gallery": "gallery-add",
+            "tabs": "tabs-add",
+            "links": "links-add",
+            "tables": "tables-add",
+            "reddit": "reddit-add",
+            "getty": "getty-add",
+            "computers": "computers-add",
+            "torrents": "torrents-add",
+            "row": "row-add",
+            "site": "site-add",
+            "substack": "substack",
+            "tildes": "tildes",
+            "hackernews": "hacker-news-add",
+        },
+        "update": {
+            "filesystem": "fs-update",
+            "video": "tube-update",
+            "web": "web-update",
+            "gallery": "gallery-update",
+            "links": "links-update",
+            "reddit": "reddit-update",
+        },
+        "import": {
+            "nicotine": "nicotine-import",
+            "places": "places-import",
+            "pushshift": "pushshift-extract",
+            "mpv-watchlater": "mpv-watchlater",
+        },
+        "enrich": {"reddit-selftext": "reddit-selftext"},
+        "merge": {"_target": "merge-dbs", "online-local": "merge-online-local"},
+        "copy": {"play-counts": "copy-play-counts"},
+        "allocate": {"torrents": "allocate-torrents"},
+        "dedupe": {"_target": "dedupe-db", "media": "dedupe-media"},
+        "search": "search-db",
+        "optimize": "optimize-db",
+        "filesystem": {
+            "list": "filesystem",
+            "usage": {
+                "_target": "disk-usage",
+                "extensions": "extensions",
+                "mimetypes": "mimetypes",
+                "sizes": "sizes",
+            },
+        },
+        "download": {"_target": "download", "links": "download-links", "status": "download-status"},
+        "history": {"_target": "history", "add": "history-add"},
+        "playlists": "playlists",
+        "stats": "stats",
+        "block": "block",
+        "redownload": "redownload",
+    },
+    "shrink": {
+        "media": "process-media",
+        "video": "process-ffmpeg",
+        "audio": "process-audio",
+        "image": "process-image",
+        "text": "process-text",
+    },
+    "captions": "search",
+    "download": "direct-download",
+    "torrent": {
+        "info": "torrents-info",
+        "start": "torrents-start",
+        "remaining": "torrents-remaining",
+        "dump": "torrents-dump",
+    },
+    "links": {
+        "open": "links-open",
+        "extract": "extract-links",
+        "download": "links-download",
+    },
+    "tabs": {
+        "shuffle": "tabs-shuffle",
+        "open": "tabs-open",
+    },
+    "table": {
+        "analyze": "eda",
+        "markdown": "markdown-tables",
+        "columns": "columns",
+        "plot": "plot",
+        "rank": "mcda",
+        "diff": "incremental-diff",
+    },
+    "filesystem": {
+        "stats": {"mounts": "mount-stats"},
+        "free": {"mounts": "disk-free"},
+    },
+    "file": {
+        "hash": "sample-hash",
+        "compare": "sample-compare",
+        "similar": "similar-files",
+        "normalize": "christen",
+        "check": "media-check",
+        "dedupe": {"czkawka": "czkawka-dedupe"},
+    },
+    "folder": {
+        "similar": "similar-folders",
+        "copy": {"mergerfs": "mergerfs-cp"},
+        "scatter": "scatter",
+        "large": "big-dirs",
+        "move": {
+            "list": "mv-list",
+        },
+        "merge": {
+            "move": "merge-mv",
+            "copy": "merge-cp",
+            "relative-move": "relmv",
+            "relative-copy": "relcp",
+        },
+    },
+    "document": {
+        "to-pdf": {"images": "images-to-pdf"},
+        "edit": {"pdf": "pdf-edit"},
+        "export": {"text": "export-text"},
+    },
+    "archive": {
+        "extract": "unardel",
+    },
+    "help": {
+        "search": "search-help",
+    },
+    "text": {
+        "extract": "extract-text",
+        "sort": {"regex": "regex-sort", "cluster": "cluster-sort"},
+        "markdown": {"links": "markdown-links"},
+        "expand": {"links": "expand-links"},
+        "rename-keys": {"json": "json-keys-rename"},
+        "nouns": "nouns",
+        "dates": "dates",
+        "times": "times",
+        "timestamps": "timestamps",
+        "combinations": "combinations",
+    },
+}
+
+NESTED_GROUP_ALIASES = {
+    "db": "database",
+    "doc": "document",
+    "docs": "document",
+    "files": "file",
+}
+
+NESTED_COMMAND_ALIASES = {
+    "fs": "filesystem",
+    "ls": "list",
+}
+
+for _group in NESTED_COMMANDS:
+    _group_alias = _group.removesuffix("s") if _group.endswith("s") else f"{_group}s"
+    NESTED_GROUP_ALIASES.setdefault(_group_alias, _group)
+
+GROUP_HELP_ARG_COUNT = 2
+
+
+def _canonical_nested_paths(group: str, command_tree) -> list[str]:
+    paths = []
+
+    def walk(current, prefix: tuple[str, ...]) -> None:
+        if isinstance(current, str):
+            path = (group, *prefix)
+            paths.append(" ".join(path))
+            return
+
+        if "_target" in current:
+            paths.append(" ".join((group, *prefix)))
+        for command, target in current.items():
+            if command == "_target":
+                continue
+            walk(target, (*prefix, command))
+
+    walk(command_tree, ())
+    return paths
+
+
+def _canonical_target_paths() -> dict[str, str]:
+    target_paths = {}
+
+    for group, command_tree in NESTED_COMMANDS.items():
+        for path in _canonical_nested_paths(group, command_tree):
+            target = _nested_target(path.split())
+            if target is not None:
+                target_paths.setdefault(target[0], path)
+    return target_paths
+
+
+def all_usage() -> dict[str, str]:
+    usages = {}
+    for func in modules:
+        module_name = func.rsplit(".", 1)[0]
+        module = _usage_module(module_name)
+        if module is None:
+            continue
+        for name, text in dict(getattr(module, "USAGE", {})).items():
+            usages.setdefault(name, text)
+    return usages
+
+
+def _module_alias_targets() -> dict[str, str]:
+    targets = {}
+    for module, aliases in modules.items():
+        target = module.rsplit(".", 1)[1].replace("_", "-")
+        for alias in aliases:
+            targets.setdefault(alias, target)
+    return targets
+
+
+def _resolve_target(command: str) -> str | None:
+    target = command.replace("_", "-")
+    if target in _canonical_target_paths():
+        return target
+    aliases = _module_alias_targets()
+    if command in aliases:
+        return aliases[command]
+    if target in aliases:
+        return aliases[target]
+    return None
+
+
+def _target_module(target: str) -> tuple[str, str]:
+    target = _module_alias_targets().get(target, target)
+    for module in modules:
+        module_name, function_name = module.rsplit(".", 1)
+        if function_name.replace("_", "-") == target:
+            return module_name, function_name
+    raise KeyError(target)
+
+
+def _usage_module(module_name: str):
+    try:
+        return importlib.import_module(module_name)
+    except ModuleNotFoundError as exc:
+        log.debug("Skipping usage metadata for %s: missing %s", module_name, exc.name)
+        return None
+
+
+def command_usage(command: str) -> str:
+    command = command.replace("_", "-")
+    target = _module_alias_targets().get(command, command)
+    module_name, function_name = _target_module(target)
+    module = _usage_module(module_name)
+    if module is None:
+        return ""
+
+    usages = dict(getattr(module, "USAGE", {}))
+    for name in (command.replace("-", "_"), function_name, target.replace("-", "_")):
+        if name in usages:
+            return usages[name]
+    return ""
+
+
+def _invoke_target(target: str):
+    module_name, function_name = _target_module(target)
+    module = importlib.import_module(module_name)
+    return getattr(module, function_name)()
+
+
+def _canonical_nested_paths_for_all_groups() -> list[str]:
+    return [
+        path
+        for group, command_tree in NESTED_COMMANDS.items()
+        for path in _canonical_nested_paths(group, command_tree)
+    ]
+
+
+def _nested_target_canonical(path: list[str]) -> tuple[str, int] | None:
+    if not path:
+        return None
+
+    group = path[0]
+
+    command_tree = NESTED_COMMANDS.get(group)
+    if isinstance(command_tree, str):
+        return command_tree, 1
+    if not isinstance(command_tree, dict):
+        return None
+
+    current = command_tree
+    consumed = 1
+    for part in path[1:]:
+        if not isinstance(current, dict) or part not in current:
+            break
+        current = current[part]
+        consumed += 1
+        if isinstance(current, str):
+            return current, consumed
+
+    if isinstance(current, dict) and "_target" in current:
+        return current["_target"], consumed
+
+    return None
+
+
+def _nested_target(path: list[str]) -> tuple[str, int] | None:
+    if not path:
+        return None
+
+    group_alias_used = path[0] == "db"
+    path = [
+        NESTED_GROUP_ALIASES.get(path[0], path[0]),
+        *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]],
+    ]
+    target = _nested_target_canonical(path)
+    if target is not None:
+        return target
+
+    if group_alias_used and len(path) >= 3:
+        return _nested_target_canonical([path[0], path[2], path[1], *path[3:]])
+
+    return None
+
+
+def _nested_group(path: list[str]) -> str | None:
+    if not path:
+        return None
+
+    group = NESTED_GROUP_ALIASES.get(path[0], path[0])
+    if group not in NESTED_COMMANDS:
+        return None
+    if path[0] in NESTED_COMMANDS or len(path) == 1:
+        return group
+    if path[1] in {"-h", "--help"} or _nested_target(path) is not None:
+        return group
+
+    command_tree = NESTED_COMMANDS[group]
+    if isinstance(command_tree, dict) and path[1] in command_tree:
+        return group
+    return None
+
+
+def _invalid_nested_path(group: str, path: list[str]) -> list[str] | None:
+    """Return the canonical path up to the first unknown command, or None if the route is valid.
+
+    Trailing ``-h``/``--help`` flags are ignored so that ``lb playback surf -h`` still reports the
+    unknown ``surf`` command instead of silently printing the group help.
+    """
+    command_tree = NESTED_COMMANDS.get(group)
+    if not isinstance(command_tree, dict) or not path:
+        return None
+
+    canonical_path = [group, *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]]]
+    current = command_tree
+    for index, part in enumerate(canonical_path[1:], start=1):
+        if part in {"-h", "--help"}:
+            return None
+        if not isinstance(current, dict) or part not in current:
+            return canonical_path[: index + 1]
+        current = current[part]
+        if isinstance(current, str):
+            return None
+    return None
+
+
+def _nested_help(group: str, invalid_path: list[str] | None = None) -> str:
+    command_tree = NESTED_COMMANDS[group]
+    if isinstance(command_tree, str):
+        return f"library {group} DATABASE [optional args]"
+
+    lines = [f"library {group} <command> [optional args]", "", "Commands:"]
+    prefix = f"{group} "
+    lines.extend(f"  {path.removeprefix(prefix)}" for path in _canonical_nested_paths(group, command_tree))
+    if invalid_path:
+        relative = " ".join(invalid_path[1:])
+        choices = [path.removeprefix(prefix) for path in _canonical_nested_paths(group, command_tree)]
+        suggestion = difflib.get_close_matches(relative, choices, n=1, cutoff=0.4)
+        message = [f"Unknown command: {' '.join(invalid_path)}"]
+        if suggestion:
+            message.append(f"Did you mean: {group} {suggestion[0]}?")
+        lines = [*message, "", *lines]
+    return "\n".join(lines)
+
+
 def create_subcommands_parser() -> argparse.ArgumentParser:
     parser = argparse_utils.ArgumentParser(
         prog="library",
@@ -284,58 +710,44 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers()
 
-    # this needs to stay inside the function to prevent side-effects during testing
-    known_subcommands = [
-        "fs",
-        "db",
-        "media",
-        "open",
-        "table",
-        "tables",
-        "tabs",
-        "du",
-        "search",
-        "links",
-        "images",
-        "torrents",
-        "torrent",
-    ]
+    def set_func(subparser, target: str):
+        module_name, function_name = _target_module(target)
 
-    def consecutive_prefixes(s):
-        prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
-        known_subcommands.extend(prefixes)
-        return prefixes
-
-    def set_func(subparser, module_name: str, function_name: str):
         def import_func():
             module = importlib.import_module(module_name)
             return getattr(module, function_name)()
 
-        subparser.set_defaults(func=import_func)
+        subparser.set_defaults(func=import_func, _nested_target=target)
 
-    def add_parser(subparsers, func, aliases=None):
-        if aliases is None:
-            aliases = []
+    def add_nested_parser(group, command_tree):
+        group_parser = subparsers.add_parser(group, add_help=False)
+        if isinstance(command_tree, str):
+            group_parser.add_argument("_nested_args", nargs=argparse.REMAINDER)
+            group_parser.set_defaults(_nested_path=[group])
+            set_func(group_parser, command_tree)
+            return
 
-        module_name, function_name = func.rsplit(".", 1)
-        name = function_name.replace("_", "-")
+        def add_nested_subparsers(parent, tree, path):
+            if "_target" in tree:
+                set_func(parent, tree["_target"])
+            subparsers = parent.add_subparsers(dest=f"_nested_command_{len(path)}")
+            for command, target in tree.items():
+                if command == "_target":
+                    continue
 
-        aliases += [
-            s.replace("-", "") for s in [name, *aliases] if "-" in s and s.replace("-", "") not in known_subcommands
-        ]
-        aliases += [
-            s.replace("-", "_") for s in [name, *aliases] if "-" in s and s.replace("-", "_") not in known_subcommands
-        ]
-        known_subcommands.extend([name, *aliases])
+                command_parser = subparsers.add_parser(command, add_help=False)
+                command_path = [*path, command]
+                if isinstance(target, str):
+                    command_parser.add_argument("_nested_args", nargs=argparse.REMAINDER)
+                    command_parser.set_defaults(_nested_path=command_path)
+                    set_func(command_parser, target)
+                else:
+                    add_nested_subparsers(command_parser, target, command_path)
 
-        # aliases += consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in aliases])
-        subp = subparsers.add_parser(name, aliases=aliases, add_help=False)
+        add_nested_subparsers(group_parser, command_tree, [group])
 
-        set_func(subp, module_name, function_name)
-        return subp
-
-    for module, aliases in modules.items():
-        add_parser(subparsers, module, aliases)
+    for group, command_tree in NESTED_COMMANDS.items():
+        add_nested_parser(group, command_tree)
 
     parser.add_argument("--version", "-V", action="store_true")
 
@@ -343,6 +755,27 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
 
 parser = create_subcommands_parser()
+
+
+def _dispatch(args) -> None:
+    if hasattr(args, "func"):
+        subcommand = " ".join(getattr(args, "_nested_path", []))
+        if hasattr(args, "_nested_args"):
+            sys.argv[1:] = args._nested_args
+        try:
+            return args.func()
+        except Exception:
+            print("Bug found in", subcommand, " ".join(sys.argv), file=sys.stderr)
+            raise
+
+    try:
+        log.error("Subcommand %s not found", sys.argv[1])
+    except Exception:
+        if len(sys.argv) > 1:
+            log.error("Invalid args. I see: %s", sys.argv)
+
+    print_help(parser)
+    raise SystemExit(1)
 
 
 def library(args=None) -> None:
@@ -354,35 +787,55 @@ def library(args=None) -> None:
         finally:
             sys.argv = original_argv
 
+    original_argv = sys.argv[1:]
+    if original_argv in (["-h"], ["--help"]):
+        print_help(parser)
+        raise SystemExit(0)
+    nested_group = _nested_group(original_argv)
+    if (
+        len(original_argv) == GROUP_HELP_ARG_COUNT
+        and original_argv[1] in {"-h", "--help"}
+        and nested_group is not None
+        and isinstance(NESTED_COMMANDS[nested_group], dict)
+    ):
+        print(_nested_help(nested_group))
+        raise SystemExit(0)
+
+    if nested_group and _nested_target(original_argv) is None:
+        invalid_path = _invalid_nested_path(nested_group, original_argv)
+        print(_nested_help(nested_group, invalid_path))
+        raise SystemExit(1)
+
+    if nested_group:
+        target_info = _nested_target(original_argv)
+        if target_info is None:
+            target = None
+        else:
+            target, consumed = target_info
+        if target is not None:
+            args = argparse.Namespace(
+                func=lambda: _invoke_target(target),
+                _nested_path=original_argv[:consumed],
+                _nested_args=original_argv[consumed:],
+            )
+            return _dispatch(args)
+
     parser.exit_on_error = False  # type: ignore
     try:
         args, _unk = parser.parse_known_args(args)
     except argparse.ArgumentError:
         args = argparse.Namespace(version=False)
+        _unk = []
+
+    if hasattr(args, "_nested_args"):
+        args._nested_args = [*args._nested_args, *_unk]
+
     if args.version:
         return print(__version__)
 
     log.debug("library v%s :: %s", __version__, os.path.realpath(sys.path[0]))
     log.debug(sys.argv)
-
-    if hasattr(args, "func"):
-        subcommand = sys.argv[1] if len(sys.argv) >= 2 else ""
-        if len(sys.argv) >= 2:
-            del sys.argv[1]
-        try:
-            return args.func()
-        except Exception:
-            print("Bug found in", subcommand, " ".join(sys.argv), file=sys.stderr)
-            raise
-    else:
-        try:
-            log.error("Subcommand %s not found", sys.argv[1])
-        except Exception:
-            if len(sys.argv) > 1:
-                log.error("Invalid args. I see: %s", sys.argv)
-
-        print_help(parser)
-        raise SystemExit(1)
+    return _dispatch(args)
 
 
 if __name__ == "__main__":

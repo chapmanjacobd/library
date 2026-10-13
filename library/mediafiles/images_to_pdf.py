@@ -3,14 +3,29 @@ from pathlib import Path
 
 from natsort import natsorted
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils, web
 from library.utils.date_utils import utc_from_local_timestamp
 from library.utils.log_utils import log
 
+USAGE = {
+    'images_to_pdf': """library document to-pdf images PATH ...
+
+    Convert groups of images to PDF
+
+        library document to-pdf images folder_with_images/
+        library document to-pdf images page00*.jpg
+        library document to-pdf images page00*.avif  # many file formats supported
+
+    Convert comics (CBZ, CBR) to PDF
+
+        library document to-pdf images my_ebook.cbr
+        library document to-pdf images https://site/my_ebook.cbz
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.images_to_pdf)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['images_to_pdf'])
     parser.add_argument(
         "--delete-original", action=argparse.BooleanOptionalAction, default=False, help="Delete source images"
     )

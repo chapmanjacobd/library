@@ -2,7 +2,6 @@ import argparse, os
 from collections import defaultdict
 from pathlib import Path
 
-from library import usage
 from library.fsdb.disk_usage import check_depth, count_folders, format_folder
 from library.playback import media_printer
 from library.tablefiles import mcda
@@ -17,9 +16,48 @@ from library.utils import (
     sqlgroups,
 )
 
+USAGE = {
+    'big_dirs': """library folder large PATH ... [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played]
+
+    See what folders take up space
+
+        library folder large ./video/
+
+    Filter folders by size
+
+        library folder large ./video/ --folder-sizes=+10GB --folder-sizes=-200GB
+        library folder large ./video/ -FS=+10GB -FS=-200GB
+
+    Filter folders by file count
+
+        library folder large ./video/ --file-counts=+3 --file-counts=-3000
+        library folder large ./video/ -FC=+20000 -D-8  # Use --depth to cascade nested directories
+
+    Filter folders by sub-folder "bigdir" count
+
+        library folder large ./video/ --folder-counts=+3 --folder-counts=-3000
+
+    Filter folders by depth
+
+        library folder large ./video/ --depth 5
+        library folder large ./video/ -D 7
+
+    Load from fs database
+
+        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library folder large --from-json
+
+        Only include files between 1MiB and 5MiB
+        library database filesystem list video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library folder large --from-json
+
+    You can even sort by auto-MCDA ~LOL~
+
+    library folder large ./video/ -u 'mcda median_size,-deleted'
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.big_dirs)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['big_dirs'])
     arggroups.sql_fs(parser)
     arggroups.files(parser)
 

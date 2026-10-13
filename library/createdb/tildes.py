@@ -5,13 +5,25 @@ from time import sleep
 from bs4 import BeautifulSoup
 from dateutil import parser
 
-from library import usage
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, nums, web
 
+USAGE = {
+    'tildes': """library database add tildes DATABASE USER
+
+    Backup tildes.net user comments and topics
+
+        library database add tildes tildes.net.db xk3
+
+    Without cookies you are limited to the first page. You can use cookies like this
+        https://github.com/rotemdan/ExportCookies
+        library database add tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.tildes)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['tildes'])
     arggroups.requests(parser)
     arggroups.debug(parser)
 

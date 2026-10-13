@@ -1,12 +1,18 @@
 from pathlib import Path
 
-from library import usage
 from library.utils import arggroups, argparse_utils, file_utils, pd_utils, web
 from library.utils.log_utils import log
 
+USAGE = {
+    'tables_add': """library database add tables DATABASE PATH ... [--table STR] [--end-row INT]
+
+    Insert data from one or more files into a SQLite database
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.tables_add)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['tables_add'])
     arggroups.table_like(parser)
     parser.set_defaults(end_row="inf")
     parser.add_argument("--sort", "-u", default="random()")

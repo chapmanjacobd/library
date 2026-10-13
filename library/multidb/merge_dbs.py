@@ -3,13 +3,45 @@ from pathlib import Path
 
 from tabulate import tabulate
 
-from library import usage
 from library.utils import arggroups, argparse_utils, consts, db_utils
 from library.utils.log_utils import log
 
+USAGE = {
+    'merge_dbs': """library database merge SOURCE_DB ... DEST_DB [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+
+    Merge-DBs inserts new rows from source dbs to target db, table by table. If primary key(s) are provided,
+    and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
+    replacing all existing fields.
+
+    Upsert mode updates each matching PK row such that if a source row has a NULL field and
+    the destination row has a value then the value is preserved instead of changed to the source row's NULL value.
+
+    Ignore mode (--only-new-rows) inserts only rows which don't already exist in the destination db
+
+    Test first by using temp databases as the destination db.
+    Try out different modes / flags until you are satisfied with the behavior of the program
+
+        library database merge --pk path tv.db movies.db (mktemp --suffix .db)
+
+    Merge database data and tables
+
+        library database merge --upsert --pk path tv.db movies.db video.db
+        library database merge --only-target-columns --only-new-rows --table media,playlists --pk path --skip-column id audio-fts.db audio.db
+
+        library database merge --pk id --only-tables subreddits audio.db reddit/81_New_Music.db
+        library database merge --only-new-rows --pk subreddit,path --only-tables reddit_posts audio.db reddit/81_New_Music.db -v
+
+     To skip copying primary-keys from the source table(s) use --business-keys instead of --primary-keys
+
+     Split DBs using --where
+
+         library database merge --pk path big.db specific-site.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.merge_dbs)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['merge_dbs'])
 
     parser.add_argument(
         "--only-tables", "-t", action=argparse_utils.ArgparseList, help="Comma separated specific table(s)"

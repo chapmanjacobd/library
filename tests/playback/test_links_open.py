@@ -6,11 +6,11 @@ from tests.utils import links_db
 
 @mock.patch("library.playback.links_open.make_souffle")
 def test_links_open(mock_souffle):
-    lb(["links-open", links_db])
+    lb(['links', 'open', links_db])
     media = mock_souffle.call_args[0][1]
     assert len(media) == 7
 
-    lb(["links-open", links_db, "-L", "3"])
+    lb(['links', 'open', links_db, "-L", "3"])
     media = mock_souffle.call_args[0][1]
     assert len(media) == 3
     assert media == [
@@ -28,16 +28,16 @@ def test_links_open_brackets(mock_play, mock_souffle, temp_db):
     encoded_url = "https://example.com/test?page%5B%5D=107"
 
     # 1. Add the link RAW
-    lb(["links-add", "--no-extract", db_path, url])
+    lb(['database', 'add', 'links', "--no-extract", db_path, url])
 
     # 2. Search for it with RAW URL (should find it because it's in include as-is)
-    lb(["links-open", db_path, "-s", url])
+    lb(['links', 'open', db_path, "-s", url])
     media = mock_souffle.call_args[0][1]
     assert len(media) == 1
     assert media[0]["path"] == url
 
     # 3. Search for it with ENCODED URL (should find it because it's added as group [encoded, raw])
-    lb(["links-open", db_path, "-s", encoded_url])
+    lb(['links', 'open', db_path, "-s", encoded_url])
     media = mock_souffle.call_args[0][1]
     assert len(media) == 1
     assert media[0]["path"] == url
@@ -49,10 +49,10 @@ def test_links_open_brackets(mock_play, mock_souffle, temp_db):
     conn.execute("DELETE FROM media")
     conn.commit()
     conn.close()
-    lb(["links-add", "--no-extract", db_path, encoded_url])
+    lb(['database', 'add', 'links', "--no-extract", db_path, encoded_url])
 
     # 5. Search for it with RAW URL (should find it because it matches the encoded version which is added to include)
-    lb(["links-open", db_path, "-s", url])
+    lb(['links', 'open', db_path, "-s", url])
     media = mock_souffle.call_args[0][1]
     assert len(media) == 1
     assert media[0]["path"] == encoded_url

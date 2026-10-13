@@ -1,13 +1,19 @@
 import argparse
 from pathlib import Path
 
-from library import usage
 from library.mediadb import db_history
 from library.utils import arggroups, argparse_utils, consts, mpv_utils, nums
 
+USAGE = {
+    'mpv_watchlater': """library database import mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
+
+    Extract timestamps from MPV to the history table
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.mpv_watchlater)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['mpv_watchlater'])
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER)
     arggroups.debug(parser)
 

@@ -1,12 +1,53 @@
 import argparse, sys
 from pathlib import Path
 
-from library import usage
 from library.createdb import tube_backend
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, db_utils, shell_utils
 from library.utils.consts import SC
 from library.utils.log_utils import log
+
+USAGE = {
+    'tube_add': r"""library database add video [--safe] [--extra] [--subs] [--auto-subs] DATABASE URL ...
+
+    Create a dl database / add links to an existing database
+
+        library database add video dl.db https://www.youdl.com/c/BranchEducation/videos
+
+    Add links from a line-delimited file
+
+        cat ./my_yt_subscriptions.txt | library database add video reddit.db -
+
+    Add metadata to links already in a database table
+
+        library database add video --force reddit.db (sqlite-utils --raw-lines reddit.db 'select path from media')
+
+    Fetch extra metadata
+
+        By default tubeadd quickly adds media at the expense of less metadata.
+        If you plan on using `library database download` then it doesn't make sense to use `--extra`.
+        Downloading adds the extra metadata automatically to the database.
+        You can fetch more metadata at any time via tubeupdate
+        library database update video tw.db --extra
+""",
+    'tube_update': """library database update video [--audio | --video] DATABASE
+
+    Fetch the latest videos for every playlist saved in your database
+
+        library database update video educational.db
+
+    Fetch extra metadata
+
+        By default tubeupdate quickly adds media.
+        You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
+
+        library database update video educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+
+    Remove duplicate playlists
+
+        library database dedupe video.db playlists --bk extractor_playlist_id
+""",
+}
 
 
 def parse_args(action, usage) -> argparse.Namespace:
@@ -34,7 +75,7 @@ def tube_add(args=None) -> None:
     if args:
         sys.argv = ["tubeadd", *args]
 
-    args = parse_args(SC.tube_add, usage=usage.tube_add)
+    args = parse_args(SC.tube_add, usage=USAGE['tube_add'])
     paths = shell_utils.gen_paths(args)
 
     db_playlists.create(args)
@@ -89,7 +130,7 @@ def tube_update(args=None) -> None:
     if args:
         sys.argv = ["tubeupdate", *args]
 
-    args = parse_args(SC.tube_update, usage=usage.tube_update)
+    args = parse_args(SC.tube_update, usage=USAGE['tube_update'])
 
     tube_playlists = db_playlists.get_all(
         args,

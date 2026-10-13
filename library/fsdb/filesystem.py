@@ -1,6 +1,5 @@
 import os
 
-from library import usage
 from library.playback import media_printer
 from library.utils import (
     arggroups,
@@ -13,9 +12,18 @@ from library.utils import (
     strings,
 )
 
+USAGE = {
+    'filesystem': """library database filesystem list
+
+    List files and filter by specific file types
+
+        library database filesystem list
+""",
+}
+
 
 def parse_args(defaults_override=None):
-    parser = argparse_utils.ArgumentParser(usage=usage.filesystem)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['filesystem'])
     arggroups.files(parser)
     arggroups.sql_fs(parser)
     parser.set_defaults(hide_deleted=True)

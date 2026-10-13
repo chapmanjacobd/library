@@ -1,12 +1,26 @@
 import argparse, sys
 from pathlib import Path
 
-from library import usage
 from library.createdb import gallery_backend
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, db_utils, shell_utils
 from library.utils.consts import SC
 from library.utils.log_utils import log
+
+USAGE = {
+    'gallery_add': """library database add gallery DATABASE URL ...
+
+    Add gallery_dl URLs to download later or periodically update
+
+    If you have many URLs use stdin
+
+        cat ./my-favorite-manhwa.txt | library database add gallery your.db --insert-only -
+""",
+    'gallery_update': """library database update gallery DATABASE
+
+    Check saved gallery_dl URLs for new content
+""",
+}
 
 
 def parse_args(action, usage) -> argparse.Namespace:
@@ -33,7 +47,7 @@ def gallery_add(args=None) -> None:
     if args:
         sys.argv = ["galleryadd", *args]
 
-    args = parse_args(SC.gallery_add, usage=usage.gallery_add)
+    args = parse_args(SC.gallery_add, usage=USAGE['gallery_add'])
 
     db_playlists.create(args)
     db_media.create(args)
@@ -80,7 +94,7 @@ def gallery_update(args=None) -> None:
     if args:
         sys.argv = ["galleryupdate", *args]
 
-    args = parse_args(SC.gallery_update, usage=usage.gallery_update)
+    args = parse_args(SC.gallery_update, usage=USAGE['gallery_update'])
 
     gdl_playlists = db_playlists.get_all(
         args,

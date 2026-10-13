@@ -83,7 +83,7 @@ def test_wt_help(capsys):
     wt_help_text = ["usage:", "where", "sort", "--duration"]
 
     with pytest.raises(SystemExit):
-        lb(["wt", "-h"])
+        lb(['play', 'video', "-h"])
     captured = capsys.readouterr().out.replace("\n", "")
     for help_text in wt_help_text:
         assert help_text in captured
@@ -91,17 +91,17 @@ def test_wt_help(capsys):
 
 def test_wt_print(capsys):
     for lb_command in [
-        ["wt", v_db, "-p"],
-        ["pl", v_db],
+        ["play", "video", v_db, "-p"],
+        ["database", "playlists", v_db],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
         assert "Agg" not in captured, f"Test failed for {lb_command}"
 
     for lb_command in [
-        ["wt", v_db, "-p", "a"],
-        ["wt", v_db, "-pa"],
-        ["pl", v_db, "-pa"],
+        ["play", "video", v_db, "-p", "a"],
+        ["play", "video", v_db, "-pa"],
+        ["database", "playlists", v_db, "-pa"],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
@@ -111,14 +111,14 @@ def test_wt_print(capsys):
 class TestFs(unittest.TestCase):
     @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
-        for SC in ("watch", "wt"):
-            lb([SC, v_db, "-w", "path like '%test.mp4'"])
+        for SC in (["play", "video"],):
+            lb([*SC, v_db, "-w", "path like '%test.mp4'"])
             out = play_mocked.call_args[0][1]
             assert "test.mp4" in out["path"]
             assert out["duration"] == 12
             assert out["size"] == 136057
 
-        lb(["wt", v_db, "-w", "path like '%test.mp4'"])
+        lb(['play', 'video', v_db, "-w", "path like '%test.mp4'"])
         out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]
         assert out["duration"] == 12
@@ -126,19 +126,19 @@ class TestFs(unittest.TestCase):
 
         a_db = "tests/data/audio.db"
         fs_add([a_db, "--audio", "tests/data/"])
-        lb(["listen", a_db])
+        lb(['play', 'audio', a_db])
         out = play_mocked.call_args[0][1]
         assert "test" in out["path"]
 
     @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
-        lb(["wt", v_db, "-u", "duration"])
+        lb(['play', 'video', v_db, "-u", "duration"])
         out = play_mocked.call_args[0][1]
         assert out is not None
 
     @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
-        lb(["wt", v_db, "--size=-1"])  # less than 1MB
+        lb(['play', 'video', v_db, "--size=-1"])  # less than 1MB
         out = play_mocked.call_args[0][1]
         assert out is not None
 

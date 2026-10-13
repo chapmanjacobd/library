@@ -2,16 +2,31 @@ import concurrent.futures, os, statistics
 from contextlib import suppress
 from pathlib import Path
 
-from library import usage
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing, shell_utils
 from library.utils.log_utils import log
 from library.utils.path_utils import tld_from_url
 from library.utils.shell_utils import trash
 
+USAGE = {
+    'torrents_add': """library database add torrents DATABASE PATH ...
+
+    Create a SQLite database of torrent file data (torrents are playlists, referenced files are media)
+
+        library database add torrents torrents.db ~/.local/data/qbittorrent/queue/
+
+    View total size of undownloaded torrents
+
+        library database playlists torrents.db -pa
+        path                      deleted_count      size    playlists_count    media_count
+        ----------------------  ---------------  --------  -----------------  -------------
+        Aggregate of playlists                0  87.7 TiB                530         272681
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.torrents_add)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['torrents_add'])
     parser.add_argument(
         "--force",
         action="store_true",

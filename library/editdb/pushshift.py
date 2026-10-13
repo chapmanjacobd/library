@@ -1,9 +1,28 @@
 import argparse, sys
 
-from library import usage
 from library.createdb.reddit_add import slim_post_data
 from library.utils import arggroups, argparse_utils, objects, printing
 from library.utils.log_utils import log
+
+USAGE = {
+    'pushshift': """library database import pushshift DATABASE < stdin
+
+    Download data (about 600GB jsonl.zst; 6TB uncompressed)
+
+        wget -e robots=off -r -k -A zst https://files.pushshift.io/reddit/submissions/
+
+    Load data from files via unzstd
+
+        unzstd --memory=2048MB --stdout RS_2005-07.zst | library database import pushshift pushshift.db
+
+    Or multiple (output is about 1.5TB SQLite fts-searchable)
+
+        for f in psaw/files.pushshift.io/reddit/submissions/*.zst
+            echo "unzstd --memory=2048MB --stdout $f | library database import pushshift (basename $f).db"
+            library database optimize (basename $f).db
+        end | parallel -j5
+""",
+}
 
 try:
     import orjson
@@ -35,7 +54,7 @@ def pushshift_extract(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(usage=usage.pushshift)
+    args = parse_args(usage=USAGE['pushshift'])
 
     args.db.enable_wal()
 

@@ -2,13 +2,45 @@ import argparse, json, tempfile
 from copy import deepcopy
 from pathlib import Path
 
-from library import usage
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, consts, db_utils, devices, iterables, shell_utils
 
+USAGE = {
+    'redownload': """library database redownload DATABASE
+
+    If you have downloaded YouTube or other online media and your
+    hard drive failed or you accidentally deleted something, and that media
+    is still accessible from the same URL, this script redownloads
+    everything that was scanned-as-deleted between two timestamps.
+
+    List deletions
+
+        library database redownload news.db
+        Deletions:
+        ╒═════════════════════╤═════════╕
+        │ time_deleted        │   count │
+        ╞═════════════════════╪═════════╡
+        │ 2023-01-26T00:31:26 │     120 │
+        ├─────────────────────┼─────────┤
+        │ 2023-01-26T19:54:42 │      18 │
+        ├─────────────────────┼─────────┤
+        │ 2023-01-26T20:45:24 │      26 │
+        ╘═════════════════════╧═════════╛
+        Showing most recent 3 deletions. Use -l to change this limit
+
+    Mark videos as candidates for download via specific deletion timestamp
+
+        library database redownload city.db 2023-01-26T19:54:42
+
+    ...or between two timestamps inclusive
+
+        library database redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.redownload)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['redownload'])
     parser.add_argument("--download-archive", default=str(Path("~/.local/share/yt_archive.txt").expanduser().resolve()))
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="100")
     arggroups.debug(parser)

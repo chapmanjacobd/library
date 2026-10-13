@@ -4,7 +4,6 @@ from pathlib import Path
 
 from screeninfo import get_monitors
 
-from library import usage
 from library.playback import media_player, post_actions
 from library.utils import (
     arggroups,
@@ -19,12 +18,21 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+USAGE = {
+    'dedupe_czkawka': """library file dedupe czkawka [--volume VOLUME] [--auto-seek] [--ignore-errors] [--folder] [--folder-glob [FOLDER_GLOB]] [--replace] [--no-replace] [--override-trash OVERRIDE_TRASH] [--delete-files] [--gui]
+               [--auto-select-min-ratio AUTO_SELECT_MIN_RATIO] [--all-keep] [--all-left] [--all-right] [--all-delete]
+               czkawka_dupes_output_path
+
+    Choose which duplicate to keep by opening both side-by-side in mpv
+""",
+}
+
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.dedupe_czkawka)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['dedupe_czkawka'])
     arggroups.playback(parser)
     arggroups.clobber(parser)
     arggroups.capability_delete(parser)

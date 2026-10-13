@@ -4,15 +4,23 @@ import os, shutil, statistics
 
 from natsort import natsorted
 
-from library import usage
 from library.mediafiles import torrents_start
 from library.playback import torrents_info
 from library.utils import arggroups, argparse_utils, consts, iterables, path_utils, printing, strings
 from library.utils.log_utils import log
 
+USAGE = {
+    'torrents_remaining': """library torrent remaining
+
+    Print remaining stats grouped by mountpoint or folder depth
+
+        library torrent remaining --depth=2 --dl --time-stalled=-5days
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.torrents_remaining)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['torrents_remaining'])
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_torrents(parser)
     parser.add_argument("--depth", "-d", type=int, help="Folder depth of simulated mountpoint")

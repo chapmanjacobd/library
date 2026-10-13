@@ -2,13 +2,31 @@ import argparse, shutil
 from os import fsdecode, fsencode
 from pathlib import Path
 
-from library import usage
 from library.utils import arggroups, argparse_utils, path_utils, shell_utils
 from library.utils.log_utils import log
 
+USAGE = {
+    'christen': """library file normalize [--run]
+
+    Rename files to be somewhat normalized
+
+    Default mode is simulate
+
+        library file normalize ~/messy/
+
+    To actually do stuff use the run flag
+
+        library file normalize . --run
+
+    You can optionally replace all the spaces in your filenames with dots
+
+        library file normalize --dot-space
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.christen)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['christen'])
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")

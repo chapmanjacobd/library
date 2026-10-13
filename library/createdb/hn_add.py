@@ -1,8 +1,25 @@
 import argparse, asyncio, importlib, queue, sqlite3, threading
 
-from library import usage
 from library.utils import arggroups, argparse_utils, db_utils, objects, web
 from library.utils.log_utils import log
+
+USAGE = {
+    'hn_add': """library database add hackernews [--oldest] DATABASE
+
+    Fetch latest stories first
+
+        library database add hackernews hn.db -v
+        Fetching 154873 items (33212696 to 33367569)
+        Saving comment 33367568
+        Saving comment 33367543
+        Saving comment 33367564
+        ...
+
+    Fetch oldest stories first
+
+        library database add hackernews --oldest hn.db
+""",
+}
 
 """
 My understanding of aiohttp is stolen
@@ -101,7 +118,7 @@ async def run(args, db_queue):
 
 
 def hacker_news_add() -> None:
-    args = parse_args(usage=usage.hn_add)
+    args = parse_args(usage=USAGE['hn_add'])
     try:
         importlib.import_module("aiohttp")
     except ModuleNotFoundError:

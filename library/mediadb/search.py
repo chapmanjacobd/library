@@ -2,15 +2,36 @@ import argparse, textwrap
 from copy import deepcopy
 from itertools import groupby
 
-from library import usage
 from library.playback import media_player, media_printer
 from library.utils import arggroups, argparse_utils, consts, iterables, printing, processes
 from library.utils.log_utils import log
 from library.utils.sqlgroups import construct_captions_search_query
 
+USAGE = {
+    'search': """library captions DATABASE QUERY
+
+    Search text databases and subtitles
+
+        library captions fts.db boil
+            7 captions
+            /mnt/d/70_Now_Watching/DidubeTheLastStop-720p.mp4
+               33:46 I brought a real stainless steel boiler
+               33:59 The world is using only stainless boilers nowadays
+               34:02 The boiler is old and authentic
+               34:30 - This boiler? - Yes
+               34:44 I am not forcing you to buy this boiler…
+               34:52 Who will give her a one liter stainless steel boiler for one Lari?
+               34:54 Glass boilers cost two
+
+    Search and open file
+
+        library captions fts.db 'two words' --open
+""",
+}
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.search)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['search'])
 
     arggroups.sql_fs(parser)
 

@@ -3,7 +3,6 @@ import os, sqlite3
 import humanize
 import pandas as pd
 
-from library import usage
 from library.utils import (
     arggroups,
     argparse_utils,
@@ -22,9 +21,22 @@ from library.utils import (
 from library.utils.log_utils import log
 from library.utils.shell_utils import trash
 
+USAGE = {
+    'allocate_torrents': """library database allocate torrents
+
+    Use a Computer DB and a Torrent DB to allocate and deplete global free space
+
+        library database allocate torrents computers.db torrents.db -v
+
+    Filter to specific words or tracker
+
+        library database allocate torrents computers.db torrents.db -s specific words or tracker
+""",
+}
+
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage=usage.allocate_torrents)
+    parser = argparse_utils.ArgumentParser(usage=USAGE['allocate_torrents'])
     arggroups.sql_fs(parser)
     parser.set_defaults(fts=False)
 

@@ -108,14 +108,18 @@ def args_post(args, parser, create_db=False):
 def printing(parser):
     printing = parser.add_argument_group("Printing")
     printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
-    printing.add_argument("--cols", "--columns", nargs="+", help="Include specific column(s) when printing")
+    printing.add_argument(
+        "--cols", "--columns", "--fields", nargs="+", help="Include specific column(s) when printing"
+    )
     printing.add_argument(
         "--print",
         "-p",
         default="",
         const="p",
         nargs="?",
-        help="""Print instead of play
+        help="""Print instead of play, or format each row with a template
+
+--print '%%(path)s\\t%%(title)s'  # print selected fields
 
 Printing modes
 -p    # print as a table
@@ -131,6 +135,8 @@ Some printing modes can be combined
 -p df  # print fields for piping into another program and mark as deleted
 -p bf  # print fields from big-dirs report""",
     )
+    printing.add_argument("--list", action="store_const", dest="print", const="p", help="Print matching rows as a table")
+    printing.add_argument("--aggregate", action="store_const", dest="print", const="a", help="Print an aggregate report")
     printing.add_argument(
         "--print-limit",
         "--preview-limit",
@@ -146,6 +152,11 @@ Some printing modes can be combined
         action="store_true",
         help="Skip URL-decoding/unquoting when printing URLs",
     )
+
+
+def get_compact_print_args(args) -> str:
+    print_args = getattr(args, "print", "") or ""
+    return "" if "%(" in print_args else print_args
 
 
 def debug(parent_parser):
@@ -1110,7 +1121,7 @@ def multiple_playback_post(args):
             args.fullscreen = False
 
 
-def extractor(parent_parser):
+def extractor(parent_parser, *, no_extract=True):
     parser = parent_parser.add_argument_group("Extractor")
     parser.add_argument("--no-sanitize", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument(
@@ -1118,21 +1129,27 @@ def extractor(parent_parser):
         action="store_true",
         help="Convert UTF-8 IRIs (RFC 3987) to ASCII percent-encoded URLs (RFC 1738)",
     )
-    parser.add_argument(
-        "--no-extract",
-        "--skip-extract",
-        "--insert-only",
-        "-n",
-        action="store_true",
-        help="Insert paths into media table",
-    )  # TODO: move to its own subcommand
-    parser.add_argument(
-        "--no-extract-playlists",
-        "--skip-extract-playlists",
-        "--insert-only-playlists",
-        action="store_true",
-        help="Insert paths into playlists table",
-    )
+    if no_extract:
+        parser.add_argument(
+            "--no-extract",
+            "--skip-extract",
+            "--insert-only",
+            "-n",
+            action="store_true",
+            help="Insert paths into media table",
+        )  # TODO: move to its own subcommand
+    else:
+        parser.set_defaults(no_extract=False)
+    if no_extract:
+        parser.add_argument(
+            "--no-extract-playlists",
+            "--skip-extract-playlists",
+            "--insert-only-playlists",
+            action="store_true",
+            help="Insert paths into playlists table",
+        )
+    else:
+        parser.set_defaults(no_extract_playlists=False)
     parser.add_argument("--extra", action="store_true", help="Get full metadata (takes a lot longer)")
 
 
@@ -1647,7 +1664,7 @@ def process_ffmpeg_post(args):
     args.min_split_segment = nums.human_to_seconds(args.min_split_segment)
 
 
-def download(parent_parser):
+def download(parent_parser, *, direct=False):
     parser = parent_parser.add_argument_group("Download")
     parser.add_argument(
         "--extractor-config",
@@ -1701,6 +1718,12 @@ def download(parent_parser):
         action="store_true",
         help="Fetch metadata for paths even if they are already in the media table",
     )
+    if direct:
+        parser.add_argument(
+            "--direct",
+            action="store_true",
+            help="Download paths directly instead of extracting links from pages",
+        )
     parser.add_argument("--prefix", default=os.getcwd())
 
     profile = parser.add_mutually_exclusive_group()
@@ -1734,6 +1757,13 @@ def download(parent_parser):
         dest="profile",
         const=DBType.filesystem,
         help="Use filesystem downloader",
+    )
+    profile.add_argument(
+        "--media-type",
+        choices=[DBType.video, DBType.audio, DBType.image, DBType.filesystem],
+        dest="profile",
+        metavar="TYPE",
+        help="Select the download media type",
     )
     profile.set_defaults(profile=DBType.video)
 
@@ -2140,6 +2170,14 @@ def db_profiles(parser):
         dest="profiles",
         const=DBType.image,
         help="Extract image metadata",
+    )
+    profiles.add_argument(
+        "--media-type",
+        choices=[DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem],
+        action="append",
+        dest="profiles",
+        metavar="TYPE",
+        help="Extract metadata for the selected media type",
     )
     parser.add_argument("--scan-all-files", action="store_true")
 
