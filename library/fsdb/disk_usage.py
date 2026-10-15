@@ -323,7 +323,7 @@ def disk_usage(defaults_override=None):
     num_files = len(files)
 
     summary = iterables.list_dict_summary(files)
-    if args.limit and not "a" in args.print:
+    if args.limit and "a" not in arggroups.get_compact_print_args(args):
         args.subset = args.subset[: args.limit]
 
     if args.group_by_extensions:

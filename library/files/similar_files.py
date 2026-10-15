@@ -140,7 +140,7 @@ def similar_files():
         if args.only_duplicates:
             media = media[1:]
 
-        if "f" in args.print:
+        if "f" in arggroups.get_compact_print_args(args):
             for d in media:
                 printing.pipe_print(d["path"])
         else:

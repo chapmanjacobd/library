@@ -91,7 +91,7 @@ def playlists() -> None:
         order by count, p.path
         """
 
-    if "a" in args.print:
+    if "a" in arggroups.get_compact_print_args(args):
         query = f"""
         select
             'Aggregate of playlists' path

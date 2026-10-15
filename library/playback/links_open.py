@@ -88,7 +88,7 @@ def links_open() -> None:
         [
             args.cluster_sort,
             args.regex_sort,
-            "a" in args.print,
+            "a" in arggroups.get_compact_print_args(args),
         ]
     )
 
@@ -117,7 +117,7 @@ def links_open() -> None:
                 counts[domain] += 1
         media = new_media
 
-    if not "a" in args.print:
+    if "a" not in arggroups.get_compact_print_args(args):
         if is_whole_db_query:
             media = media[: args.limit]
         media = make_souffle(args, media)

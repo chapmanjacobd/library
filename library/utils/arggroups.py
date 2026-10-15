@@ -108,14 +108,18 @@ def args_post(args, parser, create_db=False):
 def printing(parser):
     printing = parser.add_argument_group("Printing")
     printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
-    printing.add_argument("--cols", "--columns", nargs="+", help="Include specific column(s) when printing")
+    printing.add_argument(
+        "--cols", "--columns", "--fields", nargs="+", help="Include specific column(s) when printing"
+    )
     printing.add_argument(
         "--print",
         "-p",
         default="",
         const="p",
         nargs="?",
-        help="""Print instead of play
+        help="""Print instead of play, or format each row with a template
+
+--print '%%(path)s\\t%%(title)s'  # print selected fields
 
 Printing modes
 -p    # print as a table
@@ -131,6 +135,8 @@ Some printing modes can be combined
 -p df  # print fields for piping into another program and mark as deleted
 -p bf  # print fields from big-dirs report""",
     )
+    printing.add_argument("--list", action="store_const", dest="print", const="p", help="Print matching rows as a table")
+    printing.add_argument("--aggregate", action="store_const", dest="print", const="a", help="Print an aggregate report")
     printing.add_argument(
         "--print-limit",
         "--preview-limit",
@@ -146,6 +152,11 @@ Some printing modes can be combined
         action="store_true",
         help="Skip URL-decoding/unquoting when printing URLs",
     )
+
+
+def get_compact_print_args(args) -> str:
+    print_args = getattr(args, "print", "") or ""
+    return "" if "%(" in print_args else print_args
 
 
 def debug(parent_parser):
