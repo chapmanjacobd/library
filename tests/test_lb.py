@@ -29,8 +29,14 @@ def test_lb_help(capsys):
 def test_usage(capsys, subcommand):
     with pytest.raises(SystemExit):
         lb([subcommand, "-h"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert f'usage: library {subcommand.replace("_", "-")}' in captured
+    usage = capsys.readouterr().out.splitlines()[0]
+    assert usage.startswith("usage: library")
+
+    # Most commands use `usage: library <subcommand>`, but some declare a custom
+    # usage line (eg. `library links extract`, `library database download`). Accept
+    # any usage line that still contains every word of the subcommand name.
+    name = subcommand.replace("_", "-")
+    assert name in usage or all(word in usage for word in name.split("-"))
 
 
 def get_test_name(s):

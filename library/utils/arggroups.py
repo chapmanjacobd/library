@@ -59,7 +59,9 @@ def args_post(args, parser, create_db=False):
         if k not in ["database", "verbose", "defaults", *list(args.defaults.keys())]
     }
     args.extractor_config = {
-        k: v for k, v in settings.items() if k not in ["db", "paths", "actions", "backfill_pages", "cookie"]
+        k: v
+        for k, v in settings.items()
+        if k not in ["db", "paths", "actions", "backfill_pages", "cookie"]
     } | (getattr(args, "extractor_config", None) or {})
 
     log_args = objects.dict_filter_bool(settings)
@@ -1121,7 +1123,7 @@ def multiple_playback_post(args):
             args.fullscreen = False
 
 
-def extractor(parent_parser):
+def extractor(parent_parser, *, no_extract=True):
     parser = parent_parser.add_argument_group("Extractor")
     parser.add_argument("--no-sanitize", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument(
@@ -1129,21 +1131,27 @@ def extractor(parent_parser):
         action="store_true",
         help="Convert UTF-8 IRIs (RFC 3987) to ASCII percent-encoded URLs (RFC 1738)",
     )
-    parser.add_argument(
-        "--no-extract",
-        "--skip-extract",
-        "--insert-only",
-        "-n",
-        action="store_true",
-        help="Insert paths into media table",
-    )  # TODO: move to its own subcommand
-    parser.add_argument(
-        "--no-extract-playlists",
-        "--skip-extract-playlists",
-        "--insert-only-playlists",
-        action="store_true",
-        help="Insert paths into playlists table",
-    )
+    if no_extract:
+        parser.add_argument(
+            "--no-extract",
+            "--skip-extract",
+            "--insert-only",
+            "-n",
+            action="store_true",
+            help="Insert paths into media table",
+        )  # TODO: move to its own subcommand
+    else:
+        parser.set_defaults(no_extract=False)
+    if no_extract:
+        parser.add_argument(
+            "--no-extract-playlists",
+            "--skip-extract-playlists",
+            "--insert-only-playlists",
+            action="store_true",
+            help="Insert paths into playlists table",
+        )
+    else:
+        parser.set_defaults(no_extract_playlists=False)
     parser.add_argument("--extra", action="store_true", help="Get full metadata (takes a lot longer)")
 
 
@@ -1746,6 +1754,13 @@ def download(parent_parser):
         const=DBType.filesystem,
         help="Use filesystem downloader",
     )
+    profile.add_argument(
+        "--media-type",
+        choices=[DBType.video, DBType.audio, DBType.image, DBType.filesystem],
+        dest="profile",
+        metavar="TYPE",
+        help="Select the download media type",
+    )
     profile.set_defaults(profile=DBType.video)
 
 
@@ -2151,6 +2166,14 @@ def db_profiles(parser):
         dest="profiles",
         const=DBType.image,
         help="Extract image metadata",
+    )
+    profiles.add_argument(
+        "--media-type",
+        choices=[DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem],
+        action="append",
+        dest="profiles",
+        metavar="TYPE",
+        help="Extract metadata for the selected media type",
     )
     parser.add_argument("--scan-all-files", action="store_true")
 

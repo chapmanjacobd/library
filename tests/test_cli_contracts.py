@@ -43,3 +43,11 @@ def test_download_defaults_to_video(monkeypatch):
     args = download.parse_args()
 
     assert args.profile == DBType.video
+
+
+def test_download_links_defaults_to_filesystem(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["download-links", v_db, "--print"])
+
+    args = download.parse_args(download.USAGE["download_links"], links=True)
+
+    assert args.profile == DBType.filesystem
