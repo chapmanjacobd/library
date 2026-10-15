@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 import requests
+import urllib3
 from bs4 import BeautifulSoup
 
 from library.data.http_errors import RecoverableError, UnrecoverableError
@@ -263,6 +264,18 @@ def test_download_url_handles_exhausted_http_retries(monkeypatch, tmp_path):
     assert web.download_url(args, "https://example.com/file.pdf") is None
 
 
+def test_retry_fails_fast_on_name_resolution_error(monkeypatch):
+    monkeypatch.setattr(web, "session", None)
+    args = SimpleNamespace(http_retries=8, http_max_redirects=4)
+    retry = web.requests_session(args).get_adapter("https://example.com").max_retries
+    error = urllib3.exceptions.NameResolutionError("example.com", None, OSError("Name or service not known"))
+
+    with pytest.raises(urllib3.exceptions.MaxRetryError) as exc_info:
+        retry.increment(method="GET", url="/", error=error)
+
+    assert exc_info.value.reason is error
+
+
 class _ShortStreamResponse:
     status_code = 200
     headers = {"Content-Type": "text/plain", "Content-Length": "100"}
@@ -291,6 +304,27 @@ def test_download_url_ignore_size(monkeypatch, tmp_path):
 
     assert path is not None
     assert pathlib.Path(path).read_bytes() == b"short"
+
+
+def test_download_url_writes_file_destination_inside_existing_directory(monkeypatch, tmp_path):
+    session = Mock()
+    session.get.return_value = _ShortStreamResponse()
+    monkeypatch.setattr(web, "session", session)
+
+    directory = tmp_path / "example.com" / "Artwork"
+    directory.mkdir(parents=True)
+    args = SimpleNamespace(
+        allow_insecure=False,
+        download_chunk_size=1024,
+        http_download_retries=0,
+        prefix=str(tmp_path),
+        ignore_size=True,
+    )
+
+    path = web.download_url(args, "https://example.com/Artwork")
+
+    assert path == str(directory / "index.html")
+    assert (directory / "index.html").read_bytes() == b"short"
 
 
 class MockResponse:
