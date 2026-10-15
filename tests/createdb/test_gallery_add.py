@@ -81,6 +81,38 @@ def test_is_supported_single_arg():
     assert rows[0]["r"] in (0, 1)
 
 
+def test_is_supported_excludes_catch_all_extractors(monkeypatch):
+    """gallery-dl's generic/directlink/ytdl extractors match (almost) any URL. is_supported
+    must ignore them so ordinary pages are not claimed by the gallery backend."""
+    import re
+
+    class FakeExtractor:
+        def __init__(self, category, pattern):
+            self.category = category
+            self.pattern = re.compile(pattern)
+
+    monkeypatch.setattr(
+        gallery_backend.is_supported,
+        "extractors",
+        [
+            FakeExtractor("reddit", r"https://reddit\.com/.*"),
+            FakeExtractor("ytdl", r".*"),
+            FakeExtractor("directlink", r".*\.png$"),
+            FakeExtractor("generic", r"generic:.*"),
+        ],
+        raising=False,
+    )
+    monkeypatch.setattr(gallery_backend.is_supported, "configured", True, raising=False)
+    gallery_backend._is_supported_cached.cache_clear()
+    try:
+        assert gallery_backend.is_supported("https://reddit.com/r/library")
+        assert not gallery_backend.is_supported("https://example.com/page")
+        assert not gallery_backend.is_supported("https://example.com/pic.png")
+        assert not gallery_backend.is_supported("generic:https://example.com/x")
+    finally:
+        gallery_backend._is_supported_cached.cache_clear()
+
+
 def test_get_playlist_metadata_uses_child_status_and_extractor(monkeypatch):
     class Extractor:
         def __init__(self, category):

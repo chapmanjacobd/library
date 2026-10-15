@@ -1,4 +1,4 @@
-import argparse, functools, os, random, re, sqlite3, textwrap, typing
+import argparse, functools, importlib.util, os, random, re, sqlite3, textwrap, typing
 from pathlib import Path
 from shutil import which
 
@@ -1669,20 +1669,24 @@ def process_ffmpeg_post(args):
 # --- Media profiles -----------------------------------------------------------
 # A "profile" is a media type (see DBType). There are two consistent shapes:
 #   * `profile`  (single, mutually exclusive) -- commands with one backend
-#     (download, dedupe-media)
+#     (download)
 #   * `profiles` (multi-select scan set) -- commands that walk a file tree
 #     (fs-add, web-add, merge-mv)
 #
+# Commands that need a second axis keep it in a separate destination: dedupe-media
+# puts the dedupe `strategy` next to the media `profile`, and cluster-sort uses an
+# `image` boolean instead of a profile.
+#
 # `auto` is a sentinel meaning "figure it out": download dispatches each URL to
 # the backend that `is_supported` recognizes, while tree-walk commands scan every
-# media type.
+# media type. `text` is only scannable when its extraction deps are installed.
 MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem)
 SCAN_MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text)
 PROFILE_CHOICES = (DBType.auto, *MEDIA_TYPES)
 
 # Every command's default profile, in one place.
 #   str  -> seeds the single `profile`
-#   list -> seeds the multi `profiles`
+#   list -> seeds the multi `profiles` (an empty list means "no default")
 PROFILE_DEFAULTS = {
     SC.download: DBType.auto,
     SC.tube_add: DBType.video,
@@ -1694,9 +1698,7 @@ PROFILE_DEFAULTS = {
     SC.web_add: [],
     SC.web_update: [],
     # commands without an SC action
-    "download_links": DBType.filesystem,
-    "links_download": DBType.filesystem,
-    "direct_download": DBType.filesystem,
+    "download_links": DBType.auto,
     "extract_links": DBType.filesystem,
     "getty_add": DBType.image,
     "merge_mv": [DBType.filesystem],
@@ -1712,23 +1714,40 @@ _MEDIA_TYPE_FLAGS = {
 }
 
 
+@functools.lru_cache(maxsize=1)
+def text_profile_available() -> bool:
+    """The `text` profile needs `textract` (installed with the optional `fat` extra)."""
+    return importlib.util.find_spec("textract") is not None
+
+
 def default_profile(command, fallback=None):
     """Return the registered default profile for a command."""
     return PROFILE_DEFAULTS.get(command, fallback)
 
 
 def expand_profiles(profiles):
-    """Expand the `auto` sentinel into every scannable media type, de-duplicated."""
+    """Expand the `auto` sentinel into every scannable media type, de-duplicated.
+
+    `text` is skipped when its extraction deps are missing so that default scans
+    do not require the optional `fat` extra. Pass `text` explicitly to force it.
+    """
     expanded = []
     for profile in iterables.conform(profiles):
         if profile == DBType.auto:
-            candidates = SCAN_MEDIA_TYPES
+            candidates = tuple(p for p in SCAN_MEDIA_TYPES if p != DBType.text or text_profile_available())
         else:
             candidates = (profile,)
         for candidate in candidates:
             if candidate not in expanded:
                 expanded.append(candidate)
     return expanded
+
+
+def resolve_profiles(command, profiles, *, fallback=None):
+    """Seed the multi `profiles` from PROFILE_DEFAULTS when empty, then expand `auto`."""
+    if not profiles:
+        profiles = default_profile(command, fallback) or []
+    return expand_profiles(profiles)
 
 
 def _add_media_type_argument(container, db_type, *, dest, action, help_text):
@@ -1792,10 +1811,10 @@ def download(parent_parser, *, default=None, profile=True):
     parser.add_argument("--prefix", default=os.getcwd())
 
     if profile:
-        download_profile(parser, default=default)
+        download_profile(parser, default=default if default is not None else default_profile(SC.download))
 
 
-def download_profile(parent_parser, *, default=None):
+def download_profile(parent_parser, *, default):
     """Add the single mutually-exclusive `profile` selection.
 
     Kept separate from `download()` so commands that only need downloader options
@@ -1818,7 +1837,7 @@ def download_profile(parent_parser, *, default=None):
         metavar="TYPE",
         help="Select the download media type (auto dispatches each URL by is_supported)",
     )
-    profile.set_defaults(profile=default if default is not None else default_profile(SC.download, DBType.auto))
+    profile.set_defaults(profile=default)
 
 
 def download_subtitle(parent_parser):
@@ -2186,35 +2205,52 @@ def media_check(parent_parser):
     parser.add_argument("--audio-scan", action="store_true", help="Count errors in audio track only")
 
 
-def db_profiles(parser, *, title="DB Profiles"):
+DB_PROFILE_HELPS = {
+    DBType.auto: "Extract metadata for every media type",
+    DBType.audio: "Extract audio metadata",
+    DBType.filesystem: "Extract filesystem metadata",
+    DBType.video: "Extract video metadata",
+    DBType.text: "Extract text metadata",
+    DBType.image: "Extract image metadata",
+}
+FILE_PROFILE_HELPS = {
+    DBType.auto: "Include all media types",
+    DBType.audio: "Only include audio files",
+    DBType.filesystem: "Include all files (default)",
+    DBType.video: "Only include video files",
+    DBType.text: "Only include text files",
+    DBType.image: "Only include image files",
+}
+
+
+def db_profiles(parser, *, title="DB Profiles", kind="db"):
+    """Add the multi-select `profiles` scan set and (for DB scans) `--scan-all-files`.
+
+    `kind="files"` switches the help text from "extract metadata" to "only include"
+    wording for commands which filter files rather than build a database.
+    """
+    if kind == "files":
+        helps = FILE_PROFILE_HELPS
+        media_type_help = "Only include the selected media type (auto includes every media type)"
+        scan_all_files = False
+    else:
+        helps = DB_PROFILE_HELPS
+        media_type_help = "Extract metadata for the selected media type (auto scans every media type)"
+        scan_all_files = True
+
     profiles = parser.add_argument_group(title)
-    _add_media_type_argument(
-        profiles, DBType.auto, dest="profiles", action="append_const", help_text="Extract metadata for every media type"
-    )
-    _add_media_type_argument(
-        profiles, DBType.audio, dest="profiles", action="append_const", help_text="Extract audio metadata"
-    )
-    _add_media_type_argument(
-        profiles, DBType.filesystem, dest="profiles", action="append_const", help_text="Extract filesystem metadata"
-    )
-    _add_media_type_argument(
-        profiles, DBType.video, dest="profiles", action="append_const", help_text="Extract video metadata"
-    )
-    _add_media_type_argument(
-        profiles, DBType.text, dest="profiles", action="append_const", help_text="Extract text metadata"
-    )
-    _add_media_type_argument(
-        profiles, DBType.image, dest="profiles", action="append_const", help_text="Extract image metadata"
-    )
+    for db_type in (DBType.auto, DBType.audio, DBType.filesystem, DBType.video, DBType.text, DBType.image):
+        _add_media_type_argument(profiles, db_type, dest="profiles", action="append_const", help_text=helps[db_type])
     profiles.add_argument(
         "--media-type",
         choices=PROFILE_CHOICES,
         action="append",
         dest="profiles",
         metavar="TYPE",
-        help="Extract metadata for the selected media type (auto scans every media type)",
+        help=media_type_help,
     )
-    parser.add_argument("--scan-all-files", action="store_true")
+    if scan_all_files:
+        parser.add_argument("--scan-all-files", action="store_true")
 
 
 def frequency(parser):

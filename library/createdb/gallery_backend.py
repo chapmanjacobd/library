@@ -1,3 +1,4 @@
+import functools
 import os
 from pathlib import Path
 from types import ModuleType
@@ -56,7 +57,25 @@ def is_supported(url) -> bool:
     if not getattr(is_supported, "configured", False):
         raise RuntimeError("gallery_backend.is_supported() requires load_module_level_gallery_dl(args) to be called first")
 
-    return any(ie.pattern.match(url) and ie.category != "generic" for ie in is_supported.extractors)
+    return _is_supported_cached(url)
+
+
+# gallery-dl ships catch-all extractors that match (almost) any URL. They are not useful
+# for deciding whether a URL is worth handing to a specific gallery-dl site extractor, and
+# they make `is_supported` return True for ordinary web pages. Exclude them so `auto` falls
+# back to the built-in downloader and `--safe` skips unknown domains.
+#   generic    - `generic:<url>` escape hatch
+#   directlink - any URL ending in a media file extension
+#   ytdl       - yt-dlp delegation; matches literally every URL
+GALLERY_CATCH_ALL_CATEGORIES = frozenset({"generic", "directlink", "ytdl"})
+
+
+@functools.lru_cache(maxsize=8192)
+def _is_supported_cached(url) -> bool:
+    return any(
+        ie.pattern.match(url) and ie.category not in GALLERY_CATCH_ALL_CATEGORIES
+        for ie in is_supported.extractors
+    )
 
 
 def parse_gdl_job_status(job_status, path, ignore_errors=False):

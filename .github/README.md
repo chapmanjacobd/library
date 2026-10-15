@@ -610,12 +610,13 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add local media</summary>
 
     $ library fs-add -h
-    usage: library fs-add [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
+    usage: library fs-add [(--video) | --audio | --image |  --text | --filesystem | --auto] DATABASE PATH ...
 
-    The default database type is video
+    The default database type is auto: every media type is scanned (video, audio, image, text)
 
         library fsadd tv.db ./tv/
-        library fsadd --video tv.db ./tv/  # equivalent
+        library fsadd --video tv.db ./tv/  # scan only video
+        library fsadd --auto mixed.db ./media/  # equivalent to the default
 
     You can also create audio databases. Both audio and video use ffmpeg to read metadata
 
@@ -667,7 +668,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library fsadd audio.db --move ~/library/ ./added_folder/
         This will run destination paths through `library christen` and move files relative to the added folder root
 
-
 </details>
 
 ###### tube-add
@@ -705,7 +705,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add open-directory media</summary>
 
     $ library web-add -h
-    usage: library web-add [--filesystem | --video | --audio | --image | --text] DATABASE URL ...
+    usage: library web-add [--auto | --filesystem | --video | --audio | --image | --text] DATABASE URL ...
 
     Scan open directories (multiple profiles can be selected or none at all)
 
@@ -733,7 +733,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Stream directly to mpv
 
         library watch open_dir.db
-
 
 </details>
 
@@ -2530,61 +2529,70 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Download media</summary>
 
     $ library download -h
-    usage: library download DATABASE [--prefix /mnt/d/] [--video (default) | --audio | --image | --filesystem] [--safe]
+    usage: library database download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,filesystem,text}] [--safe]
 
-    Files will be saved to <prefix>/<extractor>/. The default prefix is the current working directory.
-    The default download profile is video. `--safe` supports audio, video, and image profiles only.
+    Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
+    The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
+    checking which backend supports it (is_supported); unsupported URLs fall back to the
+    built-in downloader. `--safe` supports the auto, audio, video, and image profiles only
+    (not --direct/--text or --media-type filesystem/text).
 
-    By default things will download in a random order
+    By default things download in a random order
 
-        library download dl.db --prefix ~/output/path/root/
+        library database download dl.db --prefix ~/output/path/root/
 
     But you can sort; eg. oldest first
 
-        library download dl.db -u m.time_modified,m.time_created
+        library database download dl.db -u m.time_modified,m.time_created
 
     Limit downloads to a specified playlist URLs
 
-        library fs video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library download --video video.db --from-json -
+        library database filesystem list video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library database download --video video.db --from-json -
 
     Limit downloads to a specified video URLs or substring
 
-        library download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
-        library download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
+        library database download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
+        library database download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
 
-    Recursively download a site (filesystem profile). Only links within the same domain and
-    parent directory as the seed are followed; other links are downloaded but not followed.
+    To download files linked within each page, use the pages/url-focused variant. Only links
+    within the same domain and parent directory as the seed are followed; other links are
+    downloaded but not followed:
 
-        library download links.db --filesystem --recursive --prefix ~/mirror/ https://example.com/docs/
+        library database download links links.db --recursive --prefix ~/mirror/ https://example.com/docs/
+
+    By default each URL is routed to yt-dlp/gallery-dl by is_supported. Pass --direct (or its
+    deprecated alias --text) to download the given URLs with the built-in downloader instead:
+
+        library database download dl.db --direct https://example.com/file.zip
 
     Download a site's archived pages from the Internet Archive Wayback Machine using the CDX API.
-    `--webcache` implies `--links`; add `--recursive` to also parse the archived pages for
-    further links:
+    `--webcache` implies link extraction; extracted links are routed by the active profile (the
+    default profile is auto). Add `--recursive` to also parse the archived pages for further links:
 
-        library download links.db --filesystem --webcache --prefix ~/mirror/ https://example.com/docs/
+        library database download links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
 
     Maximizing the variety of subdomains
 
-        library download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
+        library database download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
 
     Print list of queued up downloads
 
-        library download --print
+        library database download --print
 
     Print list of saved playlists
 
-        library playlists dl.db -p a
+        library database playlists dl.db -p a
 
     Print download queue groups
 
-        library download-status audio.db
+        library database download status audio.db
 
     Check videos before downloading
 
         library watch open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
 
         Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
-        using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
+        using the ask-keep action marks a video as deleted when you 'quit 4' and marks a video as watched when you 'quit'.
 
         For example, here I bind "'" to "MOVE" and  "j" to "DELETE" when using -k ask_move_or_delete
 
@@ -2596,15 +2604,14 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
             `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
 
-        But you will still bind keys in mpv input.conf
+        Bind keys in mpv input.conf:
 
             k quit 5  # goes to keep.txt
             r quit 6  # goes to rejected.txt
 
     Download checked videos
 
-        library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
-
+        library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
 
 </details>
 
@@ -3224,7 +3231,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Dedupe similar media</summary>
 
     $ library dedupe-media -h
-    usage: library dedupe-media [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+    usage: library dedupe-media [--audio | --filesystem | --id | --title | --same-duration] [--only-soft-delete] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
 
@@ -3234,14 +3241,13 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Dedupe based on duration and file basename or dirname similarity
 
-        library dedupe-media video.db --duration --basename -s release_group  # pre-filter with a specific text substring
-        library dedupe-media video.db --duration --basename -u m1.size  # sort such that small files are treated as originals and larger files are deleted
-        library dedupe-media video.db --duration --basename -u 'm1.size desc'  # sort such that large files are treated as originals and smaller files are deleted
+        library dedupe-media video.db --same-duration --basename -s release_group  # pre-filter with a specific text substring
+        library dedupe-media video.db --same-duration --basename -u m1.size  # sort such that small files are treated as originals and larger files are deleted
+        library dedupe-media video.db --same-duration --basename -u 'm1.size desc'  # sort such that large files are treated as originals and smaller files are deleted
 
     Dedupe online against local media
 
         library dedupe-media --compare-dirs video.db / http
-
 
 </details>
 

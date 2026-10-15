@@ -90,7 +90,7 @@ def parse_args(action, **kwargs):
 
     if not args.profiles and args.sizes:
         args.profiles = [DBType.filesystem]
-    args.profiles = arggroups.expand_profiles(args.profiles)
+    args.profiles = arggroups.resolve_profiles(action, args.profiles)
 
     return args
 
@@ -329,7 +329,7 @@ def web_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(consts.SC.web_add, usage=usage.web_update)
+    args = parse_args(consts.SC.web_update, usage=usage.web_update)
 
     web_playlists = db_playlists.get_all(
         args,

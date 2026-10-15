@@ -1,3 +1,4 @@
+import functools
 import json, re, subprocess, sys
 from copy import deepcopy
 from pathlib import Path
@@ -114,6 +115,11 @@ def is_supported(url) -> bool:  # thank you @dbr
         yt_dlp = load_module_level_yt_dlp()
         is_supported.yt_ies = yt_dlp.extractor.gen_extractors()
 
+    return _is_supported_cached(url)
+
+
+@functools.lru_cache(maxsize=8192)
+def _is_supported_cached(url) -> bool:
     return any(ie.suitable(url) and ie.IE_NAME != "generic" for ie in is_supported.yt_ies)
 
 

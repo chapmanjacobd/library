@@ -48,14 +48,6 @@ def parse_args() -> argparse.Namespace:
         help="Dedupe filesystem database",
     )
     profile.add_argument(
-        "--text",
-        action="store_const",
-        dest="profile",
-        const=DBType.text,
-        help=argparse.SUPPRESS,
-        #  "Dedupe text database",
-    )
-    profile.add_argument(
         "--image",
         action="store_const",
         dest="profile",

@@ -1,3 +1,5 @@
+import argparse
+
 import pytest
 
 from library.__main__ import library as lb
@@ -5,7 +7,7 @@ from library.editdb import dedupe_media
 from library.mediadb import download
 from library.mediafiles import process_image
 from library.text import cluster_sort
-from library.utils import arggroups
+from library.utils import arggroups, objects
 from library.utils.consts import DBType, SC
 from tests.utils import v_db
 
@@ -56,19 +58,34 @@ def test_download_media_type_auto(monkeypatch):
     assert args.profile == DBType.auto
 
 
-def test_download_links_defaults_to_filesystem(monkeypatch):
+def test_download_links_defaults_to_auto(monkeypatch):
     monkeypatch.setattr("sys.argv", ["download-links", v_db, "--print"])
 
     args = download.parse_args(download.USAGE["download_links"], links=True)
 
-    assert args.profile == DBType.filesystem
+    assert args.profile == DBType.auto
 
 
-def test_expand_profiles_auto_expands_to_all_media_types():
+def test_expand_profiles_auto_expands_to_all_media_types(monkeypatch):
+    monkeypatch.setattr(arggroups, "text_profile_available", lambda: True)
     expanded = arggroups.expand_profiles([DBType.auto])
 
     assert set(expanded) == {DBType.video, DBType.audio, DBType.image, DBType.text}
     assert DBType.filesystem not in expanded
+
+
+def test_expand_profiles_auto_skips_text_without_deps(monkeypatch):
+    monkeypatch.setattr(arggroups, "text_profile_available", lambda: False)
+    expanded = arggroups.expand_profiles([DBType.auto])
+
+    assert set(expanded) == {DBType.video, DBType.audio, DBType.image}
+    assert DBType.text not in expanded
+
+
+def test_expand_profiles_explicit_text_is_kept_without_deps(monkeypatch):
+    monkeypatch.setattr(arggroups, "text_profile_available", lambda: False)
+
+    assert arggroups.expand_profiles([DBType.text]) == [DBType.text]
 
 
 def test_fs_add_defaults_to_auto():
@@ -95,6 +112,49 @@ def test_download_text_alias_selects_direct(monkeypatch):
     args = download.parse_args()
 
     assert args.direct is True
+
+
+@pytest.mark.parametrize("extra", [["--direct"], ["--text"], ["--filesystem"], ["--media-type", "text"]])
+def test_download_safe_rejects_unsupported_profiles(monkeypatch, extra):
+    monkeypatch.setattr("sys.argv", ["download", "--safe", v_db, *extra, "--print"])
+
+    with pytest.raises(SystemExit):
+        download.parse_args()
+
+
+@pytest.mark.parametrize("extra", [[], ["--audio"], ["--video"], ["--image"], ["--media-type", "auto"]])
+def test_download_safe_accepts_supported_profiles(monkeypatch, extra):
+    monkeypatch.setattr("sys.argv", ["download", "--safe", v_db, *extra, "--print"])
+
+    args = download.parse_args()
+
+    assert args.safe is True
+
+
+def test_dedupe_media_rejects_text_profile(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["dedupe-media", "--text", v_db])
+
+    with pytest.raises(SystemExit):
+        dedupe_media.parse_args()
+
+
+def test_is_profile_auto_matches_scannable_types(monkeypatch):
+    monkeypatch.setattr(arggroups, "text_profile_available", lambda: False)
+    args = argparse.Namespace(profile=DBType.auto)
+
+    assert objects.is_profile(args, DBType.video)
+    assert objects.is_profile(args, DBType.audio)
+    assert objects.is_profile(args, DBType.image)
+    assert not objects.is_profile(args, DBType.filesystem)
+
+
+def test_cluster_sort_lines_is_an_explicit_flag(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["cluster-sort", "--lines"])
+
+    args = cluster_sort.parse_args()
+
+    assert args.lines is True
+    assert args.image is False
 
 
 def test_dedupe_media_type_leaves_strategy_unset(monkeypatch):

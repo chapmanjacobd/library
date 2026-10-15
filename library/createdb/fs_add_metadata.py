@@ -92,7 +92,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[s
     if not Path(path).exists():  # av.munge_av_tags might delete if unplayable or corruption exceeds threshold
         return m
 
-    text_exts = consts.TEXTRACT_EXTENSIONS
+    text_exts = set(consts.TEXTRACT_EXTENSIONS)
     if mp_args.ocr:
         text_exts |= consts.OCR_EXTENSIONS
     if mp_args.speech_recognition:

@@ -45,6 +45,71 @@ def test_resolve_download_profile_auto(monkeypatch):
     assert download_mod.resolve_download_profile(None, "https://x/file.zip") == DBType.filesystem
 
 
+def test_download_auto_dispatches_resolved_links(temp_db, monkeypatch):
+    """Regression: default `download` is auto and must dispatch each extracted link to the
+    matching backend. Routing used to crash because arg_utils.args_override() takes a dict,
+    not **kwargs."""
+    db1 = temp_db()
+    lb(["links-add", db1, "--insert-only", "https://example.com/page"])
+
+    links = [
+        {"link": "https://example.com/clip", "link_text": "", "before_text": "", "after_text": ""},
+        {"link": "https://example.com/pic", "link_text": "", "before_text": "", "after_text": ""},
+        {"link": "https://example.com/raw.html", "link_text": "", "before_text": "", "after_text": ""},
+    ]
+    monkeypatch.setattr(download_mod.extract_links, "crawl", lambda _args, _seeds: iter(links))
+    monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda url: url.endswith("clip"))
+    monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: url.endswith("pic"))
+
+    routed = {"tube": [], "gallery": [], "builtin": []}
+    monkeypatch.setattr(download_mod.tube_backend, "download", lambda _args, m: routed["tube"].append(m["path"]))
+    monkeypatch.setattr(
+        download_mod.gallery_backend, "download", lambda _args, m: routed["gallery"].append(m["path"])
+    )
+    monkeypatch.setattr(
+        download_mod, "_download_builtin", lambda _args, _m, _orig, paths: routed["builtin"].extend(paths)
+    )
+
+    lb(["dl", db1, "--auto", "--recursive", "--force"])
+
+    assert routed["tube"] == ["https://example.com/clip"]
+    assert routed["gallery"] == ["https://example.com/pic"]
+    assert routed["builtin"] == ["https://example.com/raw.html"]
+
+
+def test_safe_with_link_extraction_checks_links_not_seed(temp_db, monkeypatch):
+    """`--safe` must not skip the seed page (which only exists to discover links); it is
+    applied to each extracted link instead."""
+    db1 = temp_db()
+    lb(["links-add", db1, "--insert-only", "https://example.com/page"])
+
+    links = [
+        {"link": "https://example.com/clip", "link_text": "", "before_text": "", "after_text": ""},
+        {"link": "https://example.com/pic", "link_text": "", "before_text": "", "after_text": ""},
+        {"link": "https://example.com/other", "link_text": "", "before_text": "", "after_text": ""},
+    ]
+    monkeypatch.setattr(download_mod.extract_links, "crawl", lambda _args, _seeds: iter(links))
+    monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda url: url.endswith("clip"))
+    monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: url.endswith("pic"))
+
+    routed = {"tube": [], "gallery": [], "builtin": []}
+    monkeypatch.setattr(download_mod.tube_backend, "download", lambda _args, m: routed["tube"].append(m["path"]))
+    monkeypatch.setattr(
+        download_mod.gallery_backend, "download", lambda _args, m: routed["gallery"].append(m["path"])
+    )
+    monkeypatch.setattr(
+        download_mod, "_download_builtin", lambda _args, _m, _orig, paths: routed["builtin"].extend(paths)
+    )
+
+    lb(["dl", db1, "--safe", "--recursive", "--force"])
+
+    assert routed["tube"] == ["https://example.com/clip"]
+    assert routed["gallery"] == ["https://example.com/pic"]
+    assert routed["builtin"] == []
+
+
 def test_download_process_preserves_unsupported_extension(temp_db, crawl_server, tmp_path):
     lb(
         [

@@ -2,6 +2,7 @@ import argparse, sys
 
 import requests
 
+from library import usage
 from library.createdb import gallery_backend, tube_backend
 from library.data.http_errors import HTTPStatus
 from library.mediadb import db_media, db_playlists
@@ -26,94 +27,13 @@ from library.utils.log_utils import log
 from library.utils.sqlgroups import construct_download_query
 
 USAGE = {
-    'download': r"""library database download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,filesystem}] [--safe]
-
-    Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
-    The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
-    checking which backend supports it (is_supported); unsupported URLs fall back to the
-    built-in downloader. `--safe` supports the auto, audio, video, and image profiles only.
-
-    By default things download in a random order
-
-        library database download dl.db --prefix ~/output/path/root/
-
-    But you can sort; eg. oldest first
-
-        library database download dl.db -u m.time_modified,m.time_created
-
-    Limit downloads to a specified playlist URLs
-
-        library database filesystem list video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library database download --video video.db --from-json -
-
-    Limit downloads to a specified video URLs or substring
-
-        library database download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
-        library database download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
-
-    To download files linked within each page, use the pages/url-focused variant. Only links
-    within the same domain and parent directory as the seed are followed; other links are
-    downloaded but not followed:
-
-        library database download links links.db --recursive --prefix ~/mirror/ https://example.com/docs/
-
-    By default URLs are handed to yt-dlp/gallery-dl according to --media-type. Pass --direct to
-    download the given URLs with the built-in downloader instead:
-
-        library database download dl.db --direct https://example.com/file.zip
-
-    Download a site's archived pages from the Internet Archive Wayback Machine using the CDX API.
-    `--webcache` implies the links profile; add `--recursive` to also parse the archived pages
-    for further links:
-
-        library database download links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
-
-    Maximizing the variety of subdomains
-
-        library database download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
-
-    Print list of queued up downloads
-
-        library database download --print
-
-    Print list of saved playlists
-
-        library database playlists dl.db -p a
-
-    Print download queue groups
-
-        library database download status audio.db
-
-    Check videos before downloading
-
-        library play video open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
-
-        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
-        using the ask-keep action marks a video as deleted when you 'quit 4' and marks a video as watched when you 'quit'.
-
-        For example, here I bind "'" to "MOVE" and  "j" to "DELETE" when using -k ask_move_or_delete
-
-            ' quit
-            j quit 4
-
-        This is pretty intuitive after you use it a few times but another option is to
-        define your own post-actions
-
-            `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
-
-        Bind keys in mpv input.conf:
-
-            k quit 5  # goes to keep.txt
-            r quit 6  # goes to rejected.txt
-
-    Download checked videos
-
-        library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
-""",
+    'download': usage.download,  # canonical text lives in library/usage.py
     'download_links': """library database download links DATABASE [URL_OR_PATH ...] [optional args]
 
-    Download the files linked within each page using the filesystem profile. The default
-    download profile is filesystem and link extraction is implied, so the given database rows
-    (or url/path arguments) are treated as pages whose inner links are downloaded.
+    Download the files linked within each page. The default download profile is auto: each
+    extracted link is routed to yt-dlp/gallery-dl by is_supported, falling back to the built-in
+    downloader. Link extraction is implied, so the given database rows (or url/path arguments)
+    are treated as pages whose inner links are downloaded.
 
     Equivalent to:
 
@@ -183,8 +103,17 @@ def parse_args(usage=None, *, links: bool = False):
     if unk and not args.profile in (DBType.video, DBType.audio, DBType.auto):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
 
-    if args.safe and args.profile in (DBType.filesystem, DBType.text):
-        parser.error("--safe is supported only with --auto, --audio, --video, or --image")
+    if args.safe and (args.direct or args.profile in (DBType.filesystem, DBType.text)):
+        parser.error(
+            "--safe is supported only with --auto, --audio, --video, or --image"
+            " (not --direct/--text or --media-type filesystem/text)"
+        )
+
+    if args.safe and args.extract_links:
+        log.warning(
+            "--safe cannot be fully enforced when extracting links from pages; "
+            "only the extracted links are checked against known domains"
+        )
 
     arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
     args.unk = unk
@@ -219,6 +148,21 @@ def resolve_download_profile(args, path) -> str:
     if gallery_backend.is_supported(path):
         return DBType.image
     return DBType.filesystem
+
+
+def _safe_supported(args, path) -> bool:
+    """Whether `--safe` should allow downloading `path` with the active profile.
+
+    `--safe` is only accepted with a media-type profile (see parse_args), so
+    filesystem/text are intentionally not considered here.
+    """
+    if args.profile == DBType.auto:
+        return resolve_download_profile(args, path) != DBType.filesystem
+    if args.profile in (DBType.audio, DBType.video):
+        return tube_backend.is_supported(path)
+    if args.profile == DBType.image:
+        return gallery_backend.is_supported(path)
+    return True
 
 
 def _download(usage, *, links: bool = False) -> None:
@@ -265,20 +209,14 @@ def _download(usage, *, links: bool = False) -> None:
     get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
     if args.safe and args.profile in (DBType.image, DBType.auto):
         gallery_backend.load_module_level_gallery_dl(args)
+    backend_args_cache = {}
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             continue
 
-        if args.safe:
-            if args.profile == DBType.auto:
-                supported = tube_backend.is_supported(m["path"]) or gallery_backend.is_supported(m["path"])
-            elif args.profile in (DBType.audio, DBType.video):
-                supported = tube_backend.is_supported(m["path"])
-            else:
-                supported = gallery_backend.is_supported(m["path"])
-            if not supported:
-                log.info("Skipping unsupported URL (safe_mode) %s", m["path"])
-                continue
+        if args.safe and not args.extract_links and not _safe_supported(args, m["path"]):
+            log.info("Skipping unsupported URL (safe_mode) %s", m["path"])
+            continue
 
         # check if download already attempted recently by another process
         previous_time_attempted = m.get("time_modified") or consts.APPLICATION_START  # 0 is nullified
@@ -355,21 +293,27 @@ def _download(usage, *, links: bool = False) -> None:
                 _download_builtin(args, m, original_path, link_paths)
             else:
                 for link_path in link_paths:
+                    if args.safe and args.extract_links and not _safe_supported(args, link_path):
+                        log.info("Skipping unsupported URL (safe_mode) %s", link_path)
+                        continue
+
                     profile = args.profile
                     if profile == DBType.auto:
                         profile = resolve_download_profile(args, link_path)
-                        backend_args = arg_utils.args_override(args, profile=profile)
-                    else:
+
+                    if profile == args.profile:
                         backend_args = args
+                    else:
+                        if profile not in backend_args_cache:
+                            backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
+                        backend_args = backend_args_cache[profile]
 
                     if profile in (DBType.audio, DBType.video):
                         tube_backend.download(backend_args, m | {"path": link_path})
                     elif profile == DBType.image:
                         gallery_backend.download(backend_args, m | {"path": link_path})
-                    elif profile == DBType.filesystem:
+                    else:  # filesystem, or an unexpected resolved profile
                         _download_builtin(backend_args, m, original_path, [link_path])
-                    else:
-                        raise NotImplementedError
 
         except Exception:
             print("db:", args.database)

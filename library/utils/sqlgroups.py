@@ -1,6 +1,7 @@
 from library.createdb import gallery_backend, tube_backend
 from library.utils import consts, db_utils, filter_engine, sql_utils
 from library.utils.consts import DBType
+from library.utils.log_utils import log
 
 media_select_sql = filter_engine.media_select_sql
 perf_randomize_using_ids = filter_engine.perf_randomize_using_ids
@@ -368,7 +369,10 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
     pl_columns = db_utils.columns(args, "playlists")
 
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
-    if args.safe:
+    is_supported = None
+    if args.safe and not getattr(args, "extract_links", False):
+        # With link extraction the rows are pages, not downloads: the seed pages are fetched to
+        # discover links, and `--safe` is applied to the extracted links instead (see download.py).
         if args.profile in (DBType.audio, DBType.video):
             is_supported = tube_backend.is_supported
         elif args.profile in (DBType.image,):
@@ -383,9 +387,14 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
                 return tube_is_supported(url) or gallery_is_supported(url)
 
         else:
-            raise NotImplementedError
+            log.warning(
+                "--safe cannot check %s URLs against a backend; run without"
+                " --media-type filesystem|text for more accurate results",
+                args.profile,
+            )
 
-        args.db.register_function(is_supported, deterministic=True)
+        if is_supported is not None:
+            args.db.register_function(is_supported, deterministic=True)
 
     if "time_modified" in m_columns and not dl_status:
         args.filter_sql.append(
@@ -432,7 +441,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {same_subdomain if getattr(args, 'same_domain', False) else ''}
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-            {'AND is_supported(m.path)' if args.safe else ''}
+            {'AND is_supported(m.path)' if is_supported is not None else ''}
             AND (1=1 {" ".join(args.filter_sql)})
         ORDER BY 1=1
             {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}

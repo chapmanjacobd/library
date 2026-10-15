@@ -26,9 +26,9 @@ def parse_args() -> argparse.Namespace:
     input_group = parser.add_mutually_exclusive_group()
     input_group.add_argument(
         "--lines",
-        action="store_false",
-        dest="image",
-        help="Cluster lines AS-IS",
+        action="store_true",
+        dest="lines",
+        help="Cluster lines AS-IS (default)",
     )
     input_group.add_argument(
         "--image",
@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         dest="image",
         help="Read image data",
     )
-    parser.set_defaults(image=False)
+    parser.set_defaults(image=False, lines=True)
 
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
@@ -363,12 +363,10 @@ def cluster_sort() -> None:
 
     lines = [s.rstrip("\n") for s in lines if s.strip()]
 
-    if not args.image:
-        groups = cluster_paths(args, lines)
-    elif args.image:
+    if args.image:
         groups = cluster_images(lines, args.clusters)
     else:
-        raise NotImplementedError
+        groups = cluster_paths(args, lines)
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_path"])))
 
     if args.duplicates is True:
@@ -385,7 +383,11 @@ def cluster_sort() -> None:
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))
 
-        if not args.image:
+        if args.image:
+            for i, group in enumerate(groups, start=1):
+                paths = [s.rstrip("\n") for s in group["grouped_paths"]]
+                shell_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
+        else:
             if args.output_path:
                 output_parent = Path(args.output_path).parent
                 output_name = Path(args.output_path).name
@@ -400,11 +402,6 @@ def cluster_sort() -> None:
                 output_path = output_parent / (output_name + "_" + str(i).zfill(min_len))
                 with open(output_path, "w") as output_fd:
                     output_fd.writelines(group["grouped_paths"])
-
-        elif args.image:
-            for i, group in enumerate(groups, start=1):
-                paths = [s.rstrip("\n") for s in group["grouped_paths"]]
-                shell_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
     else:
         lines = (p + "\n" for d in groups for p in d["grouped_paths"])
         if args.output_path:

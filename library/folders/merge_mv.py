@@ -65,7 +65,7 @@ def parse_args(defaults_override=None):
     )
     arggroups.clobber(parser)
 
-    arggroups.db_profiles(parser, title="File Extension Profiles")
+    arggroups.db_profiles(parser, title="File Extension Profiles", kind="files")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser, destination=True)
@@ -96,9 +96,7 @@ def parse_args(defaults_override=None):
         else:
             args.file_over_file = arggroups.file_over_file("delete-src-larger delete-dest")
 
-    if not args.profiles:
-        args.profiles = list(arggroups.default_profile("merge_mv") or [])
-    args.profiles = arggroups.expand_profiles(args.profiles)
+    args.profiles = arggroups.resolve_profiles("merge_mv", args.profiles)
 
     if args.profiles:
         exts = set(args.ext or [])
