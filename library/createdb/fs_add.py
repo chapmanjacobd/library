@@ -55,6 +55,7 @@ def parse_args(action, usage):
 
     if not args.profiles:
         args.profiles = list(arggroups.default_profile(action) or [])
+    args.profiles = arggroups.expand_profiles(args.profiles)
 
     if args.copy:
         args.copy = Path(args.copy).expanduser().resolve()

@@ -121,10 +121,11 @@ stats = """library stats DATABASE TIME_COLUMN
         14 media
 """
 
-download = r"""library download DATABASE [--prefix /mnt/d/] [--video (default) | --audio | --image | --filesystem] [--safe]
+download = r"""library download DATABASE [--prefix /mnt/d/] [--auto (default) | --video | --audio | --image | --filesystem] [--safe]
 
     Files will be saved to <prefix>/<extractor>/. The default prefix is the current working directory.
-    The default download profile is video. `--safe` supports audio, video, and image profiles only.
+    The default download profile is auto: each URL is routed to yt-dlp/gallery-dl by is_supported,
+    falling back to the built-in downloader. `--safe` supports the auto, audio, video, and image profiles only.
 
     By default things will download in a random order
 
@@ -241,12 +242,13 @@ block = r"""library block DATABASE URL ...
         ...
 """
 
-fs_add = """library fs-add [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
+fs_add = """library fs-add [(--video) | --audio | --image |  --text | --filesystem | --auto] DATABASE PATH ...
 
-    The default database type is video
+    The default database type is auto: every media type is scanned (video, audio, image, text)
 
         library fsadd tv.db ./tv/
-        library fsadd --video tv.db ./tv/  # equivalent
+        library fsadd --video tv.db ./tv/  # scan only video
+        library fsadd --auto mixed.db ./media/  # equivalent to the default
 
     You can also create audio databases. Both audio and video use ffmpeg to read metadata
 
@@ -1044,6 +1046,9 @@ merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    By default all files are included (the filesystem profile). Pass --video, --audio, --image,
+    or --text to restrict to specific media extensions (or --auto for all media types)
 
     Move files/folders without losing hierarchy metadata with --relative or relmv
 

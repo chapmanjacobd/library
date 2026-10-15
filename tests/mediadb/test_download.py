@@ -2,6 +2,8 @@ import pytest
 
 from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
+from library.mediadb import download as download_mod
+from library.utils.consts import DBType
 from tests.utils import connect_db_args
 
 URL = "https://www.youtube.com/watch?v=5DqJwmzG6Fk"
@@ -31,6 +33,16 @@ def test_download_links_recursive(temp_db, crawl_server, tmp_path):
     assert any(path.endswith("a.html") for path in downloaded)
     assert any(path.endswith("sub/b.html") for path in downloaded)
     assert any(path.endswith("sub/c.html") for path in downloaded)
+
+
+def test_resolve_download_profile_auto(monkeypatch):
+    monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda path: path.endswith("video"))
+    monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda path: path.endswith("image"))
+
+    assert download_mod.resolve_download_profile(None, "https://x/video") == DBType.video
+    assert download_mod.resolve_download_profile(None, "https://x/image") == DBType.image
+    assert download_mod.resolve_download_profile(None, "https://x/file.zip") == DBType.filesystem
 
 
 def test_download_process_preserves_unsupported_extension(temp_db, crawl_server, tmp_path):

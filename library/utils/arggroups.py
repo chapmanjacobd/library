@@ -1672,19 +1672,25 @@ def process_ffmpeg_post(args):
 #     (download, dedupe-media)
 #   * `profiles` (multi-select scan set) -- commands that walk a file tree
 #     (fs-add, web-add, merge-mv)
-PROFILE_CHOICES = (DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem)
+#
+# `auto` is a sentinel meaning "figure it out": download dispatches each URL to
+# the backend that `is_supported` recognizes, while tree-walk commands scan every
+# media type.
+MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem)
+SCAN_MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text)
+PROFILE_CHOICES = (DBType.auto, *MEDIA_TYPES)
 
 # Every command's default profile, in one place.
 #   str  -> seeds the single `profile`
 #   list -> seeds the multi `profiles`
 PROFILE_DEFAULTS = {
-    SC.download: DBType.video,
+    SC.download: DBType.auto,
     SC.tube_add: DBType.video,
     SC.tube_update: DBType.video,
     SC.gallery_add: DBType.image,
     SC.gallery_update: DBType.image,
-    SC.fs_add: [DBType.video],
-    SC.fs_update: [DBType.video],
+    SC.fs_add: [DBType.auto],
+    SC.fs_update: [DBType.auto],
     SC.web_add: [],
     SC.web_update: [],
     # commands without an SC action
@@ -1693,9 +1699,11 @@ PROFILE_DEFAULTS = {
     "direct_download": DBType.filesystem,
     "extract_links": DBType.filesystem,
     "getty_add": DBType.image,
+    "merge_mv": [DBType.filesystem],
 }
 
 _MEDIA_TYPE_FLAGS = {
+    DBType.auto: ["--auto"],
     DBType.audio: ["--audio"],
     DBType.video: ["--video"],
     DBType.image: ["--image", "--photo", "--images"],
@@ -1709,11 +1717,25 @@ def default_profile(command, fallback=None):
     return PROFILE_DEFAULTS.get(command, fallback)
 
 
+def expand_profiles(profiles):
+    """Expand the `auto` sentinel into every scannable media type, de-duplicated."""
+    expanded = []
+    for profile in iterables.conform(profiles):
+        if profile == DBType.auto:
+            candidates = SCAN_MEDIA_TYPES
+        else:
+            candidates = (profile,)
+        for candidate in candidates:
+            if candidate not in expanded:
+                expanded.append(candidate)
+    return expanded
+
+
 def _add_media_type_argument(container, db_type, *, dest, action, help_text):
     container.add_argument(*_MEDIA_TYPE_FLAGS[db_type], action=action, dest=dest, const=db_type, help=help_text)
 
 
-def download(parent_parser, *, default=None):
+def download(parent_parser, *, default=None, profile=True):
     parser = parent_parser.add_argument_group("Download")
     parser.add_argument(
         "--extractor-config",
@@ -1769,7 +1791,20 @@ def download(parent_parser, *, default=None):
     )
     parser.add_argument("--prefix", default=os.getcwd())
 
-    profile = parser.add_mutually_exclusive_group()
+    if profile:
+        download_profile(parser, default=default)
+
+
+def download_profile(parent_parser, *, default=None):
+    """Add the single mutually-exclusive `profile` selection.
+
+    Kept separate from `download()` so commands that only need downloader options
+    (eg. process-text, images-to-pdf) do not advertise a meaningless media type.
+    """
+    profile = parent_parser.add_mutually_exclusive_group()
+    _add_media_type_argument(
+        profile, DBType.auto, dest="profile", action="store_const", help_text="Automatically choose a downloader per URL"
+    )
     _add_media_type_argument(profile, DBType.audio, dest="profile", action="store_const", help_text="Use audio downloader")
     _add_media_type_argument(profile, DBType.video, dest="profile", action="store_const", help_text="Use video downloader")
     _add_media_type_argument(profile, DBType.image, dest="profile", action="store_const", help_text="Use image downloader")
@@ -1781,9 +1816,9 @@ def download(parent_parser, *, default=None):
         choices=PROFILE_CHOICES,
         dest="profile",
         metavar="TYPE",
-        help="Select the download media type",
+        help="Select the download media type (auto dispatches each URL by is_supported)",
     )
-    profile.set_defaults(profile=default if default is not None else default_profile(SC.download, DBType.video))
+    profile.set_defaults(profile=default if default is not None else default_profile(SC.download, DBType.auto))
 
 
 def download_subtitle(parent_parser):
@@ -2154,6 +2189,9 @@ def media_check(parent_parser):
 def db_profiles(parser, *, title="DB Profiles"):
     profiles = parser.add_argument_group(title)
     _add_media_type_argument(
+        profiles, DBType.auto, dest="profiles", action="append_const", help_text="Extract metadata for every media type"
+    )
+    _add_media_type_argument(
         profiles, DBType.audio, dest="profiles", action="append_const", help_text="Extract audio metadata"
     )
     _add_media_type_argument(
@@ -2174,7 +2212,7 @@ def db_profiles(parser, *, title="DB Profiles"):
         action="append",
         dest="profiles",
         metavar="TYPE",
-        help="Extract metadata for the selected media type",
+        help="Extract metadata for the selected media type (auto scans every media type)",
     )
     parser.add_argument("--scan-all-files", action="store_true")
 

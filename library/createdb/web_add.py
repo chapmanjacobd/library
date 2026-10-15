@@ -90,6 +90,7 @@ def parse_args(action, **kwargs):
 
     if not args.profiles and args.sizes:
         args.profiles = [DBType.filesystem]
+    args.profiles = arggroups.expand_profiles(args.profiles)
 
     return args
 

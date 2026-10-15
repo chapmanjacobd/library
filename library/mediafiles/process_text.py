@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.set_defaults(file_over_file="delete-dest")
     arggroups.ocrmypdf(parser)
     arggroups.requests(parser)
-    arggroups.download(parser)
+    arggroups.download(parser, profile=False)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)

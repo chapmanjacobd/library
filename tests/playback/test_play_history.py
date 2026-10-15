@@ -9,7 +9,7 @@ from library.__main__ import library as lb
 from tests.utils import p
 
 history_db = p("tests/data/history.db")
-lb(["fs-add", history_db, "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
+lb(["fs-add", history_db, "--video", "--scan-subtitles", p("tests/data/"), "-E", "Youtube"])
 lb(["history-add", history_db, p("tests/data/corrupt.mp4")])
 
 history_flags = [

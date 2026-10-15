@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-path", "-o", help="Output PDF file (optional)")
     arggroups.clobber(parser)
     arggroups.requests(parser)
-    arggroups.download(parser)
+    arggroups.download(parser, profile=False)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)

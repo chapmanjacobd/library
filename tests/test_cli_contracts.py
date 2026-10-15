@@ -5,7 +5,8 @@ from library.editdb import dedupe_media
 from library.mediadb import download
 from library.mediafiles import process_image
 from library.text import cluster_sort
-from library.utils.consts import DBType
+from library.utils import arggroups
+from library.utils.consts import DBType, SC
 from tests.utils import v_db
 
 
@@ -39,12 +40,20 @@ def test_delete_original_is_independent_of_delete_larger(monkeypatch):
     assert args.delete_original is True
 
 
-def test_download_defaults_to_video(monkeypatch):
+def test_download_defaults_to_auto(monkeypatch):
     monkeypatch.setattr("sys.argv", ["download", v_db, "--print"])
 
     args = download.parse_args()
 
-    assert args.profile == DBType.video
+    assert args.profile == DBType.auto
+
+
+def test_download_media_type_auto(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["download", "--media-type", "auto", v_db, "--print"])
+
+    args = download.parse_args()
+
+    assert args.profile == DBType.auto
 
 
 def test_download_links_defaults_to_filesystem(monkeypatch):
@@ -53,6 +62,23 @@ def test_download_links_defaults_to_filesystem(monkeypatch):
     args = download.parse_args(download.USAGE["download_links"], links=True)
 
     assert args.profile == DBType.filesystem
+
+
+def test_expand_profiles_auto_expands_to_all_media_types():
+    expanded = arggroups.expand_profiles([DBType.auto])
+
+    assert set(expanded) == {DBType.video, DBType.audio, DBType.image, DBType.text}
+    assert DBType.filesystem not in expanded
+
+
+def test_fs_add_defaults_to_auto():
+    assert arggroups.default_profile(SC.fs_add) == [DBType.auto]
+    assert arggroups.default_profile(SC.fs_update) == [DBType.auto]
+
+
+def test_merge_mv_defaults_to_filesystem():
+    assert arggroups.default_profile("merge_mv") == [DBType.filesystem]
+    assert arggroups.expand_profiles(arggroups.default_profile("merge_mv")) == [DBType.filesystem]
 
 
 def test_download_media_type_includes_text(monkeypatch):

@@ -374,6 +374,14 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         elif args.profile in (DBType.image,):
             gallery_backend.load_module_level_gallery_dl(args)
             is_supported = gallery_backend.is_supported
+        elif args.profile == DBType.auto:
+            gallery_backend.load_module_level_gallery_dl(args)
+            tube_is_supported = tube_backend.is_supported
+            gallery_is_supported = gallery_backend.is_supported
+
+            def is_supported(url):
+                return tube_is_supported(url) or gallery_is_supported(url)
+
         else:
             raise NotImplementedError
 

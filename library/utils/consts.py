@@ -149,6 +149,7 @@ EPOCH_COLUMNS = (
 
 
 class DBType:
+    auto = "auto"
     audio = "audio"
     video = "video"
     filesystem = "filesystem"

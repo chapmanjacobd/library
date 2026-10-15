@@ -9,6 +9,7 @@ from library.mediafiles import process_ffmpeg, process_image
 from library.playback import media_printer
 from library.text import extract_links
 from library.utils import (
+    arg_utils,
     arggroups,
     argparse_utils,
     consts,
@@ -25,10 +26,12 @@ from library.utils.log_utils import log
 from library.utils.sqlgroups import construct_download_query
 
 USAGE = {
-    'download': r"""library database download DATABASE [--prefix /mnt/d/] [--media-type {video,audio,image,filesystem}] [--safe]
+    'download': r"""library database download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,filesystem}] [--safe]
 
     Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
-    The default download profile is video. `--safe` supports audio, video, and image profiles only.
+    The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
+    checking which backend supports it (is_supported); unsupported URLs fall back to the
+    built-in downloader. `--safe` supports the auto, audio, video, and image profiles only.
 
     By default things download in a random order
 
@@ -177,11 +180,11 @@ def parse_args(usage=None, *, links: bool = False):
 
     args.extract_links = links or args.recursive or args.webcache
 
-    if unk and not args.profile in (DBType.video, DBType.audio):
+    if unk and not args.profile in (DBType.video, DBType.audio, DBType.auto):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
 
     if args.safe and args.profile in (DBType.filesystem, DBType.text):
-        parser.error("--safe is supported only with --audio, --video, or --image")
+        parser.error("--safe is supported only with --auto, --audio, --video, or --image")
 
     arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
     args.unk = unk
@@ -206,6 +209,16 @@ def download_links(args=None) -> None:
         sys.argv = ["lb", *args]
 
     _download(USAGE['download_links'], links=True)
+
+
+def resolve_download_profile(args, path) -> str:
+    """Resolve the `auto` download profile to a concrete media type for a URL."""
+    if tube_backend.is_supported(path):
+        return DBType.video
+    gallery_backend.load_module_level_gallery_dl(args)
+    if gallery_backend.is_supported(path):
+        return DBType.image
+    return DBType.filesystem
 
 
 def _download(usage, *, links: bool = False) -> None:
@@ -250,16 +263,20 @@ def _download(usage, *, links: bool = False) -> None:
         return
 
     get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
-    if args.safe and args.profile == DBType.image:
+    if args.safe and args.profile in (DBType.image, DBType.auto):
         gallery_backend.load_module_level_gallery_dl(args)
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             continue
 
         if args.safe:
-            if (args.profile in (DBType.audio, DBType.video) and not tube_backend.is_supported(m["path"])) or (
-                args.profile in (DBType.image,) and not gallery_backend.is_supported(m["path"])
-            ):
+            if args.profile == DBType.auto:
+                supported = tube_backend.is_supported(m["path"]) or gallery_backend.is_supported(m["path"])
+            elif args.profile in (DBType.audio, DBType.video):
+                supported = tube_backend.is_supported(m["path"])
+            else:
+                supported = gallery_backend.is_supported(m["path"])
+            if not supported:
                 log.info("Skipping unsupported URL (safe_mode) %s", m["path"])
                 continue
 
@@ -336,14 +353,23 @@ def _download(usage, *, links: bool = False) -> None:
 
             if args.direct or args.profile in (DBType.filesystem, DBType.text):
                 _download_builtin(args, m, original_path, link_paths)
-            elif args.profile in (DBType.audio, DBType.video):
-                for link_path in link_paths:
-                    tube_backend.download(args, m | {"path": link_path})
-            elif args.profile == DBType.image:
-                for link_path in link_paths:
-                    gallery_backend.download(args, m | {"path": link_path})
             else:
-                raise NotImplementedError
+                for link_path in link_paths:
+                    profile = args.profile
+                    if profile == DBType.auto:
+                        profile = resolve_download_profile(args, link_path)
+                        backend_args = arg_utils.args_override(args, profile=profile)
+                    else:
+                        backend_args = args
+
+                    if profile in (DBType.audio, DBType.video):
+                        tube_backend.download(backend_args, m | {"path": link_path})
+                    elif profile == DBType.image:
+                        gallery_backend.download(backend_args, m | {"path": link_path})
+                    elif profile == DBType.filesystem:
+                        _download_builtin(backend_args, m, original_path, [link_path])
+                    else:
+                        raise NotImplementedError
 
         except Exception:
             print("db:", args.database)
