@@ -1,7 +1,4 @@
-from library.createdb import gallery_backend, tube_backend
 from library.utils import consts, db_utils, filter_engine, sql_utils
-from library.utils.consts import DBType
-from library.utils.log_utils import log
 
 media_select_sql = filter_engine.media_select_sql
 perf_randomize_using_ids = filter_engine.perf_randomize_using_ids
@@ -373,28 +370,15 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
     if args.safe and not getattr(args, "extract_links", False):
         # With link extraction the rows are pages, not downloads: the seed pages are fetched to
         # discover links, and `--safe` is applied to the extracted links instead (see download.py).
-        if args.profile in (DBType.audio, DBType.video):
-            is_supported = tube_backend.is_supported
-        elif args.profile in (DBType.image,):
-            gallery_backend.load_module_level_gallery_dl(args)
-            is_supported = gallery_backend.is_supported
-        elif args.profile == DBType.auto:
-            gallery_backend.load_module_level_gallery_dl(args)
-            tube_is_supported = tube_backend.is_supported
-            gallery_is_supported = gallery_backend.is_supported
+        # `_safe_supported` also handles the lazy gallery-dl pre-load for the image profile.
+        from library.mediadb.download import _safe_supported
 
-            def is_supported(url):
-                return tube_is_supported(url) or gallery_is_supported(url)
+        # Named is_supported so it matches the `is_supported(m.path)` SQL call below.
+        def is_supported(url):
+            return _safe_supported(args, url)
 
-        else:
-            log.warning(
-                "--safe cannot check %s URLs against a backend; run without"
-                " --media-type filesystem|text for more accurate results",
-                args.profile,
-            )
-
-        if is_supported is not None:
-            args.db.register_function(is_supported, deterministic=True)
+    if is_supported is not None:
+        args.db.register_function(is_supported, deterministic=True)
 
     if "time_modified" in m_columns and not dl_status:
         args.filter_sql.append(

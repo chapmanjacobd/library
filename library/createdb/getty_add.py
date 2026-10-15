@@ -4,6 +4,7 @@ from library import usage
 from library.data.http_errors import HTTPStatus
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, iterables, web
+from library.utils.consts import SC
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj
 
@@ -18,7 +19,7 @@ def parse_args():
     arggroups.database(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser, create_db=True)
-    args.profile = arggroups.default_profile("getty_add")
+    args.profile = arggroups.default_profile(SC.getty_add)
 
     web.requests_session(args)  # prepare requests session
 

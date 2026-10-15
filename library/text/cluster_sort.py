@@ -23,20 +23,13 @@ from library.utils.log_utils import Timer, log
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.cluster_sort)
 
-    input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument(
-        "--lines",
-        action="store_true",
-        dest="lines",
-        help="Cluster lines AS-IS (default)",
-    )
-    input_group.add_argument(
+    parser.add_argument(
         "--image",
         action="store_true",
         dest="image",
         help="Read image data",
     )
-    parser.set_defaults(image=False, lines=True)
+    parser.set_defaults(image=False)
 
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)

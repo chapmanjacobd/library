@@ -372,6 +372,12 @@ def download_add(
         print("Would update download metadata:", webpath)
         return
 
+    if getattr(args, "db", None) is None:
+        # DB-less commands (eg. `library links-download`) still download, they just have
+        # nowhere to record the result
+        log.debug("No database connected; skipping download metadata for %s", webpath)
+        return
+
     if delete_webpath_entry is None:
         delete_webpath_entry = mark_deleted or not error
 
@@ -379,7 +385,8 @@ def download_add(
         local_path = str(Path(local_path).resolve())
         fs_args = argparse.Namespace(
             profile=args.profile,
-            scan_subtitles=objects.is_profile(args, DBType.video),
+            scan_subtitles=objects.is_profile(args, DBType.video)
+            and Path(local_path).suffix.lstrip(".").lower() in consts.VIDEO_EXTENSIONS,
             ocr=False,
             speech_recognition=False,
             delete_unplayable=False,

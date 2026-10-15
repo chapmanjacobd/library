@@ -125,7 +125,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.011; 102 subcommands)
+    library (v3.2.011; 105 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -173,6 +173,10 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ regex-sort       │ Sort text by regex split and corpus comparison │
     ├──────────────────┼────────────────────────────────────────────────┤
     │ extract-links    │ Extract inner links from lists of web links    │
+    ├──────────────────┼────────────────────────────────────────────────┤
+    │ links-download   │ Download links from lists of web links         │
+    ├──────────────────┼────────────────────────────────────────────────┤
+    │ direct-download  │ Download URLs directly                         │
     ├──────────────────┼────────────────────────────────────────────────┤
     │ extract-text     │ Extract human text from lists of web links     │
     ├──────────────────┼────────────────────────────────────────────────┤
@@ -286,6 +290,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ playlists       │ List stored playlists                                       │
     ├─────────────────┼─────────────────────────────────────────────────────────────┤
     │ download        │ Download media                                              │
+    ├─────────────────┼─────────────────────────────────────────────────────────────┤
+    │ download-links  │ Download links found in pages                               │
     ├─────────────────┼─────────────────────────────────────────────────────────────┤
     │ download-status │ Show download status                                        │
     ├─────────────────┼─────────────────────────────────────────────────────────────┤
@@ -668,6 +674,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library fsadd audio.db --move ~/library/ ./added_folder/
         This will run destination paths through `library christen` and move files relative to the added folder root
 
+
 </details>
 
 ###### tube-add
@@ -733,6 +740,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Stream directly to mpv
 
         library watch open_dir.db
+
 
 </details>
 
@@ -1156,23 +1164,23 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Extract inner links from lists of web links</summary>
 
     $ library extract-links -h
-    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--local-html] [--file FILE]
+    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--local-html] [--file FILE]
 
     Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
 
-        library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
+        library extract-links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
         https://en.wikipedia.org/wiki/Omelette
 
     Download the filtered links. Internet Archive details pages use the Internet Archive downloader and preserve all original files:
 
-        library extract-links --download https://readrare.com/
+        library links-download https://readrare.com/
 
     Mirror a site recursively. Only links within the same domain and parent directory as the given
     path are followed; links pointing elsewhere are downloaded but not followed. Includes/excludes
     accept globs, so you can prune whole subtrees while crawling:
 
-        library links --recursive --download https://example.com/docs/
-        library links -R --download https://example.com/docs/ --path-exclude '*/tag/*' '*/tags/*'
+        library links-download --recursive https://example.com/docs/
+        library links-download -R https://example.com/docs/ --path-exclude '*/tag/*' '*/tags/*'
 
     Extract links from a web archive CDX index instead of crawling live pages. Internet Archive
     Wayback snapshots are emitted by default. Wayback URLs are collapsed to their original
@@ -1180,24 +1188,57 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     still followed, but multiple captures of the same page are collapsed so only one copy of
     each page is downloaded. Use --webcache-from/--webcache-to to target a time period:
 
-        library links --webcache https://example.com/docs/
-        library links --webcache --recursive --download https://example.com/docs/
-        library links --webcache --webcache-source cc https://example.com/docs/
-        library links --webcache --webcache-from 2020 --webcache-to 2021 https://example.com/docs/
+        library extract-links --webcache https://example.com/docs/
+        library links-download --webcache --recursive https://example.com/docs/
+        library extract-links --webcache --webcache-source cc https://example.com/docs/
+        library extract-links --webcache --webcache-from 2020 --webcache-to 2021 https://example.com/docs/
 
     Common tracking and analytics URLs, including Google Tag Manager and Google Analytics,
-    are excluded by default. Use --path-exclude to replace the default exclusions when needed.
+    plus /tag/, /tags/, and ?tag= URLs, are excluded by default. Use --path-exclude to
+    replace the default exclusions when needed.
 
     Read from local clipboard and filter out links based on nearby plain text
 
-        library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
+        library extract-links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
         # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
 
     Use --selenium for sites require JavaScript
 
-        library links --selenium https://archive.org/search?query=subject%3A%22Archive.org+Census%22 --path-include census
+        library extract-links --selenium https://archive.org/search?query=subject%3A%22Archive.org+Census%22 --path-include census
 
         Run with `-vv` to see the browser that normally loads in the background
+
+
+</details>
+
+###### links-download
+
+<details><summary>Download links from lists of web links</summary>
+
+    $ library links-download -h
+    usage: library links-download PATH ... [optional args]
+
+    Extract links from the given pages and download them. Each link is routed by the active
+    profile (auto by default): yt-dlp for video/audio, gallery-dl for images, and the built-in
+    downloader for everything else.
+
+    Follow same-domain links recursively, or read a web archive CDX index, with the same
+    options as `library extract-links`:
+
+        library links-download --recursive https://example.com/docs/
+        library links-download --webcache https://example.com/docs/
+
+
+</details>
+
+###### direct-download
+
+<details><summary>Download URLs directly</summary>
+
+    $ library direct-download -h
+    usage: library direct-download URL ... [optional args]
+
+    Download the given URLs directly without extracting links from pages.
 
 
 </details>
@@ -1387,6 +1428,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    By default all files are included (the filesystem profile). Pass --video, --audio, --image,
+    or --text to restrict to specific media extensions. --auto selects every media type
+    (video, audio, image, and text) but still excludes other filesystem files.
 
     Move files/folders without losing hierarchy metadata with --relative or relmv
 
@@ -2529,63 +2574,63 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Download media</summary>
 
     $ library download -h
-    usage: library database download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,filesystem,text}] [--safe]
+    usage: library download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,filesystem,text}] [--safe]
 
     Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
     The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
     checking which backend supports it (is_supported); unsupported URLs fall back to the
     built-in downloader. `--safe` supports the auto, audio, video, and image profiles only
-    (not --direct/--text or --media-type filesystem/text).
+    (not --direct or --media-type filesystem/text).
 
     By default things download in a random order
 
-        library database download dl.db --prefix ~/output/path/root/
+        library download dl.db --prefix ~/output/path/root/
 
     But you can sort; eg. oldest first
 
-        library database download dl.db -u m.time_modified,m.time_created
+        library download dl.db -u m.time_modified,m.time_created
 
     Limit downloads to a specified playlist URLs
 
-        library database filesystem list video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library database download --video video.db --from-json -
+        library fs video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library download --video video.db --from-json -
 
     Limit downloads to a specified video URLs or substring
 
-        library database download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
-        library database download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
+        library download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
+        library download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
 
     To download files linked within each page, use the pages/url-focused variant. Only links
     within the same domain and parent directory as the seed are followed; other links are
     downloaded but not followed:
 
-        library database download links links.db --recursive --prefix ~/mirror/ https://example.com/docs/
+        library download-links links.db --recursive --prefix ~/mirror/ https://example.com/docs/
 
-    By default each URL is routed to yt-dlp/gallery-dl by is_supported. Pass --direct (or its
-    deprecated alias --text) to download the given URLs with the built-in downloader instead:
+    By default each URL is routed to yt-dlp/gallery-dl by is_supported. Pass --direct to
+    download the given URLs with the built-in downloader instead:
 
-        library database download dl.db --direct https://example.com/file.zip
+        library download dl.db --direct https://example.com/file.zip
 
     Download a site's archived pages from the Internet Archive Wayback Machine using the CDX API.
     `--webcache` implies link extraction; extracted links are routed by the active profile (the
     default profile is auto). Add `--recursive` to also parse the archived pages for further links:
 
-        library database download links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
+        library download-links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
 
     Maximizing the variety of subdomains
 
-        library database download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
+        library download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
 
     Print list of queued up downloads
 
-        library database download --print
+        library download --print
 
     Print list of saved playlists
 
-        library database playlists dl.db -p a
+        library playlists dl.db -p a
 
     Print download queue groups
 
-        library database download status audio.db
+        library download-status audio.db
 
     Check videos before downloading
 
@@ -2611,7 +2656,33 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Download checked videos
 
-        library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
+        library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
+
+
+</details>
+
+###### download-links
+
+<details><summary>Download links found in pages</summary>
+
+    $ library download-links -h
+    usage: library download-links DATABASE [URL_OR_PATH ...] [optional args]
+
+    Download the files linked within each page. The default download profile is auto: each
+    extracted link is routed to yt-dlp/gallery-dl by is_supported, falling back to the built-in
+    downloader. Link extraction is implied, so the given database rows (or url/path arguments)
+    are treated as pages whose inner links are downloaded.
+
+    Follow same-domain links recursively:
+
+        library download-links links.db --recursive --prefix ~/mirror/
+
+    Download archived pages from the Internet Archive Wayback Machine using the CDX API.
+    `--webcache` extracts links from archived pages; add `--recursive` to also parse them for
+    further links:
+
+        library download-links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
+
 
 </details>
 
@@ -3248,6 +3319,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Dedupe online against local media
 
         library dedupe-media --compare-dirs video.db / http
+
 
 </details>
 

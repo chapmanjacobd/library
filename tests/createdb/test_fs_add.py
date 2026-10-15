@@ -125,7 +125,10 @@ def test_extract_chunk_writes_tag_captions():
     assert captions[0]["text"] == "some tags\nmore"
 
 
-def test_needs_process_pool_splits_threadsafe_and_process_media():
+def test_needs_process_pool_only_routes_text():
+    """Only text extraction is not thread-safe (textract starts its own pool). Images use
+    thread-safe subprocesses (process_image/ImageMagick) and exiftool runs in the main
+    process, so both audio/video and image files stay in the ThreadPoolExecutor."""
     args = SimpleNamespace(
         profiles=[DBType.video, DBType.audio], scan_all_files=False, ocr=False, speech_recognition=False
     )
@@ -133,7 +136,7 @@ def test_needs_process_pool_splits_threadsafe_and_process_media():
     assert fs_add.needs_process_pool(args, "/x/song.mp3") is False
 
     image_args = SimpleNamespace(profiles=[DBType.image], scan_all_files=False, ocr=False, speech_recognition=False)
-    assert fs_add.needs_process_pool(image_args, "/x/photo.jpg") is True
+    assert fs_add.needs_process_pool(image_args, "/x/photo.jpg") is False
     assert fs_add.needs_process_pool(image_args, "/x/clip.mp4") is False
 
     text_args = SimpleNamespace(profiles=[DBType.text], scan_all_files=False, ocr=False, speech_recognition=False)

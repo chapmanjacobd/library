@@ -55,6 +55,17 @@ def parse_args(action, usage):
 
     args.profiles = arggroups.resolve_profiles(action, args.profiles)
 
+    if DBType.text in args.profiles and not arggroups.text_profile_available():
+        log.warning(
+            "The text profile was selected but textract is not installed;"
+            " text files will be skipped (pip install textract-py3)"
+        )
+    if DBType.image in args.profiles and not arggroups.image_profile_available():
+        log.warning(
+            "The image profile was selected but PyExifTool/exiftool is not installed;"
+            " image metadata will not be extracted (pip install PyExifTool)"
+        )
+
     if args.copy:
         args.copy = Path(args.copy).expanduser().resolve()
     if args.move:
@@ -224,15 +235,13 @@ def find_new_files(args, path) -> list[str]:
 
 
 def needs_process_pool(args, path: str) -> bool:
-    """Image/text extraction is not thread-safe (exiftool handles and textract's internal
-    multiprocessing pool), so those files are processed with a ProcessPoolExecutor while
-    audio/video/filesystem metadata stays in the ThreadPoolExecutor.
+    """Text extraction is not thread-safe (textract starts its own multiprocessing pool),
+    so those files are processed with a ProcessPoolExecutor. Everything else -- including
+    images, whose exiftool enrichment runs in the main process (see `extract_chunk`) -- stays
+    in the ThreadPoolExecutor.
     """
     ext = path.rsplit(".", 1)[-1].lower()
     is_scan_all_files = getattr(args, "scan_all_files", False)
-
-    if objects.is_profile(args, DBType.image) and (ext in consts.IMAGE_EXTENSIONS or is_scan_all_files):
-        return True
 
     text_exts = set(consts.TEXTRACT_EXTENSIONS)
     if getattr(args, "ocr", False):
@@ -307,42 +316,51 @@ def scan_path(args, path_str: str) -> int:
         files_chunked = iterables.chunks(new_files, batch_count)
 
         start_time = consts.now()
+        thread_pool = None
         process_pool = None
-        # audio/video/filesystem metadata is gathered with subprocesses (thread-safe);
-        # image/text extraction is not, so those files use a ProcessPoolExecutor.
-        with ThreadPoolExecutor(n_jobs) as thread_pool:
-            try:
-                for idx, chunk_paths in enumerate(files_chunked):
-                    percent = (idx + 1) / chunks_count * 100
-                    eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if idx > 2 else ""
-                    printing.print_overwrite(
-                        f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
-                    )
+        # audio/video/image/filesystem metadata only shells out (ffprobe/exiftool/ImageMagick) or
+        # reads files, so it is safe to run in threads; only text extraction starts its own pool
+        # inside textract and therefore needs a ProcessPoolExecutor (see `needs_process_pool`).
+        try:
+            for idx, chunk_paths in enumerate(files_chunked):
+                percent = (idx + 1) / chunks_count * 100
+                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if idx > 2 else ""
+                printing.print_overwrite(
+                    f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
+                )
 
-                    mp_args = argparse.Namespace(
-                        playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
-                    )
+                mp_args = argparse.Namespace(
+                    playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
+                )
 
-                    thread_paths = []
-                    process_paths = []
-                    for p in chunk_paths:
-                        (process_paths if needs_process_pool(mp_args, p) else thread_paths).append(p)
+                thread_paths = []
+                process_paths = []
+                for p in chunk_paths:
+                    (process_paths if needs_process_pool(mp_args, p) else thread_paths).append(p)
 
-                    metadata = []
-                    if thread_paths:
-                        metadata += iterables.conform(thread_pool.map(partial(extract_metadata, mp_args), thread_paths))
-                    if process_paths:
-                        if process_pool is None:
-                            process_pool = ProcessPoolExecutor(n_jobs)
-                        metadata += iterables.conform(
-                            process_pool.map(partial(extract_metadata, mp_args), process_paths)
-                        )
+                # The two executors run independently; key the results by path so the
+                # metadata is reassembled in the original chunk order.
+                results = {}
+                if thread_paths:
+                    if thread_pool is None:
+                        thread_pool = ThreadPoolExecutor(n_jobs)
+                    for p, m in zip(thread_paths, thread_pool.map(partial(extract_metadata, mp_args), thread_paths)):
+                        results[p] = m
+                if process_paths:
+                    if process_pool is None:
+                        process_pool = ProcessPoolExecutor(n_jobs)
+                    for p, m in zip(
+                        process_paths, process_pool.map(partial(extract_metadata, mp_args), process_paths)
+                    ):
+                        results[p] = m
 
-                    extract_chunk(args, metadata)
-                print()
-            finally:
-                if process_pool is not None:
-                    process_pool.shutdown()
+                extract_chunk(args, iterables.conform([results.get(p) for p in chunk_paths]))
+            print()
+        finally:
+            if thread_pool is not None:
+                thread_pool.shutdown()
+            if process_pool is not None:
+                process_pool.shutdown()
 
     return len(new_files)
 

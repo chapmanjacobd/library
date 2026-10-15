@@ -1,4 +1,5 @@
 import functools
+import importlib.util
 import os
 from pathlib import Path
 from types import ModuleType
@@ -8,6 +9,16 @@ from library.utils import consts, printing, strings
 from library.utils.log_utils import log
 
 gallery_dl = None
+
+
+@functools.lru_cache(maxsize=1)
+def gallery_dl_available() -> bool:
+    """Whether gallery-dl (pip install gallery-dl) is importable.
+
+    Callers that only *may* use gallery-dl (eg. `auto` download routing) check this
+    before loading it so that a minimal install still works with yt-dlp/builtin only.
+    """
+    return importlib.util.find_spec("gallery_dl") is not None
 
 
 def load_module_level_gallery_dl(args=None) -> ModuleType:
@@ -60,6 +71,21 @@ def is_supported(url) -> bool:
     return _is_supported_cached(url)
 
 
+def is_supported_image(url) -> bool:
+    """Like `is_supported`, but for an explicit image-only run.
+
+    Direct image URLs are handled by gallery-dl's `directlink` extractor, so it is kept
+    here. The `ytdl` extractor is still excluded: it matches literally every URL and is
+    handled by the tube backend instead.
+    """
+    if not getattr(is_supported, "configured", False):
+        raise RuntimeError(
+            "gallery_backend.is_supported_image() requires load_module_level_gallery_dl(args) to be called first"
+        )
+
+    return _is_supported_cached(url, image_only=True)
+
+
 # gallery-dl ships catch-all extractors that match (almost) any URL. They are not useful
 # for deciding whether a URL is worth handing to a specific gallery-dl site extractor, and
 # they make `is_supported` return True for ordinary web pages. Exclude them so `auto` falls
@@ -68,13 +94,17 @@ def is_supported(url) -> bool:
 #   directlink - any URL ending in a media file extension
 #   ytdl       - yt-dlp delegation; matches literally every URL
 GALLERY_CATCH_ALL_CATEGORIES = frozenset({"generic", "directlink", "ytdl"})
+# An explicit image-only run keeps gallery-dl's `directlink` and `generic` extractors, but
+# `ytdl` is always excluded because the tube backend owns those URLs.
+GALLERY_IMAGE_EXCLUDED_CATEGORIES = frozenset({"ytdl"})
 
 
 @functools.lru_cache(maxsize=8192)
-def _is_supported_cached(url) -> bool:
+def _is_supported_cached(url, image_only=False) -> bool:
+    excluded = GALLERY_IMAGE_EXCLUDED_CATEGORIES if image_only else GALLERY_CATCH_ALL_CATEGORIES
+
     return any(
-        ie.pattern.match(url) and ie.category not in GALLERY_CATCH_ALL_CATEGORIES
-        for ie in is_supported.extractors
+        ie.pattern.match(url) and ie.category not in excluded for ie in is_supported.extractors
     )
 
 

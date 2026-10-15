@@ -92,6 +92,17 @@ def parse_args(action, **kwargs):
         args.profiles = [DBType.filesystem]
     args.profiles = arggroups.resolve_profiles(action, args.profiles)
 
+    if DBType.text in args.profiles and not arggroups.text_profile_available():
+        log.warning(
+            "The text profile was selected but textract is not installed;"
+            " text files will be skipped (pip install textract-py3)"
+        )
+    if DBType.image in args.profiles and not arggroups.image_profile_available():
+        log.warning(
+            "The image profile was selected but PyExifTool/exiftool is not installed;"
+            " image metadata will not be extracted (pip install PyExifTool)"
+        )
+
     return args
 
 

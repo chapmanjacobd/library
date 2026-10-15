@@ -1,8 +1,8 @@
-import argparse, sys
+import sys
 
 import requests
 
-from library import usage
+from library import usage as usage_mod
 from library.createdb import gallery_backend, tube_backend
 from library.data.http_errors import HTTPStatus
 from library.mediadb import db_media, db_playlists
@@ -26,47 +26,16 @@ from library.utils.consts import DBType
 from library.utils.log_utils import log
 from library.utils.sqlgroups import construct_download_query
 
-USAGE = {
-    'download': usage.download,  # canonical text lives in library/usage.py
-    'download_links': """library database download links DATABASE [URL_OR_PATH ...] [optional args]
-
-    Download the files linked within each page. The default download profile is auto: each
-    extracted link is routed to yt-dlp/gallery-dl by is_supported, falling back to the built-in
-    downloader. Link extraction is implied, so the given database rows (or url/path arguments)
-    are treated as pages whose inner links are downloaded.
-
-    Equivalent to:
-
-        library database download links DATABASE [URL_OR_PATH ...]
-
-    Follow same-domain links recursively:
-
-        library database download links links.db --recursive --prefix ~/mirror/
-
-    Download archived pages from the Internet Archive Wayback Machine using the CDX API.
-    `--webcache` extracts links from archived pages; add `--recursive` to also parse them for
-    further links:
-
-        library database download links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
-""",
-}
-
 
 def parse_args(usage=None, *, links: bool = False):
-    parser = argparse_utils.ArgumentParser(usage=usage or USAGE['download'])
+    parser = argparse_utils.ArgumentParser(usage=usage or usage_mod.download)
     arggroups.sql_fs(parser)
 
-    arggroups.download(parser, default=arggroups.default_profile("download_links") if links else None)
+    arggroups.download(parser, text_alias=True)
     parser.add_argument(
         "--direct",
         action="store_true",
         help="Download URLs with the built-in downloader instead of yt-dlp/gallery-dl",
-    )
-    parser.add_argument(
-        "--text",
-        action="store_true",
-        dest="direct",
-        help=argparse.SUPPRESS,
     )
     arggroups.download_subtitle(parser)
     arggroups.requests(parser)
@@ -76,13 +45,7 @@ def parse_args(usage=None, *, links: bool = False):
 
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
-    parser.add_argument("--live", action="store_true", help="Video: Allow live streams to be downloaded")
-
-    parser.add_argument("--small", action="store_true", help="Video: Prefer 480p-like")
-
-    parser.add_argument("--photos", action="store_true", help="Image: Only download JPG and WEBP")
-    parser.add_argument("--drawings", action="store_true", help="Image: Only download PNG")
-    parser.add_argument("--gifs", action="store_true", help="Image: Only download MP4 and GIFs")
+    arggroups.download_media_filters(parser)
 
     parser.add_argument("--process", action="store_true", help="Transcode images to AVIF and video/audio to AV1/Opus")
     arggroups.clobber(parser)
@@ -130,24 +93,60 @@ def download(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    _download(USAGE['download'])
+    _download(usage_mod.download)
 
 
 def download_links(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    _download(USAGE['download_links'], links=True)
+    _download(usage_mod.download_links, links=True)
 
 
 def resolve_download_profile(args, path) -> str:
-    """Resolve the `auto` download profile to a concrete media type for a URL."""
+    """Resolve the `auto` download profile to a concrete media type for a URL.
+
+    gallery-dl is an optional dependency (pip install gallery-dl): when it is missing,
+    `auto` falls back to yt-dlp and the built-in downloader instead of failing.
+    """
     if tube_backend.is_supported(path):
         return DBType.video
-    gallery_backend.load_module_level_gallery_dl(args)
-    if gallery_backend.is_supported(path):
-        return DBType.image
+    if gallery_backend.gallery_dl_available():
+        if not getattr(gallery_backend.is_supported, "configured", False):
+            gallery_backend.load_module_level_gallery_dl(args)
+        if gallery_backend.is_supported(path):
+            return DBType.image
     return DBType.filesystem
+
+
+def _dispatch_link(args, m, original_path, link_path, backend_args_cache, builtin_fn) -> None:
+    """Download a single resolved link with the backend chosen by `args.profile`.
+
+    `auto` (the default) resolves each link independently via is_supported. `builtin_fn` is
+    called for filesystem/text, or an unexpected resolved profile, with the signature
+    `builtin_fn(args, m, original_path, link_path)`.
+    """
+    profile = args.profile
+    if profile == DBType.auto:
+        profile = resolve_download_profile(args, link_path)
+
+    if profile == args.profile:
+        backend_args = args
+    else:
+        if profile not in backend_args_cache:
+            backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
+        backend_args = backend_args_cache[profile]
+
+    if profile in (DBType.audio, DBType.video):
+        tube_backend.download(backend_args, m | {"path": link_path})
+    elif profile == DBType.image:
+        gallery_backend.download(backend_args, m | {"path": link_path})
+    else:  # filesystem, or an unexpected resolved profile
+        builtin_fn(backend_args, m, original_path, link_path)
+
+
+def _download_builtin_one(args, m, original_path, link_path) -> None:
+    _download_builtin(args, m, original_path, [link_path])
 
 
 def _safe_supported(args, path) -> bool:
@@ -161,7 +160,12 @@ def _safe_supported(args, path) -> bool:
     if args.profile in (DBType.audio, DBType.video):
         return tube_backend.is_supported(path)
     if args.profile == DBType.image:
-        return gallery_backend.is_supported(path)
+        # An explicit image-only run also accepts gallery-dl's `directlink` extractor,
+        # which is what handles direct image URLs. Load gallery-dl lazily so DB-less
+        # link-download commands work without a separate pre-load.
+        if not getattr(gallery_backend.is_supported, "configured", False):
+            gallery_backend.load_module_level_gallery_dl(args)
+        return gallery_backend.is_supported_image(path)
     return True
 
 
@@ -207,8 +211,12 @@ def _download(usage, *, links: bool = False) -> None:
         return
 
     get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
-    if args.safe and args.profile in (DBType.image, DBType.auto):
-        gallery_backend.load_module_level_gallery_dl(args)
+    if args.safe:
+        # `auto` only uses gallery-dl when it is installed; an explicit image run requires it.
+        if args.profile == DBType.image:
+            gallery_backend.load_module_level_gallery_dl(args)
+        elif args.profile == DBType.auto and gallery_backend.gallery_dl_available():
+            gallery_backend.load_module_level_gallery_dl(args)
     backend_args_cache = {}
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
@@ -297,23 +305,7 @@ def _download(usage, *, links: bool = False) -> None:
                         log.info("Skipping unsupported URL (safe_mode) %s", link_path)
                         continue
 
-                    profile = args.profile
-                    if profile == DBType.auto:
-                        profile = resolve_download_profile(args, link_path)
-
-                    if profile == args.profile:
-                        backend_args = args
-                    else:
-                        if profile not in backend_args_cache:
-                            backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
-                        backend_args = backend_args_cache[profile]
-
-                    if profile in (DBType.audio, DBType.video):
-                        tube_backend.download(backend_args, m | {"path": link_path})
-                    elif profile == DBType.image:
-                        gallery_backend.download(backend_args, m | {"path": link_path})
-                    else:  # filesystem, or an unexpected resolved profile
-                        _download_builtin(backend_args, m, original_path, [link_path])
+                    _dispatch_link(args, m, original_path, link_path, backend_args_cache, _download_builtin_one)
 
         except Exception:
             print("db:", args.database)

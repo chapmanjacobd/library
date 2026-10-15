@@ -1697,27 +1697,30 @@ PROFILE_DEFAULTS = {
     SC.fs_update: [DBType.auto],
     SC.web_add: [],
     SC.web_update: [],
-    # commands without an SC action
-    "download_links": DBType.auto,
-    "extract_links": DBType.filesystem,
-    "getty_add": DBType.image,
-    "merge_mv": [DBType.filesystem],
+    SC.getty_add: DBType.image,
+    SC.merge_mv: [DBType.filesystem],
 }
 
 _MEDIA_TYPE_FLAGS = {
     DBType.auto: ["--auto"],
     DBType.audio: ["--audio"],
     DBType.video: ["--video"],
-    DBType.image: ["--image", "--photo", "--images"],
+    DBType.image: ["--image", "--images"],
     DBType.text: ["--text"],
-    DBType.filesystem: ["--filesystem", "--fs", "--web"],
+    DBType.filesystem: ["--filesystem", "--fs"],
 }
 
 
 @functools.lru_cache(maxsize=1)
 def text_profile_available() -> bool:
-    """The `text` profile needs `textract` (installed with the optional `fat` extra)."""
+    """The `text` profile needs `textract` (pip install textract-py3)."""
     return importlib.util.find_spec("textract") is not None
+
+
+@functools.lru_cache(maxsize=1)
+def image_profile_available() -> bool:
+    """The `image` profile needs PyExifTool (pip install PyExifTool) and the `exiftool` binary."""
+    return importlib.util.find_spec("exiftool") is not None and which("exiftool") is not None
 
 
 def default_profile(command, fallback=None):
@@ -1725,16 +1728,33 @@ def default_profile(command, fallback=None):
     return PROFILE_DEFAULTS.get(command, fallback)
 
 
+def auto_scan_media_types() -> tuple:
+    """Return the scannable media types that `auto` expands to.
+
+    Keyed on the (cached) availability of the optional `text`/`image` deps so the result is
+    computed once per availability combination, not on every `is_profile` call.
+    """
+    return _auto_scan_media_types(text_available=text_profile_available(), image_available=image_profile_available())
+
+
+@functools.lru_cache(maxsize=4)
+def _auto_scan_media_types(*, text_available: bool, image_available: bool) -> tuple:
+    return tuple(
+        p for p in SCAN_MEDIA_TYPES if (p != DBType.text or text_available) and (p != DBType.image or image_available)
+    )
+
+
 def expand_profiles(profiles):
     """Expand the `auto` sentinel into every scannable media type, de-duplicated.
 
-    `text` is skipped when its extraction deps are missing so that default scans
-    do not require the optional `fat` extra. Pass `text` explicitly to force it.
+    `text` and `image` are skipped when their extraction deps are missing so that
+    default scans do not require the optional `fat`/`deluxe` extras. Pass them
+    explicitly to force them.
     """
     expanded = []
     for profile in iterables.conform(profiles):
         if profile == DBType.auto:
-            candidates = tuple(p for p in SCAN_MEDIA_TYPES if p != DBType.text or text_profile_available())
+            candidates = auto_scan_media_types()
         else:
             candidates = (profile,)
         for candidate in candidates:
@@ -1754,7 +1774,7 @@ def _add_media_type_argument(container, db_type, *, dest, action, help_text):
     container.add_argument(*_MEDIA_TYPE_FLAGS[db_type], action=action, dest=dest, const=db_type, help=help_text)
 
 
-def download(parent_parser, *, default=None, profile=True):
+def download(parent_parser, *, default=None, profile=True, text_alias=False):
     parser = parent_parser.add_argument_group("Download")
     parser.add_argument(
         "--extractor-config",
@@ -1811,14 +1831,21 @@ def download(parent_parser, *, default=None, profile=True):
     parser.add_argument("--prefix", default=os.getcwd())
 
     if profile:
-        download_profile(parser, default=default if default is not None else default_profile(SC.download))
+        download_profile(
+            parser,
+            default=default if default is not None else default_profile(SC.download),
+            text_alias=text_alias,
+        )
 
 
-def download_profile(parent_parser, *, default):
+def download_profile(parent_parser, *, default, text_alias=False):
     """Add the single mutually-exclusive `profile` selection.
 
-    Kept separate from `download()` so commands that only need downloader options
-    (eg. process-text, images-to-pdf) do not advertise a meaningless media type.
+    Kept separate from `download()` so the `profile=False` callers (eg. process-text,
+    images-to-pdf) can reuse only the downloader options without a media type.
+
+    `text_alias` adds a hidden `--text` that is an alias of `--media-type text`; it is only
+    enabled for the download command, where selecting the text profile is meaningful.
     """
     profile = parent_parser.add_mutually_exclusive_group()
     _add_media_type_argument(
@@ -1830,6 +1857,11 @@ def download_profile(parent_parser, *, default):
     _add_media_type_argument(
         profile, DBType.filesystem, dest="profile", action="store_const", help_text="Use filesystem downloader"
     )
+    # Legacy alias for the filesystem downloader, kept only here (not on tree-scan profiles,
+    # where `--web` would be misleading).
+    profile.add_argument(
+        "--web", action="store_const", dest="profile", const=DBType.filesystem, help=argparse.SUPPRESS
+    )
     profile.add_argument(
         "--media-type",
         choices=PROFILE_CHOICES,
@@ -1837,7 +1869,20 @@ def download_profile(parent_parser, *, default):
         metavar="TYPE",
         help="Select the download media type (auto dispatches each URL by is_supported)",
     )
+    if text_alias:
+        # Hidden alias so `--text` and `--media-type text` mean the same thing.
+        _add_media_type_argument(profile, DBType.text, dest="profile", action="store_const", help_text=argparse.SUPPRESS)
     profile.set_defaults(profile=default)
+
+
+def download_media_filters(parent_parser):
+    """yt-dlp/gallery-dl output filters shared by the download and link-download commands."""
+    parser = parent_parser.add_argument_group("Download Media Filters")
+    parser.add_argument("--live", action="store_true", help="Video: Allow live streams to be downloaded")
+    parser.add_argument("--small", action="store_true", help="Video: Prefer 480p-like")
+    parser.add_argument("--photos", action="store_true", help="Image: Only download JPG and WEBP")
+    parser.add_argument("--drawings", action="store_true", help="Image: Only download PNG")
+    parser.add_argument("--gifs", action="store_true", help="Image: Only download MP4 and GIFs")
 
 
 def download_subtitle(parent_parser):

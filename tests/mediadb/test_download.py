@@ -1,7 +1,10 @@
 import pytest
 
+from types import SimpleNamespace
+
 from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
+from library.mediadb import db_media
 from library.mediadb import download as download_mod
 from library.utils.consts import DBType
 from tests.utils import connect_db_args
@@ -35,14 +38,36 @@ def test_download_links_recursive(temp_db, crawl_server, tmp_path):
     assert any(path.endswith("sub/c.html") for path in downloaded)
 
 
+def test_download_add_without_db_is_noop():
+    """DB-less commands (eg. `library links-download`) download without recording; download_add
+    must tolerate a missing database."""
+    db_media.download_add(SimpleNamespace(), "https://example.com/x")  # must not raise
+
+
 def test_resolve_download_profile_auto(monkeypatch):
     monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda path: path.endswith("video"))
+    monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: True)
     monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
     monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda path: path.endswith("image"))
 
     assert download_mod.resolve_download_profile(None, "https://x/video") == DBType.video
     assert download_mod.resolve_download_profile(None, "https://x/image") == DBType.image
     assert download_mod.resolve_download_profile(None, "https://x/file.zip") == DBType.filesystem
+
+
+def test_resolve_download_profile_auto_without_gallery_dl(monkeypatch):
+    """gallery-dl is an optional (deluxe) dependency; `auto` must fall back to yt-dlp and
+    the built-in downloader rather than crashing when it is missing."""
+    monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda path: path.endswith("video"))
+    monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: False)
+
+    def boom(*_args, **_kwargs):
+        raise AssertionError("gallery-dl must not be loaded when it is unavailable")
+
+    monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", boom)
+
+    assert download_mod.resolve_download_profile(None, "https://x/video") == DBType.video
+    assert download_mod.resolve_download_profile(None, "https://x/image") == DBType.filesystem
 
 
 def test_download_auto_dispatches_resolved_links(temp_db, monkeypatch):
@@ -59,6 +84,7 @@ def test_download_auto_dispatches_resolved_links(temp_db, monkeypatch):
     ]
     monkeypatch.setattr(download_mod.extract_links, "crawl", lambda _args, _seeds: iter(links))
     monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda url: url.endswith("clip"))
+    monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: True)
     monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
     monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: url.endswith("pic"))
 
@@ -91,6 +117,7 @@ def test_safe_with_link_extraction_checks_links_not_seed(temp_db, monkeypatch):
     ]
     monkeypatch.setattr(download_mod.extract_links, "crawl", lambda _args, _seeds: iter(links))
     monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda url: url.endswith("clip"))
+    monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: True)
     monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
     monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: url.endswith("pic"))
 
@@ -108,6 +135,27 @@ def test_safe_with_link_extraction_checks_links_not_seed(temp_db, monkeypatch):
     assert routed["tube"] == ["https://example.com/clip"]
     assert routed["gallery"] == ["https://example.com/pic"]
     assert routed["builtin"] == []
+
+
+def test_safe_image_uses_directlink_extractor(temp_db, monkeypatch):
+    """An explicit `--image --safe` run registers the image-aware is_supported UDF and keeps
+    gallery-dl's directlink extractor (so direct image URLs are not skipped)."""
+    db1 = temp_db()
+    lb(["links-add", db1, "--insert-only", "https://example.com/pic.png"])
+
+    monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: True)
+    monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: False)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported_image", lambda url: url.endswith(".png"))
+
+    routed = {"gallery": []}
+    monkeypatch.setattr(
+        download_mod.gallery_backend, "download", lambda _args, m: routed["gallery"].append(m["path"])
+    )
+
+    lb(["dl", db1, "--image", "--safe", "--force"])
+
+    assert routed["gallery"] == ["https://example.com/pic.png"]
 
 
 def test_download_process_preserves_unsupported_extension(temp_db, crawl_server, tmp_path):

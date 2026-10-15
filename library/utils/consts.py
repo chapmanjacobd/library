@@ -170,6 +170,7 @@ class SC:
     reddit_update = "reddit-update"
     gallery_add = "gallery-add"
     gallery_update = "gallery-update"
+    getty_add = "getty-add"
     tabs_open = "tabs-open"
     links_open = "links-open"
     links_add = "links-add"
@@ -190,6 +191,7 @@ class SC:
     dedupe_media = "dedupe-media"
     web_add = "web-add"
     web_update = "web-update"
+    merge_mv = "merge-mv"
     computers_add = "computers-add"
 
 

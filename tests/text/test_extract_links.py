@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from library.__main__ import library as lb
 from library.text import extract_links
 from library.utils import web
+from library.utils.consts import DBType
 
 
 def test_links_local_html_none(capsys):
@@ -46,6 +47,32 @@ def test_links_local_html_excludes_tracking_urls(capsys):
 
     captured = capsys.readouterr().out.replace("\n", "")
     assert captured == "https://example.com/document.pdf"
+
+
+def test_links_download_image_safe_loads_gallery_lazily(crawl_server, monkeypatch):
+    """`links-download --image --safe` is database-less and must lazily load gallery-dl before
+    the is_supported_image check, rather than raising because it was never pre-loaded."""
+    from library.mediadb import download as download_mod
+
+    gallery_backend = download_mod.gallery_backend
+    monkeypatch.delattr(gallery_backend.is_supported, "configured", raising=False)
+
+    loaded = {"n": 0}
+
+    def fake_load(args):
+        loaded["n"] += 1
+        gallery_backend.is_supported.configured = True
+
+    monkeypatch.setattr(gallery_backend, "load_module_level_gallery_dl", fake_load)
+    monkeypatch.setattr(gallery_backend, "is_supported_image", lambda url: url.endswith(".png"))
+
+    downloaded = []
+    monkeypatch.setattr(gallery_backend, "download", lambda args, m: downloaded.append(m["path"]))
+
+    lb(["links-download", "--image", "--safe", "-R", crawl_server, "--path-exclude", "*/tag/*"])
+
+    assert downloaded == [f"{crawl_server}img.png"]
+    assert loaded["n"] == 1
 
 
 def test_extract_links_recursive(crawl_server, capsys):
@@ -271,3 +298,65 @@ def test_crawl_wayback_dedupes_scheme_mangled_urls(monkeypatch):
     # https:/example.com and https://example.com are the same page: only one is downloaded
     assert len(out) == 1
     assert extract_links.dedup_key(out[0]) == "https://example.com/dir/other.html"
+
+
+def _patch_backend_routing(monkeypatch):
+    """Monkeypatch the download backends to record which URL each one receives."""
+    from library.mediadb import download as download_mod
+
+    monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda url: url.endswith("clip"))
+    monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: url.endswith("pic"))
+
+    routed = {"tube": [], "gallery": [], "builtin": []}
+    monkeypatch.setattr(download_mod.tube_backend, "download", lambda _args, m: routed["tube"].append(m["path"]))
+    monkeypatch.setattr(download_mod.gallery_backend, "download", lambda _args, m: routed["gallery"].append(m["path"]))
+    monkeypatch.setattr(extract_links.web, "download_link", lambda _args, url: routed["builtin"].append(url))
+    return routed
+
+
+def test_links_download_routes_by_profile(monkeypatch):
+    routed = _patch_backend_routing(monkeypatch)
+    args = SimpleNamespace(profile=DBType.auto, direct=False, safe=False, prefix=".")
+    cache = {}
+
+    for url in ["https://x/clip", "https://x/pic", "https://x/raw.html"]:
+        extract_links._download_one(args, url, cache)
+
+    assert routed["tube"] == ["https://x/clip"]
+    assert routed["gallery"] == ["https://x/pic"]
+    assert routed["builtin"] == ["https://x/raw.html"]
+
+
+def test_links_download_explicit_profile_skips_resolution(monkeypatch):
+    routed = _patch_backend_routing(monkeypatch)
+    args = SimpleNamespace(profile=DBType.filesystem, direct=False, safe=False, prefix=".")
+    cache = {}
+
+    extract_links._download_one(args, "https://x/clip", cache)
+
+    assert routed["tube"] == []
+    assert routed["builtin"] == ["https://x/clip"]
+
+
+def test_direct_download_stays_builtin(monkeypatch):
+    routed = _patch_backend_routing(monkeypatch)
+    monkeypatch.setattr("sys.argv", ["direct-download", "https://x/clip"])
+
+    extract_links.direct_download()
+
+    assert routed["tube"] == []
+    assert routed["builtin"] == ["https://x/clip"]
+
+
+def test_links_download_safe_skips_unsafe_links(monkeypatch):
+    routed = _patch_backend_routing(monkeypatch)
+    args = SimpleNamespace(profile=DBType.auto, direct=False, safe=True, prefix=".")
+    cache = {}
+
+    for url in ["https://x/clip", "https://x/raw.html"]:
+        extract_links._download_one(args, url, cache)
+
+    assert routed["tube"] == ["https://x/clip"]
+    assert routed["builtin"] == []
+

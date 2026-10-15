@@ -109,6 +109,12 @@ def test_is_supported_excludes_catch_all_extractors(monkeypatch):
         assert not gallery_backend.is_supported("https://example.com/page")
         assert not gallery_backend.is_supported("https://example.com/pic.png")
         assert not gallery_backend.is_supported("generic:https://example.com/x")
+
+        # An explicit image-only run keeps directlink/generic but still drops ytdl.
+        assert gallery_backend.is_supported_image("https://example.com/pic.png")
+        assert gallery_backend.is_supported_image("generic:https://example.com/x")
+        assert not gallery_backend.is_supported_image("https://example.com/page")
+        assert not gallery_backend.is_supported_image("https://youtu.be/HoY5RbzRcmo")
     finally:
         gallery_backend._is_supported_cached.cache_clear()
 

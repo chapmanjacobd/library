@@ -182,9 +182,9 @@ def is_profile(args, profile_target):
     if profile == profile_target:
         return True
     if profile == DBType.auto:
-        from library.utils.arggroups import expand_profiles
+        from library.utils.arggroups import auto_scan_media_types
 
-        if profile_target in expand_profiles([DBType.auto]):
+        if profile_target in auto_scan_media_types():
             return True
     return profile_target in getattr(args, "profiles", [])
 
