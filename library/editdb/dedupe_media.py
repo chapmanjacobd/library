@@ -28,6 +28,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.dedupe_media)
     arggroups.sql_fs(parser)
 
+    # Media types and dedupe strategies share one mutually-exclusive group but
+    # land in separate destinations so `profile` stays a DBType.
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
         "--audio",
@@ -35,28 +37,6 @@ def parse_args() -> argparse.Namespace:
         dest="profile",
         const=DBType.audio,
         help="Dedupe database by artist + album + title",
-    )
-    profile.add_argument(
-        "--extractor-id",
-        "--id",
-        action="store_const",
-        dest="profile",
-        const="extractor_id",
-        help="Dedupe database by extractor_id",
-    )
-    profile.add_argument(
-        "--title",
-        action="store_const",
-        dest="profile",
-        const="title",
-        help="Dedupe database by title",
-    )
-    profile.add_argument(
-        "--same-duration",
-        action="store_const",
-        dest="profile",
-        const="duration",
-        help="Dedupe database by duration (caution obviously)",
     )
     profile.add_argument(
         "--filesystem",
@@ -82,6 +62,28 @@ def parse_args() -> argparse.Namespace:
         const=DBType.image,
         help=argparse.SUPPRESS,
         # "Dedupe image database",
+    )
+    profile.add_argument(
+        "--extractor-id",
+        "--id",
+        action="store_const",
+        dest="strategy",
+        const="extractor_id",
+        help="Dedupe database by extractor_id",
+    )
+    profile.add_argument(
+        "--title",
+        action="store_const",
+        dest="strategy",
+        const="title",
+        help="Dedupe database by title",
+    )
+    profile.add_argument(
+        "--same-duration",
+        action="store_const",
+        dest="strategy",
+        const="duration",
+        help="Dedupe database by duration (caution obviously)",
     )
 
     parser.set_defaults(limit="100")
@@ -401,14 +403,14 @@ def get_fs_duplicates(args) -> list[dict]:
 def dedupe_media() -> None:
     args = parse_args()
 
-    if args.profile == DBType.audio:
-        duplicates = get_music_duplicates(args)
-    elif args.profile == "extractor_id":
+    if args.strategy == "extractor_id":
         duplicates = get_id_duplicates(args)
-    elif args.profile == "title":
+    elif args.strategy == "title":
         duplicates = get_title_duplicates(args)
-    elif args.profile == "duration":
+    elif args.strategy == "duration":
         duplicates = get_duration_duplicates(args)
+    elif args.profile == DBType.audio:
+        duplicates = get_music_duplicates(args)
     elif args.profile == DBType.filesystem:
         duplicates = get_fs_duplicates(args)
     elif args.profile == DBType.image:
@@ -427,7 +429,9 @@ def dedupe_media() -> None:
         )
         return
     else:
-        raise argparse.ArgumentError(args.profile, "Profile not set. Use --audio OR --id OR --title OR --filesystem")
+        raise argparse.ArgumentError(
+            None, "No dedupe key selected. Use --audio OR --id OR --title OR --same-duration OR --filesystem"
+        )
 
     deletion_candidates = []
     deletion_paths = []

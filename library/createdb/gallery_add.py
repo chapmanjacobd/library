@@ -12,8 +12,7 @@ from library.utils.log_utils import log
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
     arggroups.extractor(parser)
-    arggroups.download(parser)
-    parser.set_defaults(profile=consts.DBType.image)
+    arggroups.download(parser, default=arggroups.default_profile(action))
     parser.set_defaults(download_archive=str(Path("~/.local/share/gallerydl.sqlite3").expanduser().resolve()))
 
     arggroups.debug(parser)

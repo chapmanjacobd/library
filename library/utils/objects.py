@@ -171,6 +171,7 @@ def json_shelve(filename, default):
 
 
 def is_profile(args, profile_target):
+    """Check both profile shapes: single `profile` (one backend) and multi `profiles` (scan set)."""
     if getattr(args, "profile", "") == profile_target:
         return True
     elif profile_target in getattr(args, "profiles", []):

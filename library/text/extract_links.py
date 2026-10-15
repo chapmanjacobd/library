@@ -84,8 +84,8 @@ def parse_args(usage=None, *, download: bool = False):
     arggroups.filter_links(parser)
     arggroups.spider(parser)
 
-    arggroups.download(parser)
-    parser.set_defaults(profile=consts.DBType.filesystem, download=download)
+    arggroups.download(parser, default=arggroups.default_profile("extract_links"))
+    parser.set_defaults(download=download)
 
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)

@@ -17,29 +17,26 @@ from library.utils import (
     shell_utils,
     strings,
 )
-from library.utils.consts import DBType
 from library.utils.log_utils import Timer, log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.cluster_sort)
 
-    profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
+    input_group = parser.add_mutually_exclusive_group()
+    input_group.add_argument(
         "--lines",
-        action="store_const",
-        dest="profile",
-        const="lines",
+        action="store_false",
+        dest="image",
         help="Cluster lines AS-IS",
     )
-    profile.add_argument(
+    input_group.add_argument(
         "--image",
-        action="store_const",
-        dest="profile",
-        const=DBType.image,
+        action="store_true",
+        dest="image",
         help="Read image data",
     )
-    parser.set_defaults(profile="lines")
+    parser.set_defaults(image=False)
 
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
@@ -366,9 +363,9 @@ def cluster_sort() -> None:
 
     lines = [s.rstrip("\n") for s in lines if s.strip()]
 
-    if args.profile == "lines":
+    if not args.image:
         groups = cluster_paths(args, lines)
-    elif args.profile == "image":
+    elif args.image:
         groups = cluster_images(lines, args.clusters)
     else:
         raise NotImplementedError
@@ -388,7 +385,7 @@ def cluster_sort() -> None:
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))
 
-        if args.profile == "lines":
+        if not args.image:
             if args.output_path:
                 output_parent = Path(args.output_path).parent
                 output_name = Path(args.output_path).name
@@ -404,7 +401,7 @@ def cluster_sort() -> None:
                 with open(output_path, "w") as output_fd:
                     output_fd.writelines(group["grouped_paths"])
 
-        elif args.profile in ("image",):
+        elif args.image:
             for i, group in enumerate(groups, start=1):
                 paths = [s.rstrip("\n") for s in group["grouped_paths"]]
                 shell_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])

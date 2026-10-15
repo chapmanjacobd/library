@@ -1,4 +1,4 @@
-import sys
+import argparse, sys
 
 import requests
 
@@ -133,11 +133,17 @@ def parse_args(usage=None, *, links: bool = False):
     parser = argparse_utils.ArgumentParser(usage=usage or USAGE['download'])
     arggroups.sql_fs(parser)
 
-    arggroups.download(parser)
+    arggroups.download(parser, default=arggroups.default_profile("download_links") if links else None)
     parser.add_argument(
         "--direct",
         action="store_true",
         help="Download URLs with the built-in downloader instead of yt-dlp/gallery-dl",
+    )
+    parser.add_argument(
+        "--text",
+        action="store_true",
+        dest="direct",
+        help=argparse.SUPPRESS,
     )
     arggroups.download_subtitle(parser)
     arggroups.requests(parser)
@@ -167,8 +173,6 @@ def parse_args(usage=None, *, links: bool = False):
     arggroups.paths_or_stdin(parser, required=False)
 
     parser.set_defaults(fts=False)
-    if links:
-        parser.set_defaults(profile=DBType.filesystem)
     args, unk = parser.parse_known_intermixed_args()
 
     args.extract_links = links or args.recursive or args.webcache
@@ -176,7 +180,7 @@ def parse_args(usage=None, *, links: bool = False):
     if unk and not args.profile in (DBType.video, DBType.audio):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
 
-    if args.safe and args.profile == DBType.filesystem:
+    if args.safe and args.profile in (DBType.filesystem, DBType.text):
         parser.error("--safe is supported only with --audio, --video, or --image")
 
     arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
@@ -330,7 +334,7 @@ def _download(usage, *, links: bool = False) -> None:
             else:
                 link_paths = [original_path]
 
-            if args.direct or args.profile == DBType.filesystem:
+            if args.direct or args.profile in (DBType.filesystem, DBType.text):
                 _download_builtin(args, m, original_path, link_paths)
             elif args.profile in (DBType.audio, DBType.video):
                 for link_path in link_paths:

@@ -12,7 +12,7 @@ from library.utils.log_utils import log
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
     arggroups.extractor(parser)
-    arggroups.download(parser)
+    arggroups.download(parser, default=arggroups.default_profile(action))
     arggroups.download_subtitle(parser)
     parser.set_defaults(download_archive=str(Path("~/.local/share/yt_archive.txt").expanduser().resolve()))
 

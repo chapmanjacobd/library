@@ -1666,7 +1666,54 @@ def process_ffmpeg_post(args):
     args.min_split_segment = nums.human_to_seconds(args.min_split_segment)
 
 
-def download(parent_parser):
+# --- Media profiles -----------------------------------------------------------
+# A "profile" is a media type (see DBType). There are two consistent shapes:
+#   * `profile`  (single, mutually exclusive) -- commands with one backend
+#     (download, dedupe-media)
+#   * `profiles` (multi-select scan set) -- commands that walk a file tree
+#     (fs-add, web-add, merge-mv)
+PROFILE_CHOICES = (DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem)
+
+# Every command's default profile, in one place.
+#   str  -> seeds the single `profile`
+#   list -> seeds the multi `profiles`
+PROFILE_DEFAULTS = {
+    SC.download: DBType.video,
+    SC.tube_add: DBType.video,
+    SC.tube_update: DBType.video,
+    SC.gallery_add: DBType.image,
+    SC.gallery_update: DBType.image,
+    SC.fs_add: [DBType.video],
+    SC.fs_update: [DBType.video],
+    SC.web_add: [],
+    SC.web_update: [],
+    # commands without an SC action
+    "download_links": DBType.filesystem,
+    "links_download": DBType.filesystem,
+    "direct_download": DBType.filesystem,
+    "extract_links": DBType.filesystem,
+    "getty_add": DBType.image,
+}
+
+_MEDIA_TYPE_FLAGS = {
+    DBType.audio: ["--audio"],
+    DBType.video: ["--video"],
+    DBType.image: ["--image", "--photo", "--images"],
+    DBType.text: ["--text"],
+    DBType.filesystem: ["--filesystem", "--fs", "--web"],
+}
+
+
+def default_profile(command, fallback=None):
+    """Return the registered default profile for a command."""
+    return PROFILE_DEFAULTS.get(command, fallback)
+
+
+def _add_media_type_argument(container, db_type, *, dest, action, help_text):
+    container.add_argument(*_MEDIA_TYPE_FLAGS[db_type], action=action, dest=dest, const=db_type, help=help_text)
+
+
+def download(parent_parser, *, default=None):
     parser = parent_parser.add_argument_group("Download")
     parser.add_argument(
         "--extractor-config",
@@ -1723,45 +1770,20 @@ def download(parent_parser):
     parser.add_argument("--prefix", default=os.getcwd())
 
     profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
-        "--audio",
-        action="store_const",
-        dest="profile",
-        const=DBType.audio,
-        help="Use audio downloader",
-    )
-    profile.add_argument(
-        "--video",
-        action="store_const",
-        dest="profile",
-        const=DBType.video,
-        help="Use video downloader",
-    )
-    profile.add_argument(
-        "--image",
-        "--photo",
-        action="store_const",
-        dest="profile",
-        const=DBType.image,
-        help="Use image downloader",
-    )
-    profile.add_argument(
-        "--filesystem",
-        "--fs",
-        "--web",
-        action="store_const",
-        dest="profile",
-        const=DBType.filesystem,
-        help="Use filesystem downloader",
+    _add_media_type_argument(profile, DBType.audio, dest="profile", action="store_const", help_text="Use audio downloader")
+    _add_media_type_argument(profile, DBType.video, dest="profile", action="store_const", help_text="Use video downloader")
+    _add_media_type_argument(profile, DBType.image, dest="profile", action="store_const", help_text="Use image downloader")
+    _add_media_type_argument(
+        profile, DBType.filesystem, dest="profile", action="store_const", help_text="Use filesystem downloader"
     )
     profile.add_argument(
         "--media-type",
-        choices=[DBType.video, DBType.audio, DBType.image, DBType.filesystem],
+        choices=PROFILE_CHOICES,
         dest="profile",
         metavar="TYPE",
         help="Select the download media type",
     )
-    profile.set_defaults(profile=DBType.video)
+    profile.set_defaults(profile=default if default is not None else default_profile(SC.download, DBType.video))
 
 
 def download_subtitle(parent_parser):
@@ -2129,47 +2151,26 @@ def media_check(parent_parser):
     parser.add_argument("--audio-scan", action="store_true", help="Count errors in audio track only")
 
 
-def db_profiles(parser):
-    profiles = parser.add_argument_group("DB Profiles")
-    profiles.add_argument(
-        "--audio",
-        action="append_const",
-        dest="profiles",
-        const=DBType.audio,
-        help="Extract audio metadata",
+def db_profiles(parser, *, title="DB Profiles"):
+    profiles = parser.add_argument_group(title)
+    _add_media_type_argument(
+        profiles, DBType.audio, dest="profiles", action="append_const", help_text="Extract audio metadata"
     )
-    profiles.add_argument(
-        "--filesystem",
-        "--fs",
-        action="append_const",
-        dest="profiles",
-        const=DBType.filesystem,
-        help="Extract filesystem metadata",
+    _add_media_type_argument(
+        profiles, DBType.filesystem, dest="profiles", action="append_const", help_text="Extract filesystem metadata"
     )
-    profiles.add_argument(
-        "--video",
-        action="append_const",
-        dest="profiles",
-        const=DBType.video,
-        help="Extract video metadata",
+    _add_media_type_argument(
+        profiles, DBType.video, dest="profiles", action="append_const", help_text="Extract video metadata"
     )
-    profiles.add_argument(
-        "--text",
-        action="append_const",
-        dest="profiles",
-        const=DBType.text,
-        help="Extract text metadata",
+    _add_media_type_argument(
+        profiles, DBType.text, dest="profiles", action="append_const", help_text="Extract text metadata"
     )
-    profiles.add_argument(
-        "--image",
-        action="append_const",
-        dest="profiles",
-        const=DBType.image,
-        help="Extract image metadata",
+    _add_media_type_argument(
+        profiles, DBType.image, dest="profiles", action="append_const", help_text="Extract image metadata"
     )
     profiles.add_argument(
         "--media-type",
-        choices=[DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem],
+        choices=PROFILE_CHOICES,
         action="append",
         dest="profiles",
         metavar="TYPE",

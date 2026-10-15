@@ -54,7 +54,7 @@ def parse_args(action, usage):
     arggroups.args_post(args, parser, create_db=action == SC.fs_add)
 
     if not args.profiles:
-        args.profiles = [DBType.video]
+        args.profiles = list(arggroups.default_profile(action) or [])
 
     if args.copy:
         args.copy = Path(args.copy).expanduser().resolve()

@@ -65,36 +65,7 @@ def parse_args(defaults_override=None):
     )
     arggroups.clobber(parser)
 
-    profiles = parser.add_argument_group("File Extension Profiles")
-    profiles.add_argument(
-        "--audio",
-        action="append_const",
-        dest="profiles",
-        const=DBType.audio,
-        help="Only include audio files",
-    )
-    profiles.add_argument(
-        "--video",
-        action="append_const",
-        dest="profiles",
-        const=DBType.video,
-        help="Only include video files",
-    )
-    profiles.add_argument(
-        "--text",
-        action="append_const",
-        dest="profiles",
-        const=DBType.text,
-        help="Only include document files",
-    )
-    profiles.add_argument(
-        "--images",
-        "--image",
-        action="append_const",
-        dest="profiles",
-        const=DBType.image,
-        help="Only include image files",
-    )
+    arggroups.db_profiles(parser, title="File Extension Profiles")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser, destination=True)
