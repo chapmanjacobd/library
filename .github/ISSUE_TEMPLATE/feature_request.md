@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-**What is the problem that is being solved with the new feature?**
+**What problem does this feature solve?**
 
 
 

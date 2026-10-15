@@ -19,7 +19,7 @@ pip install library
 lb
 ```
 
-Then you will see:
+The output is:
 
 ```
 xk media library
@@ -33,7 +33,7 @@ local media subcommands:
 Optional: library[deluxe] deps: `choco install exiftool rust`
 
 Torrent metadata support requires the `libtorrent` Python bindings. PyPI
-currently provides Windows wheels for Python 3.12 and 3.13, so use Python 3.13
+provides Windows wheels for Python 3.12 and 3.13; use Python 3.13
 and install the deluxe extra:
 
 ```powershell
