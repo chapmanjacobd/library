@@ -59,6 +59,15 @@ def test_download_media_type_auto(monkeypatch):
     assert args.profile == DBType.auto
 
 
+def test_extract_links_parse_args_compatibility(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["extract-links", "https://example.com/"])
+
+    args = extract_links.parse_args()
+
+    assert args.download is False
+    assert args.direct is False
+
+
 def test_download_links_defaults_to_auto(monkeypatch):
     monkeypatch.setattr("sys.argv", ["download-links", v_db, "--print"])
 

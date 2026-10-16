@@ -59,6 +59,11 @@ def parse_args_extract():
     return args
 
 
+def parse_args():
+    """Backward-compatible parser entrypoint for callers of the old extractor API."""
+    return parse_args_extract()
+
+
 def parse_args_links_download():
     parser = _base_parser(usage_mod.links_download)
     _add_link_extraction(parser)
