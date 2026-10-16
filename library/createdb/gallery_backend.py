@@ -1,6 +1,4 @@
-import functools
-import importlib.util
-import os
+import functools, importlib.util, os
 from pathlib import Path
 from types import ModuleType
 
@@ -71,40 +69,31 @@ def is_supported(url) -> bool:
     return _is_supported_cached(url)
 
 
-def is_supported_image(url) -> bool:
-    """Like `is_supported`, but for an explicit image-only run.
+def ensure_configured(args) -> bool:
+    """Lazily import and configure gallery-dl (an optional dependency).
 
-    Direct image URLs are handled by gallery-dl's `directlink` extractor, so it is kept
-    here. The `ytdl` extractor is still excluded: it matches literally every URL and is
-    handled by the tube backend instead.
+    Returns False when gallery-dl is not installed so callers that only *may* use it
+    (eg. `auto` download routing) can fall back to yt-dlp/built-in instead of failing.
     """
+    if not gallery_dl_available():
+        return False
     if not getattr(is_supported, "configured", False):
-        raise RuntimeError(
-            "gallery_backend.is_supported_image() requires load_module_level_gallery_dl(args) to be called first"
-        )
-
-    return _is_supported_cached(url, image_only=True)
+        load_module_level_gallery_dl(args)
+    return True
 
 
-# gallery-dl ships catch-all extractors that match (almost) any URL. They are not useful
-# for deciding whether a URL is worth handing to a specific gallery-dl site extractor, and
-# they make `is_supported` return True for ordinary web pages. Exclude them so `auto` falls
-# back to the built-in downloader and `--safe` skips unknown domains.
-#   generic    - `generic:<url>` escape hatch
-#   directlink - any URL ending in a media file extension
-#   ytdl       - yt-dlp delegation; matches literally every URL
+# gallery-dl ships catch-all extractors that match (almost) any URL. They are never a
+# useful signal: `generic` is the `generic:<url>` escape hatch, `directlink` matches any
+# URL ending in a media extension (the built-in downloader handles those), and `ytdl`
+# delegates literally every URL to yt-dlp. Exclude them so `is_supported` (used for
+# `auto` routing and every `--safe` check) only reports real site extractors.
 GALLERY_CATCH_ALL_CATEGORIES = frozenset({"generic", "directlink", "ytdl"})
-# An explicit image-only run keeps gallery-dl's `directlink` and `generic` extractors, but
-# `ytdl` is always excluded because the tube backend owns those URLs.
-GALLERY_IMAGE_EXCLUDED_CATEGORIES = frozenset({"ytdl"})
 
 
 @functools.lru_cache(maxsize=8192)
-def _is_supported_cached(url, image_only=False) -> bool:
-    excluded = GALLERY_IMAGE_EXCLUDED_CATEGORIES if image_only else GALLERY_CATCH_ALL_CATEGORIES
-
+def _is_supported_cached(url) -> bool:
     return any(
-        ie.pattern.match(url) and ie.category not in excluded for ie in is_supported.extractors
+        ie.pattern.match(url) and ie.category not in GALLERY_CATCH_ALL_CATEGORIES for ie in is_supported.extractors
     )
 
 

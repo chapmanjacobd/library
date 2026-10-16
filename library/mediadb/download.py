@@ -31,12 +31,7 @@ def parse_args(usage=None, *, links: bool = False):
     parser = argparse_utils.ArgumentParser(usage=usage or usage_mod.download)
     arggroups.sql_fs(parser)
 
-    arggroups.download(parser, text_alias=True)
-    parser.add_argument(
-        "--direct",
-        action="store_true",
-        help="Download URLs with the built-in downloader instead of yt-dlp/gallery-dl",
-    )
+    arggroups.download(parser, direct=True)
     arggroups.download_subtitle(parser)
     arggroups.requests(parser)
     arggroups.selenium(parser)
@@ -66,17 +61,7 @@ def parse_args(usage=None, *, links: bool = False):
     if unk and not args.profile in (DBType.video, DBType.audio, DBType.auto):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
 
-    if args.safe and (args.direct or args.profile in (DBType.filesystem, DBType.text)):
-        parser.error(
-            "--safe is supported only with --auto, --audio, --video, or --image"
-            " (not --direct/--text or --media-type filesystem/text)"
-        )
-
-    if args.safe and args.extract_links:
-        log.warning(
-            "--safe cannot be fully enforced when extracting links from pages; "
-            "only the extracted links are checked against known domains"
-        )
+    validate_safe(args, parser, extracts_links=args.extract_links)
 
     arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
     args.unk = unk
@@ -103,69 +88,96 @@ def download_links(args=None) -> None:
     _download(usage_mod.download_links, links=True)
 
 
+def validate_safe(args, parser, *, extracts_links: bool) -> None:
+    """Reject unusable `--safe` combinations and note the limits of link-extraction `--safe`."""
+    if getattr(args, "safe", False) and (
+        getattr(args, "direct", False) or getattr(args, "profile", None) in (DBType.filesystem, DBType.text)
+    ):
+        parser.error(
+            "--safe is supported only with --auto, --audio, --video, or --image"
+            " (not --direct or --media-type filesystem/text)"
+        )
+    if getattr(args, "safe", False) and extracts_links:
+        log.warning(
+            "--safe cannot be fully enforced when extracting links from pages; "
+            "only the extracted links are checked against known domains"
+        )
+
+
 def resolve_download_profile(args, path) -> str:
     """Resolve the `auto` download profile to a concrete media type for a URL.
 
-    gallery-dl is an optional dependency (pip install gallery-dl): when it is missing,
+    `auto` prefers the built-in downloader for direct media links: only gallery-dl's
+    *site* extractors count as `image` here, so a bare `…/pic.png` falls back to
+    `filesystem`/built-in. gallery-dl is an optional dependency; when it is missing,
     `auto` falls back to yt-dlp and the built-in downloader instead of failing.
     """
     if tube_backend.is_supported(path):
         return DBType.video
-    if gallery_backend.gallery_dl_available():
-        if not getattr(gallery_backend.is_supported, "configured", False):
-            gallery_backend.load_module_level_gallery_dl(args)
-        if gallery_backend.is_supported(path):
-            return DBType.image
+    if gallery_backend.ensure_configured(args) and gallery_backend.is_supported(path):
+        return DBType.image
     return DBType.filesystem
 
 
-def _dispatch_link(args, m, original_path, link_path, backend_args_cache, builtin_fn) -> None:
-    """Download a single resolved link with the backend chosen by `args.profile`.
+def route_links(args, m, original_path, link_paths, backend_args_cache, builtin_fn, *, safe_links=False) -> None:
+    """Download `link_paths`, choosing a backend per link (see `resolve_download_profile`).
 
-    `auto` (the default) resolves each link independently via is_supported. `builtin_fn` is
-    called for filesystem/text, or an unexpected resolved profile, with the signature
-    `builtin_fn(args, m, original_path, link_path)`.
+    `--direct` or a filesystem/text profile hands the whole batch to the built-in
+    downloader so `_download_builtin` can decide whether the seed page row is removable.
+    Under `auto` the built-in links are likewise collected and handed over as one batch,
+    because dispatching them one at a time would let `_download_builtin` delete the seed
+    page row (and record failures) as soon as any single link succeeded; yt-dlp/gallery-dl
+    links are dispatched one at a time. `builtin_fn` is called with
+    `builtin_fn(args, m, original_path, link_paths)`.
     """
-    profile = args.profile
-    if profile == DBType.auto:
-        profile = resolve_download_profile(args, link_path)
+    if getattr(args, "direct", False) or args.profile in (DBType.filesystem, DBType.text):
+        builtin_fn(args, m, original_path, link_paths)
+        return
 
-    if profile == args.profile:
-        backend_args = args
-    else:
-        if profile not in backend_args_cache:
-            backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
-        backend_args = backend_args_cache[profile]
+    builtin_paths = []
+    for link_path in link_paths:
+        if safe_links and not safe_supported(args, link_path):
+            log.info("Skipping unsupported URL (safe_mode) %s", link_path)
+            continue
 
-    if profile in (DBType.audio, DBType.video):
-        tube_backend.download(backend_args, m | {"path": link_path})
-    elif profile == DBType.image:
-        gallery_backend.download(backend_args, m | {"path": link_path})
-    else:  # filesystem, or an unexpected resolved profile
-        builtin_fn(backend_args, m, original_path, link_path)
+        profile = args.profile
+        if profile == DBType.auto:
+            profile = resolve_download_profile(args, link_path)
+        if profile == args.profile:
+            backend_args = args
+        else:
+            backend_args = backend_args_cache.get(profile)
+            if backend_args is None:
+                backend_args = backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
+
+        if profile in (DBType.audio, DBType.video):
+            tube_backend.download(backend_args, m | {"path": link_path})
+        elif profile == DBType.image:
+            gallery_backend.download(backend_args, m | {"path": link_path})
+        else:  # filesystem, or an unexpected resolved profile
+            builtin_paths.append(link_path)
+
+    if builtin_paths:
+        builtin_fn(args, m, original_path, builtin_paths)
 
 
-def _download_builtin_one(args, m, original_path, link_path) -> None:
-    _download_builtin(args, m, original_path, [link_path])
-
-
-def _safe_supported(args, path) -> bool:
+def safe_supported(args, path) -> bool:
     """Whether `--safe` should allow downloading `path` with the active profile.
 
-    `--safe` is only accepted with a media-type profile (see parse_args), so
-    filesystem/text are intentionally not considered here.
+    `--safe` is only accepted with a media-type profile (see `validate_safe`), so
+    filesystem/text are intentionally not considered here. Direct/generic URLs are
+    rejected for every profile: `is_supported` excludes gallery-dl's catch-all
+    extractors, and `auto` falls back to the built-in downloader for such links.
     """
     if args.profile == DBType.auto:
         return resolve_download_profile(args, path) != DBType.filesystem
     if args.profile in (DBType.audio, DBType.video):
         return tube_backend.is_supported(path)
     if args.profile == DBType.image:
-        # An explicit image-only run also accepts gallery-dl's `directlink` extractor,
-        # which is what handles direct image URLs. Load gallery-dl lazily so DB-less
-        # link-download commands work without a separate pre-load.
-        if not getattr(gallery_backend.is_supported, "configured", False):
-            gallery_backend.load_module_level_gallery_dl(args)
-        return gallery_backend.is_supported_image(path)
+        # Load gallery-dl lazily so DB-less link-download commands work without a pre-load.
+        if not gallery_backend.ensure_configured(args):
+            return False
+        return gallery_backend.is_supported(path)
     return True
 
 
@@ -211,18 +223,12 @@ def _download(usage, *, links: bool = False) -> None:
         return
 
     get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
-    if args.safe:
-        # `auto` only uses gallery-dl when it is installed; an explicit image run requires it.
-        if args.profile == DBType.image:
-            gallery_backend.load_module_level_gallery_dl(args)
-        elif args.profile == DBType.auto and gallery_backend.gallery_dl_available():
-            gallery_backend.load_module_level_gallery_dl(args)
     backend_args_cache = {}
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             continue
 
-        if args.safe and not args.extract_links and not _safe_supported(args, m["path"]):
+        if args.safe and not args.extract_links and not safe_supported(args, m["path"]):
             log.info("Skipping unsupported URL (safe_mode) %s", m["path"])
             continue
 
@@ -297,15 +303,15 @@ def _download(usage, *, links: bool = False) -> None:
             else:
                 link_paths = [original_path]
 
-            if args.direct or args.profile in (DBType.filesystem, DBType.text):
-                _download_builtin(args, m, original_path, link_paths)
-            else:
-                for link_path in link_paths:
-                    if args.safe and args.extract_links and not _safe_supported(args, link_path):
-                        log.info("Skipping unsupported URL (safe_mode) %s", link_path)
-                        continue
-
-                    _dispatch_link(args, m, original_path, link_path, backend_args_cache, _download_builtin_one)
+            route_links(
+                args,
+                m,
+                original_path,
+                link_paths,
+                backend_args_cache,
+                _download_builtin,
+                safe_links=args.safe and args.extract_links,
+            )
 
         except Exception:
             print("db:", args.database)

@@ -16,7 +16,13 @@ from library.utils import (
     web,
 )
 from library.utils.arg_utils import override_sort, parse_ambiguous_sort
-from library.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT, SC, DBType
+from library.utils.consts import (
+    DEFAULT_FILE_ROWS_READ_LIMIT,
+    PROFILE_CHOICES,
+    SC,
+    SCAN_MEDIA_TYPES,
+    DBType,
+)
 from library.utils.log_utils import log
 
 EPOCH_MILLISECONDS_THRESHOLD = 1e11
@@ -224,11 +230,12 @@ def capability_delete(parent_parser):
     )
 
 
-def database(parent_parser):
+def database(parent_parser, *, soft_delete=True):
     parser = parent_parser.add_argument_group("Database")
     parser.add_argument("--db", "-db", help="Positional argument override")
     parser.add_argument("database")
-    capability_soft_delete(parent_parser)
+    if soft_delete:
+        capability_soft_delete(parent_parser)
     capability_delete(parent_parser)
 
 
@@ -1679,14 +1686,15 @@ def process_ffmpeg_post(args):
 #
 # `auto` is a sentinel meaning "figure it out": download dispatches each URL to
 # the backend that `is_supported` recognizes, while tree-walk commands scan every
-# media type. `text` is only scannable when its extraction deps are installed.
-MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem)
-SCAN_MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text)
-PROFILE_CHOICES = (DBType.auto, *MEDIA_TYPES)
+# media type. `auto` only expands to `text`/`image` when their extraction deps are
+# installed (`require_deps=True`); commands that only filter by extension pass
+# `require_deps=False` so they always see every media type.
+
 
 # Every command's default profile, in one place.
 #   str  -> seeds the single `profile`
-#   list -> seeds the multi `profiles` (an empty list means "no default")
+#   list -> seeds the multi `profiles`
+# Commands that have no default (eg. web-add) are simply omitted.
 PROFILE_DEFAULTS = {
     SC.download: DBType.auto,
     SC.tube_add: DBType.video,
@@ -1695,9 +1703,6 @@ PROFILE_DEFAULTS = {
     SC.gallery_update: DBType.image,
     SC.fs_add: [DBType.auto],
     SC.fs_update: [DBType.auto],
-    SC.web_add: [],
-    SC.web_update: [],
-    SC.getty_add: DBType.image,
     SC.merge_mv: [DBType.filesystem],
 }
 
@@ -1728,6 +1733,58 @@ def default_profile(command, fallback=None):
     return PROFILE_DEFAULTS.get(command, fallback)
 
 
+def text_extensions(args) -> set:
+    """The extensions the `text` profile extracts from, including OCR/speech sources.
+
+    Shared by the metadata extractor and the process-pool router so they cannot disagree.
+    """
+    exts = set(consts.TEXTRACT_EXTENSIONS)
+    if getattr(args, "ocr", False):
+        exts |= consts.OCR_EXTENSIONS
+    if getattr(args, "speech_recognition", False):
+        exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
+    return exts
+
+
+def profile_extensions(profiles, *, ocr=False, speech_recognition=False) -> set:
+    """Map a multi-select `profiles` scan set to a flat extension set.
+
+    Does not include `filesystem`; callers treat that (or `--scan-all-files`) as "no filter".
+    """
+    exts = set()
+    if DBType.audio in profiles:
+        exts |= consts.AUDIO_ONLY_EXTENSIONS
+    if DBType.video in profiles:
+        exts |= consts.VIDEO_EXTENSIONS
+    if DBType.image in profiles:
+        exts |= consts.IMAGE_EXTENSIONS
+    if DBType.text in profiles:
+        exts |= consts.TEXTRACT_EXTENSIONS
+    if ocr:
+        exts |= consts.OCR_EXTENSIONS
+    if speech_recognition:
+        exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
+    return exts
+
+
+def warn_missing_profile_deps(profiles) -> None:
+    """Warn when an explicitly selected `profiles` scan set needs a missing optional dep.
+
+    The scan still runs, but the affected files are added with basic metadata only
+    (the extraction step is skipped; see fs_add_metadata/extract_chunk).
+    """
+    if DBType.text in profiles and not text_profile_available():
+        log.warning(
+            "The text profile was selected but textract is not installed;"
+            " text extraction will be skipped (pip install textract-py3)"
+        )
+    if DBType.image in profiles and not image_profile_available():
+        log.warning(
+            "The image profile was selected but PyExifTool/exiftool is not installed;"
+            " image metadata extraction will be skipped (pip install PyExifTool)"
+        )
+
+
 def auto_scan_media_types() -> tuple:
     """Return the scannable media types that `auto` expands to.
 
@@ -1744,17 +1801,18 @@ def _auto_scan_media_types(*, text_available: bool, image_available: bool) -> tu
     )
 
 
-def expand_profiles(profiles):
+def expand_profiles(profiles, *, require_deps=True):
     """Expand the `auto` sentinel into every scannable media type, de-duplicated.
 
-    `text` and `image` are skipped when their extraction deps are missing so that
-    default scans do not require the optional `fat`/`deluxe` extras. Pass them
-    explicitly to force them.
+    With `require_deps=True` (metadata extraction), `text` and `image` are skipped when
+    their extraction deps are missing so default scans do not require the optional
+    extras. Pass `require_deps=False` for commands that only filter by extension
+    (eg. merge-mv) so `auto` really does mean every media type.
     """
     expanded = []
     for profile in iterables.conform(profiles):
         if profile == DBType.auto:
-            candidates = auto_scan_media_types()
+            candidates = auto_scan_media_types() if require_deps else SCAN_MEDIA_TYPES
         else:
             candidates = (profile,)
         for candidate in candidates:
@@ -1763,18 +1821,18 @@ def expand_profiles(profiles):
     return expanded
 
 
-def resolve_profiles(command, profiles, *, fallback=None):
+def resolve_profiles(command, profiles, *, fallback=None, require_deps=True):
     """Seed the multi `profiles` from PROFILE_DEFAULTS when empty, then expand `auto`."""
     if not profiles:
         profiles = default_profile(command, fallback) or []
-    return expand_profiles(profiles)
+    return expand_profiles(profiles, require_deps=require_deps)
 
 
 def _add_media_type_argument(container, db_type, *, dest, action, help_text):
     container.add_argument(*_MEDIA_TYPE_FLAGS[db_type], action=action, dest=dest, const=db_type, help=help_text)
 
 
-def download(parent_parser, *, default=None, profile=True, text_alias=False):
+def download(parent_parser, *, default=None, profile=True, direct=False, safe=True):
     parser = parent_parser.add_argument_group("Download")
     parser.add_argument(
         "--extractor-config",
@@ -1783,7 +1841,7 @@ def download(parent_parser, *, default=None, profile=True, text_alias=False):
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default extractor/downloader configuration",
     )
-    parser.add_argument("--download-archive", help="yt-dlp download archive location (--video,--audio only)")
+    parser.add_argument("--download-archive", help="yt-dlp/gallery-dl download archive location")
     parser.add_argument(
         "--extract-audio-ext",
         default="opus",
@@ -1798,7 +1856,14 @@ def download(parent_parser, *, default=None, profile=True, text_alias=False):
         action="store_true",
         help="Ignore some types of download errors (do not use this blindly!)",
     )
-    parser.add_argument("--safe", action="store_true", help="Download only from known domains; skip generic URLs")
+    if safe:
+        parser.add_argument("--safe", action="store_true", help="Download only from known domains; skip generic URLs")
+    if direct is True:
+        parser.add_argument(
+            "--direct",
+            action="store_true",
+            help="Download URLs with the built-in downloader instead of yt-dlp/gallery-dl",
+        )
 
     parser.add_argument(
         "--retry-delay",
@@ -1834,18 +1899,14 @@ def download(parent_parser, *, default=None, profile=True, text_alias=False):
         download_profile(
             parser,
             default=default if default is not None else default_profile(SC.download),
-            text_alias=text_alias,
         )
 
 
-def download_profile(parent_parser, *, default, text_alias=False):
+def download_profile(parent_parser, *, default):
     """Add the single mutually-exclusive `profile` selection.
 
     Kept separate from `download()` so the `profile=False` callers (eg. process-text,
     images-to-pdf) can reuse only the downloader options without a media type.
-
-    `text_alias` adds a hidden `--text` that is an alias of `--media-type text`; it is only
-    enabled for the download command, where selecting the text profile is meaningful.
     """
     profile = parent_parser.add_mutually_exclusive_group()
     _add_media_type_argument(
@@ -1857,11 +1918,7 @@ def download_profile(parent_parser, *, default, text_alias=False):
     _add_media_type_argument(
         profile, DBType.filesystem, dest="profile", action="store_const", help_text="Use filesystem downloader"
     )
-    # Legacy alias for the filesystem downloader, kept only here (not on tree-scan profiles,
-    # where `--web` would be misleading).
-    profile.add_argument(
-        "--web", action="store_const", dest="profile", const=DBType.filesystem, help=argparse.SUPPRESS
-    )
+    _add_media_type_argument(profile, DBType.text, dest="profile", action="store_const", help_text="Use text downloader")
     profile.add_argument(
         "--media-type",
         choices=PROFILE_CHOICES,
@@ -1869,9 +1926,6 @@ def download_profile(parent_parser, *, default, text_alias=False):
         metavar="TYPE",
         help="Select the download media type (auto dispatches each URL by is_supported)",
     )
-    if text_alias:
-        # Hidden alias so `--text` and `--media-type text` mean the same thing.
-        _add_media_type_argument(profile, DBType.text, dest="profile", action="store_const", help_text=argparse.SUPPRESS)
     profile.set_defaults(profile=default)
 
 

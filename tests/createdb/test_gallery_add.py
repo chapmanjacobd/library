@@ -23,14 +23,17 @@ def create_args(test_name):
     return args
 
 
-@pytest.mark.skip("inconsistent between gallery-dl versions")
 def test_safe_mode():
+    """Version-robust check of the catch-all policy using the installed gallery-dl:
+    `is_supported` must not claim direct links or generic pages (it is used for both
+    `auto` routing and every `--safe` check)."""
     args = NoneSpace()
     gallery_backend.load_module_level_gallery_dl(args)
-    assert gallery_backend.is_supported("https://i.redd.it/gdlcqo5xvpwa1.png")
-    assert gallery_backend.is_supported("https://www.reddit.com/gallery/145863a")
-    assert gallery_backend.is_supported("https://old.reddit.com/r/lego/comments/145863a/spaceship_moc/")
-    assert gallery_backend.is_supported("www.com") is False
+
+    # is_supported excludes gallery-dl's generic/directlink/ytdl catch-alls
+    assert gallery_backend.is_supported("https://example.com/pic.png") is False
+    assert gallery_backend.is_supported("https://example.com/page.html") is False
+    assert gallery_backend.is_supported("generic:https://example.com/x") is False
     assert gallery_backend.is_supported("https://youtu.be/HoY5RbzRcmo") is False
 
 
@@ -109,12 +112,6 @@ def test_is_supported_excludes_catch_all_extractors(monkeypatch):
         assert not gallery_backend.is_supported("https://example.com/page")
         assert not gallery_backend.is_supported("https://example.com/pic.png")
         assert not gallery_backend.is_supported("generic:https://example.com/x")
-
-        # An explicit image-only run keeps directlink/generic but still drops ytdl.
-        assert gallery_backend.is_supported_image("https://example.com/pic.png")
-        assert gallery_backend.is_supported_image("generic:https://example.com/x")
-        assert not gallery_backend.is_supported_image("https://example.com/page")
-        assert not gallery_backend.is_supported_image("https://youtu.be/HoY5RbzRcmo")
     finally:
         gallery_backend._is_supported_cached.cache_clear()
 

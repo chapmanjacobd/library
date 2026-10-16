@@ -125,7 +125,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.2.011; 105 subcommands)
+    library (v3.2.011; 104 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -373,11 +373,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────┤
     │ help           │ Search subcommands and help text        │
     ╰────────────────┴─────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭─────────────┬─────────────╮
-    │ search-help │ search_help │
-    ╰─────────────┴─────────────╯
 
 
 </details>
@@ -2574,7 +2569,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Download media</summary>
 
     $ library download -h
-    usage: library download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,filesystem,text}] [--safe]
+    usage: library download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,text,filesystem}] [--safe]
 
     Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
     The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
@@ -3302,9 +3297,13 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Dedupe similar media</summary>
 
     $ library dedupe-media -h
-    usage: library dedupe-media [--audio | --filesystem | --id | --title | --same-duration] [--only-soft-delete] [--limit LIMIT] DATABASE
+    usage: library dedupe-media [--audio | --filesystem | --id | --title | --same-duration] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
+
+    The media-type flags (--audio, --filesystem) select a `profile`; the dedupe-key
+    flags (--id, --title, --same-duration) select a `strategy`. The two axes are
+    mutually exclusive, so pick exactly one.
 
     Exact file matches
 
@@ -3522,19 +3521,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Choose which duplicate to keep by opening both side-by-side in mpv
 
-
-</details>
-
-### Other subcommands
-
-###### search-help
-
-<details><summary>search_help</summary>
-
-    $ library search-help -h
-    usage: library help [subcommand] QUERY ...
-
-    Search library functionality and help text
 
 </details>
 

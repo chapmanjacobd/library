@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import Any
 
-from library.utils.consts import DBType
+from library.utils.consts import SCAN_MEDIA_TYPES, DBType
 
 
 class NoneSpace(types.SimpleNamespace):
@@ -175,17 +175,14 @@ def json_shelve(filename, default):
 def is_profile(args, profile_target):
     """Check both profile shapes: single `profile` (one backend) and multi `profiles` (scan set).
 
-    `auto` matches every scannable media type (text only when its deps are installed),
-    so metadata extraction still runs for locally downloaded audio/video/text files.
+    `auto` matches every scannable media type. Callers that extract text/image still gate the
+    work on the optional-dependency checks (`arggroups.text_profile_available` etc.).
     """
     profile = getattr(args, "profile", "")
     if profile == profile_target:
         return True
-    if profile == DBType.auto:
-        from library.utils.arggroups import auto_scan_media_types
-
-        if profile_target in auto_scan_media_types():
-            return True
+    if profile == DBType.auto and profile_target in SCAN_MEDIA_TYPES:
+        return True
     return profile_target in getattr(args, "profiles", [])
 
 

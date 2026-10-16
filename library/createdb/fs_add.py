@@ -54,17 +54,7 @@ def parse_args(action, usage):
     arggroups.args_post(args, parser, create_db=action == SC.fs_add)
 
     args.profiles = arggroups.resolve_profiles(action, args.profiles)
-
-    if DBType.text in args.profiles and not arggroups.text_profile_available():
-        log.warning(
-            "The text profile was selected but textract is not installed;"
-            " text files will be skipped (pip install textract-py3)"
-        )
-    if DBType.image in args.profiles and not arggroups.image_profile_available():
-        log.warning(
-            "The image profile was selected but PyExifTool/exiftool is not installed;"
-            " image metadata will not be extracted (pip install PyExifTool)"
-        )
+    arggroups.warn_missing_profile_deps(args.profiles)
 
     if args.copy:
         args.copy = Path(args.copy).expanduser().resolve()
@@ -86,7 +76,7 @@ def parse_args(action, usage):
 def extract_chunk(args, media) -> None:
     is_scan_all_files = getattr(args, "scan_all_files", False)
 
-    if objects.is_profile(args, DBType.image):
+    if objects.is_profile(args, DBType.image) and arggroups.image_profile_available():
         if is_scan_all_files:
             image_media = list(media)
             other_media = []
@@ -153,30 +143,16 @@ def find_new_files(args, path) -> list[str]:
                         print(f"[{path}] Marking as undeleted")
         return [path]
 
-    for s in args.profiles:
-        if getattr(DBType, s, None) is None:
-            msg = f"fs_extract for profile {s}"
-            raise NotImplementedError(msg)
-
     exts = args.ext
     if not exts:
         if args.scan_all_files or DBType.filesystem in args.profiles:
             exts = None
         else:
-            exts = set()
-            if DBType.audio in args.profiles:
-                exts |= consts.AUDIO_ONLY_EXTENSIONS
-            if DBType.video in args.profiles:
-                exts |= consts.VIDEO_EXTENSIONS
-            if DBType.image in args.profiles:
-                exts |= consts.IMAGE_EXTENSIONS
-            if DBType.text in args.profiles:
-                exts |= consts.TEXTRACT_EXTENSIONS
-            if args.ocr:
-                exts |= consts.OCR_EXTENSIONS
-            if args.speech_recognition:
-                exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
-            exts = tuple(exts)
+            exts = tuple(
+                arggroups.profile_extensions(
+                    args.profiles, ocr=args.ocr, speech_recognition=args.speech_recognition
+                )
+            )
 
     scanned_set = shell_utils.rglob(path, exts or None, args.exclude)[0]
 
@@ -239,16 +215,15 @@ def needs_process_pool(args, path: str) -> bool:
     so those files are processed with a ProcessPoolExecutor. Everything else -- including
     images, whose exiftool enrichment runs in the main process (see `extract_chunk`) -- stays
     in the ThreadPoolExecutor.
+
+    When textract is missing the text extraction is skipped entirely, so no pool is needed.
     """
+    if not arggroups.text_profile_available():
+        return False
+
     ext = path.rsplit(".", 1)[-1].lower()
     is_scan_all_files = getattr(args, "scan_all_files", False)
-
-    text_exts = set(consts.TEXTRACT_EXTENSIONS)
-    if getattr(args, "ocr", False):
-        text_exts |= consts.OCR_EXTENSIONS
-    if getattr(args, "speech_recognition", False):
-        text_exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
-    if objects.is_profile(args, DBType.text) and (ext in text_exts or is_scan_all_files):
+    if objects.is_profile(args, DBType.text) and (ext in arggroups.text_extensions(args) or is_scan_all_files):
         return True
 
     return False
@@ -300,16 +275,18 @@ def scan_path(args, path_str: str) -> int:
             db_utils.optimize(args)
             del args.playlist_path
 
+        # Text-only scans use a small chunk because textract is slow per-file; any other
+        # media keeps its prior chunk size even when `auto` also includes text.
         if getattr(args, "process", False) and n_jobs:
             batch_count = n_jobs
-        elif DBType.text in args.profiles:
-            batch_count = int(os.cpu_count() or 4)
         elif DBType.video in args.profiles:
             batch_count = 500
         elif DBType.audio in args.profiles:
             batch_count = 1000
         elif DBType.image in args.profiles:
             batch_count = 1500
+        elif DBType.text in args.profiles:
+            batch_count = int(os.cpu_count() or 4)
         else:
             batch_count = 15000
         chunks_count = math.ceil(len(new_files) / batch_count)

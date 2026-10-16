@@ -121,7 +121,7 @@ stats = """library stats DATABASE TIME_COLUMN
         14 media
 """
 
-download = r"""library download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,filesystem,text}] [--safe]
+download = r"""library download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,text,filesystem}] [--safe]
 
     Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
     The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
@@ -835,9 +835,13 @@ copy_play_counts = """library copy-play-counts SOURCE_DB ... DEST_DB [--source-p
 
         library copy-play-counts phone.db audio.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 """
-dedupe_media = """library dedupe-media [--audio | --filesystem | --id | --title | --same-duration] [--only-soft-delete] [--limit LIMIT] DATABASE
+dedupe_media = """library dedupe-media [--audio | --filesystem | --id | --title | --same-duration] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
+
+    The media-type flags (--audio, --filesystem) select a `profile`; the dedupe-key
+    flags (--id, --title, --same-duration) select a `strategy`. The two axes are
+    mutually exclusive, so pick exactly one.
 
     Exact file matches
 

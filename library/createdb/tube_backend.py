@@ -476,7 +476,7 @@ def download(args, m) -> None:
             diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default["postprocessors"]]
         return diff
 
-    extra_args = yt_cli_to_api(args.unk)
+    extra_args = yt_cli_to_api(getattr(args, "unk", []))
     ydl_opts = tube_opts(
         args,
         func_opts=func_opts | extra_args,

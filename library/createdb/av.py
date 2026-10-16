@@ -14,7 +14,6 @@ from library.utils import (
     shell_utils,
     strings,
 )
-from library.utils.consts import DBType
 from library.utils.log_utils import log
 
 
@@ -288,10 +287,13 @@ def munge_av_tags(args, m) -> dict:
     if m.get("time_deleted"):
         return m
 
-    if objects.is_profile(args, DBType.video):
+    # Use the file extension, not the selected profile: `auto` enables both video
+    # and audio, so a profile-based `if/elif` would always shadow the audio branch.
+    ext = path_utils.ext(path)
+    if ext in consts.VIDEO_EXTENSIONS:
         video_tags = get_subtitle_tags(path, streams, scan_subtitles=getattr(args, "scan_subtitles", False))
         m = {**m, **video_tags}
-    elif objects.is_profile(args, DBType.audio) and not str(path).startswith("http"):
+    elif ext in consts.AUDIO_ONLY_EXTENSIONS and not str(path).startswith("http"):
         stream_tags = get_audio_tags(path)
         stream_tags = {k: v for k, v in stream_tags.items() if v}
         m = {**m, **stream_tags}

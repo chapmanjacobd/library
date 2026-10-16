@@ -157,6 +157,13 @@ class DBType:
     image = "image"
 
 
+# Media profile constants. Kept here (rather than in arggroups) so `objects.is_profile`
+# can reference them without importing arggroups (which itself imports objects).
+MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text, DBType.filesystem)
+SCAN_MEDIA_TYPES = (DBType.video, DBType.audio, DBType.image, DBType.text)
+PROFILE_CHOICES = (DBType.auto, *MEDIA_TYPES)
+
+
 class SC:
     fs_add = "fs-add"
     fs_update = "fs-update"
@@ -170,7 +177,6 @@ class SC:
     reddit_update = "reddit-update"
     gallery_add = "gallery-add"
     gallery_update = "gallery-update"
-    getty_add = "getty-add"
     tabs_open = "tabs-open"
     links_open = "links-open"
     links_add = "links-add"

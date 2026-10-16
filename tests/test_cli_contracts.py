@@ -8,7 +8,7 @@ from library.editdb import dedupe_media
 from library.mediadb import download
 from library.mediafiles import process_image
 from library.text import cluster_sort, extract_links
-from library.utils import arggroups, objects
+from library.utils import arggroups, consts, objects
 from library.utils.consts import DBType, SC
 from tests.utils import v_db
 
@@ -75,6 +75,34 @@ def test_links_download_defaults_to_auto(monkeypatch):
     assert args.profile == DBType.auto
 
 
+def test_links_download_accepts_direct(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links-download", "--direct", "https://example.com/"])
+
+    args = extract_links.parse_args_links_download()
+
+    assert args.direct is True
+
+
+def test_links_download_accepts_text(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links-download", "--text", "https://example.com/"])
+
+    args = extract_links.parse_args_links_download()
+
+    assert args.profile == DBType.text
+
+
+def test_direct_download_has_no_profile_or_safe(monkeypatch):
+    """direct-download only uses the built-in downloader, so it must not advertise
+    profile/media-type/safe options that would be ignored."""
+    monkeypatch.setattr("sys.argv", ["direct-download", "https://example.com/x"])
+
+    args = extract_links.parse_args_direct_download()
+
+    assert args.direct is True
+    assert not hasattr(args, "profile")
+    assert not hasattr(args, "safe")
+
+
 def test_expand_profiles_auto_expands_to_all_media_types(monkeypatch):
     monkeypatch.setattr(arggroups, "text_profile_available", lambda: True)
     monkeypatch.setattr(arggroups, "image_profile_available", lambda: True)
@@ -114,6 +142,39 @@ def test_expand_profiles_explicit_image_is_kept_without_deps(monkeypatch):
     assert arggroups.expand_profiles([DBType.image]) == [DBType.image]
 
 
+def test_expand_profiles_require_deps_false_keeps_optional(monkeypatch):
+    monkeypatch.setattr(arggroups, "text_profile_available", lambda: False)
+    monkeypatch.setattr(arggroups, "image_profile_available", lambda: False)
+
+    expanded = arggroups.expand_profiles([DBType.auto], require_deps=False)
+
+    assert set(expanded) == {DBType.video, DBType.audio, DBType.image, DBType.text}
+
+
+def test_resolve_profiles_require_deps_false_keeps_all_media_types(monkeypatch):
+    """Extension-only commands (merge-mv) must not drop text/image just because the
+    optional extraction deps are missing."""
+    monkeypatch.setattr(arggroups, "text_profile_available", lambda: False)
+    monkeypatch.setattr(arggroups, "image_profile_available", lambda: False)
+
+    resolved = arggroups.resolve_profiles(SC.merge_mv, [DBType.auto], require_deps=False)
+
+    assert set(resolved) == {DBType.video, DBType.audio, DBType.image, DBType.text}
+
+
+def test_profile_extensions_maps_media_types():
+    exts = arggroups.profile_extensions([DBType.text], ocr=True, speech_recognition=True)
+
+    assert consts.TEXTRACT_EXTENSIONS <= exts
+    assert consts.OCR_EXTENSIONS <= exts
+    assert consts.SPEECH_RECOGNITION_EXTENSIONS <= exts
+
+    video_only = arggroups.profile_extensions([DBType.video])
+    assert consts.VIDEO_EXTENSIONS <= video_only
+    # filesystem is not a media type and contributes no extensions
+    assert arggroups.profile_extensions([DBType.filesystem]) == set()
+
+
 def test_fs_add_defaults_to_auto():
     assert arggroups.default_profile(SC.fs_add) == [DBType.auto]
     assert arggroups.default_profile(SC.fs_update) == [DBType.auto]
@@ -141,6 +202,14 @@ def test_download_text_alias_selects_text_profile(monkeypatch):
     assert args.direct is False
 
 
+def test_download_links_text_alias_selects_text_profile(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["download-links", "--text", v_db, "--print"])
+
+    args = download.parse_args(usage.download_links, links=True)
+
+    assert args.profile == DBType.text
+
+
 @pytest.mark.parametrize("extra", [["--direct"], ["--text"], ["--filesystem"], ["--media-type", "text"]])
 def test_download_safe_rejects_unsupported_profiles(monkeypatch, extra):
     monkeypatch.setattr("sys.argv", ["download", "--safe", v_db, *extra, "--print"])
@@ -165,14 +234,26 @@ def test_dedupe_media_rejects_text_profile(monkeypatch):
         dedupe_media.parse_args()
 
 
-def test_is_profile_auto_matches_scannable_types(monkeypatch):
-    monkeypatch.setattr(arggroups, "text_profile_available", lambda: False)
-    monkeypatch.setattr(arggroups, "image_profile_available", lambda: True)
+def test_dedupe_media_does_not_offer_soft_delete_flags(monkeypatch):
+    """dedupe-media always soft-deletes the rows it removes, so the generic
+    --mark-deleted/--delete-rows/--mark-watched flags are not advertised."""
+    monkeypatch.setattr("sys.argv", ["dedupe-media", "--audio", v_db])
+
+    args = dedupe_media.parse_args()
+
+    assert not hasattr(args, "mark_deleted")
+    assert not hasattr(args, "delete_rows")
+    assert not hasattr(args, "mark_watched")
+
+
+def test_is_profile_auto_matches_scannable_types():
     args = argparse.Namespace(profile=DBType.auto)
 
     assert objects.is_profile(args, DBType.video)
     assert objects.is_profile(args, DBType.audio)
     assert objects.is_profile(args, DBType.image)
+    # text matches `auto` too; the extractor itself skips when textract is unavailable
+    assert objects.is_profile(args, DBType.text)
     assert not objects.is_profile(args, DBType.filesystem)
 
 

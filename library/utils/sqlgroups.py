@@ -366,19 +366,20 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
     pl_columns = db_utils.columns(args, "playlists")
 
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
-    is_supported = None
-    if args.safe and not getattr(args, "extract_links", False):
-        # With link extraction the rows are pages, not downloads: the seed pages are fetched to
-        # discover links, and `--safe` is applied to the extracted links instead (see download.py).
-        # `_safe_supported` also handles the lazy gallery-dl pre-load for the image profile.
-        from library.mediadb.download import _safe_supported
 
-        # Named is_supported so it matches the `is_supported(m.path)` SQL call below.
+    safe_filter = False
+    if getattr(args, "safe", False) and not getattr(args, "extract_links", False):
+        # Filter in SQL so `--limit` can backfill supported URLs. With link extraction the rows
+        # are pages, not downloads: `--safe` is applied to the extracted links instead.
+        # `download._download` re-checks rows that did not come from this query
+        # (--from-json / positional paths).
+        from library.mediadb.download import safe_supported
+
         def is_supported(url):
-            return _safe_supported(args, url)
+            return safe_supported(args, url)
 
-    if is_supported is not None:
         args.db.register_function(is_supported, deterministic=True)
+        safe_filter = True
 
     if "time_modified" in m_columns and not dl_status:
         args.filter_sql.append(
@@ -425,7 +426,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {same_subdomain if getattr(args, 'same_domain', False) else ''}
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-            {'AND is_supported(m.path)' if is_supported is not None else ''}
+            {'AND is_supported(m.path)' if safe_filter else ''}
             AND (1=1 {" ".join(args.filter_sql)})
         ORDER BY 1=1
             {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}

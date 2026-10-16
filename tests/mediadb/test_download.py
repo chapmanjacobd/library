@@ -6,6 +6,7 @@ from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
 from library.mediadb import db_media
 from library.mediadb import download as download_mod
+from library.utils import sqlgroups
 from library.utils.consts import DBType
 from tests.utils import connect_db_args
 
@@ -137,16 +138,16 @@ def test_safe_with_link_extraction_checks_links_not_seed(temp_db, monkeypatch):
     assert routed["builtin"] == []
 
 
-def test_safe_image_uses_directlink_extractor(temp_db, monkeypatch):
-    """An explicit `--image --safe` run registers the image-aware is_supported UDF and keeps
-    gallery-dl's directlink extractor (so direct image URLs are not skipped)."""
+def test_safe_image_excludes_direct_links(temp_db, monkeypatch):
+    """An explicit `--image --safe` run only accepts real gallery-dl site extractors;
+    direct/generic (catch-all) links are skipped, exactly like `auto`."""
     db1 = temp_db()
+    lb(["links-add", db1, "--insert-only", "https://example.com/album"])
     lb(["links-add", db1, "--insert-only", "https://example.com/pic.png"])
 
     monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: True)
     monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
-    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: False)
-    monkeypatch.setattr(download_mod.gallery_backend, "is_supported_image", lambda url: url.endswith(".png"))
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: url.endswith("/album"))
 
     routed = {"gallery": []}
     monkeypatch.setattr(
@@ -155,7 +156,45 @@ def test_safe_image_uses_directlink_extractor(temp_db, monkeypatch):
 
     lb(["dl", db1, "--image", "--safe", "--force"])
 
-    assert routed["gallery"] == ["https://example.com/pic.png"]
+    assert routed["gallery"] == ["https://example.com/album"]
+
+
+def test_safe_without_link_extraction_filters_rows(temp_db, monkeypatch):
+    """`--safe` without link extraction skips unsupported rows (the loop re-check covers
+    rows that did not come from the SQL query)."""
+    db1 = temp_db()
+    lb(["links-add", db1, "--insert-only", "https://example.com/clip"])
+    lb(["links-add", db1, "--insert-only", "https://example.com/other"])
+
+    monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda url: url.endswith("clip"))
+    monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: True)
+    monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: False)
+
+    routed = {"tube": [], "builtin": []}
+    monkeypatch.setattr(download_mod.tube_backend, "download", lambda _args, m: routed["tube"].append(m["path"]))
+    monkeypatch.setattr(
+        download_mod, "_download_builtin", lambda _args, _m, _orig, paths: routed["builtin"].extend(paths)
+    )
+
+    lb(["dl", db1, "--safe", "--force"])
+
+    assert routed["tube"] == ["https://example.com/clip"]
+    assert routed["builtin"] == []
+
+
+def test_safe_filter_is_pushed_into_sql(temp_db, monkeypatch):
+    """`--safe` (without link extraction) is also applied in SQL so `--limit` backfills
+    supported URLs; the loop re-checks rows that did not come from the query."""
+    db1 = temp_db()
+    lb(["links-add", db1, "--insert-only", "https://example.com/clip"])
+
+    monkeypatch.setattr("sys.argv", ["download", db1, "--safe", "--print"])
+    args = download_mod.parse_args()
+
+    query, _ = sqlgroups.construct_download_query(args)
+
+    assert "is_supported(m.path)" in query
 
 
 def test_download_process_preserves_unsupported_extension(temp_db, crawl_server, tmp_path):

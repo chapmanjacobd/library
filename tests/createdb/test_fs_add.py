@@ -125,10 +125,11 @@ def test_extract_chunk_writes_tag_captions():
     assert captions[0]["text"] == "some tags\nmore"
 
 
-def test_needs_process_pool_only_routes_text():
+def test_needs_process_pool_only_routes_text(monkeypatch):
     """Only text extraction is not thread-safe (textract starts its own pool). Images use
     thread-safe subprocesses (process_image/ImageMagick) and exiftool runs in the main
     process, so both audio/video and image files stay in the ThreadPoolExecutor."""
+    monkeypatch.setattr(fs_add.arggroups, "text_profile_available", lambda: True)
     args = SimpleNamespace(
         profiles=[DBType.video, DBType.audio], scan_all_files=False, ocr=False, speech_recognition=False
     )
@@ -142,3 +143,82 @@ def test_needs_process_pool_only_routes_text():
     text_args = SimpleNamespace(profiles=[DBType.text], scan_all_files=False, ocr=False, speech_recognition=False)
     assert fs_add.needs_process_pool(text_args, "/x/book.pdf") is True
     assert fs_add.needs_process_pool(text_args, "/x/clip.mp4") is False
+
+
+def test_needs_process_pool_skips_text_without_textract(monkeypatch):
+    """When textract is missing the text extraction is skipped, so the process pool is
+    not needed and text files can run in the thread pool."""
+    monkeypatch.setattr(fs_add.arggroups, "text_profile_available", lambda: False)
+    text_args = SimpleNamespace(profiles=[DBType.text], scan_all_files=True, ocr=False, speech_recognition=False)
+
+    assert fs_add.needs_process_pool(text_args, "/x/book.pdf") is False
+
+
+def test_extract_chunk_skips_image_metadata_without_exiftool(monkeypatch):
+    """A missing exiftool must skip image enrichment, not crash the scan."""
+    db = _mk_db()
+    args = SimpleNamespace(db=db, playlists_id=1, scan_subtitles=False, scan_all_files=False)
+    media = [{"path": "/x/photo.jpg", "size": 100}]
+
+    monkeypatch.setattr(fs_add.arggroups, "image_profile_available", lambda: False)
+    monkeypatch.setattr(fs_add.objects, "is_profile", lambda _args, target: target == DBType.image)
+
+    def boom(_media):
+        raise AssertionError("exiftool must not be called when it is unavailable")
+
+    monkeypatch.setattr(fs_add, "extract_image_metadata_chunk", boom)
+
+    fs_add.extract_chunk(args, media)
+
+    assert len(list(db["media"].rows)) == 1
+
+
+def test_extract_metadata_process_dispatches_by_extension(monkeypatch, tmp_path):
+    """With `auto` (or any multi-profile set) the audio branch is enabled for every file,
+    so `--process` must dispatch on the file extension: an image goes to process_image,
+    never process_ffmpeg."""
+    photo = tmp_path / "photo.jpg"
+    photo.write_bytes(b"\xff\xd8\xff\xe0" + b"x" * 100)
+
+    args = SimpleNamespace(
+        profiles=[DBType.video, DBType.audio, DBType.image, DBType.text],
+        process=True,
+        split_longer_than=None,
+        ocr=False,
+        speech_recognition=False,
+        hash=False,
+        copy=False,
+        move=False,
+    )
+    monkeypatch.setattr(fs_add_metadata.file_utils, "detect_mimetype", lambda _: "image/jpeg")
+    monkeypatch.setattr(fs_add_metadata.av, "munge_av_tags", lambda _args, m: m)
+
+    calls = []
+    monkeypatch.setattr(
+        fs_add_metadata.process_ffmpeg, "process_path", lambda *_a, **_k: calls.append("ffmpeg") or str(photo)
+    )
+    monkeypatch.setattr(
+        fs_add_metadata.process_image, "process_path", lambda *_a, **_k: calls.append("image") or str(photo)
+    )
+
+    fs_add_metadata.extract_metadata(args, str(photo))
+
+    assert calls == ["image"]
+
+
+def test_extract_metadata_skips_text_without_textract(monkeypatch, tmp_path):
+    """A missing textract must skip text extraction, not crash the scan."""
+    book = tmp_path / "book.txt"
+    book.write_text("hello")
+
+    def boom(_path):
+        raise AssertionError("textract path must be skipped when it is unavailable")
+
+    monkeypatch.setattr(fs_add_metadata.arggroups, "text_profile_available", lambda: False)
+    monkeypatch.setattr(fs_add_metadata, "munge_book_tags_fast", boom)
+
+    mp_args = SimpleNamespace(profiles=[DBType.text], scan_all_files=False, ocr=False, speech_recognition=False)
+    m = fs_add_metadata.extract_metadata(mp_args, str(book))
+
+    assert m["path"] == str(book)
+    assert "tags" not in m

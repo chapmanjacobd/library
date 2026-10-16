@@ -91,17 +91,7 @@ def parse_args(action, **kwargs):
     if not args.profiles and args.sizes:
         args.profiles = [DBType.filesystem]
     args.profiles = arggroups.resolve_profiles(action, args.profiles)
-
-    if DBType.text in args.profiles and not arggroups.text_profile_available():
-        log.warning(
-            "The text profile was selected but textract is not installed;"
-            " text files will be skipped (pip install textract-py3)"
-        )
-    if DBType.image in args.profiles and not arggroups.image_profile_available():
-        log.warning(
-            "The image profile was selected but PyExifTool/exiftool is not installed;"
-            " image metadata will not be extracted (pip install PyExifTool)"
-        )
+    arggroups.warn_missing_profile_deps(args.profiles)
 
     return args
 
@@ -130,10 +120,14 @@ def add_extra_metadata(args, m):
         m = av.munge_av_tags(args, m)
     if DBType.audio in args.profiles and extension in consts.AUDIO_ONLY_EXTENSIONS:
         m = av.munge_av_tags(args, m)
-    if DBType.text in args.profiles and (extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files):
+    if DBType.text in args.profiles and arggroups.text_profile_available() and (
+        extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files
+    ):
         with web.PartialContent(m["path"]) as temp_file_path:
             m |= fs_add_metadata.munge_book_tags_fast(temp_file_path)
-    if DBType.image in args.profiles and (extension in consts.IMAGE_EXTENSIONS or args.scan_all_files):
+    if DBType.image in args.profiles and arggroups.image_profile_available() and (
+        extension in consts.IMAGE_EXTENSIONS or args.scan_all_files
+    ):
         with web.PartialContent(m["path"], max_size=32 * 1024) as temp_file_path:
             m |= fs_add_metadata.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
     m["path"] = remote_path  # restore from temp file extraction

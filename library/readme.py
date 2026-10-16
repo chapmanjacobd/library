@@ -1,8 +1,25 @@
 from library import __main__, usage
 
 all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
-categorized_progs = [key for d in __main__.progs.values() for key in d if isinstance(key, str)]
-other_progs = [s for s in all_progs if s not in categorized_progs]
+categorized_progs = {key for d in __main__.progs.values() for key in d if isinstance(key, str)}
+
+
+def _already_categorized(prog_name: str) -> bool:
+    """A usage attribute may be listed in `progs` under a different (alias) name.
+
+    eg. the `search_help` usage string is listed as `help`. Without this check the README
+    would add a duplicate "Other subcommands" entry and report a different subtotal than
+    the CLI's `library` output.
+    """
+    if prog_name in categorized_progs:
+        return True
+    for module_name, aliases in __main__.modules.items():
+        if module_name.rsplit(".", 1)[1] == prog_name and any(alias in categorized_progs for alias in aliases):
+            return True
+    return False
+
+
+other_progs = [s for s in all_progs if not _already_categorized(s)]
 if len(other_progs) > 0:
     __main__.progs["Other subcommands"] = {s: s for s in other_progs}
 

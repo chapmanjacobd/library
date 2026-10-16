@@ -65,7 +65,7 @@ def gallery_add(args=None) -> None:
                 log.info("Known already. Skipping %s", path)
                 continue
 
-            if args.safe and not gallery_backend.is_supported_image(path):
+            if args.safe and not gallery_backend.is_supported(path):
                 log.info("Skipping unsupported playlist (safe_mode) %s", path)
                 continue
 

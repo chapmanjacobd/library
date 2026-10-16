@@ -28,8 +28,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.dedupe_media)
     arggroups.sql_fs(parser)
 
-    # Media types and dedupe strategies share one mutually-exclusive group but
-    # land in separate destinations so `profile` stays a DBType.
+    # Media-type and dedupe-strategy flags are mutually exclusive: combining them is
+    # ambiguous (eg. `--audio --id`). They share one group so argparse rejects those
+    # combinations, but the selected values land in two destinations: the media types
+    # (`--audio`, `--filesystem`, hidden `--image`) set `profile` (kept a DBType so the
+    # rest of the codebase can reuse `is_profile`), while the dedupe keys (`--id`,
+    # `--title`, `--same-duration`) set `strategy`.
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
         "--audio",
@@ -95,7 +99,9 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.debug(parser)
 
-    arggroups.database(parser)
+    # dedupe-media always soft-deletes the duplicate rows it removes, so it does not
+    # offer the generic `--mark-deleted`/`--delete-rows`/`--mark-watched` flags.
+    arggroups.database(parser, soft_delete=False)
     parser.add_argument("search", nargs="*")
     parser.set_defaults(fts=False)
     args = parser.parse_intermixed_args()

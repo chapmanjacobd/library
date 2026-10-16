@@ -18,6 +18,14 @@ def parse_args() -> argparse.Namespace:
 
     parser.set_defaults(fts=False)
     args = parser.parse_args()
+
+    # `arggroups.download()` adds `--safe`/`--media-type` because
+    # `construct_download_query` reuses them; validate the combination so `--safe`
+    # filters as documented instead of silently no-op'ing with filesystem/text.
+    from library.mediadb import download as download_mod
+
+    download_mod.validate_safe(args, parser, extracts_links=False)
+
     arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)

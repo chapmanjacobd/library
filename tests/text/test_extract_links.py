@@ -51,7 +51,7 @@ def test_links_local_html_excludes_tracking_urls(capsys):
 
 def test_links_download_image_safe_loads_gallery_lazily(crawl_server, monkeypatch):
     """`links-download --image --safe` is database-less and must lazily load gallery-dl before
-    the is_supported_image check, rather than raising because it was never pre-loaded."""
+    the is_supported check, rather than raising because it was never pre-loaded."""
     from library.mediadb import download as download_mod
 
     gallery_backend = download_mod.gallery_backend
@@ -63,8 +63,9 @@ def test_links_download_image_safe_loads_gallery_lazily(crawl_server, monkeypatc
         loaded["n"] += 1
         gallery_backend.is_supported.configured = True
 
+    monkeypatch.setattr(gallery_backend, "gallery_dl_available", lambda: True)
     monkeypatch.setattr(gallery_backend, "load_module_level_gallery_dl", fake_load)
-    monkeypatch.setattr(gallery_backend, "is_supported_image", lambda url: url.endswith(".png"))
+    monkeypatch.setattr(gallery_backend, "is_supported", lambda url: url.endswith(".png"))
 
     downloaded = []
     monkeypatch.setattr(gallery_backend, "download", lambda args, m: downloaded.append(m["path"]))
@@ -346,6 +347,20 @@ def test_direct_download_stays_builtin(monkeypatch):
     extract_links.direct_download()
 
     assert routed["tube"] == []
+    assert routed["builtin"] == ["https://x/clip"]
+
+
+def test_links_download_direct_uses_builtin(monkeypatch):
+    """`links-download --direct` must bypass yt-dlp/gallery-dl routing even for a
+    supported URL."""
+    routed = _patch_backend_routing(monkeypatch)
+    args = SimpleNamespace(profile=DBType.auto, direct=True, safe=False, prefix=".")
+    cache = {}
+
+    extract_links._download_one(args, "https://x/clip", cache)
+
+    assert routed["tube"] == []
+    assert routed["gallery"] == []
     assert routed["builtin"] == ["https://x/clip"]
 
 

@@ -5,8 +5,8 @@ from collections.abc import Iterable
 from library import usage
 from library.folders import filter_src
 from library.folders.filter_src import process_time_filters, track_moved
-from library.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, shell_utils
-from library.utils.consts import DBType, SC
+from library.utils import arggroups, argparse_utils, devices, path_utils, processes, shell_utils
+from library.utils.consts import SC
 from library.utils.log_utils import log
 from library.utils.shell_utils import rglob_gen
 
@@ -96,19 +96,10 @@ def parse_args(defaults_override=None):
         else:
             args.file_over_file = arggroups.file_over_file("delete-src-larger delete-dest")
 
-    args.profiles = arggroups.resolve_profiles(SC.merge_mv, args.profiles)
+    args.profiles = arggroups.resolve_profiles(SC.merge_mv, args.profiles, require_deps=False)
 
     if args.profiles:
-        exts = set(args.ext or [])
-        if DBType.audio in args.profiles:
-            exts |= consts.AUDIO_ONLY_EXTENSIONS
-        if DBType.video in args.profiles:
-            exts |= consts.VIDEO_EXTENSIONS
-        if DBType.image in args.profiles:
-            exts |= consts.IMAGE_EXTENSIONS
-        if DBType.text in args.profiles:
-            exts |= consts.TEXTRACT_EXTENSIONS
-        args.ext = tuple(exts)
+        args.ext = tuple(set(args.ext or []) | arggroups.profile_extensions(args.profiles))
 
     return args
 

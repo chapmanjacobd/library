@@ -1,4 +1,4 @@
-import json
+import json, pathlib
 from collections import deque
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
@@ -16,9 +16,7 @@ from library.utils import (
     strings,
     web,
 )
-from library.utils.consts import DBType
 from library.utils.log_utils import log
-import pathlib
 
 
 def _base_parser(usage):
@@ -35,7 +33,7 @@ def _add_link_extraction(parser):
 
 
 def _add_download_options(parser):
-    arggroups.download(parser)
+    arggroups.download(parser, direct=True)
     arggroups.download_subtitle(parser)
     arggroups.download_media_filters(parser)
 
@@ -44,22 +42,6 @@ def _post_link_extraction(args):
     arggroups.filter_links_post(args)
     web.requests_session(args)
     arggroups.selenium_post(args)
-
-
-def _check_safe_download(args, parser, *, extracts_links):
-    """Reject unusable `--safe` combinations and note the limits of link-extraction `--safe`."""
-    args.unk = []  # yt-dlp passthrough args are only supported by the database download command
-
-    if args.safe and (args.direct or args.profile in (DBType.filesystem, DBType.text)):
-        parser.error(
-            "--safe is supported only with --auto, --audio, --video, or --image"
-            " (not --direct or --media-type filesystem/text)"
-        )
-    if args.safe and extracts_links:
-        log.warning(
-            "--safe cannot be fully enforced when extracting links from pages; "
-            "only the extracted links are checked against known domains"
-        )
 
 
 def parse_args_extract():
@@ -88,7 +70,10 @@ def parse_args_links_download():
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
-    _check_safe_download(args, parser, extracts_links=True)
+    # local import: library.mediadb.download imports this module at module level
+    from library.mediadb import download as download_mod
+
+    download_mod.validate_safe(args, parser, extracts_links=True)
     arggroups.extractor_post(args)
     _post_link_extraction(args)
     return args
@@ -96,7 +81,8 @@ def parse_args_links_download():
 
 def parse_args_direct_download():
     parser = _base_parser(usage_mod.direct_download)
-    _add_download_options(parser)
+    # A pure built-in downloader: no profile/media-type or yt-dlp/gallery-dl filters.
+    arggroups.download(parser, profile=False, safe=False)
     parser.set_defaults(download=True, direct=True)
 
     arggroups.debug(parser)
@@ -104,7 +90,6 @@ def parse_args_direct_download():
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
-    _check_safe_download(args, parser, extracts_links=False)
     arggroups.extractor_post(args)
     web.requests_session(args)
     return args
@@ -452,24 +437,20 @@ def _download_one(args, url, backend_args_cache) -> None:
     These commands are database-less, so yt-dlp/gallery-dl downloads are not recorded; only
     the database download command records results.
     """
-    if args.direct or args.profile in (DBType.filesystem, DBType.text):
-        _builtin_download(args, url)
-        return
-
     # local import: library.mediadb.download imports this module at module level
     from library.mediadb import download as download_mod
 
-    if args.safe and not download_mod._safe_supported(args, url):
+    if getattr(args, "safe", False) and not download_mod.safe_supported(args, url):
         log.info("Skipping unsupported URL (safe_mode) %s", url)
         return
 
-    download_mod._dispatch_link(
+    download_mod.route_links(
         args,
         {"path": url},
         url,
-        url,
+        [url],
         backend_args_cache,
-        lambda _args, _m, _original_path, link_path: _builtin_download(_args, link_path),
+        lambda _args, _m, _original_path, urls: [_builtin_download(_args, u) for u in urls],
     )
 
 
