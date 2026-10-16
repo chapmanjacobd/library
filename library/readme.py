@@ -1,3 +1,5 @@
+import re
+
 from library import __main__, usage
 
 all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
@@ -24,24 +26,51 @@ if len(other_progs) > 0:
     __main__.progs["Other subcommands"] = {s: s for s in other_progs}
 
 usage_details_md = []
+canonical_target_paths = __main__._canonical_target_paths()
+seen_usage_commands = set()
+legacy_to_canonical = {}
+for module_name, aliases in __main__.modules.items():
+    function_name = module_name.rsplit(".", 1)[1]
+    target = function_name.replace("_", "-")
+    canonical_command = canonical_target_paths.get(target)
+    if canonical_command is None:
+        continue
+    for legacy_command in {function_name, target, *aliases}:
+        legacy_to_canonical.setdefault(legacy_command, canonical_command)
+
+
+def canonicalize_usage(text: str) -> str:
+    if not legacy_to_canonical:
+        return text
+    commands = "|".join(re.escape(command) for command in sorted(legacy_to_canonical, key=len, reverse=True))
+    pattern = re.compile(rf"(?<!\w)(library\s+)({commands})(?![\w-])")
+    return pattern.sub(lambda match: f"{match.group(1)}{legacy_to_canonical[match.group(2)]}", text)
+
+
 for category, category_progs in __main__.progs.items():
     usage_details_md.append(f"\n### {category}\n")
 
     for prog, prog_description in category_progs.items():
         prog_usage = getattr(usage, prog, None)
         subcommand = prog.replace("_", "-")
+        target = __main__._resolve_target(prog)
+        canonical_command = canonical_target_paths.get(target, subcommand)
+        if canonical_command in seen_usage_commands:
+            continue
+        seen_usage_commands.add(canonical_command)
 
         if prog_description is None:
             prog_description = subcommand
 
         if prog_usage is not None:
+            prog_usage = canonicalize_usage(prog_usage)
             usage_details_md.append(
                 f"""
-###### {subcommand}
+###### {canonical_command}
 
 <details><summary>{prog_description}</summary>
 
-    $ library {subcommand} -h
+    $ library {canonical_command} -h
     usage: {prog_usage.replace('%%', '%')}
 
 </details>
@@ -114,15 +143,15 @@ For thirty terabytes of video the initial scan takes about four hours to complet
 After that, subsequent scans of the path (or any subpaths) are much quicker--only
 new files will be read by `ffprobe`.
 
-    library fsadd tv.db ./video/folder/
+    library database add filesystem tv.db ./video/folder/
 
 ![termtosvg](./examples/extract.svg)
 
 ### 2. Watch / Listen from local files
 
-    library watch tv.db                           # the default post-action is to do nothing
-    library watch tv.db --post-action delete      # delete file after playing
-    library listen finalists.db -k ask_delete     # ask whether to delete file after playing
+    library play video tv.db                           # the default post-action is to do nothing
+    library play video tv.db --post-action delete      # delete file after playing
+    library play audio finalists.db -k ask_delete      # ask whether to delete file after playing
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -134,18 +163,18 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 Download playlist and channel metadata. Break free of the YouTube algo~
 
-    library tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
+    library database add video educational.db https://www.youtube.com/c/BranchEducation/videos
 
-[![termtosvg](./examples/tubeadd.svg "library tubeadd example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
+[![termtosvg](./examples/tubeadd.svg "library database add video example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
 
 And you can always add more later--even from different websites.
 
-    library tubeadd maker.db https://vimeo.com/terburg
+    library database add video maker.db https://vimeo.com/terburg
 
 To prevent mistakes the default configuration is to download metadata for only
 the most recent 20,000 videos per playlist/channel.
 
-    library tubeadd maker.db --extractor-config playlistend=1000
+    library database add video maker.db --extractor-config playlistend=1000
 
 Be aware that there are some YouTube Channels which have many items--for example
 the TEDx channel has about 180,000 videos. Some channels even have upwards of
@@ -155,28 +184,34 @@ the metadata for 180,000 videos.
 
 TIP! If you often copy and paste many URLs you can paste line-delimited text as arguments via a subshell. For example, in `fish` shell with [cb](https://github.com/niedzielski/cb):
 
-    library tubeadd my.db (cb)
+    library database add video my.db (cb)
 
 Or in BASH:
 
-    library tubeadd my.db $(xclip -selection c)
+    library database add video my.db $(xclip -selection c)
 
 #### 1a. Get new videos for saved playlists
 
 Tubeupdate will go through the list of added playlists and fetch metadata for
 any videos not previously seen.
 
-    library tube-update tube.db
+    library database update video tube.db
 
 ### 2. Watch / Listen from websites
 
-    library watch maker.db
+    library play video maker.db
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
 </details>
 
 <details><summary>List all subcommands</summary>
+
+Commands are organized by resource. Use `database` (or `db`) for database
+operations, `filesystem` (or `fs`) for filesystem operations, `document` (or
+`doc`/`docs`) for document operations, and `file` (or `files`) for file
+operations. The `ls` alias can be used for nested list commands. Existing flat
+commands remain available where they do not conflict with a new resource path.
 
     $ library
     {__main__.usage()}
@@ -188,29 +223,29 @@ To stop playing press Ctrl+C in either the terminal or mpv
 ### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/mealtime.tw.db
-    library watch mealtime.tw.db --random --duration 30m
+    library play video mealtime.tw.db --random --duration 30m
 
 ### Listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/music.tl.db
-    library listen music.tl.db -ct "House speakers" --random
+    library play audio music.tl.db -ct "House speakers" --random
 
 ### Hook into HackerNews
 
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
-    library watch hackernews_only_direct.tw.db --random --ignore-errors
+    library play video hackernews_only_direct.tw.db --random --ignore-errors
 
 ### Organize via separate databases
 
-    library fsadd --audio audiobooks.db ./audiobooks/
-    library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+    library database add filesystem --audio audiobooks.db ./audiobooks/
+    library database add filesystem --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
     # merge later if you want
-    library merge-dbs --pk path -t playlists,media audiobooks.db podcasts.db both.db
+    library database merge --pk path -t playlists,media audiobooks.db podcasts.db both.db
 
     # or split
-    library merge-dbs --pk path -t playlists,media both.db audiobooks.db -w 'path like "%/audiobooks/%"'
-    library merge-dbs --pk path -t playlists,media both.db podcasts.db -w 'path like "%/podcasts%"'
+    library database merge --pk path -t playlists,media both.db audiobooks.db -w 'path like "%/audiobooks/%"'
+    library database merge --pk path -t playlists,media both.db podcasts.db -w 'path like "%/podcasts%"'
 
 ## Guides
 
@@ -220,15 +255,15 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 Wake up to your own music
 
-    30 7 * * * library listen ./audio.db
+    30 7 * * * library play audio ./audio.db
 
 Wake up to your own music _only when you are *not* home_ (computer on local IP)
 
-    30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || library listen --random
+    30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || library play audio --random
 
 Wake up to your own music on your Chromecast speaker group _only when you are home_
 
-    30 7 * * * ssh 192.168.1.12 library listen --cast --cast-to "Bedroom pair"
+    30 7 * * * ssh 192.168.1.12 library play audio --cast --cast-to "Bedroom pair"
 
 </details>
 
@@ -247,15 +282,15 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 1. Add your websites
 
-    library tabsadd tabs.db --frequency monthly --category fun \
+    library database add tabs tabs.db --frequency monthly --category fun \
         https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \
         https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
 ### 2. Add library tabs to cron
 
-library tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+library tabs open is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
-    45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+    45 9 * * * DISPLAY=:0 library tabs open /home/my/tabs.db
 
 Or with `systemd`:
 
@@ -267,7 +302,7 @@ Or with `systemd`:
     Type=simple
     RemainAfterExit=no
     Environment="DISPLAY=:0"
-    ExecStart=library tabs /home/my/tabs.db
+    ExecStart=library tabs open /home/my/tabs.db
 
     tee ~/.config/systemd/user/tabs.timer
     [Unit]
@@ -285,7 +320,7 @@ Or with `systemd`:
 
 You can also invoke tabs manually:
 
-    library tabs tabs.db -L 1  # open one tab
+    library tabs open tabs.db -L 1  # open one tab
 
 Incremental surfing. 📈🏄 totally rad!
 
@@ -293,24 +328,24 @@ Incremental surfing. 📈🏄 totally rad!
 
 ### Find large folders
 
-<details><summary>Curate with library big-dirs</summary>
+<details><summary>Curate with library folder large</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
-The big-dirs subcommand was written for that purpose:
+The folder large subcommand was written for that purpose:
 
-    $ library big-dirs fs/d.db
+    $ library folder large fs/d.db
 
 You may filter by folder depth (similar to QDirStat or WizTree)
 
-    $ library big-dirs --depth=3 audio.db
+    $ library folder large --depth=3 audio.db
 
 There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
 
-    $ library big-dirs --sort-groups-by deleted audio.db
+    $ library folder large --sort-groups-by deleted audio.db
 
-Recently, this functionality has also been integrated into watch/listen subcommands so you could just do this:
+Recently, this functionality has also been integrated into play subcommands so you could just do this:
 
-    $ library watch --big-dirs ./my.db
+    $ library play video --big-dirs ./my.db
     $ lb wt -B  # shorthand equivalent
 
 </details>
@@ -334,7 +369,7 @@ for reddit_db in ~/lb/reddit/*.db
         sqlite-utils upsert --pk path --alter --csv --detect-types $reddit_db media $subreddit.csv
     end
 
-    library tubeadd --safe --ignore-errors --force $reddit_db (sqlite-utils --raw-lines $reddit_db 'select path from media')
+    library database add video --safe --ignore-errors --force $reddit_db (sqlite-utils --raw-lines $reddit_db 'select path from media')
 end
 ```
 
@@ -355,7 +390,7 @@ end
 
 You can use fzf in a subshell to choose a specific video from 1000 random options
 
-    library watch ~/lb/video.db (library watch ~/lb/video.db -pf --random -L 1000 | fzf)
+    library play video ~/lb/video.db (library play video ~/lb/video.db -pf --random -L 1000 | fzf)
 
 </details>
 
@@ -365,14 +400,14 @@ You can use fzf in a subshell to choose a specific video from 1000 random option
 
     pip install mnamer
     mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
-        --no-overwrite -b (library watch -p fd -s 'path : McCloud')
-    library fsadd ~/d/70_Now_Watching/
+        --no-overwrite -b (library play video -p fd -s 'path : McCloud')
+    library database add filesystem ~/d/70_Now_Watching/
 
 </details>
 
 ### Pipe to [lowcharts](https://github.com/juan-leon/lowcharts)
 
-<details><summary>$ library watch -p f -col time_created | lowcharts timehist -w 80</summary>
+<details><summary>$ library play video -p f -col time_created | lowcharts timehist -w 80</summary>
 
     Matches: 445183.
     Each ∎ represents a count of 1896
@@ -399,7 +434,7 @@ You can use fzf in a subshell to choose a specific video from 1000 random option
 
 BTW, for some cols like time_deleted you'll need to specify a where clause so they aren't filtered out:
 
-    $ library watch -p f -col time_deleted -w time_deleted'>'0 | lowcharts timehist -w 80
+    $ library play video -p f -col time_deleted -w time_deleted'>'0 | lowcharts timehist -w 80
 
 ![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
 
