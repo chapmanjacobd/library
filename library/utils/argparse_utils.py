@@ -263,7 +263,21 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
 
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
-        kwargs["prog"] = " ".join((kwargs.get("usage") or "").split(" ", maxsplit=3)[0:2]).strip() or None
+        usage = kwargs.get("usage")
+        canonical_prog = sys.argv[0] if sys.argv and sys.argv[0].startswith("library ") else None
+        if usage and canonical_prog:
+            usage_lines = usage.splitlines()
+            for index, line in enumerate(usage_lines):
+                stripped = line.lstrip()
+                if stripped.startswith("library "):
+                    parts = stripped.split(maxsplit=2)
+                    suffix = f" {parts[2]}" if len(parts) == 3 else ""
+                    usage_lines[index] = f"{line[: len(line) - len(stripped)]}{canonical_prog}{suffix}"
+                    break
+            usage = "\n".join(usage_lines)
+            kwargs["usage"] = usage
+
+        kwargs["prog"] = " ".join((usage or "").split(" ", maxsplit=3)[0:2]).strip() or None
         kwargs["formatter_class"] = lambda prog: CustomHelpFormatter(prog, max_help_position=40)
         super().__init__(*args, **kwargs)
 

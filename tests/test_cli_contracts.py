@@ -149,6 +149,24 @@ def test_nested_group_help(capsys):
     assert "usage: library database <command>" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize(
+    ("nested", "usage_prefix"),
+    [
+        (["play", "video", "-h"], "usage: library play video"),
+        (["database", "search", "-h"], "usage: library database search"),
+        (["database", "filesystem", "list", "-h"], "usage: library database filesystem list"),
+        (["file", "hash", "-h"], "usage: library file hash"),
+        (["text", "sort", "regex", "-h"], "usage: library text sort regex"),
+    ],
+)
+def test_nested_leaf_help_uses_canonical_usage(nested, usage_prefix, capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(nested)
+
+    assert exc_info.value.code == 0
+    assert capsys.readouterr().out.startswith(usage_prefix)
+
+
 def test_nested_unknown_command_suggests_group_usage(capsys):
     with pytest.raises(SystemExit) as exc_info:
         lb(["database", "unknown"])

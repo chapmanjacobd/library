@@ -229,7 +229,7 @@ modules = {
     "library.folders.mount_stats.disk_free": ["df", "free"],
     "library.folders.mount_stats.mount_stats": ["mu", "mount-usage"],
     "library.folders.big_dirs.big_dirs": ["large-folders"],
-    "library.fsdb.filesystem.filesystem": ["fs", "files", "files-info"],
+    "library.fsdb.filesystem.filesystem": ["files-info"],
     "library.fsdb.disk_usage.disk_usage": ["du", "usage"],
     "library.fsdb.disk_usage.extensions": ["exts"],
     "library.fsdb.disk_usage.mimetypes": ["types"],
@@ -243,11 +243,11 @@ modules = {
     "library.mediadb.history_add.history_add": ["add-history"],
     "library.mediadb.stats.stats": [],
     "library.mediadb.optimize_db.optimize_db": ["optimize"],
-    "library.mediadb.playlists.playlists": ["pl", "folders"],
+    "library.mediadb.playlists.playlists": ["pl"],
     "library.mediadb.redownload.redownload": ["re-dl", "re-download"],
     "library.mediadb.search.search": ["sc", "search-captions"],
     "library.mediafiles.media_check.media_check": ["check_media"],
-    "library.mediafiles.process_media.process_media": ["shrink"],
+    "library.mediafiles.process_media.process_media": [],
     "library.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video", "video-process"],
     "library.mediafiles.process_ffmpeg.process_audio": ["audio-process"],
     "library.mediafiles.process_image.process_image": ["image-process"],
@@ -259,37 +259,37 @@ modules = {
     "library.mediafiles.torrents_start.torrents_start": ["torrent-start"],
     "library.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "library.misc.export_text.export_text": [],
-    "library.misc.search_help.search_help": ["h", "help"],
+    "library.misc.search_help.search_help": ["h"],
     "library.multidb.copy_play_counts.copy_play_counts": [],
     "library.multidb.merge_dbs.merge_dbs": ["merge-db"],
     "library.multidb.allocate_torrents.allocate_torrents": [],
     "library.playback.links_open.links_open": ["open-links"],
-    "library.playback.play_actions.media": ["db", "open"],
+    "library.playback.play_actions.media": ["open"],
     "library.playback.play_actions.listen": ["lt", "tubelisten", "tl"],
-    "library.playback.play_actions.read": ["books", "docs"],
+    "library.playback.play_actions.read": ["books"],
     "library.playback.play_actions.view": ["images", "see", "look"],
     "library.playback.play_actions.watch": ["wt", "tubewatch", "tw", "entries"],
     "library.playback.playback_control.playback_next": ["next"],
     "library.playback.playback_control.playback_now": ["now"],
-    "library.playback.playback_control.playback_pause": ["pause", "play"],
+    "library.playback.playback_control.playback_pause": ["pause"],
     "library.playback.playback_control.playback_seek": ["ffwd", "rewind", "seek"],  # TODO: make rewind negative...
     "library.playback.playback_control.playback_stop": ["stop"],
     "library.playback.surf.streaming_tab_loader": ["surf"],
-    "library.playback.tabs_open.tabs_open": ["tb", "tabs", "open_tabs"],
-    "library.playback.torrents_info.torrents_info": ["torrent-info", "torrents", "torrent"],
+    "library.playback.tabs_open.tabs_open": ["tb", "open_tabs"],
+    "library.playback.torrents_info.torrents_info": ["torrent-info"],
     "library.playback.torrents_remaining.torrents_remaining": ["torrent-remaining"],
     "library.tablefiles.eda.eda": ["preview"],
     "library.tablefiles.incremental_diff.incremental_diff": ["diff"],
     "library.tablefiles.columns.columns": [],
-    "library.tablefiles.markdown_tables.markdown_tables": ["tables", "table"],
+    "library.tablefiles.markdown_tables.markdown_tables": [],
     "library.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "library.tablefiles.plot.plot": ["plots", "chart", "graph"],
     "library.text.cluster_sort.cluster_sort": ["cs"],
     "library.text.regex_sort.regex_sort": ["rs", "resort"],
-    "library.text.extract_links.extract_links": ["links", "links_extract"],
+    "library.text.extract_links.extract_links": ["links_extract"],
     "library.text.extract_links.links_download": [],
     "library.text.extract_links.direct_download": [],
-    "library.text.extract_text.extract_text": ["text", "text_extract"],
+    "library.text.extract_text.extract_text": ["text_extract"],
     "library.text.markdown_links.markdown_links": ["markdown-urls"],
     "library.text.expand_links.expand_links": ["search-urls", "search-links"],
     "library.text.nouns.nouns": ["noun"],
@@ -633,6 +633,27 @@ def _target_module(target: str) -> tuple[str, str]:
     raise KeyError(target)
 
 
+def command_usage(command: str) -> str:
+    command = command.replace("_", "-")
+    nested_target = _nested_target(command.split())
+    target = nested_target[0] if nested_target else _module_alias_targets().get(command, command)
+    module_name, function_name = _target_module(target)
+    module = importlib.import_module(module_name)
+
+    local_usage = getattr(module, "USAGE", {})
+    if function_name in local_usage:
+        return local_usage[function_name]
+
+    from library import usage as usage_mod
+
+    value = getattr(usage_mod, function_name, "")
+    if isinstance(value, str):
+        return value
+    if callable(value) and function_name in {"listen", "media", "read", "view", "watch"}:
+        return value(function_name)
+    return ""
+
+
 def _invoke_target(target: str):
     module_name, function_name = _target_module(target)
     module = importlib.import_module(module_name)
@@ -643,6 +664,8 @@ def _dispatch(args) -> None:
     if hasattr(args, "func"):
         subcommand = " ".join(getattr(args, "_nested_path", []))
         if hasattr(args, "_nested_args"):
+            if subcommand:
+                sys.argv[0] = f"library {subcommand}"
             sys.argv[1:] = args._nested_args
         elif len(sys.argv) >= 2:
             subcommand = sys.argv[1]
