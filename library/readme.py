@@ -1,5 +1,3 @@
-import re
-
 from library import __main__, usage
 
 all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
@@ -28,24 +26,6 @@ if len(other_progs) > 0:
 usage_details_md = []
 canonical_target_paths = __main__._canonical_target_paths()
 seen_usage_commands = set()
-legacy_to_canonical = {}
-for module_name, aliases in __main__.modules.items():
-    function_name = module_name.rsplit(".", 1)[1]
-    target = function_name.replace("_", "-")
-    canonical_command = canonical_target_paths.get(target)
-    if canonical_command is None:
-        continue
-    for legacy_command in {function_name, target, *aliases}:
-        legacy_to_canonical.setdefault(legacy_command, canonical_command)
-
-
-def canonicalize_usage(text: str) -> str:
-    if not legacy_to_canonical:
-        return text
-    commands = "|".join(re.escape(command) for command in sorted(legacy_to_canonical, key=len, reverse=True))
-    pattern = re.compile(rf"(?<!\w)(library\s+)({commands})(?![\w-])")
-    return pattern.sub(lambda match: f"{match.group(1)}{legacy_to_canonical[match.group(2)]}", text)
-
 
 for category, category_progs in __main__.progs.items():
     usage_details_md.append(f"\n### {category}\n")
@@ -63,7 +43,7 @@ for category, category_progs in __main__.progs.items():
             prog_description = subcommand
 
         if prog_usage is not None:
-            prog_usage = canonicalize_usage(prog_usage)
+            prog_usage = __main__.canonicalize_usage(prog_usage)
             usage_details_md.append(
                 f"""
 ###### {canonical_command}

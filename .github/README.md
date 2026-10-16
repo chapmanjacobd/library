@@ -131,7 +131,7 @@ operations. The `ls` alias can be used for nested list commands. Existing flat
 commands remain available where they do not conflict with a new resource path.
 
     $ library
-    library (v3.2.011; 114 subcommands)
+    library (v4.0.0; 114 subcommands)
 
     Create database subcommands:
     ╭──────────────────────────┬──────────────────────────────────────────╮
@@ -332,8 +332,6 @@ commands remain available where they do not conflict with a new resource path.
     ├───────────────────┼────────────────────────────────────────────────────────┤
     │ links open        │ Open links from link dbs                               │
     ├───────────────────┼────────────────────────────────────────────────────────┤
-    │ surf              │ Auto-load browser tabs in a streaming way (stdin)      │
-    ├───────────────────┼────────────────────────────────────────────────────────┤
     │ torrent info      │ List torrents (qBittorrent-nox)                        │
     ├───────────────────┼────────────────────────────────────────────────────────┤
     │ torrent remaining │ Overview of torrents by drive (qBittorrent-nox)        │
@@ -377,13 +375,8 @@ commands remain available where they do not conflict with a new resource path.
     ├──────────────────────┼─────────────────────────────────────────┤
     │ file dedupe czkawka  │ Process czkawka diff output             │
     ├──────────────────────┼─────────────────────────────────────────┤
-    │ help                 │ Search subcommands and help text        │
+    │ help search          │ Search subcommands and help text        │
     ╰──────────────────────┴─────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭─────────────┬─────────────╮
-    │ help search │ search_help │
-    ╰─────────────┴─────────────╯
 
     Other subcommands:
     ╭──────────────────────────────────────┬─────────────────────────────╮
@@ -1146,7 +1139,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Print similar paths
 
-        library fs 0day.db -pa --cluster --print-groups
+        library database filesystem list 0day.db -pa --cluster --print-groups
 
 
 
@@ -1287,7 +1280,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Select text by CSS selector
 
-        library text --selenium https://aaronson.org/full-moon-albums/ --select .album-artist,.album-title --sep ' - ' | \
+        library text extract --selenium https://aaronson.org/full-moon-albums/ --select .album-artist,.album-title --sep ' - ' | \
             library database add links ~/mc/music.db -c p1 --skip-extract -
 
 
@@ -1729,10 +1722,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Load from fs database
 
-        library fs video.db --cols path,duration,size,time_deleted --to-json | library folder large --from-json
+        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library folder large --from-json
 
         Only include files between 1MiB and 5MiB
-        library fs video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library folder large --from-json
+        library database filesystem list video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library folder large --from-json
 
     You can even sort by auto-MCDA ~LOL~
 
@@ -1775,7 +1768,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Read paths from dbs
 
-        library fs audio.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -v
+        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -v
 
     Print only paths
 
@@ -1784,7 +1777,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         /home/xk/d/dump/datasets/vector/output2/
 
     How I use it
-        library fs video.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -FS=+8G --filter-names --filter-counts --filter-durations
+        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -FS=+8G --filter-names --filter-counts --filter-durations
 
 
 </details>
@@ -1852,7 +1845,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     List files and filter by specific file types
 
-        library fs
+        library database filesystem list
 
 
 </details>
@@ -1878,7 +1871,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Read paths from dbs
 
-        library fs audio.db --cols path,duration,size,time_deleted --to-json | library file similar --from-json -v
+        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library file similar --from-json -v
 
     How I use it
         library file similar --filter-names --filter-durations --estimated-duplicates 3 .
@@ -2130,7 +2123,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach
 
         library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
-        library file check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+        library file check (library database filesystem list tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
 
     The above can now be done in one command via `--full-scan-if-corrupt`
 
@@ -2138,7 +2131,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Corruption stats
 
-        library fs tmp.db -w 'corruption>15' -pa
+        library database filesystem list tmp.db -w 'corruption>15' -pa
         path         count  duration             avg_duration         size    avg_size
         ---------  -------  -------------------  --------------  ---------  ----------
         Aggregate      907  15 days and 9 hours  24 minutes      130.6 GiB   147.4 MiB
@@ -2206,7 +2199,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Convert audio to Opus. Optionally split up long tracks into multiple files.
 
-        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process --audio
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library shrink audio
 
     Use --always-split to _always_ split files if silence is detected
 
@@ -2623,7 +2616,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Limit downloads to a specified playlist URLs
 
-        library fs video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library database download --video video.db --from-json -
+        library database filesystem list video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library database download --video video.db --from-json -
 
     Limit downloads to a specified video URLs or substring
 
@@ -2943,7 +2936,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Print an aggregate report of deleted media
 
-        library fs -w time_deleted!=0 -pa
+        library database filesystem list -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
@@ -3085,11 +3078,11 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`
 
-        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+        45 9 * * * DISPLAY=:0 library tabs open /home/my/tabs.db
 
     If things aren't working you can use `at` to simulate a similar environment as `cron`
 
-        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
+        echo 'fish -c "export DISPLAY=:0 && library tabs open /full/path/to/tabs.db"' | at NOW
 
     Also, if you're just testing things out be aware that `tabs-add` assumes that you visited the
     website right before adding it; eg. if you use `tabs-add --frequency yearly` today the tab won't
@@ -3100,23 +3093,23 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     To re-"play" some tabs, delete some history
 
         library database history ~/lb/tabs.db --played-within '1 day' -L inf -p --delete-rows
-        library tabs ~/lb/tabs.db
+        library tabs open ~/lb/tabs.db
 
     You can also invoke tabs manually
 
-        library tabs -L 1  # open one tab
+        library tabs open -L 1  # open one tab
 
     Print URLs
 
-        library tabs -w "frequency='yearly'" -p
+        library tabs open -w "frequency='yearly'" -p
 
     View how many yearly tabs you have
 
-        library tabs -w "frequency='yearly'" -p a
+        library tabs open -w "frequency='yearly'" -p a
 
     Delete URLs
 
-        library tabs -p -s cyber
+        library tabs open -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -3129,10 +3122,10 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
 
-        library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
+        library tabs open -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
         Removed 1 metadata records
 
-        library tabs -p -s cyber
+        library tabs open -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -3188,28 +3181,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
-###### surf
-
-<details><summary>Auto-load browser tabs in a streaming way (stdin)</summary>
-
-    $ library surf -h
-    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
-
-    Streaming tab loader: press ctrl+c to stop.
-
-    Open tabs from a line-delimited file
-
-        cat tabs.txt | library surf -n 5
-
-    You will likely want to use this setting in `about:config`
-
-        browser.tabs.loadDivertedInBackground = True
-
-    If you prefer GUI, check out https://unli.xyz/tabsender/
-
-
-</details>
-
 ###### torrent info
 
 <details><summary>List torrents (qBittorrent-nox)</summary>
@@ -3219,67 +3190,67 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     List torrents in qBittorrent-nox
 
-        library torrents
+        library torrent info
 
     Search for specific torrent
 
-        library torrents query
+        library torrent info query
 
     Positional torrent searches use the path aligned with torrent status by default.
     Search a specific path field or both fields with --path-search:
 
-        library torrents --dl --path-search save /mnt/d4/
-        library torrents --dl --path-search both /mnt/d4/
+        library torrent info --dl --path-search save /mnt/d4/
+        library torrent info --dl --path-search both /mnt/d4/
 
     Find incomplete torrents whose temp and final paths use different drives.
     --different-drives searches both path fields unless --path-search is specified:
 
-        library torrents --dl --different-drives
-        library torrents --dl --different-drives /mnt/d4/
+        library torrent info --dl --different-drives
+        library torrent info --dl --different-drives /mnt/d4/
 
     Find incomplete torrents whose temp and final paths use the same drive:
 
-        library torrents --dl --same-drives
+        library torrent info --dl --same-drives
 
     Aggregate torrent info (torrents-status)
 
-        library torrents -pa
+        library torrent info -pa
 
     Aggregate tracker errors
 
-        library torrents --errored --trackers
+        library torrent info --errored --trackers
 
     Search for specific file
 
-        library torrents query -v --file-search query2
+        library torrent info query -v --file-search query2
 
     Force-start incomplete downloads
 
-        library torrents --dl --progress=+10% --force-start
+        library torrent info --dl --progress=+10% --force-start
 
     Find torrents with a recorded completion timestamp
 
-        library torrents --completed
+        library torrent info --completed
 
     Stop completed downloads
 
-        library torrents -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
+        library torrent info -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
 
     Stop incomplete downloads
 
-        library torrents --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
-        library torrents --time-active=+45days --inactive --progress=0 --stop
+        library torrent info --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
+        library torrent info --time-active=+45days --inactive --progress=0 --stop
 
     Move files
 
         Use --move OR any combination of --temp-drive, --temp-path, --download-drive, --download-path
 
-            library torrents --temp-drive /mnt/d/
+            library torrent info --temp-drive /mnt/d/
 
         Unset default prefixes
 
-            library torrents --no-tracker-dirname --temp-prefix '' --download-prefix '' --move /home/xk/
-            library torrents --no-tracker-dirname --temp-prefix seeding --move /home/xk/
+            library torrent info --no-tracker-dirname --temp-prefix '' --download-prefix '' --move /home/xk/
+            library torrent info --no-tracker-dirname --temp-prefix seeding --move /home/xk/
 
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
@@ -3557,19 +3528,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Choose which duplicate to keep by opening both side-by-side in mpv
 
-
-</details>
-
-### Other subcommands
-
-###### help search
-
-<details><summary>search_help</summary>
-
-    $ library help search -h
-    usage: library help [subcommand] QUERY ...
-
-    Search library functionality and help text
 
 </details>
 

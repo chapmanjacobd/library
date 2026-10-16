@@ -1,4 +1,4 @@
-import argparse, difflib, importlib, os, sys, textwrap
+import argparse, difflib, importlib, os, re, sys, textwrap
 
 from tabulate import tabulate
 
@@ -111,7 +111,6 @@ progs = {
         "pause": "Pause all playback",
         "tabs_open": "Open your tabs for the day",
         "links_open": "Open links from link dbs",
-        "surf": "Auto-load browser tabs in a streaming way (stdin)",
         "torrents_info": "List torrents (qBittorrent-nox)",
         "torrents_remaining": "Overview of torrents by drive (qBittorrent-nox)",
     },
@@ -259,7 +258,7 @@ modules = {
     "library.mediafiles.torrents_start.torrents_start": ["torrent-start"],
     "library.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "library.misc.export_text.export_text": [],
-    "library.misc.search_help.search_help": ["h"],
+    "library.misc.search_help.search_help": ["h", "help"],
     "library.multidb.copy_play_counts.copy_play_counts": [],
     "library.multidb.merge_dbs.merge_dbs": ["merge-db"],
     "library.multidb.allocate_torrents.allocate_torrents": [],
@@ -274,7 +273,6 @@ modules = {
     "library.playback.playback_control.playback_pause": ["pause"],
     "library.playback.playback_control.playback_seek": ["ffwd", "rewind", "seek"],  # TODO: make rewind negative...
     "library.playback.playback_control.playback_stop": ["stop"],
-    "library.playback.surf.streaming_tab_loader": ["surf"],
     "library.playback.tabs_open.tabs_open": ["tb", "open_tabs"],
     "library.playback.torrents_info.torrents_info": ["torrent-info"],
     "library.playback.torrents_remaining.torrents_remaining": ["torrent-remaining"],
@@ -616,6 +614,34 @@ def _canonical_target_paths() -> dict[str, str]:
     return target_paths
 
 
+def _legacy_command_paths() -> dict[str, str]:
+    target_paths = _canonical_target_paths()
+    legacy_paths = {}
+    for module, aliases in modules.items():
+        function_name = module.rsplit(".", 1)[1]
+        target = function_name.replace("_", "-")
+        canonical_path = target_paths.get(target)
+        if canonical_path is None:
+            continue
+
+        legacy_names = {function_name, target, function_name.replace("_", ""), *aliases}
+        for legacy_name in legacy_names:
+            if legacy_name == canonical_path.split()[0] and canonical_path != legacy_name:
+                continue
+            legacy_paths.setdefault(legacy_name, canonical_path)
+    return legacy_paths
+
+
+def canonicalize_usage(text: str) -> str:
+    legacy_paths = _legacy_command_paths()
+    if not legacy_paths:
+        return text
+
+    commands = "|".join(re.escape(command) for command in sorted(legacy_paths, key=len, reverse=True))
+    pattern = re.compile(rf"(?<!\w)(library\s+)({commands})(?![\w-])")
+    return pattern.sub(lambda match: f"{match.group(1)}{legacy_paths[match.group(2)]}", text)
+
+
 def _resolve_target(command: str) -> str | None:
     target = command.replace("_", "-")
     if target in _canonical_target_paths():
@@ -712,11 +738,6 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         "torrent",
     ]
 
-    def consecutive_prefixes(s):
-        prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
-        known_subcommands.extend(prefixes)
-        return prefixes
-
     def set_func(subparser, module_name: str, function_name: str):
         def import_func():
             module = importlib.import_module(module_name)
@@ -739,7 +760,6 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         ]
         known_subcommands.extend([name, *aliases])
 
-        # aliases += consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in aliases])
         subp = subparsers.add_parser(name, aliases=aliases, add_help=False)
 
         set_func(subp, module_name, function_name)
@@ -767,6 +787,9 @@ def library(args=None) -> None:
 
     original_argv = sys.argv[1:]
     if original_argv in (["-h"], ["--help"]):
+        print_help(parser)
+        raise SystemExit(0)
+    if original_argv == ["help"]:
         print_help(parser)
         raise SystemExit(0)
 

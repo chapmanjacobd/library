@@ -30,7 +30,7 @@ dependencies = [
   'pyreadline3; platform_system == "Windows"',
 ]
 description = "xk media library"
-version = "3.2.011"
+version = "4.0.0"
 license = {file = "LICENSE"}
 name = "library"
 readme = ".github/README.md"
@@ -66,7 +66,6 @@ deluxe = [
   'xattr; platform_system != "Windows"',
 ]
 fat = [
-  "brotab",
   "camelot-py>=0.11.0",
   "ghostscript",
   "opencv-python",

@@ -20,7 +20,7 @@ def play(action) -> str:
 
     Print an aggregate report of deleted media
 
-        library fs -w time_deleted!=0 -pa
+        library database filesystem list -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
@@ -139,7 +139,7 @@ download = r"""library download DATABASE [--prefix /mnt/d/] [--media-type {auto,
 
     Limit downloads to a specified playlist URLs
 
-        library fs video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library download --video video.db --from-json -
+        library database filesystem list video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library download --video video.db --from-json -
 
     Limit downloads to a specified video URLs or substring
 
@@ -254,58 +254,58 @@ fs_add = """library fs-add [(--video) | --audio | --image |  --text | --filesyst
 
     The default database type is auto: every media type is scanned (video, audio, image, text)
 
-        library fsadd tv.db ./tv/
-        library fsadd --video tv.db ./tv/  # scan only video
-        library fsadd --auto mixed.db ./media/  # equivalent to the default
+        library database add filesystem tv.db ./tv/
+        library database add filesystem --video tv.db ./tv/  # scan only video
+        library database add filesystem --auto mixed.db ./media/  # equivalent to the default
 
     You can also create audio databases. Both audio and video use ffmpeg to read metadata
 
-        library fsadd --audio audio.db ./music/
+        library database add filesystem --audio audio.db ./music/
 
     Image uses ExifTool
 
-        library fsadd --image image.db ./photos/
+        library database add filesystem --image image.db ./photos/
 
     Text will try to read files and save the contents into a searchable database
 
-        library fsadd --text text.db ./documents_and_books/
+        library database add filesystem --text text.db ./documents_and_books/
 
     Create a text database and scan with OCR and speech-recognition
 
-        library fsadd --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
+        library database add filesystem --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
 
     Create a video database and read internal/external subtitle files into a searchable database
 
-        library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
+        library database add filesystem --scan-subtitles tv.search.db ./tv/ ./movies/
 
     Decode media to check for corruption (slow)
 
-        library fsadd --check-corrupt
+        library database add filesystem --check-corrupt
         # See media-check command for full options
 
     Normally only relevant filetypes are included. You can scan all files with this flag
 
-        library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
+        library database add filesystem --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
         # I use that with this to keep my folders organized
         library watch -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
 
     Remove path roots with --force
 
-        library fsadd audio.db /mnt/d/Youtube/
+        library database add filesystem audio.db /mnt/d/Youtube/
         [/mnt/d/Youtube] Path does not exist
 
-        library fsadd --force audio.db /mnt/d/Youtube/
+        library database add filesystem --force audio.db /mnt/d/Youtube/
         [/mnt/d/Youtube] Path does not exist
         [/mnt/d/Youtube] Building file list...
         [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
 
     If you run out of RAM, for example scanning large VR videos, you can lower the number of threads via --threads
 
-        library fsadd vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15% --delete-corrupt 20% ./vr/ --threads 3
+        library database add filesystem vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15% --delete-corrupt 20% ./vr/ --threads 3
 
     Move files on import
 
-        library fsadd audio.db --move ~/library/ ./added_folder/
+        library database add filesystem audio.db --move ~/library/ ./added_folder/
         This will run destination paths through `library christen` and move files relative to the added folder root
 """
 
@@ -493,11 +493,11 @@ tabs_open = """library tabs-open DATABASE
 
     Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`
 
-        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+        45 9 * * * DISPLAY=:0 library tabs open /home/my/tabs.db
 
     If things aren't working you can use `at` to simulate a similar environment as `cron`
 
-        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
+        echo 'fish -c "export DISPLAY=:0 && library tabs open /full/path/to/tabs.db"' | at NOW
 
     Also, if you're just testing things out be aware that `tabs-add` assumes that you visited the
     website right before adding it; eg. if you use `tabs-add --frequency yearly` today the tab won't
@@ -508,23 +508,23 @@ tabs_open = """library tabs-open DATABASE
     To re-"play" some tabs, delete some history
 
         library history ~/lb/tabs.db --played-within '1 day' -L inf -p --delete-rows
-        library tabs ~/lb/tabs.db
+        library tabs open ~/lb/tabs.db
 
     You can also invoke tabs manually
 
-        library tabs -L 1  # open one tab
+        library tabs open -L 1  # open one tab
 
     Print URLs
 
-        library tabs -w "frequency='yearly'" -p
+        library tabs open -w "frequency='yearly'" -p
 
     View how many yearly tabs you have
 
-        library tabs -w "frequency='yearly'" -p a
+        library tabs open -w "frequency='yearly'" -p a
 
     Delete URLs
 
-        library tabs -p -s cyber
+        library tabs open -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -537,10 +537,10 @@ tabs_open = """library tabs-open DATABASE
         │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
 
-        library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
+        library tabs open -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
         Removed 1 metadata records
 
-        library tabs -p -s cyber
+        library tabs open -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -665,10 +665,10 @@ big_dirs = """library big-dirs PATH ... [--limit (4000)] [--depth (0)] [--sort-g
 
     Load from fs database
 
-        library fs video.db --cols path,duration,size,time_deleted --to-json | library big-dirs --from-json
+        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library big-dirs --from-json
 
         Only include files between 1MiB and 5MiB
-        library fs video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library big-dirs --from-json
+        library database filesystem list video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library big-dirs --from-json
 
     You can even sort by auto-MCDA ~LOL~
 
@@ -734,7 +734,7 @@ filesystem = """library filesystem
 
     List files and filter by specific file types
 
-        library fs
+        library database filesystem list
 """
 
 christen = """library christen [--run]
@@ -794,7 +794,7 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
 
     Print similar paths
 
-        library fs 0day.db -pa --cluster --print-groups
+        library database filesystem list 0day.db -pa --cluster --print-groups
 
 """
 
@@ -988,7 +988,7 @@ mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOU
 
     The program takes a mount point and a library database file. If you don't have a database file you can create one like this
 
-        library fsadd --filesystem d.db ~/d/
+        library database add filesystem --filesystem d.db ~/d/
 
     But this should definitely also work with library audio and video databases
 
@@ -1206,21 +1206,6 @@ links_open = """library links-open DATABASE [search] [--title] [--title-prefix T
         library open-links dl.db --online
         library open-links dl.db -w 'path like "http%"'  # equivalent
 
-"""
-
-surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
-
-    Streaming tab loader: press ctrl+c to stop.
-
-    Open tabs from a line-delimited file
-
-        cat tabs.txt | library surf -n 5
-
-    You will likely want to use this setting in `about:config`
-
-        browser.tabs.loadDivertedInBackground = True
-
-    If you prefer GUI, check out https://unli.xyz/tabsender/
 """
 
 pushshift = """library pushshift DATABASE < stdin
@@ -1559,7 +1544,7 @@ extract_text = r"""library extract-text PATH ... [--skip-links]
 
     Select text by CSS selector
 
-        library text --selenium https://aaronson.org/full-moon-albums/ --select .album-artist,.album-title --sep ' - ' | \
+        library text extract --selenium https://aaronson.org/full-moon-albums/ --select .album-artist,.album-title --sep ' - ' | \
             library links-db ~/mc/music.db -c p1 --skip-extract -
 """
 
@@ -1583,7 +1568,7 @@ process_ffmpeg = """library process-ffmpeg PATH ... [--always-split] [--split-lo
 
     Convert audio to Opus. Optionally split up long tracks into multiple files.
 
-        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process --audio
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library shrink audio
 
     Use --always-split to _always_ split files if silence is detected
 
@@ -1666,16 +1651,16 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
 
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach
 
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
-        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
+        library media-check (library database filesystem list tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
 
     The above can now be done in one command via `--full-scan-if-corrupt`
 
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
+        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
 
     Corruption stats
 
-        library fs tmp.db -w 'corruption>15' -pa
+        library database filesystem list tmp.db -w 'corruption>15' -pa
         path         count  duration             avg_duration         size    avg_size
         ---------  -------  -------------------  --------------  ---------  ----------
         Aggregate      907  15 days and 9 hours  24 minutes      130.6 GiB   147.4 MiB
@@ -1850,7 +1835,7 @@ similar_files = """library similar-files (--filter-names | --filter-sizes | --fi
 
     Read paths from dbs
 
-        library fs audio.db --cols path,duration,size,time_deleted --to-json | library similar-files --from-json -v
+        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library similar-files --from-json -v
 
     How I use it
         library similar-files --filter-names --filter-durations --estimated-duplicates 3 .
@@ -1885,7 +1870,7 @@ similar_folders = """library similar-folders (--filter-names | --filter-counts |
 
     Read paths from dbs
 
-        library fs audio.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -v
+        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -v
 
     Print only paths
 
@@ -1894,7 +1879,7 @@ similar_folders = """library similar-folders (--filter-names | --filter-counts |
         /home/xk/d/dump/datasets/vector/output2/
 
     How I use it
-        library fs video.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -FS=+8G --filter-names --filter-counts --filter-durations
+        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -FS=+8G --filter-names --filter-counts --filter-durations
 """
 
 json_keys_rename = """library json-keys-rename --new-key 'old key substring' (stdin)
@@ -1985,7 +1970,7 @@ process_media = """library process-media DATABASE_OR_PATH
 
     Running fsadd first to create a video database will be faster because it runs many files in parallel
 
-        library fsadd --video video.db ~/Videos/
+        library database add filesystem --video video.db ~/Videos/
         library process-media video.db
 
     But using media folder/file paths directly is also supported
@@ -2088,67 +2073,67 @@ torrents_info = """library torrents-info
 
     List torrents in qBittorrent-nox
 
-        library torrents
+        library torrent info
 
     Search for specific torrent
 
-        library torrents query
+        library torrent info query
 
     Positional torrent searches use the path aligned with torrent status by default.
     Search a specific path field or both fields with --path-search:
 
-        library torrents --dl --path-search save /mnt/d4/
-        library torrents --dl --path-search both /mnt/d4/
+        library torrent info --dl --path-search save /mnt/d4/
+        library torrent info --dl --path-search both /mnt/d4/
 
     Find incomplete torrents whose temp and final paths use different drives.
     --different-drives searches both path fields unless --path-search is specified:
 
-        library torrents --dl --different-drives
-        library torrents --dl --different-drives /mnt/d4/
+        library torrent info --dl --different-drives
+        library torrent info --dl --different-drives /mnt/d4/
 
     Find incomplete torrents whose temp and final paths use the same drive:
 
-        library torrents --dl --same-drives
+        library torrent info --dl --same-drives
 
     Aggregate torrent info (torrents-status)
 
-        library torrents -pa
+        library torrent info -pa
 
     Aggregate tracker errors
 
-        library torrents --errored --trackers
+        library torrent info --errored --trackers
 
     Search for specific file
 
-        library torrents query -v --file-search query2
+        library torrent info query -v --file-search query2
 
     Force-start incomplete downloads
 
-        library torrents --dl --progress=+10% --force-start
+        library torrent info --dl --progress=+10% --force-start
 
     Find torrents with a recorded completion timestamp
 
-        library torrents --completed
+        library torrent info --completed
 
     Stop completed downloads
 
-        library torrents -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
+        library torrent info -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
 
     Stop incomplete downloads
 
-        library torrents --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
-        library torrents --time-active=+45days --inactive --progress=0 --stop
+        library torrent info --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
+        library torrent info --time-active=+45days --inactive --progress=0 --stop
 
     Move files
 
         Use --move OR any combination of --temp-drive, --temp-path, --download-drive, --download-path
 
-            library torrents --temp-drive /mnt/d/
+            library torrent info --temp-drive /mnt/d/
 
         Unset default prefixes
 
-            library torrents --no-tracker-dirname --temp-prefix '' --download-prefix '' --move /home/xk/
-            library torrents --no-tracker-dirname --temp-prefix seeding --move /home/xk/
+            library torrent info --no-tracker-dirname --temp-prefix '' --download-prefix '' --move /home/xk/
+            library torrent info --no-tracker-dirname --temp-prefix seeding --move /home/xk/
 
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent

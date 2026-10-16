@@ -45,12 +45,19 @@ def search_help():
         for command, target in alias_targets.items()
         if target in target_paths
     }
-    all_commands.update(target_paths)
+    all_commands.update({path: path for path in target_paths.values()})
 
     text = args.subcommand_or_text
     subcommand = None
-    if text[0].replace("_", "-") in all_commands.keys():
-        subcommand, text = text[0].replace("_", "-"), text[1:]
+    for end in range(len(text), 0, -1):
+        candidate = " ".join(text[:end]).replace("_", "-")
+        nested_target = __main__._nested_target(text[:end])
+        if candidate in all_commands:
+            subcommand, text = all_commands[candidate], text[end:]
+            break
+        if nested_target is not None and nested_target[1] == end:
+            subcommand, text = target_paths[nested_target[0]], text[end:]
+            break
 
     if subcommand:  # Search within a specific subcommand's help text
         args_help(subcommand, text)
@@ -62,13 +69,24 @@ def search_help():
             prog = prog.replace("_", "-")
             target = alias_targets.get(prog, prog)
             canonical_path = target_paths.get(target, prog)
-            prog_usage = __main__.command_usage(prog)
-            if any(c(t) in c(prog) or t in description.lower() or t in prog_usage.lower() for t in text):
+            prog_usage = __main__.canonicalize_usage(__main__.command_usage(prog))
+            if any(
+                c(t) in c(prog)
+                or c(t) in c(canonical_path)
+                or t in description.lower()
+                or t in prog_usage.lower()
+                for t in text
+            ):
                 matching_commands.append((prog, canonical_path, description, prog_usage))
 
         print_category = any(t in category.lower() for t in text)
         for prog, canonical_path, description, prog_usage in matching_commands:
-            print_prog = any(c(t) in c(prog) or t in description.lower() for t in text)
+            print_prog = any(
+                c(t) in c(prog)
+                or c(t) in c(canonical_path)
+                or t in description.lower()
+                for t in text
+            )
 
             symbol = prog[0]
             size = 100

@@ -39,20 +39,20 @@ def test_simple(play_mocked, temp_db):
 
         clock.move_to("1970-01-01 00:10:00")
         with pytest.raises(SystemExit):
-            lb(["tabs", db1])
+            lb(["tabs", "open", db1])
 
         clock.move_to("1970-01-08 00:00:00")
-        lb(["tabs", db1])
+        lb(["tabs", "open", db1])
         out = play_mocked.call_args[0][1][0]
         assert out["time_valid"] > 100000
 
         args = connect_db_args(db1)
         db_history.add(args, [TEST_URL], time_played=consts.today_stamp(), mark_done=True)
         with pytest.raises(SystemExit):  # it should not be available until the week after
-            lb(["tabs", db1])
+            lb(["tabs", "open", db1])
 
         clock.move_to("1970-01-15 00:00:00")
-        lb(["tabs", db1])
+        lb(["tabs", "open", db1])
         out = play_mocked.call_args[0][1][0]
         assert out["time_valid"] == 1209300
 
@@ -63,7 +63,7 @@ def test_immediate(play_mocked, temp_db):
     with freeze_time("1970-02-01 00:00:00") as clock:
         lb(["tabsadd", db1, "--allow-immediate", TEST_URL])
 
-        lb(["tabs", db1])
+        lb(["tabs", "open", db1])
         out = play_mocked.call_args[0][1][0]
         assert out == {
             "path": TEST_URL,
@@ -74,10 +74,10 @@ def test_immediate(play_mocked, temp_db):
         args = connect_db_args(db1)
         db_history.add(args, [TEST_URL], time_played=consts.today_stamp(), mark_done=True)
         with pytest.raises(SystemExit):  # it should not be available until the month after
-            lb(["tabs", db1])
+            lb(["tabs", "open", db1])
 
         clock.move_to("1970-03-01 00:00:00")
-        lb(["tabs", db1])
+        lb(["tabs", "open", db1])
         out = play_mocked.call_args[0][1][0]
         assert out == {
             "path": TEST_URL,

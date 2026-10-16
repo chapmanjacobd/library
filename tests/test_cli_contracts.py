@@ -1,8 +1,12 @@
 import argparse
+import re
+import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
+from library import __main__
 from library.__main__ import library as lb
 from library.__main__ import _nested_group, _nested_target
 from library import usage
@@ -31,6 +35,13 @@ from tests.utils import v_db
 def test_unsupported_cli_modes_fail_during_parsing(command):
     with pytest.raises(SystemExit):
         lb(command)
+
+
+def test_removed_surf_command_is_rejected():
+    with pytest.raises(SystemExit) as exc_info:
+        lb(["surf", "-h"])
+
+    assert exc_info.value.code == 1
 
 
 def test_delete_original_is_independent_of_delete_larger(monkeypatch):
@@ -123,6 +134,15 @@ def test_nested_command_dispatches_to_canonical_target(monkeypatch):
     assert called == [["video.db"]]
 
 
+def test_legacy_flat_command_dispatches_to_existing_target(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.playback.play_actions.watch", lambda: called.append(sys.argv[1:]))
+
+    lb(["watch", "video.db"])
+
+    assert called == [["video.db"]]
+
+
 def test_nested_links_download_dispatches_to_existing_entrypoint(monkeypatch):
     called = []
     monkeypatch.setattr("library.text.extract_links.links_download", lambda: called.append(sys.argv[1:]))
@@ -149,6 +169,15 @@ def test_nested_group_help(capsys):
     assert "usage: library database <command>" in capsys.readouterr().out
 
 
+def test_help_without_query_prints_top_level_help(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(["help"])
+
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    assert output == f"{__main__.usage()}\n{__main__.parser.epilog}\n"
+
+
 @pytest.mark.parametrize(
     ("nested", "usage_prefix"),
     [
@@ -165,6 +194,51 @@ def test_nested_leaf_help_uses_canonical_usage(nested, usage_prefix, capsys):
 
     assert exc_info.value.code == 0
     assert capsys.readouterr().out.startswith(usage_prefix)
+
+
+def test_help_search_accepts_ordinary_searches(capsys):
+    lb(["help", "search", "database"])
+
+    output = capsys.readouterr().out
+    assert "Add local media with lb database add filesystem" in output
+    assert "library database add filesystem" in output
+    assert "Bug found" not in output
+
+
+def test_help_search_selects_canonical_nested_paths(capsys):
+    lb(["help", "search", "database", "add", "video"])
+
+    output = capsys.readouterr().out
+    assert output.startswith("usage: library database add video")
+
+
+def test_usage_catalog_lists_executable_help_path_only():
+    output = __main__.usage()
+
+    assert re.search(r"│ help search\s+│", output)
+    assert not re.search(r"│ help\s+│", output)
+
+
+def test_nested_help_examples_use_canonical_commands(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(["database", "add", "filesystem", "-h"])
+
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    assert "library fsadd" not in output
+    assert not re.search(r"library fs(?:\s|$)", output)
+    assert "library database add filesystem" in output
+
+
+def test_generated_readme_matches_committed_documentation():
+    generated = subprocess.run(
+        [sys.executable, "-m", "library.readme"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+
+    assert generated == Path(".github/README.md").read_text()
 
 
 def test_nested_unknown_command_suggests_group_usage(capsys):

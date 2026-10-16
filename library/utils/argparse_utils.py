@@ -266,12 +266,19 @@ class ArgumentParser(argparse.ArgumentParser):
         usage = kwargs.get("usage")
         canonical_prog = sys.argv[0] if sys.argv and sys.argv[0].startswith("library ") else None
         if usage and canonical_prog:
+            from library import __main__ as cli
+
+            usage = cli.canonicalize_usage(usage)
             usage_lines = usage.splitlines()
             for index, line in enumerate(usage_lines):
                 stripped = line.lstrip()
                 if stripped.startswith("library "):
-                    parts = stripped.split(maxsplit=2)
-                    suffix = f" {parts[2]}" if len(parts) == 3 else ""
+                    canonical_prefix = f"{canonical_prog} "
+                    if stripped.startswith(canonical_prefix):
+                        suffix = stripped[len(canonical_prog) :]
+                    else:
+                        parts = stripped.split(maxsplit=1)
+                        suffix = f" {parts[1]}" if len(parts) == 2 else ""
                     usage_lines[index] = f"{line[: len(line) - len(stripped)]}{canonical_prog}{suffix}"
                     break
             usage = "\n".join(usage_lines)

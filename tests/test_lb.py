@@ -23,7 +23,7 @@ def test_lb_help(capsys):
         lb(["-h"])
     captured = capsys.readouterr().out.replace("\n", "")
     assert "subcommands" in captured
-    assert "surf" in captured
+    assert "surf" not in captured
 
 
 @pytest.mark.parametrize("subcommand", subcommands)
@@ -65,6 +65,5 @@ def test_pytest_files_exist(path):
         p("tests/mediadb/test_block.py"),
         p("tests/mediadb/test_optimize_db.py"),
         p("tests/misc/test_export_text.py"),
-        p("tests/playback/test_surf.py"),
     ):
         assert os.path.getsize(path) > 0, f"Pytest file {path} is empty."
