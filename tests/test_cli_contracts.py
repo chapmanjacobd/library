@@ -1,8 +1,10 @@
 import argparse
+import sys
 
 import pytest
 
 from library.__main__ import library as lb
+from library.__main__ import _nested_group, _nested_target
 from library import usage
 from library.editdb import dedupe_media
 from library.mediadb import download
@@ -110,6 +112,59 @@ def test_direct_download_has_no_profile_or_safe(monkeypatch):
     assert args.direct is True
     assert not hasattr(args, "profile")
     assert not hasattr(args, "safe")
+
+
+def test_nested_command_dispatches_to_canonical_target(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.playback.play_actions.watch", lambda: called.append(sys.argv[1:]))
+
+    lb(["play", "video", "video.db"])
+
+    assert called == [["video.db"]]
+
+
+def test_nested_links_download_dispatches_to_existing_entrypoint(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.text.extract_links.links_download", lambda: called.append(sys.argv[1:]))
+
+    lb(["links", "download", "https://example.com/"])
+
+    assert called == [["https://example.com/"]]
+
+
+def test_nested_direct_download_dispatches_to_existing_entrypoint(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.text.extract_links.direct_download", lambda: called.append(sys.argv[1:]))
+
+    lb(["download", "https://example.com/file.zip"])
+
+    assert called == [["https://example.com/file.zip"]]
+
+
+def test_nested_group_help(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(["database", "-h"])
+
+    assert exc_info.value.code == 0
+    assert "usage: library database <command>" in capsys.readouterr().out
+
+
+def test_nested_unknown_command_suggests_group_usage(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(["database", "unknown"])
+
+    assert exc_info.value.code == 1
+    output = capsys.readouterr().out
+    assert "Unknown command: database unknown" in output
+    assert "usage: library database <command>" in output
+
+
+def test_db_and_fs_are_resource_group_aliases():
+    assert _nested_group(["db"]) == "database"
+    assert _nested_group(["fs"]) == "filesystem"
+    assert _nested_target(["db", "add", "filesystem"]) == ("fs-add", 3)
+    assert _nested_target(["fs", "stats", "mounts"]) == ("mount-stats", 3)
+    assert _nested_target(["database", "fs", "list"]) == ("filesystem", 3)
 
 
 def test_expand_profiles_auto_expands_to_all_media_types(monkeypatch):

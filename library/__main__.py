@@ -1,9 +1,9 @@
-import argparse, importlib, os, sys, textwrap
+import argparse, difflib, importlib, os, sys, textwrap
 
 from tabulate import tabulate
 
 from library._version import __version__
-from library.utils import argparse_utils, iterables
+from library.utils import argparse_utils
 from library.utils.log_utils import log
 
 progs = {
@@ -141,20 +141,40 @@ progs = {
 
 
 def usage() -> str:
-    subcommands_list = []
-    for category, category_progs in progs.items():
-        subcommands_list.append(f"\n    {category}:\n")
-        category_progs_text = tabulate(
-            [(key.replace("_", "-"), value) for key, value in category_progs.items()],
-            tablefmt="rounded_grid",
-            showindex=False,
-        )
-        subcommands_list.append(textwrap.indent(category_progs_text, "    "))
-        subcommands_list.append("\n")
+    target_paths = _canonical_target_paths()
+    grouped_commands = []
+    seen = set()
 
-    subcommands = list(iterables.flatten((v.keys() for k, v in progs.items())))
-    return f"""library (v{__version__}; {len(subcommands)} subcommands)
-{''.join(subcommands_list)}"""
+    for category, category_progs in progs.items():
+        commands = []
+        for command, description in category_progs.items():
+            target = _resolve_target(command)
+            path = target_paths.get(target) if target else None
+            if path is None:
+                path = command.replace("_", "-")
+            if path in seen:
+                continue
+            seen.add(path)
+            commands.append((path, description))
+        if commands:
+            grouped_commands.append((category, commands))
+
+    other_commands = []
+    for path in _canonical_nested_paths_for_all_groups():
+        if path not in seen:
+            other_commands.append((path, path.removeprefix(f"{path.split()[0]} ")))
+    if other_commands:
+        grouped_commands.append(("Other subcommands", other_commands))
+
+    tables = []
+    for category, commands in grouped_commands:
+        tables.append(f"\n    {category}:\n")
+        table = tabulate(commands, tablefmt="rounded_grid", showindex=False)
+        tables.append(textwrap.indent(table, "    "))
+        tables.append("\n")
+
+    count = len(_canonical_nested_paths_for_all_groups())
+    return f"library (v{__version__}; {count} subcommands)\n{''.join(tables)}"
 
 
 def print_help(parser) -> None:
@@ -281,6 +301,368 @@ modules = {
 }
 
 
+NESTED_COMMANDS = {
+    "play": {
+        "media": "media",
+        "video": "watch",
+        "audio": "listen",
+        "text": "read",
+        "images": "view",
+    },
+    "playback": {
+        "next": "playback-next",
+        "now": "playback-now",
+        "pause": "playback-pause",
+        "seek": "playback-seek",
+        "stop": "playback-stop",
+    },
+    "database": {
+        "add": {
+            "filesystem": "fs-add",
+            "video": "tube-add",
+            "web": "web-add",
+            "gallery": "gallery-add",
+            "tabs": "tabs-add",
+            "links": "links-add",
+            "tables": "tables-add",
+            "reddit": "reddit-add",
+            "getty": "getty-add",
+            "computers": "computers-add",
+            "torrents": "torrents-add",
+            "row": "row-add",
+            "site": "site-add",
+            "substack": "substack",
+            "tildes": "tildes",
+            "hackernews": "hacker-news-add",
+        },
+        "update": {
+            "filesystem": "fs-update",
+            "video": "tube-update",
+            "web": "web-update",
+            "gallery": "gallery-update",
+            "links": "links-update",
+            "reddit": "reddit-update",
+        },
+        "import": {
+            "nicotine": "nicotine-import",
+            "places": "places-import",
+            "pushshift": "pushshift-extract",
+            "mpv-watchlater": "mpv-watchlater",
+        },
+        "enrich": {"reddit-selftext": "reddit-selftext"},
+        "merge": {"_target": "merge-dbs", "online-local": "merge-online-local"},
+        "copy": {"play-counts": "copy-play-counts"},
+        "allocate": {"torrents": "allocate-torrents"},
+        "dedupe": {"_target": "dedupe-db", "media": "dedupe-media"},
+        "search": "search-db",
+        "optimize": "optimize-db",
+        "filesystem": {
+            "list": "filesystem",
+            "usage": {
+                "_target": "disk-usage",
+                "extensions": "extensions",
+                "mimetypes": "mimetypes",
+                "sizes": "sizes",
+            },
+        },
+        "download": {"_target": "download", "links": "download-links", "status": "download-status"},
+        "history": {"_target": "history", "add": "history-add"},
+        "playlists": "playlists",
+        "stats": "stats",
+        "block": "block",
+        "redownload": "redownload",
+    },
+    "shrink": {
+        "media": "process-media",
+        "video": "process-ffmpeg",
+        "audio": "process-audio",
+        "image": "process-image",
+        "text": "process-text",
+    },
+    "captions": "search",
+    "download": "direct-download",
+    "torrent": {
+        "info": "torrents-info",
+        "start": "torrents-start",
+        "remaining": "torrents-remaining",
+        "dump": "torrents-dump",
+    },
+    "links": {
+        "open": "links-open",
+        "extract": "extract-links",
+        "download": "links-download",
+    },
+    "tabs": {
+        "shuffle": "tabs-shuffle",
+        "open": "tabs-open",
+    },
+    "table": {
+        "analyze": "eda",
+        "markdown": "markdown-tables",
+        "columns": "columns",
+        "plot": "plot",
+        "rank": "mcda",
+        "diff": "incremental-diff",
+    },
+    "filesystem": {
+        "stats": {"mounts": "mount-stats"},
+        "free": {"mounts": "disk-free"},
+    },
+    "file": {
+        "hash": "sample-hash",
+        "compare": "sample-compare",
+        "similar": "similar-files",
+        "normalize": "christen",
+        "check": "media-check",
+        "dedupe": {"czkawka": "czkawka-dedupe"},
+    },
+    "folder": {
+        "similar": "similar-folders",
+        "copy": {"mergerfs": "mergerfs-cp"},
+        "scatter": "scatter",
+        "large": "big-dirs",
+        "move": {"list": "mv-list"},
+        "merge": {
+            "move": "merge-mv",
+            "copy": "merge-cp",
+            "relative-move": "relmv",
+            "relative-copy": "relcp",
+        },
+    },
+    "document": {
+        "to-pdf": {"images": "images-to-pdf"},
+        "edit": {"pdf": "pdf-edit"},
+        "export": {"text": "export-text"},
+    },
+    "archive": {"extract": "unardel"},
+    "help": {"search": "search-help"},
+    "text": {
+        "extract": "extract-text",
+        "sort": {"regex": "regex-sort", "cluster": "cluster-sort"},
+        "markdown": {"links": "markdown-links"},
+        "expand": {"links": "expand-links"},
+        "rename-keys": {"json": "json-keys-rename"},
+        "nouns": "nouns",
+        "dates": "dates",
+        "times": "times",
+        "timestamps": "timestamps",
+        "combinations": "combinations",
+    },
+}
+
+NESTED_GROUP_ALIASES = {
+    "db": "database",
+    "doc": "document",
+    "docs": "document",
+    "fs": "filesystem",
+    "files": "file",
+}
+
+NESTED_COMMAND_ALIASES = {
+    "fs": "filesystem",
+    "ls": "list",
+}
+
+for _group in NESTED_COMMANDS:
+    _group_alias = _group.removesuffix("s") if _group.endswith("s") else f"{_group}s"
+    NESTED_GROUP_ALIASES.setdefault(_group_alias, _group)
+
+GROUP_HELP_ARG_COUNT = 2
+
+
+def _canonical_nested_paths(group: str, command_tree) -> list[str]:
+    paths = []
+
+    def walk(current, prefix: tuple[str, ...]) -> None:
+        if isinstance(current, str):
+            paths.append(" ".join((group, *prefix)))
+            return
+
+        if "_target" in current:
+            paths.append(" ".join((group, *prefix)))
+        for command, target in current.items():
+            if command != "_target":
+                walk(target, (*prefix, command))
+
+    walk(command_tree, ())
+    return paths
+
+
+def _canonical_nested_paths_for_all_groups() -> list[str]:
+    return [
+        path
+        for group, command_tree in NESTED_COMMANDS.items()
+        for path in _canonical_nested_paths(group, command_tree)
+    ]
+
+
+def _module_alias_targets() -> dict[str, str]:
+    targets = {}
+    for module, aliases in modules.items():
+        target = module.rsplit(".", 1)[1].replace("_", "-")
+        for alias in aliases:
+            targets.setdefault(alias, target)
+    return targets
+
+
+def _nested_target_canonical(path: list[str]) -> tuple[str, int] | None:
+    if not path:
+        return None
+
+    group = path[0]
+    command_tree = NESTED_COMMANDS.get(group)
+    if isinstance(command_tree, str):
+        return command_tree, 1
+    if not isinstance(command_tree, dict):
+        return None
+
+    current = command_tree
+    consumed = 1
+    for part in path[1:]:
+        if not isinstance(current, dict) or part not in current:
+            break
+        current = current[part]
+        consumed += 1
+        if isinstance(current, str):
+            return current, consumed
+
+    if isinstance(current, dict) and "_target" in current:
+        return current["_target"], consumed
+    return None
+
+
+def _nested_target(path: list[str]) -> tuple[str, int] | None:
+    if not path:
+        return None
+
+    group_alias_used = path[0] == "db"
+    canonical_path = [
+        NESTED_GROUP_ALIASES.get(path[0], path[0]),
+        *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]],
+    ]
+    target = _nested_target_canonical(canonical_path)
+    if target is not None:
+        return target
+
+    # Support the compact `db fs update` spelling for `database update filesystem`.
+    if group_alias_used and len(canonical_path) >= 3:
+        return _nested_target_canonical(
+            [canonical_path[0], canonical_path[2], canonical_path[1], *canonical_path[3:]]
+        )
+    return None
+
+
+def _nested_group(path: list[str]) -> str | None:
+    if not path:
+        return None
+
+    group = NESTED_GROUP_ALIASES.get(path[0], path[0])
+    if group not in NESTED_COMMANDS:
+        return None
+    if path[0] in NESTED_COMMANDS or len(path) == 1:
+        return group
+    if path[1] in {"-h", "--help"} or _nested_target(path) is not None:
+        return group
+
+    command_tree = NESTED_COMMANDS[group]
+    if isinstance(command_tree, dict) and path[1] in command_tree:
+        return group
+    return None
+
+
+def _invalid_nested_path(group: str, path: list[str]) -> list[str] | None:
+    command_tree = NESTED_COMMANDS.get(group)
+    if not isinstance(command_tree, dict) or not path:
+        return None
+
+    canonical_path = [group, *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]]]
+    current = command_tree
+    for index, part in enumerate(canonical_path[1:], start=1):
+        if part in {"-h", "--help"}:
+            return None
+        if not isinstance(current, dict) or part not in current:
+            return canonical_path[: index + 1]
+        current = current[part]
+        if isinstance(current, str):
+            return None
+    return None
+
+
+def _nested_help(group: str, invalid_path: list[str] | None = None) -> str:
+    command_tree = NESTED_COMMANDS[group]
+    if isinstance(command_tree, str):
+        return f"usage: library {group} DATABASE [optional args]"
+
+    lines = [f"usage: library {group} <command> [optional args]", "", "Commands:"]
+    prefix = f"{group} "
+    lines.extend(f"  {path.removeprefix(prefix)}" for path in _canonical_nested_paths(group, command_tree))
+    if invalid_path:
+        relative = " ".join(invalid_path[1:])
+        choices = [path.removeprefix(prefix) for path in _canonical_nested_paths(group, command_tree)]
+        suggestion = difflib.get_close_matches(relative, choices, n=1, cutoff=0.4)
+        message = [f"Unknown command: {' '.join(invalid_path)}"]
+        if suggestion:
+            message.append(f"Did you mean: {group} {suggestion[0]}?")
+        lines = [*message, "", *lines]
+    return "\n".join(lines)
+
+
+def _canonical_target_paths() -> dict[str, str]:
+    target_paths = {}
+    for path in _canonical_nested_paths_for_all_groups():
+        target = _nested_target(path.split())
+        if target is not None:
+            target_paths.setdefault(target[0], path)
+    return target_paths
+
+
+def _resolve_target(command: str) -> str | None:
+    target = command.replace("_", "-")
+    if target in _canonical_target_paths():
+        return target
+    aliases = _module_alias_targets()
+    return aliases.get(command) or aliases.get(target)
+
+
+def _target_module(target: str) -> tuple[str, str]:
+    target = _module_alias_targets().get(target, target)
+    for module in modules:
+        module_name, function_name = module.rsplit(".", 1)
+        if function_name.replace("_", "-") == target:
+            return module_name, function_name
+    raise KeyError(target)
+
+
+def _invoke_target(target: str):
+    module_name, function_name = _target_module(target)
+    module = importlib.import_module(module_name)
+    return getattr(module, function_name)()
+
+
+def _dispatch(args) -> None:
+    if hasattr(args, "func"):
+        subcommand = " ".join(getattr(args, "_nested_path", []))
+        if hasattr(args, "_nested_args"):
+            sys.argv[1:] = args._nested_args
+        elif len(sys.argv) >= 2:
+            subcommand = sys.argv[1]
+            del sys.argv[1]
+        try:
+            return args.func()
+        except Exception:
+            print("Bug found in", subcommand, " ".join(sys.argv), file=sys.stderr)
+            raise
+
+    try:
+        log.error("Subcommand %s not found", sys.argv[1])
+    except Exception:
+        if len(sys.argv) > 1:
+            log.error("Invalid args. I see: %s", sys.argv)
+
+    print_help(parser)
+    raise SystemExit(1)
+
+
 def create_subcommands_parser() -> argparse.ArgumentParser:
     parser = argparse_utils.ArgumentParser(
         prog="library",
@@ -360,6 +742,38 @@ def library(args=None) -> None:
         finally:
             sys.argv = original_argv
 
+    original_argv = sys.argv[1:]
+    if original_argv in (["-h"], ["--help"]):
+        print_help(parser)
+        raise SystemExit(0)
+
+    nested_group = _nested_group(original_argv)
+    if (
+        len(original_argv) == GROUP_HELP_ARG_COUNT
+        and original_argv[1] in {"-h", "--help"}
+        and nested_group is not None
+        and isinstance(NESTED_COMMANDS[nested_group], dict)
+    ):
+        print(_nested_help(nested_group))
+        raise SystemExit(0)
+
+    if nested_group and _nested_target(original_argv) is None:
+        invalid_path = _invalid_nested_path(nested_group, original_argv)
+        print(_nested_help(nested_group, invalid_path))
+        raise SystemExit(1)
+
+    if nested_group:
+        target_info = _nested_target(original_argv)
+        if target_info is not None:
+            target, consumed = target_info
+            return _dispatch(
+                argparse.Namespace(
+                    func=lambda: _invoke_target(target),
+                    _nested_path=original_argv[:consumed],
+                    _nested_args=original_argv[consumed:],
+                )
+            )
+
     parser.exit_on_error = False  # type: ignore
     try:
         args, _unk = parser.parse_known_args(args)
@@ -371,24 +785,7 @@ def library(args=None) -> None:
     log.debug("library v%s :: %s", __version__, os.path.realpath(sys.path[0]))
     log.debug(sys.argv)
 
-    if hasattr(args, "func"):
-        subcommand = sys.argv[1] if len(sys.argv) >= 2 else ""
-        if len(sys.argv) >= 2:
-            del sys.argv[1]
-        try:
-            return args.func()
-        except Exception:
-            print("Bug found in", subcommand, " ".join(sys.argv), file=sys.stderr)
-            raise
-    else:
-        try:
-            log.error("Subcommand %s not found", sys.argv[1])
-        except Exception:
-            if len(sys.argv) > 1:
-                log.error("Invalid args. I see: %s", sys.argv)
-
-        print_help(parser)
-        raise SystemExit(1)
+    return _dispatch(args)
 
 
 if __name__ == "__main__":
