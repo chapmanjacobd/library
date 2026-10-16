@@ -641,29 +641,32 @@ def mpv_jsonipc(args, m):
     mpv_kwargs = mpv_utils.mpv_cli_args_to_pythonic(mpv_cli_args)
     x_mpv = MPV(args.mpv_socket, log_handler=print, **mpv_kwargs)
 
-    if args.volume:
-        x_mpv.volume = args.volume
+    try:
+        if args.volume:
+            x_mpv.volume = args.volume
 
-    SIGINT_EXIT = threading.Event()
+        SIGINT_EXIT = threading.Event()
 
-    @x_mpv.on_key_press("ctrl+c")
-    def sig_interrupt_handler():
-        SIGINT_EXIT.set()
-        x_mpv.command("quit", "4")
+        @x_mpv.on_key_press("ctrl+c")
+        def sig_interrupt_handler():
+            SIGINT_EXIT.set()
+            x_mpv.command("quit", "4")
 
-    x_mpv.play(m["path"])
-    if args.auto_seek:
-        try:
-            mpv_utils.auto_seek(x_mpv)
-        except (BrokenPipeError, MPVError, ConnectionResetError):
-            log.debug("BrokenPipeError ignored")
-    else:
-        raise NotImplementedError
-        # x_mpv.wait_for_property('idle-active')
+        x_mpv.play(m["path"])
+        if args.auto_seek:
+            try:
+                mpv_utils.auto_seek(x_mpv)
+            except (BrokenPipeError, MPVError, ConnectionResetError):
+                log.debug("BrokenPipeError ignored")
+        else:
+            raise NotImplementedError
+            # x_mpv.wait_for_property('idle-active')
 
-    if SIGINT_EXIT.is_set():
-        log.error("Player exited with code 4")
-        raise SystemExit(4)
+        if SIGINT_EXIT.is_set():
+            log.error("Player exited with code 4")
+            raise SystemExit(4)
+    finally:
+        x_mpv.terminate(join=None)
 
 
 def play(args, m, media_len) -> None:

@@ -1,49 +1,15 @@
-from library import __main__, usage
-
-all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
-categorized_progs = {key for d in __main__.progs.values() for key in d if isinstance(key, str)}
-
-
-def _already_categorized(prog_name: str) -> bool:
-    """A usage attribute may be listed in `progs` under a different (alias) name.
-
-    eg. the `search_help` usage string is listed as `help`. Without this check the README
-    would add a duplicate "Other subcommands" entry and report a different subtotal than
-    the CLI's `library` output.
-    """
-    if prog_name in categorized_progs:
-        return True
-    for module_name, aliases in __main__.modules.items():
-        if module_name.rsplit(".", 1)[1] == prog_name and any(alias in categorized_progs for alias in aliases):
-            return True
-    return False
-
-
-other_progs = [s for s in all_progs if not _already_categorized(s)]
-if len(other_progs) > 0:
-    __main__.progs["Other subcommands"] = {s: s for s in other_progs}
+from library import __main__
 
 usage_details_md = []
-canonical_target_paths = __main__._canonical_target_paths()
-seen_usage_commands = set()
 
-for category, category_progs in __main__.progs.items():
+for category, category_progs in __main__._command_catalog():
     usage_details_md.append(f"\n### {category}\n")
 
-    for prog, prog_description in category_progs.items():
-        prog_usage = getattr(usage, prog, None)
-        subcommand = prog.replace("_", "-")
-        target = __main__._resolve_target(prog)
-        canonical_command = canonical_target_paths.get(target, subcommand)
-        if canonical_command in seen_usage_commands:
-            continue
-        seen_usage_commands.add(canonical_command)
+    for canonical_command, prog_description in category_progs:
+        prog_usage = __main__.command_usage(canonical_command)
 
-        if prog_description is None:
-            prog_description = subcommand
-
-        if prog_usage is not None:
-            prog_usage = __main__.canonicalize_usage(prog_usage)
+        if prog_usage:
+            prog_usage = __main__.canonicalize_usage_for_command(prog_usage, canonical_command)
             usage_details_md.append(
                 f"""
 ###### {canonical_command}
@@ -90,19 +56,17 @@ Required: `ffmpeg`
 Some features work better with: `mpv`, `fd-find`, `fish`
 
 Optional Python extras are grouped under `library[deluxe]`. This includes
-`gallery-dl` (used by `gallery-add`), `internetarchive` (used for Internet
-Archive downloads), and `cdx_toolkit` (used by the `--webcache`/`--wayback`
-CDX extractor):
+`gallery-dl` (used by `database add gallery`), `internetarchive` (used for
+Internet Archive downloads), and `cdx_toolkit` (used by the
+`--webcache`/`--wayback` CDX extractor):
 
     pip install "library[deluxe]"
 
-Torrent metadata commands (`torrents-add` and `torrents-dump`) require the
-`libtorrent` Python bindings. They are included by `library[deluxe]` when using
-Python 3.12 or 3.13; Python 3.14 wheels are not available yet, so use Python
-3.13 for torrent support.
-
-If the PyPI wheel is unavailable for your Python or platform, these system
-packages provide the bindings:
+Torrent metadata commands (`database add torrents` and `torrent dump`) require
+the Python bindings for libtorrent-rasterbar, published on PyPI as
+`libtorrent`. `library[deluxe]` installs them on Python 3.12 and 3.13. The
+libtorrent-rasterbar project does not publish Python 3.14 wheels yet, so on
+Python 3.14 install the bindings with a system or distro package:
 
 * Debian/Ubuntu: `sudo apt install python3-libtorrent`
 * Fedora: `sudo dnf install rb_libtorrent-python3`
@@ -190,8 +154,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
 Commands are organized by resource. Use `database` (or `db`) for database
 operations, `filesystem` (or `fs`) for filesystem operations, `document` (or
 `doc`/`docs`) for document operations, and `file` (or `files`) for file
-operations. The `ls` alias can be used for nested list commands. Existing flat
-commands remain available where they do not conflict with a new resource path.
+operations. The `ls` alias can be used for nested list commands. Resource group
+names and their aliases take precedence over flat command names, so a few former
+flat commands are now only reachable through a group (for example
+`database filesystem list`, `captions`, `table markdown`, `tabs open`,
+`links extract`, `text extract`, and `torrent info`).
 
     $ library
     {__main__.usage()}

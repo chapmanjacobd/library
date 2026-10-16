@@ -27,19 +27,17 @@ Required: `ffmpeg`
 Some features work better with: `mpv`, `fd-find`, `fish`
 
 Optional Python extras are grouped under `library[deluxe]`. This includes
-`gallery-dl` (used by `gallery-add`), `internetarchive` (used for Internet
-Archive downloads), and `cdx_toolkit` (used by the `--webcache`/`--wayback`
-CDX extractor):
+`gallery-dl` (used by `database add gallery`), `internetarchive` (used for
+Internet Archive downloads), and `cdx_toolkit` (used by the
+`--webcache`/`--wayback` CDX extractor):
 
     pip install "library[deluxe]"
 
-Torrent metadata commands (`torrents-add` and `torrents-dump`) require the
-`libtorrent` Python bindings. They are included by `library[deluxe]` when using
-Python 3.12 or 3.13; Python 3.14 wheels are not available yet, so use Python
-3.13 for torrent support.
-
-If the PyPI wheel is unavailable for your Python or platform, these system
-packages provide the bindings:
+Torrent metadata commands (`database add torrents` and `torrent dump`) require
+the Python bindings for libtorrent-rasterbar, published on PyPI as
+`libtorrent`. `library[deluxe]` installs them on Python 3.12 and 3.13. The
+libtorrent-rasterbar project does not publish Python 3.14 wheels yet, so on
+Python 3.14 install the bindings with a system or distro package:
 
 * Debian/Ubuntu: `sudo apt install python3-libtorrent`
 * Fedora: `sudo dnf install rb_libtorrent-python3`
@@ -127,8 +125,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
 Commands are organized by resource. Use `database` (or `db`) for database
 operations, `filesystem` (or `fs`) for filesystem operations, `document` (or
 `doc`/`docs`) for document operations, and `file` (or `files`) for file
-operations. The `ls` alias can be used for nested list commands. Existing flat
-commands remain available where they do not conflict with a new resource path.
+operations. The `ls` alias can be used for nested list commands. Resource group
+names and their aliases take precedence over flat command names, so a few former
+flat commands are now only reachable through a group (for example
+`database filesystem list`, `captions`, `table markdown`, `tabs open`,
+`links extract`, `text extract`, and `torrent info`).
 
     $ library
     library (v4.0.0; 114 subcommands)
@@ -379,29 +380,29 @@ commands remain available where they do not conflict with a new resource path.
     ╰──────────────────────┴─────────────────────────────────────────╯
 
     Other subcommands:
-    ╭──────────────────────────────────────┬─────────────────────────────╮
-    │ play media                           │ media                       │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ play audio                           │ audio                       │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ play text                            │ text                        │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ play images                          │ images                      │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ database filesystem usage extensions │ filesystem usage extensions │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ database filesystem usage mimetypes  │ filesystem usage mimetypes  │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ database filesystem usage sizes      │ filesystem usage sizes      │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ shrink audio                         │ audio                       │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ folder merge copy                    │ merge copy                  │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ folder merge relative-move           │ merge relative-move         │
-    ├──────────────────────────────────────┼─────────────────────────────┤
-    │ folder merge relative-copy           │ merge relative-copy         │
-    ╰──────────────────────────────────────┴─────────────────────────────╯
+    ╭──────────────────────────────────────┬────────────────────────────────────────────╮
+    │ play media                           │ Play media of any supported type           │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ play audio                           │ Listen to audio                            │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ play text                            │ Read text                                  │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ play images                          │ View images                                │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ database filesystem usage extensions │ Show disk usage grouped by file extension  │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ database filesystem usage mimetypes  │ Show disk usage grouped by MIME type       │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ database filesystem usage sizes      │ Show disk usage grouped by file size       │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ shrink audio                         │ Shrink audio to Opus                       │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ folder merge copy                    │ Copy files and merge folders               │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ folder merge relative-move           │ Move files while preserving relative paths │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ folder merge relative-copy           │ Copy files while preserving relative paths │
+    ╰──────────────────────────────────────┴────────────────────────────────────────────╯
 
 
 </details>
@@ -1260,9 +1261,17 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Download URLs directly</summary>
 
     $ library download -h
-    usage: library download URL ... [optional args]
+    usage: library download URL ... [--db DATABASE] [optional args]
 
     Download the given URLs directly without extracting links from pages.
+
+        library download https://example.com/file.zip
+
+    Pass --db to download the media recorded in a database instead. Results are recorded,
+    pages can be resolved into links, and the database media filters apply:
+
+        library download --db dl.db
+        library download --db dl.db --media-type auto --prefix ~/output/
 
 
 </details>
@@ -1469,7 +1478,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library folder merge move /mnt/d/sync/weekly/ /
 
         # move new music for this week
-        library relmv (
+        library folder merge relative-move (
             library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/sync/weekly/
 
@@ -1587,7 +1596,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Find specific folders to move to different disks</summary>
 
     $ library folder move list -h
-    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
+    usage: library folder move list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
 
     Free up space on a specific disk. Find candidates for moving data to a different mount point
 
@@ -1598,7 +1607,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     But this should definitely also work with library audio and video databases
 
-        library mv-list /mnt/d/ video.db
+        library folder move list /mnt/d/ video.db
 
     The program will print a table with a sorted list of folders which are good candidates for moving.
     Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
@@ -2606,6 +2615,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     built-in downloader. `--safe` supports the auto, audio, video, and image profiles only
     (not --direct or --media-type filesystem/text).
 
+    Equivalent to `library download --db DATABASE ...`.
+
     By default things download in a random order
 
         library database download dl.db --prefix ~/output/path/root/
@@ -3527,6 +3538,729 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
                czkawka_dupes_output_path
 
     Choose which duplicate to keep by opening both side-by-side in mpv
+
+
+</details>
+
+###### help search
+
+<details><summary>Search subcommands and help text</summary>
+
+    $ library help search -h
+    usage: library help search [subcommand] QUERY ...
+
+    Search library functionality and help text
+
+</details>
+
+### Other subcommands
+
+###### play media
+
+<details><summary>Play media of any supported type</summary>
+
+    $ library play media -h
+    usage: library play media DATABASE [optional args]
+
+    Control playback
+
+        To stop playback press Ctrl-C in either the terminal or mpv
+
+        Or use `lb next` or `lb stop`
+
+        Or create global shortcuts in your desktop environment by sending commands to mpv_socket
+        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+
+        If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
+        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+
+    Print an aggregate report of deleted media
+
+        library database filesystem list -w time_deleted!=0 -pa
+        path         count  duration               size
+        ---------  -------  ------------------  -------
+        Aggregate      337  2 days and 5 hours  1.6 GiB
+
+    Print an aggregate report of media that has no duration information (ie.
+    online media or corrupt local media)
+
+        library play media -w 'duration is null' -pa
+
+    Print a list of filenames which have below 1280px resolution
+
+        library play media -w 'width<1280' -pf
+
+    View how much time you have played
+
+        library play media -w play_count'>'0 -pa
+
+    View all the columns
+
+        library play media -p -L 1 --cols '*'
+
+    Open ipython with all of your media
+
+        library play media -vv -p --cols '*'
+        ipdb> len(media)
+        462219
+
+    View most recent files
+
+        library play media web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        path                                                                                                                      width    height       size  time_modified
+        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
+        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
+        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
+        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
+        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
+        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
+        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
+        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
+        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
+        10 media (limited by --limit 10)
+
+    How I use it
+
+        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+
+        When sorting videos
+        focus_under_mouse
+        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        focus_follows_mouse
+
+        On-the-go mobile smartphone mode (Android)
+        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+
+
+</details>
+
+###### play audio
+
+<details><summary>Listen to audio</summary>
+
+    $ library play audio -h
+    usage: library play audio DATABASE [optional args]
+
+    Control playback
+
+        To stop playback press Ctrl-C in either the terminal or mpv
+
+        Or use `lb next` or `lb stop`
+
+        Or create global shortcuts in your desktop environment by sending commands to mpv_socket
+        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+
+        If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
+        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+
+    Print an aggregate report of deleted media
+
+        library database filesystem list -w time_deleted!=0 -pa
+        path         count  duration               size
+        ---------  -------  ------------------  -------
+        Aggregate      337  2 days and 5 hours  1.6 GiB
+
+    Print an aggregate report of media that has no duration information (ie.
+    online media or corrupt local media)
+
+        library play audio -w 'duration is null' -pa
+
+    Print a list of filenames which have below 1280px resolution
+
+        library play audio -w 'width<1280' -pf
+
+    View how much time you have played
+
+        library play audio -w play_count'>'0 -pa
+
+    View all the columns
+
+        library play audio -p -L 1 --cols '*'
+
+    Open ipython with all of your media
+
+        library play audio -vv -p --cols '*'
+        ipdb> len(media)
+        462219
+
+    View most recent files
+
+        library play audio web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        path                                                                                                                      width    height       size  time_modified
+        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
+        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
+        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
+        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
+        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
+        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
+        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
+        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
+        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
+        10 media (limited by --limit 10)
+
+    How I use it
+
+        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+
+        When sorting videos
+        focus_under_mouse
+        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        focus_follows_mouse
+
+        On-the-go mobile smartphone mode (Android)
+        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+
+
+</details>
+
+###### play text
+
+<details><summary>Read text</summary>
+
+    $ library play text -h
+    usage: library play text DATABASE [optional args]
+
+    Control playback
+
+        To stop playback press Ctrl-C in either the terminal or mpv
+
+        Or use `lb next` or `lb stop`
+
+        Or create global shortcuts in your desktop environment by sending commands to mpv_socket
+        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+
+        If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
+        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+
+    Print an aggregate report of deleted media
+
+        library database filesystem list -w time_deleted!=0 -pa
+        path         count  duration               size
+        ---------  -------  ------------------  -------
+        Aggregate      337  2 days and 5 hours  1.6 GiB
+
+    Print an aggregate report of media that has no duration information (ie.
+    online media or corrupt local media)
+
+        library play text -w 'duration is null' -pa
+
+    Print a list of filenames which have below 1280px resolution
+
+        library play text -w 'width<1280' -pf
+
+    View how much time you have played
+
+        library play text -w play_count'>'0 -pa
+
+    View all the columns
+
+        library play text -p -L 1 --cols '*'
+
+    Open ipython with all of your media
+
+        library play text -vv -p --cols '*'
+        ipdb> len(media)
+        462219
+
+    View most recent files
+
+        library play text web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        path                                                                                                                      width    height       size  time_modified
+        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
+        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
+        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
+        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
+        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
+        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
+        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
+        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
+        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
+        10 media (limited by --limit 10)
+
+    How I use it
+
+        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+
+        When sorting videos
+        focus_under_mouse
+        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        focus_follows_mouse
+
+        On-the-go mobile smartphone mode (Android)
+        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+
+
+</details>
+
+###### play images
+
+<details><summary>View images</summary>
+
+    $ library play images -h
+    usage: library play images DATABASE [optional args]
+
+    Control playback
+
+        To stop playback press Ctrl-C in either the terminal or mpv
+
+        Or use `lb next` or `lb stop`
+
+        Or create global shortcuts in your desktop environment by sending commands to mpv_socket
+        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+
+        If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
+        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+
+    Print an aggregate report of deleted media
+
+        library database filesystem list -w time_deleted!=0 -pa
+        path         count  duration               size
+        ---------  -------  ------------------  -------
+        Aggregate      337  2 days and 5 hours  1.6 GiB
+
+    Print an aggregate report of media that has no duration information (ie.
+    online media or corrupt local media)
+
+        library play images -w 'duration is null' -pa
+
+    Print a list of filenames which have below 1280px resolution
+
+        library play images -w 'width<1280' -pf
+
+    View how much time you have played
+
+        library play images -w play_count'>'0 -pa
+
+    View all the columns
+
+        library play images -p -L 1 --cols '*'
+
+    Open ipython with all of your media
+
+        library play images -vv -p --cols '*'
+        ipdb> len(media)
+        462219
+
+    View most recent files
+
+        library play images web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        path                                                                                                                      width    height       size  time_modified
+        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
+        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
+        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
+        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
+        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
+        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
+        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
+        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
+        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
+        10 media (limited by --limit 10)
+
+    How I use it
+
+        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+
+        When sorting videos
+        focus_under_mouse
+        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        focus_follows_mouse
+
+        On-the-go mobile smartphone mode (Android)
+        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+
+
+</details>
+
+###### database filesystem usage extensions
+
+<details><summary>Show disk usage grouped by file extension</summary>
+
+    $ library database filesystem usage extensions -h
+    usage: library database filesystem usage extensions DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library database filesystem usage du.db --size=-1Ki
+        library database filesystem usage du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library database filesystem usage du.db --depth 19
+        library database filesystem usage du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library database filesystem usage extensions du.db
+        library database filesystem usage du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
+
+
+</details>
+
+###### database filesystem usage mimetypes
+
+<details><summary>Show disk usage grouped by MIME type</summary>
+
+    $ library database filesystem usage mimetypes -h
+    usage: library database filesystem usage mimetypes DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library database filesystem usage du.db --size=-1Ki
+        library database filesystem usage du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library database filesystem usage du.db --depth 19
+        library database filesystem usage du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library database filesystem usage extensions du.db
+        library database filesystem usage du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
+
+
+</details>
+
+###### database filesystem usage sizes
+
+<details><summary>Show disk usage grouped by file size</summary>
+
+    $ library database filesystem usage sizes -h
+    usage: library database filesystem usage sizes DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library database filesystem usage du.db --size=-1Ki
+        library database filesystem usage du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library database filesystem usage du.db --depth 19
+        library database filesystem usage du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library database filesystem usage extensions du.db
+        library database filesystem usage du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
+
+
+</details>
+
+###### shrink audio
+
+<details><summary>Shrink audio to Opus</summary>
+
+    $ library shrink audio -h
+    usage: library shrink audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
+
+    Resize videos to max 1440x960px AV1 and/or Opus to save space
+
+    Convert audio to Opus. Optionally split up long tracks into multiple files.
+
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library shrink audio
+
+    Use --always-split to _always_ split files if silence is detected
+
+        library shrink audio --always-split audiobook.m4a
+
+    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
+
+        library shrink audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+    Calculate how much space you could save via process-ffmpeg by running something like this:
+
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/video.db "select sum(size)-sum(duration*100000) from media where time_deleted=0 and video_count>=1 and video_codecs != 'av1' and size/duration > 100000")
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/audio.db "select sum(size)-sum(duration*18000) from media where time_deleted=0 and video_count=0 and audio_count>=1 and audio_codecs != 'opus' and size/duration > 18000")
+
+
+</details>
+
+###### folder merge copy
+
+<details><summary>Copy files and merge folders</summary>
+
+    $ library folder merge copy -h
+    usage: library folder merge copy SOURCE ... DEST [--simulate] [--ext EXT]
+
+    merging-move: combine file trees
+
+    The destination is ALWAYS a folder by default (`--dest-folder`).
+    Use `--dest-bsd` to mimick BSD/GNU default `mv` behavior
+    Use `--dest-file` to mimick BSD/GNU `mv --no-target-directory`
+
+    By default it won't matter if source folders end with a path separator or not
+
+        library folder merge move folder1  folder2/  # folder1 will be merged with folder2/
+        library folder merge move folder1/ folder2/  # folder1 will be merged with folder2/
+
+    --bsd mode: an ending path separator determines if each source is to be placed within or merged with the destination
+
+        library folder merge move --bsd folder1/ folder2/  # folder1 will be merged with folder2/
+        library folder merge move --bsd folder1  folder2/  # folder1 will be moved to folder2/folder1/
+
+    --parent mode: always include the parent folder name when merging
+
+        library folder merge move --parent folder1  folder2/  # folder1 will be moved to folder2/folder1/
+        library folder merge move --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
+        library folder merge move --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
+
+    nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    By default all files are included (the filesystem profile). Pass --video, --audio, --image,
+    or --text to restrict to specific media extensions. --auto selects every media type
+    (video, audio, image, and text) but still excludes other filesystem files.
+
+    Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move smallest files first
+
+        lb fs /src/dir/ -u size -pf | lb mv - /dest/dir/ --relative-to=/src/dir/ --dry-run
+
+        Move fresh music to your phone every Sunday
+
+        # move last week music back to their source folders
+        library folder merge move /mnt/d/sync/weekly/ /
+
+        # move new music for this week
+        library folder merge relative-move (
+            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
+
+
+</details>
+
+###### folder merge relative-move
+
+<details><summary>Move files while preserving relative paths</summary>
+
+    $ library folder merge relative-move -h
+    usage: library folder merge relative-move SOURCE ... DEST [--simulate] [--ext EXT]
+
+    merging-move: combine file trees
+
+    The destination is ALWAYS a folder by default (`--dest-folder`).
+    Use `--dest-bsd` to mimick BSD/GNU default `mv` behavior
+    Use `--dest-file` to mimick BSD/GNU `mv --no-target-directory`
+
+    By default it won't matter if source folders end with a path separator or not
+
+        library folder merge move folder1  folder2/  # folder1 will be merged with folder2/
+        library folder merge move folder1/ folder2/  # folder1 will be merged with folder2/
+
+    --bsd mode: an ending path separator determines if each source is to be placed within or merged with the destination
+
+        library folder merge move --bsd folder1/ folder2/  # folder1 will be merged with folder2/
+        library folder merge move --bsd folder1  folder2/  # folder1 will be moved to folder2/folder1/
+
+    --parent mode: always include the parent folder name when merging
+
+        library folder merge move --parent folder1  folder2/  # folder1 will be moved to folder2/folder1/
+        library folder merge move --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
+        library folder merge move --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
+
+    nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    By default all files are included (the filesystem profile). Pass --video, --audio, --image,
+    or --text to restrict to specific media extensions. --auto selects every media type
+    (video, audio, image, and text) but still excludes other filesystem files.
+
+    Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move smallest files first
+
+        lb fs /src/dir/ -u size -pf | lb mv - /dest/dir/ --relative-to=/src/dir/ --dry-run
+
+        Move fresh music to your phone every Sunday
+
+        # move last week music back to their source folders
+        library folder merge move /mnt/d/sync/weekly/ /
+
+        # move new music for this week
+        library folder merge relative-move (
+            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
+
+
+</details>
+
+###### folder merge relative-copy
+
+<details><summary>Copy files while preserving relative paths</summary>
+
+    $ library folder merge relative-copy -h
+    usage: library folder merge relative-copy SOURCE ... DEST [--simulate] [--ext EXT]
+
+    merging-move: combine file trees
+
+    The destination is ALWAYS a folder by default (`--dest-folder`).
+    Use `--dest-bsd` to mimick BSD/GNU default `mv` behavior
+    Use `--dest-file` to mimick BSD/GNU `mv --no-target-directory`
+
+    By default it won't matter if source folders end with a path separator or not
+
+        library folder merge move folder1  folder2/  # folder1 will be merged with folder2/
+        library folder merge move folder1/ folder2/  # folder1 will be merged with folder2/
+
+    --bsd mode: an ending path separator determines if each source is to be placed within or merged with the destination
+
+        library folder merge move --bsd folder1/ folder2/  # folder1 will be merged with folder2/
+        library folder merge move --bsd folder1  folder2/  # folder1 will be moved to folder2/folder1/
+
+    --parent mode: always include the parent folder name when merging
+
+        library folder merge move --parent folder1  folder2/  # folder1 will be moved to folder2/folder1/
+        library folder merge move --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
+        library folder merge move --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
+
+    nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    By default all files are included (the filesystem profile). Pass --video, --audio, --image,
+    or --text to restrict to specific media extensions. --auto selects every media type
+    (video, audio, image, and text) but still excludes other filesystem files.
+
+    Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move smallest files first
+
+        lb fs /src/dir/ -u size -pf | lb mv - /dest/dir/ --relative-to=/src/dir/ --dry-run
+
+        Move fresh music to your phone every Sunday
+
+        # move last week music back to their source folders
+        library folder merge move /mnt/d/sync/weekly/ /
+
+        # move new music for this week
+        library folder merge relative-move (
+            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
 
 
 </details>

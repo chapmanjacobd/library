@@ -20,11 +20,11 @@ from library.utils import (
 from library.utils.log_utils import log
 
 
-def parse_args(usage) -> argparse.Namespace:
+def parse_args(usage, command=None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
-    if parser.prog == "library next":
+    if command == "next":
         arggroups.capability_delete(parser)
-    if parser.prog == "library seek":
+    if command == "seek":
         parser.add_argument("time")
 
     parser.add_argument("--mpv-socket", help="Use a custom mpv socket location")
@@ -265,7 +265,7 @@ def playback_now() -> None:
     if playing["mpv"] and playing["catt"]:
         print(source_now_playing(playing, "mpv"))
         with suppress(AttributeError):
-            args.mpv.terminate()
+            args.mpv.terminate(join=None)
         print(source_now_playing(playing, "catt"))
 
     elif playing["mpv"]:
@@ -274,7 +274,7 @@ def playback_now() -> None:
         time_pos = printing.seconds_to_hhmmss(args.mpv.command("get_property", "time-pos")).strip()
         print(f"    Playhead: {time_pos}\n")
         with suppress(AttributeError):
-            args.mpv.terminate()
+            args.mpv.terminate(join=None)
 
     elif playing["catt"]:
         path = playing["catt"]
@@ -315,7 +315,7 @@ def playback_stop() -> None:
     if playing["mpv"]:
         args.mpv.command("loadfile", "/dev/null")  # make mpv exit with code 3
         with suppress(AttributeError):
-            args.mpv.terminate()
+            args.mpv.terminate(join=None)
 
     if playing["catt"] or not any(playing.values()):
         kill_process("catt")
@@ -339,11 +339,11 @@ def playback_pause() -> None:
     if playing["mpv"]:
         args.mpv.command("cycle", "pause")
         with suppress(AttributeError):
-            args.mpv.terminate()
+            args.mpv.terminate(join=None)
 
 
 def playback_next() -> None:
-    args = parse_args(usage.next)
+    args = parse_args(usage.next, command="next")
     if args.simulate:
         print("Would advance playback")
         return
@@ -361,13 +361,13 @@ def playback_next() -> None:
     if playing["mpv"]:
         args.mpv.command("playlist_next", "force")
         with suppress(AttributeError):
-            args.mpv.terminate()
+            args.mpv.terminate(join=None)
         if args.delete_files:
             shell_utils.trash(args, playing["mpv"])
 
 
 def playback_seek() -> None:
-    args = parse_args(usage.seek)
+    args = parse_args(usage.seek, command="seek")
     if args.simulate:
         print("Would seek playback by", args.time)
         return
@@ -392,7 +392,7 @@ def playback_seek() -> None:
     if playing["mpv"]:
         args.mpv.command("seek", seconds, "relative" if is_relative else "absolute")
         with suppress(AttributeError):
-            args.mpv.terminate()
+            args.mpv.terminate(join=None)
 
     if playing["catt"]:
         catt_device = []

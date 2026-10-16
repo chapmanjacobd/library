@@ -268,23 +268,15 @@ class ArgumentParser(argparse.ArgumentParser):
         if usage and canonical_prog:
             from library import __main__ as cli
 
-            usage = cli.canonicalize_usage(usage)
-            usage_lines = usage.splitlines()
-            for index, line in enumerate(usage_lines):
-                stripped = line.lstrip()
-                if stripped.startswith("library "):
-                    canonical_prefix = f"{canonical_prog} "
-                    if stripped.startswith(canonical_prefix):
-                        suffix = stripped[len(canonical_prog) :]
-                    else:
-                        parts = stripped.split(maxsplit=1)
-                        suffix = f" {parts[1]}" if len(parts) == 2 else ""
-                    usage_lines[index] = f"{line[: len(line) - len(stripped)]}{canonical_prog}{suffix}"
-                    break
-            usage = "\n".join(usage_lines)
+            # Rewrite the usage string's own examples/header to the canonical v4 path
+            # (`canonicalize_usage_for_command` never mutates argv).
+            usage = cli.canonicalize_usage_for_command(
+                usage,
+                canonical_prog.removeprefix("library "),
+            )
             kwargs["usage"] = usage
 
-        kwargs["prog"] = " ".join((usage or "").split(" ", maxsplit=3)[0:2]).strip() or None
+        kwargs["prog"] = canonical_prog or " ".join((usage or "").split(" ", maxsplit=3)[0:2]).strip() or None
         kwargs["formatter_class"] = lambda prog: CustomHelpFormatter(prog, max_help_position=40)
         super().__init__(*args, **kwargs)
 

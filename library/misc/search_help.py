@@ -63,32 +63,30 @@ def search_help():
         args_help(subcommand, text)
         return
 
-    for category, commands in __main__.progs.items():
+    for category, commands in __main__._command_catalog():
         matching_commands = []
-        for prog, description in commands.items():
-            prog = prog.replace("_", "-")
-            target = alias_targets.get(prog, prog)
-            canonical_path = target_paths.get(target, prog)
-            prog_usage = __main__.canonicalize_usage(__main__.command_usage(prog))
+        for canonical_path, description in commands:
+            prog_usage = __main__.canonicalize_usage_for_command(
+                __main__.command_usage(canonical_path),
+                canonical_path,
+            )
             if any(
-                c(t) in c(prog)
-                or c(t) in c(canonical_path)
+                c(t) in c(canonical_path)
                 or t in description.lower()
                 or t in prog_usage.lower()
                 for t in text
             ):
-                matching_commands.append((prog, canonical_path, description, prog_usage))
+                matching_commands.append((canonical_path, description, prog_usage))
 
         print_category = any(t in category.lower() for t in text)
-        for prog, canonical_path, description, prog_usage in matching_commands:
+        for canonical_path, description, prog_usage in matching_commands:
             print_prog = any(
-                c(t) in c(prog)
-                or c(t) in c(canonical_path)
+                c(t) in c(canonical_path)
                 or t in description.lower()
                 for t in text
             )
 
-            symbol = prog[0]
+            symbol = canonical_path[0]
             size = 100
             print(symbol * size)
             txt = f"{description} with lb {canonical_path}"

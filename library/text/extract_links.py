@@ -1,6 +1,8 @@
-import json, pathlib
+import json, pathlib, sys
 from collections import deque
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
+
+import requests
 
 from library import usage as usage_mod
 from library.data.http_errors import HTTPStatus
@@ -59,11 +61,6 @@ def parse_args_extract():
     return args
 
 
-def parse_args():
-    """Backward-compatible parser entrypoint for callers of the old extractor API."""
-    return parse_args_extract()
-
-
 def parse_args_links_download():
     parser = _base_parser(usage_mod.links_download)
     _add_link_extraction(parser)
@@ -88,6 +85,11 @@ def parse_args_direct_download():
     parser = _base_parser(usage_mod.direct_download)
     # A pure built-in downloader: no profile/media-type or yt-dlp/gallery-dl filters.
     arggroups.download(parser, profile=False, safe=False)
+    parser.add_argument(
+        "--db",
+        "-db",
+        help="Download media recorded in a database instead of downloading the given URLs directly",
+    )
     parser.set_defaults(download=True, direct=True)
 
     arggroups.debug(parser)
@@ -98,6 +100,23 @@ def parse_args_direct_download():
     arggroups.extractor_post(args)
     web.requests_session(args)
     return args
+
+
+def _split_db_override(argv: list[str]) -> tuple[str | None, list[str]]:
+    """Split `--db DB` (or `--db=DB`) out of argv.
+
+    `library download` is a direct URL downloader unless `--db` is given, in which case
+    it behaves like the database-backed downloader (the db is injected as the database
+    positional so the existing parser is reused unchanged).
+    """
+    for index, arg in enumerate(argv):
+        if arg in {"--db", "-db"}:
+            if index + 1 >= len(argv):
+                return None, argv  # let argparse report the missing value
+            return argv[index + 1], argv[:index] + argv[index + 2 :]
+        if arg.startswith(("--db=", "-db=")):
+            return arg.split("=", 1)[1], argv[:index] + argv[index + 1 :]
+    return None, argv
 
 
 def is_desired_url(args, link, link_text, before, after) -> bool:
@@ -432,7 +451,7 @@ def crawl(args, seeds):
 def _builtin_download(args, url) -> None:
     try:
         web.download_link(args, url)
-    except RuntimeError as excinfo:
+    except (RuntimeError, requests.RequestException, ValueError, OSError) as excinfo:
         log.error("[%s]: %s", url, excinfo)
 
 
@@ -491,6 +510,17 @@ def links_download() -> None:
 
 
 def direct_download() -> None:
+    """`library download`: direct URL download, or database download when `--db` is given."""
+    database, argv = _split_db_override(sys.argv[1:])
+    if database is not None:
+        program = sys.argv[0] if sys.argv else "library download"
+        sys.argv = [program, database, *argv]
+
+        # local import: library.mediadb.download imports this module at module level
+        from library.mediadb import download as download_mod
+
+        return download_mod.download()
+
     _download_paths(parse_args_direct_download(), {})
 
 

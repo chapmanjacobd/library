@@ -215,6 +215,19 @@ def test_infer_command():
     assert not need_sleep
 
 
+def test_mpv_jsonipc_terminates_mpv():
+    args = NoneSpace(mpv_socket="/tmp/socket", volume=None, auto_seek=True)
+    m = {"player": ["mpv"], "path": "test.mp4"}
+
+    with (
+        mock.patch("python_mpv_jsonipc.MPV") as mock_mpv,
+        mock.patch.object(media_player.mpv_utils, "auto_seek", side_effect=ConnectionResetError),
+    ):
+        media_player.mpv_jsonipc(args, m)
+
+    mock_mpv.return_value.terminate.assert_called_once_with(join=None)
+
+
 @mock.patch("library.playback.media_player.MediaPrefetcher")
 @mock.patch("library.playback.media_player.play")
 def test_play_list(mock_play, mock_prefetcher):

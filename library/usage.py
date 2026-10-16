@@ -1459,9 +1459,17 @@ links_download = """library links-download PATH ... [optional args]
         library links-download --webcache https://example.com/docs/
 """
 
-direct_download = """library direct-download URL ... [optional args]
+direct_download = """library direct-download URL ... [--db DATABASE] [optional args]
 
     Download the given URLs directly without extracting links from pages.
+
+        library direct-download https://example.com/file.zip
+
+    Pass --db to download the media recorded in a database instead. Results are recorded,
+    pages can be resolved into links, and the database media filters apply:
+
+        library direct-download --db dl.db
+        library direct-download --db dl.db --media-type auto --prefix ~/output/
 """
 
 download_links = """library download-links DATABASE [URL_OR_PATH ...] [optional args]

@@ -19,22 +19,15 @@ pip install library
 lb
 ```
 
-The output is:
-
-```
-xk media library
-
-local media subcommands:
-  fsadd [extract, xr]                Create a local media database; Add folders
-  listen [lt]                        Listen to local media
-  watch [wt]                         Watch local media
-```
+Run `lb` to list the available subcommands (grouped by resource) and
+`lb <command> -h` for help with any one of them. The common entry points are
+`database add filesystem` (scan local media), `play video`, and `play audio`.
 
 Optional: library[deluxe] deps: `choco install exiftool rust`
 
-Torrent metadata support requires the `libtorrent` Python bindings. PyPI
-provides Windows wheels for Python 3.12 and 3.13; use Python 3.13
-and install the deluxe extra:
+Torrent metadata support requires the libtorrent-rasterbar Python bindings,
+published on PyPI as `libtorrent`. PyPI provides Windows wheels for Python
+3.12 and 3.13; use Python 3.13 and install the deluxe extra:
 
 ```powershell
 py -3.13 -m pip install "library[deluxe]"

@@ -4,11 +4,10 @@ from pathlib import Path
 import pytest
 
 from library.__main__ import library as lb
-from library.__main__ import modules, progs
-from library.utils import iterables
+from library.__main__ import _canonical_nested_paths_for_all_groups, modules
 from tests.utils import p
 
-subcommands = list(iterables.flatten((v.keys() for _, v in progs.items())))
+subcommands = _canonical_nested_paths_for_all_groups()
 unique_modules = list(set(s.rsplit(".", 1)[0] for s in modules.keys()))  # chop off function names
 
 
@@ -29,15 +28,12 @@ def test_lb_help(capsys):
 @pytest.mark.parametrize("subcommand", subcommands)
 def test_usage(capsys, subcommand):
     with pytest.raises(SystemExit):
-        lb([subcommand, "-h"])
+        lb([*subcommand.split(), "-h"])
+
     usage = capsys.readouterr().out.splitlines()[0]
     assert usage.startswith("usage: library")
-
-    # Most commands use `usage: library <subcommand>`, but some declare a custom
-    # usage line (eg. `library links extract`, `library database download`). Accept
-    # any usage line that still contains every word of the subcommand name.
-    name = subcommand.replace("_", "-")
-    assert name in usage or all(word in usage for word in name.split("-"))
+    # Every advertised command must show its own canonical path in the usage header
+    assert subcommand in usage
 
 
 def get_test_name(s):

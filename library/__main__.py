@@ -140,30 +140,7 @@ progs = {
 
 
 def usage() -> str:
-    target_paths = _canonical_target_paths()
-    grouped_commands = []
-    seen = set()
-
-    for category, category_progs in progs.items():
-        commands = []
-        for command, description in category_progs.items():
-            target = _resolve_target(command)
-            path = target_paths.get(target) if target else None
-            if path is None:
-                path = command.replace("_", "-")
-            if path in seen:
-                continue
-            seen.add(path)
-            commands.append((path, description))
-        if commands:
-            grouped_commands.append((category, commands))
-
-    other_commands = []
-    for path in _canonical_nested_paths_for_all_groups():
-        if path not in seen:
-            other_commands.append((path, path.removeprefix(f"{path.split()[0]} ")))
-    if other_commands:
-        grouped_commands.append(("Other subcommands", other_commands))
+    grouped_commands = _command_catalog()
 
     tables = []
     for category, commands in grouped_commands:
@@ -461,28 +438,45 @@ NESTED_COMMAND_ALIASES = {
     "ls": "list",
 }
 
+NESTED_DESCRIPTIONS = {
+    "play media": "Play media of any supported type",
+    "play video": "Watch video",
+    "play audio": "Listen to audio",
+    "play text": "Read text",
+    "play images": "View images",
+    "database filesystem usage extensions": "Show disk usage grouped by file extension",
+    "database filesystem usage mimetypes": "Show disk usage grouped by MIME type",
+    "database filesystem usage sizes": "Show disk usage grouped by file size",
+    "shrink audio": "Shrink audio to Opus",
+    "folder merge copy": "Copy files and merge folders",
+    "folder merge relative-move": "Move files while preserving relative paths",
+    "folder merge relative-copy": "Copy files while preserving relative paths",
+}
+
 for _group in NESTED_COMMANDS:
     _group_alias = _group.removesuffix("s") if _group.endswith("s") else f"{_group}s"
     NESTED_GROUP_ALIASES.setdefault(_group_alias, _group)
 
-GROUP_HELP_ARG_COUNT = 2
 
-
-def _canonical_nested_paths(group: str, command_tree) -> list[str]:
+def _canonical_nested_paths(
+    group: str,
+    command_tree,
+    prefix: tuple[str, ...] = (),
+) -> list[str]:
     paths = []
 
-    def walk(current, prefix: tuple[str, ...]) -> None:
+    def walk(current, current_prefix: tuple[str, ...]) -> None:
         if isinstance(current, str):
-            paths.append(" ".join((group, *prefix)))
+            paths.append(" ".join((group, *current_prefix)))
             return
 
         if "_target" in current:
-            paths.append(" ".join((group, *prefix)))
+            paths.append(" ".join((group, *current_prefix)))
         for command, target in current.items():
             if command != "_target":
-                walk(target, (*prefix, command))
+                walk(target, (*current_prefix, command))
 
-    walk(command_tree, ())
+    walk(command_tree, prefix)
     return paths
 
 
@@ -494,11 +488,25 @@ def _canonical_nested_paths_for_all_groups() -> list[str]:
     ]
 
 
+def _expanded_aliases(module: str, aliases) -> list[str]:
+    """Aliases plus the hyphen-less/underscore spellings argparse also accepts.
+
+    Computed on demand instead of mutating the shared `modules` metadata.
+    """
+    name = module.rsplit(".", 1)[1].replace("_", "-")
+    expanded = []
+    for alias in (name, *aliases):
+        if "-" in alias:
+            expanded.append(alias.replace("-", ""))
+            expanded.append(alias.replace("-", "_"))
+    return [*aliases, *expanded]
+
+
 def _module_alias_targets() -> dict[str, str]:
     targets = {}
     for module, aliases in modules.items():
         target = module.rsplit(".", 1)[1].replace("_", "-")
-        for alias in aliases:
+        for alias in _expanded_aliases(module, aliases):
             targets.setdefault(alias, target)
     return targets
 
@@ -533,7 +541,6 @@ def _nested_target(path: list[str]) -> tuple[str, int] | None:
     if not path:
         return None
 
-    group_alias_used = path[0] == "db"
     canonical_path = [
         NESTED_GROUP_ALIASES.get(path[0], path[0]),
         *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]],
@@ -542,8 +549,9 @@ def _nested_target(path: list[str]) -> tuple[str, int] | None:
     if target is not None:
         return target
 
-    # Support the compact `db fs update` spelling for `database update filesystem`.
-    if group_alias_used and len(canonical_path) >= 3:
+    # Also accept compact spellings such as `db fs update` for `database update filesystem`
+    # (the resource and the operation swapped), regardless of which group alias was used.
+    if len(canonical_path) >= 3:
         return _nested_target_canonical(
             [canonical_path[0], canonical_path[2], canonical_path[1], *canonical_path[3:]]
         )
@@ -551,21 +559,19 @@ def _nested_target(path: list[str]) -> tuple[str, int] | None:
 
 
 def _nested_group(path: list[str]) -> str | None:
+    """Return the canonical resource group for a token, including aliases.
+
+    Group names and their aliases always win over same-named flat commands so that
+    invalid subcommands get the helpful `Unknown command` diagnostic instead of a
+    generic top-level `Subcommand not found` error.
+    """
     if not path:
         return None
 
     group = NESTED_GROUP_ALIASES.get(path[0], path[0])
     if group not in NESTED_COMMANDS:
         return None
-    if path[0] in NESTED_COMMANDS or len(path) == 1:
-        return group
-    if path[1] in {"-h", "--help"} or _nested_target(path) is not None:
-        return group
-
-    command_tree = NESTED_COMMANDS[group]
-    if isinstance(command_tree, dict) and path[1] in command_tree:
-        return group
-    return None
+    return group
 
 
 def _invalid_nested_path(group: str, path: list[str]) -> list[str] | None:
@@ -586,21 +592,58 @@ def _invalid_nested_path(group: str, path: list[str]) -> list[str] | None:
     return None
 
 
-def _nested_help(group: str, invalid_path: list[str] | None = None) -> str:
+def _nested_tree_node(path: list[str]) -> tuple[tuple[str, ...], object] | None:
+    if not path:
+        return None
+
+    group = NESTED_GROUP_ALIASES.get(path[0], path[0])
+    command_tree = NESTED_COMMANDS.get(group)
+    if command_tree is None:
+        return None
+
+    current = command_tree
+    prefix = []
+    for part in path[1:]:
+        part = NESTED_COMMAND_ALIASES.get(part, part)
+        if not isinstance(current, dict) or part not in current:
+            return None
+        current = current[part]
+        prefix.append(part)
+    return tuple(prefix), current
+
+
+def _nested_help(
+    group: str,
+    invalid_path: list[str] | None = None,
+    prefix: tuple[str, ...] = (),
+) -> str:
     command_tree = NESTED_COMMANDS[group]
     if isinstance(command_tree, str):
         return f"usage: library {group} DATABASE [optional args]"
 
-    lines = [f"usage: library {group} <command> [optional args]", "", "Commands:"]
-    prefix = f"{group} "
-    lines.extend(f"  {path.removeprefix(prefix)}" for path in _canonical_nested_paths(group, command_tree))
+    current = command_tree
+    for part in prefix:
+        if not isinstance(current, dict):
+            return f"usage: library {group} <command> [optional args]"
+        current = current[part]
+
+    command_name = " ".join((group, *prefix))
+    lines = [f"usage: library {command_name} <command> [optional args]", "", "Commands:"]
+    prefix_text = f"{command_name} "
+    lines.extend(
+        f"  {path.removeprefix(prefix_text)}"
+        for path in _canonical_nested_paths(group, current, prefix)
+    )
     if invalid_path:
         relative = " ".join(invalid_path[1:])
-        choices = [path.removeprefix(prefix) for path in _canonical_nested_paths(group, command_tree)]
+        choices = [
+            path.removeprefix(prefix_text)
+            for path in _canonical_nested_paths(group, current, prefix)
+        ]
         suggestion = difflib.get_close_matches(relative, choices, n=1, cutoff=0.4)
         message = [f"Unknown command: {' '.join(invalid_path)}"]
         if suggestion:
-            message.append(f"Did you mean: {group} {suggestion[0]}?")
+            message.append(f"Did you mean: {command_name} {suggestion[0]}?")
         lines = [*message, "", *lines]
     return "\n".join(lines)
 
@@ -614,20 +657,82 @@ def _canonical_target_paths() -> dict[str, str]:
     return target_paths
 
 
-def _legacy_command_paths() -> dict[str, str]:
+def _target_descriptions() -> dict[str, str]:
+    descriptions = {}
+    for category_progs in progs.values():
+        for command, description in category_progs.items():
+            target = _resolve_target(command)
+            if target is not None:
+                descriptions.setdefault(target, description)
+    return descriptions
+
+
+def _command_catalog() -> list[tuple[str, list[tuple[str, str]]]]:
     target_paths = _canonical_target_paths()
+    target_descriptions = _target_descriptions()
+    grouped_commands = []
+    seen = set()
+
+    for category, category_progs in progs.items():
+        commands = []
+        for command, description in category_progs.items():
+            target = _resolve_target(command)
+            path = target_paths.get(target) if target else command.replace("_", "-")
+            if path in seen:
+                continue
+            seen.add(path)
+            commands.append((path, description))
+        if commands:
+            grouped_commands.append((category, commands))
+
+    other_commands = []
+    for path in _canonical_nested_paths_for_all_groups():
+        if path in seen:
+            continue
+        target_info = _nested_target(path.split())
+        target = target_info[0] if target_info else None
+        description = NESTED_DESCRIPTIONS.get(path) or target_descriptions.get(target)
+        if description is None:
+            description = f"Run the {path} command"
+        other_commands.append((path, description))
+    if other_commands:
+        grouped_commands.append(("Other subcommands", other_commands))
+
+    return grouped_commands
+
+
+def _module_canonical_paths() -> dict[str, str]:
+    """Map each implementation module to the canonical nested path that calls it.
+
+    This is the inverse of `_target_module`: it resolves aliases (eg. `mv-list` /
+    `relmv`) so every legacy spelling of a command can be rewritten to its v4 path.
+    """
+    paths = {}
+    for target, path in _canonical_target_paths().items():
+        try:
+            module_name, function_name = _target_module(target)
+        except KeyError:
+            continue
+        paths.setdefault(f"{module_name}.{function_name}", path)
+    return paths
+
+
+def _legacy_command_paths() -> dict[str, str]:
+    canonical_paths = _module_canonical_paths()
     legacy_paths = {}
     for module, aliases in modules.items():
-        function_name = module.rsplit(".", 1)[1]
-        target = function_name.replace("_", "-")
-        canonical_path = target_paths.get(target)
+        canonical_path = canonical_paths.get(module)
         if canonical_path is None:
             continue
 
-        legacy_names = {function_name, target, function_name.replace("_", ""), *aliases}
+        function_name = module.rsplit(".", 1)[1]
+        legacy_names = {
+            function_name,
+            function_name.replace("_", "-"),
+            function_name.replace("_", ""),
+            *_expanded_aliases(module, aliases),
+        }
         for legacy_name in legacy_names:
-            if legacy_name == canonical_path.split()[0] and canonical_path != legacy_name:
-                continue
             legacy_paths.setdefault(legacy_name, canonical_path)
     return legacy_paths
 
@@ -672,12 +777,65 @@ def command_usage(command: str) -> str:
 
     from library import usage as usage_mod
 
-    value = getattr(usage_mod, function_name, "")
-    if isinstance(value, str):
-        return value
-    if callable(value) and function_name in {"listen", "media", "read", "view", "watch"}:
-        return value(function_name)
-    return ""
+    usage_value = None
+    if function_name in {"listen", "media", "read", "view", "watch"}:
+        usage_value = usage_mod.play(function_name)
+    elif function_name in {"extensions", "mimetypes", "sizes"}:
+        usage_value = usage_mod.disk_usage
+    elif function_name in {"merge_cp", "merge_mv", "rel_cp", "rel_mv"}:
+        usage_value = usage_mod.merge_mv
+    elif function_name == "process_audio":
+        usage_value = usage_mod.process_ffmpeg
+    else:
+        usage_aliases = {
+            "hacker_news_add": "hn_add",
+            "move_list": "mv_list",
+            "optimize_db": "optimize",
+            "playback_now": "now",
+            "playback_next": "next",
+            "playback_seek": "seek",
+            "playback_stop": "stop",
+            "playback_pause": "pause",
+            "pushshift_extract": "pushshift",
+            "czkawka_dedupe": "dedupe_czkawka",
+        }
+        usage_value = getattr(usage_mod, usage_aliases.get(function_name, function_name), "")
+
+    return usage_value if isinstance(usage_value, str) else ""
+
+
+def canonicalize_usage_for_command(text: str, command: str) -> str:
+    text = canonicalize_usage(text)
+    if not text:
+        return text
+    trailing_newline = text.endswith("\n")
+
+    nested_target = _nested_target(command.split())
+    target = nested_target[0] if nested_target else _resolve_target(command)
+    canonical_command = _canonical_target_paths().get(target, command.replace("_", "-"))
+
+    lines = text.splitlines()
+    known_paths = sorted(_canonical_nested_paths_for_all_groups(), key=len, reverse=True)
+    for index, line in enumerate(lines):
+        stripped = line.lstrip()
+        if not stripped.startswith("library "):
+            continue
+
+        route = next(
+            (
+                path
+                for path in known_paths
+                if stripped == f"library {path}" or stripped.startswith(f"library {path} ")
+            ),
+            None,
+        )
+        if route is None:
+            break
+        suffix = stripped[len(f"library {route}") :]
+        lines[index] = f"{line[: len(line) - len(stripped)]}library {canonical_command}{suffix}"
+        break
+    result = "\n".join(lines)
+    return result + "\n" if trailing_newline else result
 
 
 def _invoke_target(target: str):
@@ -696,6 +854,10 @@ def _dispatch(args) -> None:
         elif len(sys.argv) >= 2:
             subcommand = sys.argv[1]
             del sys.argv[1]
+            # Present flat aliases using their canonical v4 path in help output too
+            canonical_path = _canonical_target_paths().get(_resolve_target(subcommand) or "")
+            if canonical_path:
+                sys.argv[0] = f"library {canonical_path}"
         try:
             return args.func()
         except Exception:
@@ -746,8 +908,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         subparser.set_defaults(func=import_func)
 
     def add_parser(subparsers, func, aliases=None):
-        if aliases is None:
-            aliases = []
+        # copy so registering aliases never mutates the shared `modules` metadata
+        aliases = list(aliases or [])
 
         module_name, function_name = func.rsplit(".", 1)
         name = function_name.replace("_", "-")
@@ -765,7 +927,16 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         set_func(subp, module_name, function_name)
         return subp
 
+    # These flat names collide with a nested resource group and are handled by the
+    # nested router; registering them again would create unreachable parsers.
+    nested_only_modules = {
+        "library.fsdb.filesystem.filesystem",  # `database filesystem list`
+        "library.mediadb.search.search",  # `captions`
+    }
+
     for module, aliases in modules.items():
+        if module in nested_only_modules:
+            continue
         add_parser(subparsers, module, aliases)
 
     parser.add_argument("--version", "-V", action="store_true")
@@ -793,15 +964,27 @@ def library(args=None) -> None:
         print_help(parser)
         raise SystemExit(0)
 
+    # `library help <query>` means `library help search <query>` (the v3 spelling)
+    if (
+        original_argv
+        and original_argv[0] == "help"
+        and original_argv[1:2] not in ([], ["-h"], ["--help"], ["search"])
+    ):
+        original_argv = ["help", "search", *original_argv[1:]]
+
     nested_group = _nested_group(original_argv)
     if (
-        len(original_argv) == GROUP_HELP_ARG_COUNT
-        and original_argv[1] in {"-h", "--help"}
+        original_argv
+        and original_argv[-1] in {"-h", "--help"}
         and nested_group is not None
         and isinstance(NESTED_COMMANDS[nested_group], dict)
     ):
-        print(_nested_help(nested_group))
-        raise SystemExit(0)
+        help_node = _nested_tree_node(original_argv[:-1])
+        if help_node is not None:
+            prefix, node = help_node
+            if isinstance(node, dict) and "_target" not in node:
+                print(_nested_help(nested_group, prefix=prefix))
+                raise SystemExit(0)
 
     if nested_group and _nested_target(original_argv) is None:
         invalid_path = _invalid_nested_path(nested_group, original_argv)
@@ -812,10 +995,11 @@ def library(args=None) -> None:
         target_info = _nested_target(original_argv)
         if target_info is not None:
             target, consumed = target_info
+            canonical_path = _canonical_target_paths().get(target)
             return _dispatch(
                 argparse.Namespace(
                     func=lambda: _invoke_target(target),
-                    _nested_path=original_argv[:consumed],
+                    _nested_path=(canonical_path or " ".join(original_argv[:consumed])).split(),
                     _nested_args=original_argv[consumed:],
                 )
             )

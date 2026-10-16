@@ -13,6 +13,7 @@ from library import usage
 from library.editdb import dedupe_media
 from library.mediadb import download
 from library.mediafiles import process_image
+from library.playback import playback_control
 from library.text import cluster_sort, extract_links
 from library.utils import arggroups, consts, objects
 from library.utils.consts import DBType, SC
@@ -44,6 +45,15 @@ def test_removed_surf_command_is_rejected():
     assert exc_info.value.code == 1
 
 
+def test_removed_flat_search_is_rejected(capsys):
+    # `search` collided with the `captions` resource; it is only reachable as `captions`
+    with pytest.raises(SystemExit) as exc_info:
+        lb(["search", v_db])
+
+    assert exc_info.value.code == 1
+    assert "subcommands" in capsys.readouterr().out
+
+
 def test_delete_original_is_independent_of_delete_larger(monkeypatch):
     monkeypatch.setattr(
         "sys.argv",
@@ -70,15 +80,6 @@ def test_download_media_type_auto(monkeypatch):
     args = download.parse_args()
 
     assert args.profile == DBType.auto
-
-
-def test_extract_links_parse_args_compatibility(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["extract-links", "https://example.com/"])
-
-    args = extract_links.parse_args()
-
-    assert args.download is False
-    assert args.direct is False
 
 
 def test_download_links_defaults_to_auto(monkeypatch):
@@ -161,12 +162,67 @@ def test_nested_direct_download_dispatches_to_existing_entrypoint(monkeypatch):
     assert called == [["https://example.com/file.zip"]]
 
 
+def test_download_without_db_is_direct(monkeypatch):
+    called = []
+    monkeypatch.setattr(
+        "library.text.extract_links._download_paths",
+        lambda _args, _cache: called.append(sys.argv[1:]),
+    )
+
+    lb(["download", "https://example.com/file.zip"])
+
+    assert called == [["https://example.com/file.zip"]]
+
+
+def test_download_with_db_delegates_to_database_download(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.mediadb.download.download", lambda: called.append(sys.argv[1:]))
+
+    lb(["download", "--db", "dl.db", "--prefix", "/tmp/out"])
+
+    # the db override is injected as the database positional, everything else is preserved
+    assert called == [["dl.db", "--prefix", "/tmp/out"]]
+
+
 def test_nested_group_help(capsys):
     with pytest.raises(SystemExit) as exc_info:
         lb(["database", "-h"])
 
     assert exc_info.value.code == 0
     assert "usage: library database <command>" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("path", "usage_prefix"),
+    [
+        (["database", "add", "-h"], "usage: library database add <command>"),
+        (["database", "filesystem", "-h"], "usage: library database filesystem <command>"),
+        (["folder", "merge", "-h"], "usage: library folder merge <command>"),
+        (["text", "sort", "-h"], "usage: library text sort <command>"),
+    ],
+)
+def test_nested_intermediate_group_help(path, usage_prefix, capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(path)
+
+    assert exc_info.value.code == 0
+    assert capsys.readouterr().out.startswith(usage_prefix)
+
+
+def test_nested_playback_parsers_register_route_specific_arguments(monkeypatch):
+    monkeypatch.setattr(
+        playback_control.mpv_utils,
+        "connect_default_mpv",
+        lambda socket: (socket or "/tmp/test-mpv.sock", object()),
+    )
+
+    monkeypatch.setattr("sys.argv", ["library playback seek", "10"])
+    seek_args = playback_control.parse_args(usage.seek, command="seek")
+    assert seek_args.time == "10"
+
+    monkeypatch.setattr("sys.argv", ["library playback next", "--delete"])
+    next_args = playback_control.parse_args(usage.next, command="next")
+    assert next_args.delete_files is True
 
 
 def test_help_without_query_prints_top_level_help(capsys):
@@ -186,6 +242,12 @@ def test_help_without_query_prints_top_level_help(capsys):
         (["database", "filesystem", "list", "-h"], "usage: library database filesystem list"),
         (["file", "hash", "-h"], "usage: library file hash"),
         (["text", "sort", "regex", "-h"], "usage: library text sort regex"),
+        (["playback", "next", "-h"], "usage: library playback next"),
+        (["folder", "merge", "copy", "-h"], "usage: library folder merge copy"),
+        (["folder", "move", "list", "-h"], "usage: library folder move list"),
+        (["folder", "merge", "relative-move", "-h"], "usage: library folder merge relative-move"),
+        (["shrink", "audio", "-h"], "usage: library shrink audio"),
+        (["help", "search", "-h"], "usage: library help search"),
     ],
 )
 def test_nested_leaf_help_uses_canonical_usage(nested, usage_prefix, capsys):
@@ -193,7 +255,9 @@ def test_nested_leaf_help_uses_canonical_usage(nested, usage_prefix, capsys):
         lb(nested)
 
     assert exc_info.value.code == 0
-    assert capsys.readouterr().out.startswith(usage_prefix)
+    first_line = capsys.readouterr().out.splitlines()[0]
+    assert first_line.startswith(usage_prefix)
+    assert first_line.count(" ".join(nested[:-1])) == 1
 
 
 def test_help_search_accepts_ordinary_searches(capsys):
@@ -205,6 +269,13 @@ def test_help_search_accepts_ordinary_searches(capsys):
     assert "Bug found" not in output
 
 
+def test_help_query_without_search_keyword_searches(capsys):
+    # `help <query>` is the v3 spelling for `help search <query>`
+    lb(["help", "audio"])
+
+    assert "Listen to audio with lb play audio" in capsys.readouterr().out
+
+
 def test_help_search_selects_canonical_nested_paths(capsys):
     lb(["help", "search", "database", "add", "video"])
 
@@ -212,11 +283,22 @@ def test_help_search_selects_canonical_nested_paths(capsys):
     assert output.startswith("usage: library database add video")
 
 
+def test_help_search_indexes_nested_only_commands(capsys):
+    lb(["help", "search", "audio"])
+
+    output = capsys.readouterr().out
+    assert "Play media of any supported type with lb play media" in output
+    assert "Listen to audio with lb play audio" in output
+    assert "Read text with lb play text" in output
+
+
 def test_usage_catalog_lists_executable_help_path_only():
     output = __main__.usage()
 
     assert re.search(r"│ help search\s+│", output)
     assert not re.search(r"│ help\s+│", output)
+    assert "play audio" in output
+    assert "Show disk usage grouped by file extension" in output
 
 
 def test_nested_help_examples_use_canonical_commands(capsys):
@@ -241,6 +323,15 @@ def test_generated_readme_matches_committed_documentation():
     assert generated == Path(".github/README.md").read_text()
 
 
+def test_generated_readme_documents_every_nested_command():
+    readme = Path(".github/README.md").read_text()
+
+    for path in __main__._canonical_nested_paths_for_all_groups():
+        assert f"###### {path}\n" in readme
+        # the per-command example and its usage header must use the canonical path, too
+        assert f"    $ library {path} -h\n    usage: library {path}" in readme
+
+
 def test_nested_unknown_command_suggests_group_usage(capsys):
     with pytest.raises(SystemExit) as exc_info:
         lb(["database", "unknown"])
@@ -249,6 +340,31 @@ def test_nested_unknown_command_suggests_group_usage(capsys):
     output = capsys.readouterr().out
     assert "Unknown command: database unknown" in output
     assert "usage: library database <command>" in output
+
+
+def test_group_aliases_report_unknown_subcommands(capsys):
+    for group in (["db", "bogus"], ["fs", "bogus"], ["docs", "bogus"]):
+        with pytest.raises(SystemExit) as exc_info:
+            lb(group)
+
+        assert exc_info.value.code == 1
+        assert "Unknown command: " in capsys.readouterr().out
+
+
+def test_compact_operation_first_spelling_is_group_agnostic():
+    # `db fs update` and `database fs update` should both mean `database update filesystem`
+    assert _nested_target(["db", "fs", "update"]) == ("fs-update", 3)
+    assert _nested_target(["database", "fs", "update"]) == ("fs-update", 3)
+    assert _nested_target(["databases", "fs", "update"]) == ("fs-update", 3)
+
+
+def test_registering_parsers_does_not_mutate_module_aliases():
+    from library.__main__ import create_subcommands_parser, modules
+
+    before = {name: list(aliases) for name, aliases in modules.items()}
+    create_subcommands_parser()
+
+    assert modules == before
 
 
 def test_db_and_fs_are_resource_group_aliases():
