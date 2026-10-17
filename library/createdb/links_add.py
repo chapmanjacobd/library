@@ -36,10 +36,10 @@ Overrides --max-pages and --stop-known but you can still stop early via --stop-l
 
 If `--fixed-pages` is 1 and --start-page is not set then the URL will not be modified.
 
-library links-add --fixed-pages=1
+library database add links --fixed-pages=1
 Loading page https://site/path
 
-library links-add --fixed-pages=1 --page-start 99
+library database add links --fixed-pages=1 --page-start 99
 Loading page https://site/path?page=99""",
     )
     paging_parser.add_argument(
@@ -67,7 +67,7 @@ sqlite your.db "UPDATE playlists SET extractor_config = json_replace(extractor_c
 
 Some pages don't count page numbers but instead count items like messages or forum posts. You can iterate through like this:
 
-library links-add --page-key start --page-start 0 --page-step 50
+library database add links --page-key start --page-start 0 --page-step 50
 
 which translates to
 &start=0    first page
@@ -81,19 +81,19 @@ which translates to
         default="page",
         help="""By default the script will attempt to modify each given URL with a specific query parameter, "&page=1".
 Override like so:
-library links-add --page-key p  # "&p=1"
+library database add links --page-key p  # "&p=1"
 
 Some websites use paths instead of query parameters. In this case the URL provided must include the matching page folder:
-library links-add --page-key page https://website/page/1/
-library links-add --page-key article https://website/article/1/
+library database add links --page-key page https://website/page/1/
+library database add links --page-key article https://website/article/1/
 """,
     )
     paging_parser.add_argument(
         "--page-replace",
         help="""If you have more complicated needs you can replace the page number with a named variable:
-library links-add --page-replace NUMBER https://site/with/complex-NUMBER
-library links-add --page-replace NUMBER https://website/page/2?page=NUMBER
-library links-add --page-replace NUMBER https://website/page/NUMBER?page=2
+library database add links --page-replace NUMBER https://site/with/complex-NUMBER
+library database add links --page-replace NUMBER https://website/page/2?page=NUMBER
+library database add links --page-replace NUMBER https://website/page/NUMBER?page=2
 """,
     )
 

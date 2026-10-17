@@ -1,6 +1,8 @@
 import tempfile
 from types import SimpleNamespace
 
+import pytest
+
 from library.__main__ import library as lb
 from library.text import extract_links
 from library.utils import web
@@ -364,3 +366,13 @@ def test_links_download_safe_skips_unsafe_links(monkeypatch):
 
     assert routed["tube"] == ["https://x/clip"]
     assert routed["builtin"] == []
+
+
+def test_builtin_download_propagates_failures(monkeypatch):
+    def fail(_args, _url):
+        raise OSError("destination is not writable")
+
+    monkeypatch.setattr(extract_links.web, "download_link", fail)
+
+    with pytest.raises(OSError, match="destination is not writable"):
+        extract_links._builtin_download(SimpleNamespace(), "https://example.com/file")

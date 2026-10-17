@@ -8,6 +8,15 @@ from library.utils.strings import format_two_columns, load_string
 STDIN_DASH = ["-"]
 
 
+def read_stdin(prog=None):
+    prog = prog or sys.argv[0]
+    print(f"{prog}: Reading from stdin...", file=sys.stderr)
+    lines = sys.stdin.readlines()
+    if not lines or (len(lines) == 1 and lines[0].strip() == ""):
+        return None
+    return [s.strip() for s in lines]
+
+
 class ArgparseList(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None) or []
@@ -73,12 +82,7 @@ class ArgparseDict(argparse.Action):
 class ArgparseArgsOrStdin(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if values == STDIN_DASH:
-            print(f"{parser.prog}: Reading from stdin...", file=sys.stderr)
-            lines = sys.stdin.readlines()
-            if not lines or (len(lines) == 1 and lines[0].strip() == ""):
-                lines = None
-            else:
-                lines = [s.strip() for s in lines]
+            lines = read_stdin(parser.prog)
         else:
             lines = values
         setattr(namespace, self.dest, lines)
@@ -95,6 +99,8 @@ class ArgparseArgsOrStdinGen(argparse.Action):
 
 
 def is_sqlite(path):
+    if path == ":memory:":
+        return True
     if not path.lower().endswith(SQLITE_EXTENSIONS):
         return False
 

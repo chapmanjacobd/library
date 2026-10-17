@@ -149,8 +149,8 @@ will get the 500 largest and then sort by regex_sort, time_modified, and the ori
 --interdimensional-cable 40
 -4dtv 40
 You can open two terminals to replicate AMV Hell somewhat
-library watch --volume 0 -4dtv 30
-library listen -4dtv 30
+library play video --volume 0 -4dtv 30
+library play audio -4dtv 30
 """,
     )
 

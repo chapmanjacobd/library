@@ -250,6 +250,7 @@ def database_optional(parent_parser, *, soft_delete=True):
 
 def paths_or_stdin(parent_parser, required=True, destination=False):
     parser = parent_parser.add_argument_group("Paths")
+    parent_parser.set_defaults(prog=parent_parser.prog)
     parser.add_argument("--from-json", "--json", action="store_true", help="Read JSON or JSONL from stdin")
 
     if destination:
@@ -266,22 +267,15 @@ def paths_or_stdin(parent_parser, required=True, destination=False):
 def database_paths_post(args, *, legacy_database=False):
     if legacy_database and not args.database and args.paths:
         candidate = args.paths[0]
-        if (
-            candidate == ":memory:"
-            or argparse_utils.is_sqlite(candidate)
-            or (
-                not candidate.startswith(("http://", "https://"))
-                and Path(candidate).suffix.lower() in consts.SQLITE_EXTENSIONS
-            )
-        ):
+        if argparse_utils.is_sqlite(candidate):
             args.database = candidate
             args.paths = args.paths[1:]
 
     if args.database:
         args.include.extend(args.paths or [])
         args.paths = []
-    elif args.paths is None:
-        args.paths = argparse_utils.STDIN_DASH
+    elif not args.paths:
+        args.paths = argparse_utils.read_stdin(getattr(args, "prog", None))
 
 
 def sql_fs(parent_parser):
@@ -899,7 +893,7 @@ def mmv_folders(parent_parser):
         "--relative-to",
         "--relative-from",
         help="""Preserve directory hierarchy
-library relmv /src/d1/ /mnt/d1/ /mnt/dest/
+library folder merge relative-move /src/d1/ /mnt/d1/ /mnt/dest/
 /src/d1/          /mnt/d1/           /mnt/dest
 /mnt/dest/        /mnt/dest/         (without --relative or --relative-to)
 /mnt/dest/src/d1/ /mnt/dest/mnt/d1/  --relative-to=/ (all directory hierarchy)
@@ -1105,7 +1099,7 @@ When using `--multiple-playback` it may be helpful to set simple window focus ru
 You can set and restore your previous mouse focus setting by wrapping the command like this:
 
     focus-under-mouse
-    library watch ... --multiple-playback 4
+    library play video ... --multiple-playback 4
     focus-follows-mouse
 
 For example in KDE:
@@ -1533,7 +1527,7 @@ Choose ZERO OR MORE of the following options:
   delete-src-size      will delete the incoming file if the file size matches
   delete-src-larger    will delete the incoming file if it is larger
   delete-src-smaller   will delete the incoming file if it is smaller
-  Useful for `lb cp`:
+  Useful for `library folder merge copy`:
   skip-hash            will skip the incoming file if the SHA-256 hash matches
   skip-size            will skip the incoming file if the size matches
   skip-larger          will skip the incoming file if it is larger
@@ -1841,7 +1835,7 @@ def _add_media_type_argument(container, db_type, *, dest, action, help_text):
     container.add_argument(*_MEDIA_TYPE_FLAGS[db_type], action=action, dest=dest, const=db_type, help=help_text)
 
 
-def download(parent_parser, *, default=None, profile=True, direct=False, safe=True):
+def download(parent_parser, *, default=None, profile=True, direct=False, safe=True, profiles=None):
     parser = parent_parser.add_argument_group("Download")
     parser.add_argument(
         "--extractor-config",
@@ -1908,32 +1902,34 @@ def download(parent_parser, *, default=None, profile=True, direct=False, safe=Tr
         download_profile(
             parser,
             default=default if default is not None else default_profile(SC.download),
+            profiles=profiles,
         )
 
 
-def download_profile(parent_parser, *, default):
+def download_profile(parent_parser, *, default, profiles=None):
     """Add the single mutually-exclusive `profile` selection.
 
     Kept separate from `download()` so the `profile=False` callers (eg. process-text,
     images-to-pdf) can reuse only the downloader options without a media type.
     """
+    profiles = tuple(profiles or PROFILE_CHOICES)
+    help_text = {
+        DBType.auto: "Automatically choose a downloader per URL",
+        DBType.audio: "Use audio downloader",
+        DBType.video: "Use video downloader",
+        DBType.image: "Use image downloader",
+        DBType.filesystem: "Use filesystem downloader",
+        DBType.text: "Use text downloader",
+    }
     profile = parent_parser.add_mutually_exclusive_group()
-    _add_media_type_argument(
-        profile, DBType.auto, dest="profile", action="store_const", help_text="Automatically choose a downloader per URL"
-    )
-    _add_media_type_argument(profile, DBType.audio, dest="profile", action="store_const", help_text="Use audio downloader")
-    _add_media_type_argument(profile, DBType.video, dest="profile", action="store_const", help_text="Use video downloader")
-    _add_media_type_argument(profile, DBType.image, dest="profile", action="store_const", help_text="Use image downloader")
-    _add_media_type_argument(
-        profile, DBType.filesystem, dest="profile", action="store_const", help_text="Use filesystem downloader"
-    )
-    _add_media_type_argument(profile, DBType.text, dest="profile", action="store_const", help_text="Use text downloader")
+    for db_type in profiles:
+        _add_media_type_argument(profile, db_type, dest="profile", action="store_const", help_text=help_text[db_type])
     profile.add_argument(
         "--media-type",
-        choices=PROFILE_CHOICES,
+        choices=profiles,
         dest="profile",
         metavar="TYPE",
-        help="Select the download media type (auto dispatches each URL by is_supported)",
+        help="Select the download media type",
     )
     profile.set_defaults(profile=default)
 
@@ -2907,7 +2903,7 @@ def auto_plot_missing(figures, df):
 
 
 def auto_plot(df, scale=None):
-    """Analyze a dataframe like `library eda` and return a list of useful figures."""
+    """Analyze a dataframe like `library table analyze` and return a list of useful figures."""
     import pandas as pd
 
     figures = []

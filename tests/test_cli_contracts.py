@@ -1,4 +1,5 @@
 import argparse
+import io
 import re
 import subprocess
 import sys
@@ -10,14 +11,38 @@ from library import __main__
 from library.__main__ import library as lb
 from library.__main__ import _nested_group, _nested_target
 from library import usage
+from library.createdb import gallery_add, tube_add
 from library.editdb import dedupe_media
 from library.mediadb import download
 from library.mediafiles import process_image
 from library.playback import playback_control
 from library.text import cluster_sort, extract_links
-from library.utils import arggroups, consts, objects
+from library.utils import arggroups, argparse_utils, consts, objects
 from library.utils.consts import DBType, SC
 from tests.utils import v_db
+
+
+def test_direct_download_rejects_unknown_options(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["download", "--direct", "--unknown-option", "https://example.com/file"])
+
+    with pytest.raises(SystemExit):
+        download.parse_args()
+
+
+@pytest.mark.parametrize(
+    ("parse_args", "action", "usage_text", "argv"),
+    [
+        (tube_add.parse_args, SC.tube_add, usage.tube_add, [v_db, "--image", "https://example.com"]),
+        (tube_add.parse_args, SC.tube_update, usage.tube_update, [v_db, "--filesystem"]),
+        (gallery_add.parse_args, SC.gallery_add, usage.gallery_add, [v_db, "--video", "https://example.com"]),
+        (gallery_add.parse_args, SC.gallery_update, usage.gallery_update, [v_db, "--text"]),
+    ],
+)
+def test_backend_add_commands_reject_mismatching_profiles(monkeypatch, parse_args, action, usage_text, argv):
+    monkeypatch.setattr("sys.argv", ["command", *argv])
+
+    with pytest.raises(SystemExit):
+        parse_args(action, usage_text)
 
 
 @pytest.mark.parametrize(
@@ -52,6 +77,23 @@ def test_removed_flat_search_is_rejected(capsys):
 
     assert exc_info.value.code == 1
     assert "subcommands" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        ["database", "filesystem", "list"],
+        ["database", "filesystem", "usage"],
+        ["database", "filesystem", "usage", "extensions"],
+        ["database", "filesystem", "usage", "mimetypes"],
+        ["database", "filesystem", "usage", "sizes"],
+    ],
+)
+def test_removed_database_filesystem_routes_are_rejected(command):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(command)
+
+    assert exc_info.value.code == 1
 
 
 def test_delete_original_is_independent_of_delete_larger(monkeypatch):
@@ -122,6 +164,43 @@ def test_database_download_positional_is_the_database(monkeypatch):
     args = download.parse_args(usage.download_database, database_positional=True)
 
     assert args.database == v_db
+
+
+def test_database_download_requires_positional_database(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["database-download", "--print"])
+
+    with pytest.raises(SystemExit):
+        download.parse_args(usage.download_database, database_positional=True)
+
+
+def test_links_download_accepts_extractor_options(monkeypatch):
+    monkeypatch.setattr(
+        "sys.argv",
+        ["links-download", "--url-encode", "--no-sanitize", "--extra", "https://example.com/"],
+    )
+
+    args = download.parse_args(usage.links_download, links=True)
+
+    assert args.url_encode is True
+    assert args.no_sanitize is True
+    assert args.extra is True
+    assert args.unk == []
+
+
+@pytest.mark.parametrize(
+    ("command", "links", "expected_path"),
+    [
+        (["download"], False, "https://old.reddit.com/r/python/top/?sort=top&t=month"),
+        (["links-download"], True, "https://old.reddit.com/r/python/top/?sort=top&t=month"),
+        (["download", "--no-sanitize"], False, "https://www.reddit.com/r/python/new/"),
+    ],
+)
+def test_download_commands_apply_extractor_path_sanitization(monkeypatch, command, links, expected_path):
+    monkeypatch.setattr("sys.argv", [*command, "https://www.reddit.com/r/python/new/"])
+
+    args = download.parse_args(usage.download_links if links else None, links=links)
+
+    assert args.paths == [expected_path]
 
 
 def test_download_requires_db_flag_for_databases(monkeypatch):
@@ -223,6 +302,44 @@ def test_nested_direct_download_dispatches_to_existing_entrypoint(monkeypatch):
     assert called == [["https://example.com/file.zip"]]
 
 
+def test_nested_alias_dispatches_with_canonical_program(monkeypatch):
+    called = []
+
+    def record_call():
+        called.append((sys.argv[0], sys.argv[1:]))
+
+    monkeypatch.setattr("library.fsdb.filesystem.filesystem", record_call)
+
+    lb(["fs", "list", "--db", "files.db"])
+
+    assert called == [("library filesystem list", ["--db", "files.db"])]
+
+
+def test_canonicalize_usage_rewrites_legacy_flat_commands_only():
+    text = "library fs-add ROOT\nlibrary database add filesystem ROOT\n"
+
+    assert __main__.canonicalize_usage(text) == (
+        "library database add filesystem ROOT\n"
+        "library database add filesystem ROOT\n"
+    )
+
+
+def test_nested_unknown_leaf_suggests_closest_command(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        lb(["database", "add", "filesytem"])
+
+    assert exc_info.value.code == 1
+    output = capsys.readouterr().out
+    assert "Unknown command: database add filesytem" in output
+    assert "Did you mean: database add filesystem?" in output
+
+
+def test_version_flag_prints_version(capsys):
+    lb(["--version"])
+
+    assert capsys.readouterr().out.strip() == __main__.__version__
+
+
 def test_download_without_db_is_direct(monkeypatch):
     called = []
     monkeypatch.setattr(
@@ -265,7 +382,7 @@ def test_nested_group_help(capsys):
     ("path", "usage_prefix"),
     [
         (["database", "add", "-h"], "usage: library database add <command>"),
-        (["database", "filesystem", "-h"], "usage: library database filesystem <command>"),
+        (["filesystem", "-h"], "usage: library filesystem <command>"),
         (["folder", "merge", "-h"], "usage: library folder merge <command>"),
         (["text", "sort", "-h"], "usage: library text sort <command>"),
     ],
@@ -309,7 +426,7 @@ def test_help_without_query_prints_top_level_help(capsys):
         (["play", "video", "-h"], "usage: library play video"),
         (["links", "download", "-h"], "usage: library links download"),
         (["database", "search", "-h"], "usage: library database search"),
-        (["database", "filesystem", "list", "-h"], "usage: library filesystem list"),
+        (["filesystem", "list", "-h"], "usage: library filesystem list"),
         (["file", "hash", "-h"], "usage: library file hash"),
         (["text", "sort", "regex", "-h"], "usage: library text sort regex"),
         (["playback", "next", "-h"], "usage: library playback next"),
@@ -442,10 +559,43 @@ def test_db_and_fs_are_resource_group_aliases():
     assert _nested_group(["db"]) == "database"
     assert _nested_group(["fs"]) == "filesystem"
     assert _nested_target(["db", "add", "filesystem"]) == ("fs-add", 3)
+    assert _nested_target(["fs", "mounts", "stats"]) == ("mount-stats", 3)
+    assert _nested_target(["fs", "mounts", "free"]) == ("disk-free", 3)
+    # The former operation-first spellings remain accepted as compatibility routes.
     assert _nested_target(["fs", "stats", "mounts"]) == ("mount-stats", 3)
-    assert _nested_target(["database", "fs", "list"]) == ("filesystem", 3)
+    assert _nested_target(["fs", "free", "mounts"]) == ("disk-free", 3)
     assert _nested_target(["filesystem", "list"]) == ("filesystem", 2)
     assert _nested_target(["fs", "usage"]) == ("disk-usage", 2)
+
+
+def test_download_block_is_nested_under_download():
+    assert _nested_target(["database", "download", "block"]) == ("block", 3)
+    assert _nested_target(["database", "block"]) is None
+
+
+def test_database_export_html_is_nested_under_database():
+    assert _nested_target(["database", "export", "html"]) == ("export-text", 3)
+    assert _nested_target(["document", "export", "text"]) is None
+
+
+def test_pdf_adjustment_is_nested_under_document():
+    assert _nested_target(["document", "adjust", "pdf"]) == ("pdf-edit", 3)
+    assert _nested_target(["document", "edit", "pdf"]) is None
+
+
+def test_torrent_allocation_is_nested_under_torrent():
+    assert _nested_target(["torrent", "allocate"]) == ("allocate-torrents", 2)
+    assert _nested_target(["database", "allocate", "torrents"]) is None
+
+
+def test_json_key_renaming_is_nested_under_json():
+    assert _nested_target(["json", "rename-keys"]) == ("json-keys-rename", 2)
+    assert _nested_target(["text", "rename-keys", "json"]) is None
+
+
+def test_image_pdf_conversion_has_explicit_output_format():
+    assert _nested_target(["document", "convert", "images", "pdf"]) == ("images-to-pdf", 4)
+    assert _nested_target(["document", "to-pdf", "images"]) is None
 
 
 def test_top_level_filesystem_routes_dispatch_to_migrated_commands(monkeypatch):
@@ -468,6 +618,46 @@ def test_migrated_path_parsers_promote_legacy_database_position():
     arggroups.database_paths_post(args, legacy_database=True)
 
     assert args.database == "tests/data/video.db"
+    assert args.include == ["path-filter"]
+    assert args.paths == []
+
+
+def test_migrated_path_parsers_promote_memory_database():
+    args = argparse.Namespace(database=None, paths=[":memory:", "path-filter"], include=[])
+
+    arggroups.database_paths_post(args, legacy_database=True)
+
+    assert argparse_utils.is_sqlite(":memory:")
+    assert args.database == ":memory:"
+    assert args.include == ["path-filter"]
+    assert args.paths == []
+
+
+def test_migrated_path_parsers_keep_non_sqlite_db_path(tmp_path):
+    path = tmp_path / "archive.db"
+    path.write_text("not a database")
+    args = argparse.Namespace(database=None, paths=[str(path)], include=[])
+
+    arggroups.database_paths_post(args, legacy_database=True)
+
+    assert args.database is None
+    assert args.paths == [str(path)]
+
+
+def test_database_paths_post_reads_implicit_stdin(monkeypatch):
+    monkeypatch.setattr(sys, "stdin", io.StringIO("first\nsecond\n"))
+    args = argparse.Namespace(database=None, paths=[], include=[])
+
+    arggroups.database_paths_post(args)
+
+    assert args.paths == ["first", "second"]
+
+
+def test_database_paths_post_moves_explicit_paths_to_filters():
+    args = argparse.Namespace(database="tests/data/video.db", paths=["path-filter"], include=[])
+
+    arggroups.database_paths_post(args)
+
     assert args.include == ["path-filter"]
     assert args.paths == []
 

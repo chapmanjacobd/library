@@ -133,7 +133,7 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
     return errors
 
 
-def download(args, m):
+def download(args, m) -> bool:
     gallery_dl = load_module_level_gallery_dl(args)
 
     extensions = []
@@ -156,7 +156,7 @@ def download(args, m):
     except gallery_dl.exception.NoExtractorError:
         log.info("NoExtractorError %s", webpath)  # RecoverableError
         db_media.download_add(args, webpath, m, error="NoExtractorError")
-        return
+        return False
 
     job_status = job.run()
     errors = parse_gdl_job_status(job_status, webpath, ignore_errors=args.ignore_errors)
@@ -175,6 +175,7 @@ def download(args, m):
         error=strings.combine(errors),
         mark_deleted="HTTPNotFound" in errors,
     )
+    return not errors or errors == ["HTTPNotFound"]
 
 
 def url_job_class(gallery_dl):

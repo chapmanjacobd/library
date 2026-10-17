@@ -31,6 +31,7 @@ def parse_args(usage=None, *, links: bool = False, database_positional: bool = F
     parser = argparse_utils.ArgumentParser(usage=usage or usage_mod.download)
     arggroups.sql_fs(parser)
 
+    arggroups.extractor(parser, no_extract=False)
     arggroups.download(parser, direct=True)
     arggroups.download_subtitle(parser)
     arggroups.requests(parser)
@@ -53,7 +54,7 @@ def parse_args(usage=None, *, links: bool = False, database_positional: bool = F
 
     arggroups.database_optional(parser)
     if database_positional:
-        parser.add_argument("database_path", nargs="?", metavar="DATABASE", help="SQLite database to query")
+        parser.add_argument("database_path", metavar="DATABASE", help="SQLite database to query")
     arggroups.paths_or_stdin(parser, required=False)
 
     parser.set_defaults(fts=False, download=True)
@@ -71,7 +72,7 @@ def parse_args(usage=None, *, links: bool = False, database_positional: bool = F
 
     args.extract_links = links or getattr(args, "recursive", False) or getattr(args, "webcache", False)
 
-    if unk and not args.profile in (DBType.video, DBType.audio, DBType.auto):
+    if unk and (args.direct or args.profile not in (DBType.video, DBType.audio, DBType.auto)):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
 
     validate_safe(args, parser, extracts_links=args.extract_links)
@@ -79,6 +80,7 @@ def parse_args(usage=None, *, links: bool = False, database_positional: bool = F
     arggroups.args_post(args, parser, create_db=args.database and args.database.endswith(consts.SQLITE_EXTENSIONS))
     args.unk = unk
 
+    arggroups.extractor_post(args)
     arggroups.sql_fs_post(args)
     arggroups.filter_links_post(args)
     web.requests_session(args)  # prepare requests session
@@ -141,18 +143,20 @@ def route_links(args, m, original_path, link_paths, backend_args_cache, builtin_
     """Download `link_paths`, choosing a backend per link (see `resolve_download_profile`).
 
     `--direct` or a filesystem/text profile hands the whole batch to the built-in
-    downloader so `_download_builtin` can decide whether the seed page row is removable.
-    Under `auto` the built-in links are likewise collected and handed over as one batch,
-    because dispatching them one at a time would let `_download_builtin` delete the seed
-    page row (and record failures) as soon as any single link succeeded; yt-dlp/gallery-dl
-    links are dispatched one at a time. `builtin_fn` is called with
+    downloader. Under `auto` the built-in links are likewise collected and handed over as
+    one batch, while yt-dlp/gallery-dl links are dispatched one at a time. The source page
+    row is finalized only after every routed download has completed without a recoverable
+    error. `builtin_fn` is called with
     `builtin_fn(args, m, original_path, link_paths)`.
     """
     if getattr(args, "direct", False) or args.profile in (DBType.filesystem, DBType.text):
-        builtin_fn(args, m, original_path, link_paths)
+        succeeded = builtin_fn(args, m, original_path, link_paths) is not False
+        if succeeded:
+            _finalize_source(args, original_path)
         return
 
     builtin_paths = []
+    succeeded = True
     for link_path in link_paths:
         if safe_links and not safe_supported(args, link_path):
             log.info("Skipping unsupported URL (safe_mode) %s", link_path)
@@ -169,14 +173,23 @@ def route_links(args, m, original_path, link_paths, backend_args_cache, builtin_
                 backend_args = backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
 
         if profile in (DBType.audio, DBType.video):
-            tube_backend.download(backend_args, m | {"path": link_path})
+            succeeded = tube_backend.download(backend_args, m | {"path": link_path}) is not False and succeeded
         elif profile == DBType.image:
-            gallery_backend.download(backend_args, m | {"path": link_path})
+            succeeded = gallery_backend.download(backend_args, m | {"path": link_path}) is not False and succeeded
         else:  # filesystem, or an unexpected resolved profile
             builtin_paths.append(link_path)
 
     if builtin_paths:
-        builtin_fn(args, m, original_path, builtin_paths)
+        succeeded = builtin_fn(args, m, original_path, builtin_paths) is not False and succeeded
+    if succeeded:
+        _finalize_source(args, original_path)
+
+
+def _finalize_source(args, original_path) -> None:
+    if getattr(args, "simulate", False) or getattr(args, "db", None) is None:
+        return
+    with args.db.conn:
+        args.db.conn.execute("DELETE FROM media WHERE path = ?", [original_path])
 
 
 def safe_supported(args, path) -> bool:
@@ -240,10 +253,10 @@ def _download(usage, *, links: bool = False, database_positional: bool = False) 
 
     if args.print:
         media_printer.media_printer(args, media)
-        return
+        return None
     if args.simulate:
         print("Would download:", *(m["path"] for m in media), sep="\n")
-        return
+        return None
 
     get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
     backend_args_cache = {}
@@ -341,10 +354,10 @@ def _download(usage, *, links: bool = False, database_positional: bool = False) 
             raise
 
 
-def _download_builtin(args, m, original_path, dl_paths) -> None:
+def _download_builtin(args, m, original_path, dl_paths) -> bool:
     """Download each path with the built-in downloader, recording results against original_path."""
     any_error = False
-    for i, dl_path in enumerate(dl_paths):
+    for dl_path in dl_paths:
         error = None
         try:
             local_path = web.download_link(args, dl_path)
@@ -368,7 +381,7 @@ def _download_builtin(args, m, original_path, dl_paths) -> None:
         if error is not None and "HTTPNotFound" not in error:
             any_error = True
 
-        for output_index, local_path in enumerate(local_paths):
+        for local_path in local_paths:
             db_media.download_add(
                 args,
                 webpath=original_path,
@@ -376,9 +389,6 @@ def _download_builtin(args, m, original_path, dl_paths) -> None:
                 local_path=local_path,
                 error=error,
                 mark_deleted=is_not_found,
-                delete_webpath_entry=(
-                    not any_error
-                    if i == len(dl_paths) - 1 and output_index == len(local_paths) - 1
-                    else False
-                ),  # only check after last downloaded output was saved
+                delete_webpath_entry=False,
             )
+    return not any_error

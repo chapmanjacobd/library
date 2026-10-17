@@ -5,14 +5,18 @@ from library import usage
 from library.createdb import tube_backend
 from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, db_utils, shell_utils
-from library.utils.consts import SC
+from library.utils.consts import DBType, SC
 from library.utils.log_utils import log
 
 
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
     arggroups.extractor(parser)
-    arggroups.download(parser, default=arggroups.default_profile(action))
+    arggroups.download(
+        parser,
+        default=arggroups.default_profile(action),
+        profiles=(DBType.audio, DBType.video),
+    )
     arggroups.download_subtitle(parser)
     parser.set_defaults(download_archive=str(Path("~/.local/share/yt_archive.txt").expanduser().resolve()))
 

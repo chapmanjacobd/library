@@ -73,6 +73,78 @@ def test_resolve_download_profile_auto_without_gallery_dl(monkeypatch):
     assert download_mod.resolve_download_profile(None, "https://x/image") == DBType.filesystem
 
 
+def test_route_links_direct_batches_builtin_paths(monkeypatch):
+    routed = []
+    args = SimpleNamespace(direct=True, profile=DBType.auto)
+
+    monkeypatch.setattr(
+        download_mod.tube_backend,
+        "download",
+        lambda *_args: pytest.fail("direct downloads must not use yt-dlp"),
+    )
+    monkeypatch.setattr(
+        download_mod.gallery_backend,
+        "download",
+        lambda *_args: pytest.fail("direct downloads must not use gallery-dl"),
+    )
+
+    download_mod.route_links(
+        args,
+        {"path": "https://example.com/page"},
+        "https://example.com/page",
+        ["https://example.com/a", "https://example.com/b"],
+        {},
+        lambda _args, _media, original, paths: routed.append((original, paths)),
+    )
+
+    assert routed == [
+        ("https://example.com/page", ["https://example.com/a", "https://example.com/b"]),
+    ]
+
+
+@pytest.mark.parametrize(("backend_result", "finalized"), [(True, True), (False, False)])
+def test_route_links_finalizes_source_only_after_backend_success(monkeypatch, backend_result, finalized):
+    finalized_paths = []
+    args = SimpleNamespace(direct=False, profile=DBType.video)
+    monkeypatch.setattr(download_mod.tube_backend, "download", lambda *_args: backend_result)
+    monkeypatch.setattr(download_mod, "_finalize_source", lambda _args, path: finalized_paths.append(path))
+
+    download_mod.route_links(
+        args,
+        {"path": "https://example.com/page"},
+        "https://example.com/page",
+        ["https://example.com/video"],
+        {},
+        lambda *_args: pytest.fail("video downloads must not use the built-in downloader"),
+    )
+
+    assert finalized_paths == (["https://example.com/page"] if finalized else [])
+
+
+def test_route_links_finalizes_source_when_safe_filters_every_link(monkeypatch):
+    finalized_paths = []
+    args = SimpleNamespace(direct=False, profile=DBType.video)
+    monkeypatch.setattr(download_mod, "safe_supported", lambda *_args: False)
+    monkeypatch.setattr(
+        download_mod.tube_backend,
+        "download",
+        lambda *_args: pytest.fail("filtered links must not reach the backend"),
+    )
+    monkeypatch.setattr(download_mod, "_finalize_source", lambda _args, path: finalized_paths.append(path))
+
+    download_mod.route_links(
+        args,
+        {"path": "https://example.com/page"},
+        "https://example.com/page",
+        ["https://example.com/unsupported"],
+        {},
+        lambda *_args: pytest.fail("filtered links must not reach the built-in downloader"),
+        safe_links=True,
+    )
+
+    assert finalized_paths == ["https://example.com/page"]
+
+
 def test_download_auto_dispatches_resolved_links(temp_db, monkeypatch):
     """Regression: default `download` is auto and must dispatch each extracted link to the
     matching backend. Routing used to crash because arg_utils.args_override() takes a dict,

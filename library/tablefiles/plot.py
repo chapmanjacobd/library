@@ -76,7 +76,7 @@ Forcing a value applies that scale to all histograms; `off` draws plain linear h
     arggroups.paths_or_stdin(parser)
 
     # Everything after `--` is treated as a matplotlib command instead of a file path.
-    # e.g. lb plot data.csv -- scatter x y s=3 alpha=0.5
+    # e.g. library table plot data.csv -- scatter x y s=3 alpha=0.5
     argv = sys.argv[1:]
     plot_args = []
     if "--" in argv:

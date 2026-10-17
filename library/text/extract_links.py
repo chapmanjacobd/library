@@ -389,6 +389,7 @@ def _builtin_download(args, url) -> None:
         web.download_link(args, url)
     except (RuntimeError, requests.RequestException, ValueError, OSError) as excinfo:
         log.error("[%s]: %s", url, excinfo)
+        raise
 
 
 def _download_one(args, url, backend_args_cache) -> None:

@@ -137,7 +137,11 @@ def redownload() -> None:
         mark_media_undownloaded(args, deleted_media)
         non_tube_media = get_non_tube_media(args, paths)
 
-        print("Marked", len(deleted_media) - len(non_tube_media), "records as downloadable. Redownload via lb download")
+        print(
+            "Marked",
+            len(deleted_media) - len(non_tube_media),
+            "records as downloadable. Redownload via library download",
+        )
         if len(non_tube_media) > 0:
             try:
                 import pandas as pd

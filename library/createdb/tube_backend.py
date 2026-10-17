@@ -393,7 +393,7 @@ def log_error(ydl_log, webpath):
     return DLStatus.UNKNOWN_ERROR, ydl_errors_txt
 
 
-def download(args, m) -> None:
+def download(args, m) -> bool:
     yt_dlp = load_module_level_yt_dlp()
 
     ydl_log = {"error": [], "warning": [], "info": []}
@@ -635,10 +635,10 @@ def download(args, m) -> None:
             if vid:  # try archives
                 for prefix in archives:
                     try:
-                        download(args, m | {"path": prefix + vid})
+                        archive_succeeded = download(args, m | {"path": prefix + vid})
                     except VideoArchiveError:
                         continue
-                    else:
+                    if archive_succeeded:
                         download_status = DLStatus.SUCCESS
                         media_check_failed = False
                         break
@@ -669,3 +669,4 @@ def download(args, m) -> None:
         error=None if download_status == DLStatus.SUCCESS else ydl_errors_txt,
         mark_deleted=download_status == DLStatus.UNRECOVERABLE_ERROR,
     )
+    return download_status in (DLStatus.SUCCESS, DLStatus.UNRECOVERABLE_ERROR)

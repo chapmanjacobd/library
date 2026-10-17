@@ -8,15 +8,15 @@ def play(action) -> str:
 
         To stop playback press Ctrl-C in either the terminal or mpv
 
-        Or use `lb next` or `lb stop`
+        Or use `library playback next` or `library playback stop`
 
         Or create global shortcuts in your desktop environment by sending commands to mpv_socket
         echo 'playlist-next force' | socat - {consts.DEFAULT_MPV_LISTEN_SOCKET}  # library play audio default
         echo 'playlist-next force' | socat - {consts.DEFAULT_MPV_WATCH_SOCKET}  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
-        mpv --playlist=(lb wt --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
-        mpv --playlist=<(lb wt --db videos.db --ext mp4 -p f)  # BASH, all videos
+        mpv --playlist=(library play video --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(library play video --db videos.db --ext mp4 -p f)  # BASH, all videos
 
     Print an aggregate report of deleted media
 
@@ -67,16 +67,16 @@ def play(action) -> str:
 
     How I use it
 
-        lb lt --db ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
-        lb wt --db ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+        library play audio --db ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        library play video --db ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
 
         When sorting videos
         focus_under_mouse
-        lb wt --db ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {{}} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        library play video --db ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {{}} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
         focus_follows_mouse
 
         On-the-go mobile smartphone mode (Android)
-        repeat lb wt --db ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+        repeat library play video --db ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
 """
 
 
@@ -197,7 +197,7 @@ download_database = r"""library database download DATABASE [PATH ...] [--prefix 
 
     Print list of queued up downloads
 
-        library database download --print
+        library database download dl.db --print
 
     Print list of saved playlists
 
@@ -234,28 +234,28 @@ download_database = r"""library database download DATABASE [PATH ...] [--prefix 
         library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
 """
 
-block = r"""library database block DATABASE URL ...
+block = r"""library database download block DATABASE URL ...
 
     Blocklist specific URLs (eg. YouTube channels, etc)
 
-        library database block dl.db https://annoyingwebsite/etc/
+        library database download block dl.db https://annoyingwebsite/etc/
 
     Or URL substrings
 
-        library database block dl.db "%fastcompany.com%"
+        library database download block dl.db "%fastcompany.com%"
 
     Block videos from the playlist uploader
 
-        library database block dl.db --match-column playlist_path 'https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm'
+        library database download block dl.db --match-column playlist_path 'https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm'
 
     Or other columns
 
-        library database block dl.db --match-column title "% bitcoin%"
-        library database block dl.db --force --match-column uploader Zeducation
+        library database download block dl.db --match-column title "% bitcoin%"
+        library database download block dl.db --force --match-column uploader Zeducation
 
     Display subdomains (similar to `library database download status`)
 
-        library database block audio.db
+        library database download block audio.db
         subdomain              count    new_links    tried  percent_tried      successful  percent_successful      failed  percent_failed
         -------------------  -------  -----------  -------  ---------------  ------------  --------------------  --------  ----------------
         dts.podtrac.com         5244          602     4642  88.52%                    690  14.86%                    3952  85.14%
@@ -527,8 +527,8 @@ tabs_open = """library tabs open DATABASE
 
         echo 'fish -c "export DISPLAY=:0 && library tabs open /full/path/to/tabs.db"' | at NOW
 
-    Also, if you're just testing things out be aware that `tabs-add` assumes that you visited the
-    website right before adding it; eg. if you use `tabs-add --frequency yearly` today the tab won't
+    Also, if you're just testing things out be aware that `library database add tabs` assumes that you visited the
+    website right before adding it; eg. if you use `library database add tabs --frequency yearly` today the tab won't
     open until one year from now (at most). You can override this default
 
         library database add tabs --allow-immediate ...
@@ -1091,11 +1091,11 @@ merge_mv = """library folder merge move SOURCE ... DEST [--simulate] [--ext EXT]
     or --text to restrict to specific media extensions. --auto selects every media type
     (video, audio, image, and text) but still excludes other filesystem files.
 
-    Move files/folders without losing hierarchy metadata with --relative or relmv
+    Move files/folders without losing hierarchy metadata with --relative or `library folder merge relative-move`
 
         Move smallest files first
 
-        lb fs /src/dir/ -u size -pf | lb mv - /dest/dir/ --relative-to=/src/dir/ --dry-run
+        library filesystem list /src/dir/ -u size -pf | library folder merge move - /dest/dir/ --relative-to=/src/dir/ --dry-run
 
         Move fresh music to your phone every Sunday
 
@@ -1264,7 +1264,7 @@ mpv_watchlater = """library database import mpv-watchlater DATABASE [--watch-lat
     Extract timestamps from MPV to the history table
 """
 
-export_text = """library document export text DATABASE
+export_text = """library database export html DATABASE
 
     Generate HTML files from SQLite databases
 """
@@ -1299,16 +1299,16 @@ plot = """library table plot PATH ... [--table STR] [--end-row INT] -- [PLT.COMM
 
     Examples:
 
-    lb plot data.csv
-    lb plot data.csv -- plot x y
-    lb plot data.csv -- scatter x y s=3 alpha=0.5 label=points
-    lb plot data.csv -- hist x bins=50
-    lb plot audio.db --table media --cols size,duration -- scatter size duration
-    lb plot a.csv b.csv --join-tables -- sort -u time_created desc -- plot index time_created
-    lb plot data.csv --where 'duration > 60'
-    lb plot data.csv --classify 'size > 1GB' --groupby category
-    lb plot data.csv --classify duration --bins 5 --groupby category --agg mean
-    lb plot data.csv --groupby category --agg count --top 10
+    library table plot data.csv
+    library table plot data.csv -- plot x y
+    library table plot data.csv -- scatter x y s=3 alpha=0.5 label=points
+    library table plot data.csv -- hist x bins=50
+    library table plot audio.db --table media --cols size,duration -- scatter size duration
+    library table plot a.csv b.csv --join-tables -- sort -u time_created desc -- plot index time_created
+    library table plot data.csv --where 'duration > 60'
+    library table plot data.csv --classify 'size > 1GB' --groupby category
+    library table plot data.csv --classify duration --bins 5 --groupby category --agg mean
+    library table plot data.csv --groupby category --agg count --top 10
 """
 
 markdown_tables = """library table markdown PATH ... [--table STR] [--end-row INT] [--transpose] [--filetype]
@@ -1319,7 +1319,7 @@ markdown_tables = """library table markdown PATH ... [--table STR] [--end-row IN
 
     Examples:
 
-    lb sdb cities.db places chic | lb table --from-json --transpose
+    library database search cities.db places chic | library table markdown --from-json --transpose
 
     ## stdin:0
 
@@ -1766,19 +1766,19 @@ markdown_links = """library text markdown links URL ... [--cookies COOKIES] [--c
         [Work For Peace](https://www.youtube.com/watch?v=IgZDDW-NXDE)
 """
 
-disk_free = r"""library filesystem free mounts [MOUNTPOINT ...]
+disk_free = r"""library filesystem mounts free [MOUNTPOINT ...]
 
     Print total disk usage and disk free stats
 
-        library filesystem free mounts
+        library filesystem mounts free
 """
 
 
-mount_stats = r"""library filesystem stats mounts MOUNTPOINT ...
+mount_stats = r"""library filesystem mounts stats MOUNTPOINT ...
 
     Print relative use and free for multiple mount points
 
-        lb mu (fd -td -d1 'd[0-9]+$' /mnt)
+        library filesystem mounts stats (fd -td -d1 'd[0-9]+$' /mnt)
         Relative disk dependence:
         /mnt/d1: ###### 8.1%
         /mnt/d2: ######### 12.2%
@@ -1896,11 +1896,11 @@ similar_folders = """library folder similar (--filter-names | --filter-counts | 
         library filesystem list --db video.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -FS=+8G --filter-names --filter-counts --filter-durations
 """
 
-json_keys_rename = """library text rename-keys json --new-key 'old key substring' (stdin)
+json_keys_rename = """library json rename-keys --new-key 'old key substring' (stdin)
 
     Rename/filter keys in JSON
 
-        echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | library text rename-keys json --country 'place of birth'
+        echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | library json rename-keys --country 'place of birth'
         {"country": "Yo Mama"}
 """
 
@@ -2009,31 +2009,31 @@ unardel = """library archive extract PATH ...
     Extract from archives and delete all source archives
 """
 
-images_to_pdf = """library document to-pdf images PATH ...
+images_to_pdf = """library document convert images pdf PATH ...
 
     Convert groups of images to PDF
 
-        library document to-pdf images folder_with_images/
-        library document to-pdf images page00*.jpg
-        library document to-pdf images page00*.avif  # many file formats supported
+        library document convert images pdf folder_with_images/
+        library document convert images pdf page00*.jpg
+        library document convert images pdf page00*.avif  # many file formats supported
 
     Convert comics (CBZ, CBR) to PDF
 
-        library document to-pdf images my_ebook.cbr
-        library document to-pdf images https://site/my_ebook.cbz
+        library document convert images pdf my_ebook.cbr
+        library document convert images pdf https://site/my_ebook.cbz
 """
 
-pdf_edit = """library document edit pdf PATH ...
+pdf_edit = """library document adjust pdf PATH ...
 
     Increase brightness
 
-        library document edit pdf --brightness 120 scan001.pdf --output-path brighter_scan.pdf
-        library document edit pdf -b 120 scan001.pdf -o brighter_scan.pdf
+        library document adjust pdf --brightness 120 scan001.pdf --output-path brighter_scan.pdf
+        library document adjust pdf -b 120 scan001.pdf -o brighter_scan.pdf
 
     Increase or decrease brightness, contrast, color contrast, and sharpness
 
-        library document edit pdf --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
-        library document edit pdf -b 105 -c 120 -C 80 -s 110 scan001.pdf
+        library document adjust pdf --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
+        library document adjust pdf -b 105 -c 120 -C 80 -s 110 scan001.pdf
 """
 
 computers_add = """library database add computers DATABASE HOSTNAME ...
@@ -2164,15 +2164,15 @@ torrents_remaining = """library torrent remaining
 """
 
 
-allocate_torrents = """library database allocate torrents
+allocate_torrents = """library torrent allocate
 
     Use a Computer DB and a Torrent DB to allocate and deplete global free space
 
-        library database allocate torrents computers.db torrents.db -v
+        library torrent allocate computers.db torrents.db -v
 
     Filter to specific words or tracker
 
-        library database allocate torrents computers.db torrents.db -s specific words or tracker
+        library torrent allocate computers.db torrents.db -s specific words or tracker
 """
 
 getty_add = """library database add getty DATABASE

@@ -156,7 +156,7 @@ operations, `filesystem` (or `fs`) for filesystem operations, `document` (or
 operations. The `ls` alias can be used for nested list commands. Resource group
 names and their aliases take precedence over flat command names, so a few former
 flat commands are now only reachable through a group (for example
-`database filesystem list`, `captions`, `table markdown`, `tabs open`,
+`filesystem list`, `captions`, `table markdown`, `tabs open`,
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
@@ -292,7 +292,7 @@ There is also a flag to prioritize folders which have many files which have been
 The play subcommands also support this functionality:
 
     $ library play video --big-dirs ./my.db
-    $ lb wt -B  # shorthand equivalent
+    $ library play video -B  # shorthand equivalent
 
 </details>
 

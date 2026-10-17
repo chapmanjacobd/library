@@ -324,24 +324,14 @@ NESTED_COMMANDS = {
         "enrich": {"reddit-selftext": "reddit-selftext"},
         "merge": {"_target": "merge-dbs", "online-local": "merge-online-local"},
         "copy": {"play-counts": "copy-play-counts"},
-        "allocate": {"torrents": "allocate-torrents"},
         "dedupe": {"_target": "dedupe-db", "media": "dedupe-media"},
+        "export": {"html": "export-text"},
         "search": "search-db",
         "optimize": "optimize-db",
-        "filesystem": {
-            "list": "filesystem",
-            "usage": {
-                "_target": "disk-usage",
-                "extensions": "extensions",
-                "mimetypes": "mimetypes",
-                "sizes": "sizes",
-            },
-        },
-        "download": {"_target": "download-database", "status": "download-status"},
+        "download": {"_target": "download-database", "status": "download-status", "block": "block"},
         "history": {"_target": "history", "add": "history-add"},
         "playlists": "playlists",
         "stats": "stats",
-        "block": "block",
         "redownload": "redownload",
     },
     "shrink": {
@@ -354,6 +344,7 @@ NESTED_COMMANDS = {
     "captions": "search",
     "download": "download",
     "torrent": {
+        "allocate": "allocate-torrents",
         "info": "torrents-info",
         "start": "torrents-start",
         "remaining": "torrents-remaining",
@@ -384,8 +375,10 @@ NESTED_COMMANDS = {
             "mimetypes": "mimetypes",
             "sizes": "sizes",
         },
-        "stats": {"mounts": "mount-stats"},
-        "free": {"mounts": "disk-free"},
+        "mounts": {
+            "stats": "mount-stats",
+            "free": "disk-free",
+        },
     },
     "file": {
         "hash": "sample-hash",
@@ -409,10 +402,10 @@ NESTED_COMMANDS = {
         },
     },
     "document": {
-        "to-pdf": {"images": "images-to-pdf"},
-        "edit": {"pdf": "pdf-edit"},
-        "export": {"text": "export-text"},
+        "convert": {"images": {"pdf": "images-to-pdf"}},
+        "adjust": {"pdf": "pdf-edit"},
     },
+    "json": {"rename-keys": "json-keys-rename"},
     "archive": {"extract": "unardel"},
     "help": {"search": "search-help"},
     "text": {
@@ -420,7 +413,6 @@ NESTED_COMMANDS = {
         "sort": {"regex": "regex-sort", "cluster": "cluster-sort"},
         "markdown": {"links": "markdown-links"},
         "expand": {"links": "expand-links"},
-        "rename-keys": {"json": "json-keys-rename"},
         "nouns": "nouns",
         "dates": "dates",
         "times": "times",
@@ -440,6 +432,7 @@ NESTED_GROUP_ALIASES = {
 NESTED_COMMAND_ALIASES = {
     "fs": "filesystem",
     "ls": "list",
+    "explore": "analyze",
 }
 
 NESTED_DESCRIPTIONS = {
@@ -448,9 +441,6 @@ NESTED_DESCRIPTIONS = {
     "play audio": "Listen to audio",
     "play text": "Read text",
     "play images": "View images",
-    "database filesystem usage extensions": "Show disk usage grouped by file extension",
-    "database filesystem usage mimetypes": "Show disk usage grouped by MIME type",
-    "database filesystem usage sizes": "Show disk usage grouped by file size",
     "filesystem usage extensions": "Show disk usage grouped by file extension",
     "filesystem usage mimetypes": "Show disk usage grouped by MIME type",
     "filesystem usage sizes": "Show disk usage grouped by file size",
@@ -972,7 +962,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     # These flat names collide with a nested resource group and are handled by the
     # nested router; registering them again would create unreachable parsers.
     nested_only_modules = {
-        "library.fsdb.filesystem.filesystem",  # `database filesystem list`
+        "library.fsdb.filesystem.filesystem",  # `filesystem list`
         "library.mediadb.search.search",  # `captions`
     }
 
