@@ -34,8 +34,7 @@ def delete_playlists(args, playlists) -> None:
     deleted_media_count = 0
     try:
         online_media = [p for p in playlists if p.startswith("http")]
-        online_playlist_ids = [db_playlists.get_id(args, path) for path in online_media]
-        online_playlist_ids = [playlist_id for playlist_id in online_playlist_ids if playlist_id is not None]
+        online_playlist_ids = db_playlists.get_ids(args, online_media)
         if online_playlist_ids:
             with args.db.conn:
                 cursor = args.db.conn.execute(
@@ -52,8 +51,7 @@ def delete_playlists(args, playlists) -> None:
     deleted_playlist_count = 0
     with args.db.conn:
         playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
-        playlist_ids = [db_playlists.get_id(args, path) for path in playlist_paths]
-        playlist_ids = [playlist_id for playlist_id in playlist_ids if playlist_id is not None]
+        playlist_ids = db_playlists.get_ids(args, playlist_paths)
         if playlist_ids:
             cursor = args.db.conn.execute(
                 "delete from playlists where id in (" + ",".join(["?"] * len(playlist_ids)) + ")",
@@ -89,7 +87,7 @@ def playlists() -> None:
             {', sum(m.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media m
-        JOIN ({query}) p on p.id = m.playlists_id
+        LEFT JOIN ({query}) p on p.id = m.playlists_id
         group by m.playlists_id, coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """

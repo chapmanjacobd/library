@@ -6,6 +6,7 @@ from shutil import which
 from library import usage
 from library.mediadb import db_history
 from library.mediafiles import process_ffmpeg, process_image, process_text
+from library.mediafiles.unardel import replace_media_paths
 from library.utils import (
     arggroups,
     argparse_utils,
@@ -281,7 +282,7 @@ def check_shrink(args, m) -> list:
             return [m]
         else:
             log.debug("[%s]: skipping; future file size estimated to be larger than source file", m["path"])
-    elif m.get("compressed_size"):  # TODO nested archives
+    elif m.get("compressed_size"):
         log.info("[%s]: Skipping unknown filetype %s from archive", m["path"], m["ext"])
         # m["media_type"] = "Compressed"
         # return [m]
@@ -307,13 +308,74 @@ def check_shrink(args, m) -> list:
     return []
 
 
+def _archive_paths(media):
+    return list(
+        dict.fromkeys(
+            str(m["path"])
+            for m in media
+            if m.get("path") and processes.is_archive_path(m["path"])
+        )
+    )
+
+
+def _archive_contains_nested_archive(archive_path):
+    return any(
+        processes.is_archive_path(item.get("rel_path") or item.get("path", ""))
+        for item in processes.lsar(archive_path)
+    )
+
+
+def extract_nested_media(args, media, archive_paths, mp_args):
+    """Extract selected archives and add processable files from nested archives."""
+    extracted_outputs = []
+    path_updates = []
+
+    for archive_path in archive_paths:
+        if not os.path.exists(archive_path):
+            continue
+        if args.simulate:
+            log.info("Unarchiving %s", archive_path)
+            continue
+
+        output_path, updates = processes.extract_nested_archives(
+            archive_path,
+            flatten=False,
+        )
+        extracted_outputs.append(output_path)
+        path_updates.extend(updates)
+
+    original_media_paths = {m["path"] for m in media}
+    media = replace_media_paths(media, path_updates)
+    if args.simulate:
+        return media
+
+    existing_paths = {m["path"] for m in media} | original_media_paths
+    for output_path in extracted_outputs:
+        for path in processes.iter_regular_files(output_path):
+            if path in existing_paths or processes.is_archive_path(path):
+                continue
+            try:
+                size = os.path.getsize(path)
+            except OSError:
+                continue
+
+            nested_media = check_shrink(mp_args, {"path": path, "size": size})
+            for item in iterables.conform(nested_media):
+                if item["path"] not in existing_paths:
+                    media.append(item)
+                    existing_paths.add(item["path"])
+
+    return iterables.list_dict_unique(media, ["path"])
+
+
 def process_media() -> None:
     args = parse_args()
-    media = collect_media(args)
+    collected_media = collect_media(args)
+    collected_archive_paths = _archive_paths(collected_media)
 
     mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k != "db"})
     with concurrent.futures.ThreadPoolExecutor() as executor:  # mostly for lsar but also ffprobe
-        futures = {executor.submit(check_shrink, mp_args, m) for m in media}
+        futures = {executor.submit(check_shrink, mp_args, m) for m in collected_media}
     media = iterables.conform(v.result() for v in futures)
 
     media = sorted(
@@ -325,7 +387,22 @@ def process_media() -> None:
 
     media = iterables.list_dict_unique(media, ["path"])
 
-    if not media:
+    if media:
+        archive_paths = list(
+            dict.fromkeys(
+                str(m["archive_path"])
+                for m in media
+                if m.get("archive_path") and m.get("compressed_size")
+            )
+        )
+    else:
+        archive_paths = [
+            archive_path
+            for archive_path in collected_archive_paths
+            if _archive_contains_nested_archive(archive_path)
+        ]
+
+    if not media and not archive_paths:
         processes.no_media_found()
 
     summary = {}
@@ -354,27 +431,32 @@ def process_media() -> None:
     current_size = sum([m["current_size"] for m in summary])
     future_size = sum([m["future_size"] for m in summary])
     savings = sum([m["savings"] for m in summary])
-    if "processing_time" in summary[0]:
-        processing_time = sum([m["processing_time"] for m in summary])
+    processing_time = sum([m["processing_time"] for m in summary])
 
     summary = sorted(summary, key=lambda d: d["savings"], reverse=True)
     summary = iterables.list_dict_filter_bool(summary, keep_0=False)
 
-    for t in ["processing_time"]:
-        summary = printing.col_duration(summary, t)
-    for t in ["current_size", "future_size", "compressed_size", "savings"]:
-        summary = printing.col_filesize(summary, t)
-    printing.table(summary)
-    print()
+    if summary:
+        for t in ["processing_time"]:
+            summary = printing.col_duration(summary, t)
+        for t in ["current_size", "future_size", "compressed_size", "savings"]:
+            summary = printing.col_filesize(summary, t)
+        printing.table(summary)
+        print()
 
     print("Current size:", strings.file_size(current_size))
     print("Estimated future size:", strings.file_size(future_size))
     print("Estimated savings:", strings.file_size(savings))
     print("Estimated processing time:", strings.duration(processing_time))
 
-    uncompressed_archives = set()
     new_free_space = 0
     if args.no_confirm or devices.confirm("Proceed?"):
+        media = extract_nested_media(args, media, archive_paths, mp_args)
+        media = sorted(
+            media, key=lambda d: d["savings"] / (d["processing_time"] or args.transcoding_image_time), reverse=True
+        )
+        if args.continue_from:
+            media = iterables.tail_from(media, args.continue_from, key="path")
         for m in media:
             log.info(
                 "%s freed. Processing %s (%s)",
@@ -382,15 +464,6 @@ def process_media() -> None:
                 m["path"],
                 strings.file_size(m["size"]),
             )
-
-            if m.get("compressed_size") and os.path.exists(m["archive_path"]):
-                if m["archive_path"] not in uncompressed_archives:
-                    uncompressed_archives.add(m["archive_path"])
-
-                    if args.simulate:
-                        log.info("Unarchiving %s", m["archive_path"])
-                    else:
-                        processes.unar_delete(m["archive_path"], flatten=False)
 
             if not os.path.exists(m["path"]):
                 log.error("[%s]: FileNotFoundError", m["path"])

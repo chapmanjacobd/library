@@ -32,13 +32,21 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def extract_tables(dict_, table_name):
+def _next_record_id(state, table_name):
+    state["next_ids"][table_name] += 1
+    return state["next_ids"][table_name]
+
+
+def extract_tables(dict_, table_name, foreign_keys=False, state=None, parent_ref=None):
+    if state is None:
+        state = {"next_ids": defaultdict(int)}
+
     dict_ = objects.flatten_dict_single_parents(dict_)
     dict_ = objects.flatten_grandparents(dict_)
 
     tables = []
     simple_dict = {}
-    child_table_name = None
+    child_tables = []
     for key, value in dict_.items():
         if isinstance(value, list):
             arr_ = value
@@ -46,21 +54,47 @@ def extract_tables(dict_, table_name):
                 simple_dict[key] = ", ".join(arr_)
             else:
                 child_table_name = key if table_name is None else f"{table_name}_{key}"
-                # TODO: add foreign keys: itertools.count(start=1) for each parent table
-                tables.extend(nosql_to_sql(arr_, table_name=child_table_name))
+                child_tables.append((arr_, child_table_name))
         else:
             simple_dict[key] = value
 
+    child_table_name = child_tables[-1][1] if child_tables else None
+    parent_table_name = table_name
+    if parent_table_name is None and child_table_name is not None:
+        parent_table_name = child_table_name + "_root"
+
+    record_id = None
+    if foreign_keys and parent_table_name is not None and simple_dict:
+        record_id = simple_dict.get("id") or _next_record_id(state, parent_table_name)
+        simple_dict["id"] = record_id
+    if foreign_keys and parent_ref is not None and parent_table_name is not None and simple_dict:
+        simple_dict[f"{parent_ref[0]}_id"] = parent_ref[1]
+
+    for arr_, child_table_name in child_tables:
+        child_parent_ref = parent_ref
+        if record_id is not None:
+            child_parent_ref = (parent_table_name, record_id)
+        tables.extend(
+            nosql_to_sql(
+                arr_,
+                table_name=child_table_name,
+                foreign_keys=foreign_keys,
+                state=state,
+                parent_ref=child_parent_ref,
+            )
+        )
+
     if simple_dict:
-        if table_name is None and child_table_name is not None:
-            table_name = child_table_name + "_root"
         log.debug("simple_dict: %s", simple_dict)
-        tables.append({"table_name": table_name, "data": [simple_dict]})
+        tables.append({"table_name": parent_table_name if table_name is None and child_table_name else table_name, "data": [simple_dict]})
 
     return tables
 
 
-def nosql_to_sql(dict_or_arr, table_name=None):
+def nosql_to_sql(dict_or_arr, table_name=None, foreign_keys=False, state=None, parent_ref=None):
+    if state is None:
+        state = {"next_ids": defaultdict(int)}
+
     tables = []
 
     if isinstance(dict_or_arr, list):
@@ -70,7 +104,7 @@ def nosql_to_sql(dict_or_arr, table_name=None):
         for value in arr_:
             if isinstance(value, dict):
                 dict_ = value
-                sub_tables = extract_tables(dict_, table_name)
+                sub_tables = extract_tables(dict_, table_name, foreign_keys, state, parent_ref)
                 for t in sub_tables:
                     new_records[t["table_name"]].extend(t["data"])
             else:
@@ -79,6 +113,12 @@ def nosql_to_sql(dict_or_arr, table_name=None):
         if scalar_values:
             log.debug("array of scalar: %s", arr_)
             arr_ = [{"v": v} for v in scalar_values]
+            if foreign_keys and table_name is not None:
+                for record in arr_:
+                    record["id"] = _next_record_id(state, table_name)
+            if foreign_keys and parent_ref is not None:
+                for record in arr_:
+                    record[f"{parent_ref[0]}_id"] = parent_ref[1]
             tables.append({"table_name": table_name, "data": arr_})
 
         for table_name, data in new_records.items():
@@ -87,7 +127,7 @@ def nosql_to_sql(dict_or_arr, table_name=None):
 
     elif isinstance(dict_or_arr, dict):
         dict_ = dict_or_arr
-        tables.extend(extract_tables(dict_, table_name))
+        tables.extend(extract_tables(dict_, table_name, foreign_keys, state, parent_ref))
 
     else:
         raise ValueError("Expected dict, list of dicts, or list of scalar values")
@@ -221,14 +261,14 @@ def attach_interceptors(args):
                 return
 
             body = strings.safe_json_loads(body)
-            tables = nosql_to_sql(body)
+            tables = nosql_to_sql(body, foreign_keys=True)
 
         elif args.extract_html and response.headers["Content-Type"].startswith(("text/html",)):
             body = decode(response.body, response.headers.get("Content-Encoding", "identity"))
             body = body.decode()
 
             o = html_to_dict(body)
-            tables = nosql_to_sql(o)
+            tables = nosql_to_sql(o, foreign_keys=True)
 
         elif args.extract_xml and response.headers["Content-Type"].startswith(("text/xml", "application/xml")):
             body = decode(response.body, response.headers.get("Content-Encoding", "identity"))
@@ -237,7 +277,7 @@ def attach_interceptors(args):
             import xmltodict
 
             o = xmltodict.parse(body)
-            tables = nosql_to_sql(o)
+            tables = nosql_to_sql(o, foreign_keys=True)
 
         elif response.headers["Content-Type"].startswith(
             (

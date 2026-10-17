@@ -299,7 +299,7 @@ def read_file_to_dataframes(
         df = pd.read_json(path, encoding=encoding)
         dfs.append(NDF(None, df))
     elif mimetype in ("jsonl", "json lines", "geojson lines"):
-        df = pd.read_json(StringIO(path), nrows=end_row, lines=True, encoding=encoding)
+        df = pd.read_json(path, nrows=end_row, lines=True, encoding=encoding)
         dfs.append(NDF(None, df))
     elif mimetype in (
         "csv",

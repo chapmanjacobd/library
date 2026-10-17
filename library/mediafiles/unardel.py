@@ -60,7 +60,7 @@ def check_shrink(args, m) -> list:
     if not m["size"]:  # empty or deleted file
         return []
 
-    if m.get("compressed_size"):  # TODO nested archives
+    if m.get("compressed_size"):
         return [m]
     elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
@@ -73,25 +73,65 @@ def check_shrink(args, m) -> list:
 
 
 def replace_media_paths(media, path_updates):
-    updates_by_path = {update["path"]: update for update in path_updates}
     updated_media = []
     for item in media:
-        path = item["path"]
-        match = updates_by_path.get(path)
-        if match is None:
-            ancestor = os.path.dirname(path)
-            while ancestor:
-                match = updates_by_path.get(ancestor)
-                if match is not None:
-                    break
-                parent = os.path.dirname(ancestor)
-                if parent == ancestor:
-                    break
-                ancestor = parent
-        if match is not None:
-            path = match["new_path"] + path[len(match["path"]) :]
+        path = os.fspath(item["path"])
+        seen_paths = {path}
+        applied_updates = set()
+        while True:
+            matches = [
+                (index, update)
+                for index, update in enumerate(path_updates)
+                if index not in applied_updates
+                and (
+                    path == os.fspath(update["path"])
+                    or path.startswith(os.fspath(update["path"]).rstrip(os.sep) + os.sep)
+                )
+            ]
+            if not matches:
+                break
+
+            index, match = max(matches, key=lambda pair: len(os.fspath(pair[1]["path"])))
+            update_path = os.fspath(match["path"])
+            new_path = os.fspath(match["new_path"]) + path[len(update_path) :]
+            if new_path in seen_paths:
+                break
+            applied_updates.add(index)
+            path = new_path
+            seen_paths.add(path)
         updated_media.append({**item, "path": path} if path != item["path"] else item)
     return updated_media
+
+
+def _extracted_media(output_paths, existing_paths, path_updates):
+    media = []
+    for output_path, source_archive in output_paths:
+        if os.path.abspath(output_path) == os.path.dirname(os.path.abspath(source_archive)):
+            paths = [
+                update["new_path"]
+                for update in path_updates
+                if os.path.isfile(update["new_path"])
+            ]
+        else:
+            paths = processes.iter_regular_files(output_path)
+
+        for path in paths:
+            if path in existing_paths or processes.is_archive_path(path):
+                continue
+            try:
+                size = os.path.getsize(path)
+            except OSError:
+                continue
+            media.append(
+                {
+                    "path": path,
+                    "size": size,
+                    "compressed_size": 0,
+                    "ext": path_utils.ext(path),
+                }
+            )
+            existing_paths.add(path)
+    return media
 
 
 def unardel() -> None:
@@ -148,6 +188,7 @@ def unardel() -> None:
     new_free_space = 0
     if args.no_confirm or devices.confirm("Proceed?"):
         path_updates = []
+        extracted_outputs = []
         for m in media:
             if (
                 m.get("compressed_size")
@@ -159,10 +200,26 @@ def unardel() -> None:
                 if args.simulate:
                     log.info("Unarchiving %s", m["archive_path"])
                 else:
-                    _, updates = processes.unar_delete(m["archive_path"], single_file_flatten=True)
+                    output_path, updates = processes.extract_nested_archives(
+                        m["archive_path"],
+                        single_file_flatten=True,
+                    )
+                    extracted_outputs.append((output_path, m["archive_path"]))
                     path_updates.extend(updates)
 
+        original_media_paths = {m["path"] for m in media}
         media = replace_media_paths(media, path_updates)
+        existing_paths = {m["path"] for m in media} | original_media_paths
+        media.extend(_extracted_media(extracted_outputs, existing_paths, path_updates))
+        media = [
+            m
+            for m in media
+            if not (
+                m.get("compressed_size")
+                and processes.is_archive_path(m["path"])
+            )
+        ]
+        media = iterables.list_dict_unique(media, ["path"])
 
         for m in media:
             log.info(

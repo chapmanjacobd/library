@@ -558,8 +558,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
 def get_playlist_media(args, playlist_paths) -> list[dict]:
     select_sql = getattr(args, "select_sql", None) or "\n        , ".join(s for s in args.select)
 
-    playlist_ids = [db_playlists.get_id(args, path) for path in playlist_paths]
-    playlist_ids = [playlist_id for playlist_id in playlist_ids if playlist_id is not None]
+    playlist_ids = db_playlists.get_ids(args, playlist_paths)
     if not playlist_ids:
         return []
 

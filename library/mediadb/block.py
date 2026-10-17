@@ -72,8 +72,33 @@ def block(args=None) -> None:
     if not paths:
         if "blocklist" in args.db.table_names():
             deleted_count = 0
-            blocklist = [(d["key"], d["value"]) for d in args.db["blocklist"].rows if d["key"] in m_columns]
-            # TODO: add support for playlists table block rules
+            blocklist_rows = list(args.db["blocklist"].rows)
+            playlist_blocklist = [d["value"] for d in blocklist_rows if d["key"] == "playlist_path"]
+            playlist_ids = db_playlists.get_ids(args, playlist_blocklist)
+            if playlist_ids and not args.simulate:
+                with args.db.conn:
+                    cursor = args.db.conn.execute(
+                        f"""UPDATE playlists
+                        SET time_deleted = {consts.APPLICATION_START}
+                        WHERE id IN ("""
+                        + ",".join(["?"] * len(playlist_ids))
+                        + ")",
+                        (*playlist_ids,),
+                    )
+                    deleted_count += cursor.rowcount
+                    cursor = args.db.conn.execute(
+                        f"""UPDATE media
+                        SET time_deleted = {consts.APPLICATION_START}
+                        WHERE COALESCE(time_deleted, 0)=0
+                        AND path LIKE 'http%'
+                        AND playlists_id IN ("""
+                        + ",".join(["?"] * len(playlist_ids))
+                        + ")",
+                        (*playlist_ids,),
+                    )
+                    deleted_count += cursor.rowcount
+
+            blocklist = [(d["key"], d["value"]) for d in blocklist_rows if d["key"] in m_columns]
             if blocklist:
                 # prevent Expression tree is too large (max depth 1000)
                 blocklist_chunked = iterables.chunks(blocklist, consts.SQLITE_PARAM_LIMIT // 100)
@@ -151,8 +176,7 @@ def block(args=None) -> None:
         for p in playlist_paths:
             add_to_blocklist(args, [p])
 
-        playlist_ids = [db_playlists.get_id(args, path) for path in playlist_paths]
-        playlist_ids = [playlist_id for playlist_id in playlist_ids if playlist_id is not None]
+        playlist_ids = db_playlists.get_ids(args, playlist_paths)
         if not args.simulate:
             if playlist_ids:
                 with args.db.conn:

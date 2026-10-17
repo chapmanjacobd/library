@@ -1,5 +1,6 @@
 import pytest
 
+from library.playback import playback_control
 from library.playback.playback_control import from_duration_to_duration_str
 
 
@@ -19,3 +20,19 @@ from library.playback.playback_control import from_duration_to_duration_str
 def test_from_duration_to_duration_str(duration, segment_start, segment_end, expected):
     result = from_duration_to_duration_str(duration, segment_start, segment_end)
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("command", "expected_catt_command"),
+    [("rewind", "rewind"), ("ffwd", "ffwd")],
+)
+def test_directional_playback_aliases_apply_direction(monkeypatch, command, expected_catt_command):
+    monkeypatch.setattr(playback_control, "_now_playing", lambda _args: {"catt": "playing", "mpv": None})
+    commands = []
+    monkeypatch.setattr(playback_control.processes, "cmd", lambda *args: commands.append(args))
+    monkeypatch.setattr("sys.argv", [f"library {command}", "5"])
+
+    getattr(playback_control, f"playback_{command}")()
+
+    expected_seconds = "-5" if command == "rewind" else "5"
+    assert commands == [("catt", expected_catt_command, expected_seconds)]

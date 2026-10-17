@@ -24,7 +24,7 @@ def parse_args(usage, command=None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
     if command == "next":
         arggroups.capability_delete(parser)
-    if command == "seek":
+    if command in {"ffwd", "rewind", "seek"}:
         parser.add_argument("time")
 
     parser.add_argument("--mpv-socket", help="Use a custom mpv socket location")
@@ -366,8 +366,8 @@ def playback_next() -> None:
             shell_utils.trash(args, playing["mpv"])
 
 
-def playback_seek() -> None:
-    args = parse_args(usage.seek, command="seek")
+def playback_seek(command="seek") -> None:
+    args = parse_args(usage.seek, command=command)
     if args.simulate:
         print("Would seek playback by", args.time)
         return
@@ -388,6 +388,14 @@ def playback_seek() -> None:
     seconds = strings.from_timestamp_seconds(s) if ":" in s else float(s)
     if is_negative:
         seconds = -seconds
+    if command == "rewind":
+        is_relative = True
+        is_negative = True
+        seconds = -abs(seconds)
+    elif command == "ffwd":
+        is_relative = True
+        is_negative = False
+        seconds = abs(seconds)
 
     if playing["mpv"]:
         args.mpv.command("seek", seconds, "relative" if is_relative else "absolute")
@@ -404,3 +412,11 @@ def playback_seek() -> None:
             processes.cmd("catt", *catt_device, "ffwd", str(int(seconds)))
         else:
             processes.cmd("catt", *catt_device, "seek", str(int(seconds)))
+
+
+def playback_ffwd() -> None:
+    playback_seek(command="ffwd")
+
+
+def playback_rewind() -> None:
+    playback_seek(command="rewind")

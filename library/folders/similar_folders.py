@@ -221,7 +221,6 @@ def similar_folders():
                         "median_size": strings.file_size(d["median_size"]),
                         "total_duration": strings.duration(d.get("duration")),
                         "median_duration": strings.duration(d.get("median_duration")),
-                        "median_size": strings.file_size(d.get("median_size")),
                         "files": d["exists"],
                     }
                     for d in media

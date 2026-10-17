@@ -434,6 +434,118 @@ def unar_out_path(archive_path):
     return output_path
 
 
+MAX_ARCHIVE_DEPTH = 5
+
+
+def is_archive_path(path) -> bool:
+    return path_utils.ext(str(path)) in consts.ARCHIVE_EXTENSIONS
+
+
+def iter_regular_files(path):
+    """Yield regular files below a path without following symlinks."""
+    path = os.fspath(path)
+    if os.path.isfile(path):
+        yield path
+        return
+    if not os.path.isdir(path):
+        return
+
+    for root, dirs, files in os.walk(path, followlinks=False):
+        dirs[:] = [directory for directory in dirs if not os.path.islink(os.path.join(root, directory))]
+        for filename in files:
+            file_path = os.path.join(root, filename)
+            if not os.path.islink(file_path) and os.path.isfile(file_path):
+                yield file_path
+
+
+def _archive_identity(path):
+    return os.path.normcase(os.path.realpath(os.path.abspath(os.fspath(path))))
+
+
+def _nested_archive_paths(output_path, current_archive, path_updates, single_file_flatten):
+    candidates = set()
+    if single_file_flatten and os.path.abspath(output_path) == os.path.dirname(os.path.abspath(current_archive)):
+        candidates.update(
+            update["new_path"]
+            for update in path_updates
+            if is_archive_path(update.get("new_path", ""))
+        )
+    else:
+        candidates.update(
+            path for path in iter_regular_files(output_path) if is_archive_path(path)
+        )
+    return sorted(candidates)
+
+
+def extract_nested_archives(
+    archive_path,
+    *,
+    single_file_flatten=False,
+    flatten=True,
+    max_depth=MAX_ARCHIVE_DEPTH,
+):
+    """Extract an archive and nested archives below it up to ``max_depth``.
+
+    The root archive is depth zero.  Archive paths are canonicalized before
+    extraction so an archive encountered through multiple paths is extracted
+    only once.  This also prevents archive cycles from consuming unbounded
+    resources.
+    """
+    if max_depth < 0:
+        raise ValueError("max_depth must be non-negative")
+
+    root_archive = os.fspath(archive_path)
+    pending = [(root_archive, 0)]
+    seen = set()
+    all_updates = []
+    root_output = None
+
+    while pending:
+        current_archive, depth = pending.pop(0)
+        identity = _archive_identity(current_archive)
+        if identity in seen:
+            log.warning("[%s]: Skipping recursive archive cycle", current_archive)
+            continue
+        seen.add(identity)
+
+        if depth > max_depth:
+            log.warning(
+                "[%s]: Maximum nested archive depth (%s) reached; leaving archive unextracted",
+                current_archive,
+                max_depth,
+            )
+            continue
+        if not os.path.exists(current_archive):
+            log.warning("[%s]: Nested archive was not found", current_archive)
+            continue
+
+        kwargs = {"single_file_flatten": single_file_flatten}
+        if not flatten:
+            kwargs["flatten"] = False
+        output_path, path_updates = unar_delete(current_archive, **kwargs)
+        if root_output is None:
+            root_output = output_path
+        all_updates.extend(path_updates)
+
+        if depth == max_depth:
+            log.warning(
+                "[%s]: Maximum nested archive depth (%s) reached; not scanning deeper",
+                current_archive,
+                max_depth,
+            )
+            continue
+
+        for nested_archive in _nested_archive_paths(
+            output_path, current_archive, path_updates, single_file_flatten
+        ):
+            if _archive_identity(nested_archive) in seen:
+                log.warning("[%s]: Skipping recursive archive cycle", nested_archive)
+            else:
+                pending.append((nested_archive, depth + 1))
+
+    return root_output or unar_out_path(root_archive), all_updates
+
+
 def lsar(archive_path):
     # TODO: seems a little slow. maybe compare perf with 7z or https://github.com/wummel/patool
 

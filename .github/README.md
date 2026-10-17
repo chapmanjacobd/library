@@ -1901,6 +1901,17 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     library table rank ~/storage.csv --minimize price --ignore warranty
 
+        --weights 0.5,0.3,0.2        use explicit criterion weights
+        --weights price=0.7,size=0.3 use named criterion weights
+        --categorical --columns-include quality,size
+                                    convert word-valued criteria using the standard map
+        --categorical-columns quality --words-nums-map ratings.json
+                                    use an explicit category mapping file
+        --pca                          print PCA variance-contribution diagnostics
+        --pairwise                     add weighted pairwise ranking
+        --comet                        add deterministic COMET ranking
+        --mcda-method COMET            sort by one of TOPSIS, MABAC, BORDA, PAIRWISE, COMET
+
         ### Goals
         #### Maximize
         - size
@@ -2061,9 +2072,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     See data differences in an incremental way to quickly see how two different files differ.
 
-    Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
+    Data (PATH1, PATH2) can be two different files of different file formats (CSV, JSONL, JSON, Excel) or it could even be the same file with different tables.
 
-    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared.
+    Use `--join-keys id,name` (or `--id-columns id,name`) to compare rows by ID instead of by their position in each batch. This handles rows reordered between files and streams CSV, JSONL, and JSON arrays in bounded-size batches.
+    Each ID must be present and unique within each file. Missing ID columns, null ID values, and duplicate IDs are errors.
+    ID-driven comparison stores only the streamed rows on disk and keeps the active pandas batches bounded by `--batch-size`.
+    JSON streaming expects an array of row objects (for example, `[{"id": 1, "value": "a"}]); use JSONL for one object per line.
     If you are comparing SQLite files you may be able to use `--sort id,name` to achieve the same effect.
 
     To diff everything at once run with `--batch-size inf`
@@ -2247,7 +2261,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     $ library archive extract -h
     usage: library archive extract PATH ...
 
-    Extract from archives and delete all source archives
+    Extract from archives, including nested archives, and delete all source archives
 
 
 </details>

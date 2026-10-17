@@ -111,6 +111,19 @@ def get_id(args, playlist_path, extractor_config=None) -> int | None:
     )
 
 
+def get_ids(args, playlist_paths) -> list[int]:
+    playlist_paths = iterables.conform(playlist_paths)
+    if not playlist_paths:
+        return []
+    return [
+        row["id"]
+        for row in args.db.query(
+            "select id from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")",
+            playlist_paths,
+        )
+    ]
+
+
 def _add(args, entry):
     entry = {**entry, "extractor_config": _normalize_extractor_config(args, entry.get("extractor_config"))}
     playlists_id = get_id(args, entry["path"], entry["extractor_config"])
@@ -164,37 +177,35 @@ def mark_media_deleted(args, playlist_paths) -> int:
         return 0
 
     playlist_paths = iterables.conform(playlist_paths)
-    config = _normalize_extractor_config(args)
+    playlist_ids = get_ids(args, playlist_paths)
 
     deleted_playlist_count = 0
     deleted_media_count = 0
-    if playlist_paths:
-        df_chunked = iterables.chunks(playlist_paths, consts.SQLITE_PARAM_LIMIT)
-        for chunk_paths in df_chunked:
+    if playlist_ids:
+        df_chunked = iterables.chunks(playlist_ids, consts.SQLITE_PARAM_LIMIT)
+        for chunk_ids in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""update playlists
                     set time_deleted={consts.APPLICATION_START}
-                    where path in ("""
-                    + ",".join(["?"] * len(chunk_paths))
-                    + ") and extractor_config = ?",
-                    (*chunk_paths, config),
+                    where id in ("""
+                    + ",".join(["?"] * len(chunk_ids))
+                    + ")",
+                    (*chunk_ids,),
                 )
                 deleted_playlist_count += cursor.rowcount
 
         try:
-            df_chunked = iterables.chunks(playlist_paths, consts.SQLITE_PARAM_LIMIT)
-            for chunk_paths in df_chunked:
+            df_chunked = iterables.chunks(playlist_ids, consts.SQLITE_PARAM_LIMIT)
+            for chunk_ids in df_chunked:
                 with args.db.conn:
                     cursor = args.db.conn.execute(
                         f"""UPDATE media
                         SET time_deleted={consts.APPLICATION_START}
-                        WHERE playlists_id in (
-                            SELECT id from playlists
-                            WHERE path IN ("""
-                        + ",".join(["?"] * len(chunk_paths))
-                        + ") AND extractor_config = ?)",
-                        (*chunk_paths, config),
+                        WHERE playlists_id in ("""
+                        + ",".join(["?"] * len(chunk_ids))
+                        + ")",
+                        (*chunk_ids,),
                     )
                     deleted_media_count += cursor.rowcount
         except sqlite3.OperationalError:  # no such column: playlists_id

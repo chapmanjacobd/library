@@ -41,7 +41,8 @@ def test_fsupdate_multi(mocked, temp_db):
 
     lb(["playlists", db1])
     out = mocked.call_args[0][1]
-    assert len(out) == 2
+    assert len(out) == 3
+    assert out[0]["path"] == "Playlist-less media"
 
     lb(["filesystem", "list", "--db", db1, "-s", "conftest.py"])
     out = mocked.call_args[0][1]

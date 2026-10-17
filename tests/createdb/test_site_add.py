@@ -69,6 +69,17 @@ def test_tables():
     assert output == [{"table_name": "people", "data": [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]}]
 
 
+def test_tables_include_parent_ids_when_requested():
+    output = nosql_to_sql(
+        {"people": [{"name": "John", "addresses": [{"city": "New York"}]}]},
+        foreign_keys=True,
+    )
+    assert output == [
+        {"table_name": "people_addresses", "data": [{"city": "New York", "id": 1, "people_id": 1}]},
+        {"table_name": "people", "data": [{"id": 1, "name": "John"}]},
+    ]
+
+
 def test_simple_dict():
     assert nosql_to_sql({"name": "John", "age": 30}) == [{"table_name": None, "data": [{"name": "John", "age": 30}]}]
     assert nosql_to_sql({"1": 1, "2": "ba", "3": False, "4": 1.2}) == [

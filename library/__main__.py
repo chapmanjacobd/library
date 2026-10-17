@@ -246,7 +246,9 @@ modules = {
     "library.playback.playback_control.playback_next": ["next"],
     "library.playback.playback_control.playback_now": ["now"],
     "library.playback.playback_control.playback_pause": ["pause"],
-    "library.playback.playback_control.playback_seek": ["ffwd", "rewind", "seek"],  # TODO: make rewind negative...
+    "library.playback.playback_control.playback_ffwd": ["ffwd"],
+    "library.playback.playback_control.playback_rewind": ["rewind"],
+    "library.playback.playback_control.playback_seek": ["seek"],
     "library.playback.playback_control.playback_stop": ["stop"],
     "library.playback.tabs_open.tabs_open": ["tb", "open_tabs"],
     "library.playback.torrents_info.torrents_info": ["torrent-info"],

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from library.mediafiles import unardel
 from library.mediafiles.unardel import replace_media_paths
-from library.utils import objects
+from library.utils import objects, processes
 
 
 def test_replace_media_paths_builds_new_media_list():
@@ -29,6 +29,18 @@ def test_replace_media_paths_applies_at_most_one_update_per_item():
     updated_media = replace_media_paths(media, path_updates)
 
     assert updated_media == [{"path": "/out/sub/file.txt", "size": 1}]
+
+
+def test_replace_media_paths_applies_nested_updates_in_specific_order():
+    media = [{"path": "/out/wrapper/nested/wrapper/file.txt", "size": 1}]
+    path_updates = [
+        {"path": "/out/wrapper", "new_path": "/out"},
+        {"path": "/out/wrapper/nested/wrapper", "new_path": "/out/wrapper/nested"},
+    ]
+
+    updated_media = replace_media_paths(media, path_updates)
+
+    assert updated_media == [{"path": "/out/nested/file.txt", "size": 1}]
 
 
 def make_archived_media(archive_path, paths, compressed_size=5):
@@ -137,3 +149,88 @@ def test_unardel_moves_existing_media_to_move_dir(tmp_path, monkeypatch):
     assert moved[0][0] == str(tmp_path / "movie" / "movie.mkv")
     assert str(moved[0][1]).startswith(str(tmp_path / "moved") + os.sep)
     assert str(moved[0][1]).endswith(os.path.join("movie", "movie.mkv"))
+
+
+def test_extract_nested_archives_recurses_with_a_depth_limit(tmp_path, monkeypatch, caplog):
+    root_archive = tmp_path / "root.zip"
+    root_archive.write_bytes(b"archive")
+    calls = []
+
+    def fake_unar_delete(path, _single_file_flatten=False, **_kwargs):
+        path = Path(path)
+        calls.append((path, _single_file_flatten))
+        path.unlink()
+        output = path.with_suffix("")
+        output.mkdir(exist_ok=True)
+        if path.name == "root.zip":
+            (output / "nested.zip").write_bytes(b"archive")
+        elif path.name == "nested.zip":
+            (output / "too-deep.zip").write_bytes(b"archive")
+        return str(output), []
+
+    monkeypatch.setattr(processes, "unar_delete", fake_unar_delete)
+
+    output_path, updates = processes.extract_nested_archives(root_archive, max_depth=1)
+
+    assert output_path == str(tmp_path / "root")
+    assert updates == []
+    assert calls == [
+        (tmp_path / "root.zip", False),
+        (tmp_path / "root" / "nested.zip", False),
+    ]
+    assert (tmp_path / "root" / "nested" / "too-deep.zip").exists()
+    assert "Maximum nested archive depth" in caplog.text
+
+
+def test_extract_nested_archives_skips_archive_cycles(tmp_path, monkeypatch, caplog):
+    root_archive = tmp_path / "root.zip"
+    root_archive.write_bytes(b"archive")
+    calls = []
+
+    def fake_unar_delete(path, **_kwargs):
+        path = Path(path)
+        calls.append(path)
+        path.unlink()
+        output = tmp_path / "root"
+        output.mkdir(exist_ok=True)
+        (output / "loop.zip").write_bytes(b"archive")
+        return str(output), []
+
+    monkeypatch.setattr(processes, "unar_delete", fake_unar_delete)
+
+    processes.extract_nested_archives(root_archive)
+
+    assert calls == [root_archive, tmp_path / "root" / "loop.zip"]
+    assert "Skipping recursive archive cycle" in caplog.text
+
+
+def test_unardel_extracts_media_inside_nested_archives(tmp_path, monkeypatch):
+    root_archive = tmp_path / "root.zip"
+    root_archive.write_bytes(b"archive")
+    direct_media = tmp_path / "root" / "direct.mkv"
+    nested_archive = tmp_path / "root" / "nested.zip"
+    nested_media = tmp_path / "root" / "nested" / "nested.mkv"
+    calls = []
+
+    def fake_unar_delete(path, _single_file_flatten=False, **_kwargs):
+        path = Path(path)
+        calls.append(path)
+        path.unlink()
+        output = path.with_suffix("")
+        output.mkdir(exist_ok=True)
+        if path.name == "root.zip":
+            direct_media.write_bytes(b"video")
+            nested_archive.write_bytes(b"archive")
+        else:
+            nested_media.parent.mkdir(exist_ok=True)
+            nested_media.write_bytes(b"video")
+        return str(output), []
+
+    media = make_archived_media(root_archive, [str(direct_media)])
+    patch_unardel(monkeypatch, media, simulate=False)
+    monkeypatch.setattr(unardel.processes, "unar_delete", fake_unar_delete)
+
+    unardel.unardel()
+
+    assert calls == [root_archive, nested_archive]
+    assert nested_media.exists()
