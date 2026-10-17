@@ -237,7 +237,7 @@ def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
 
     command = iterables.conform(command)
     if command[0] in ["fish", "bash"]:
-        command = command[0:2] + [shlex.join(command[2:])]
+        command = [*command[0:2], shlex.join(command[2:])]
     proc = subprocess.Popen(
         command, stdin=stdin, stdout=stdout, stderr=stderr, close_fds=True, **os_bg_kwargs(), **kwargs
     )

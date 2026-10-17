@@ -90,7 +90,7 @@ def calculate_duration(args, m) -> tuple[int, int]:
 def listen_chromecast(args, m: dict) -> subprocess.CompletedProcess | None:
     Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
     catt = which("catt") or "catt"
-    start, end = calculate_duration(args, m)
+    start, _end = calculate_duration(args, m)
 
     if args.cast_with_local:
         cast_process = subprocess.Popen(
@@ -271,7 +271,7 @@ def grid_stack(display, qty, swap=False) -> list[tuple]:
     return [(hole, f'--screen-name="{display.name}"') for hole in holes]
 
 
-def get_display_by_name(displays, screen_name):  # noqa: ANN201; -> List[screeninfo.Monitor]
+def get_display_by_name(displays, screen_name):  # noqa: ANN201
     for d in displays:
         if d.name == screen_name:
             return [d]
@@ -375,7 +375,7 @@ def get_multiple_player_template(args) -> list[tuple[str, str]]:
 
 class MediaPrefetcher:
     def __init__(self, args, media: list[dict]):
-        self.args = Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+        self.args = Namespace(**{k: v for k, v in args.__dict__.items() if k != "db"})
         self.media = media
         self.media.reverse()
         self.remaining = len(media)

@@ -611,15 +611,15 @@ def parse_args_limit(args):
         ):
             if args.action in (SC.media, SC.listen, SC.watch, SC.read):
                 args.limit = consts.DEFAULT_PLAY_QUEUE
-            elif args.action in (SC.view,):
+            elif args.action == SC.view:
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 4
-            elif args.action in (SC.history,):
+            elif args.action == SC.history:
                 args.limit = 10
-            elif args.action in (SC.links_open,):
+            elif args.action == SC.links_open:
                 args.limit = consts.DEFAULT_OPEN_LIMIT
-            elif args.action in (SC.download,):
+            elif args.action == SC.download:
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 60
-            elif args.action in (SC.tabs_open,):
+            elif args.action == SC.tabs_open:
                 args.limit = None
     elif args.limit.lower() in ("inf", "all"):
         args.limit = None

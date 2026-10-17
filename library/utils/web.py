@@ -809,7 +809,8 @@ def internet_archive_identifier(url: str) -> str | None:
 def download_internet_archive(args, url: str) -> str | None:
     identifier = internet_archive_identifier(url)
     if identifier is None:
-        raise ValueError(f"Not an Internet Archive details URL: {url}")
+        msg = f"Not an Internet Archive details URL: {url}"
+        raise ValueError(msg)
 
     log.info("Downloading Internet Archive item %s", identifier)
     ia = load_internetarchive()
@@ -855,7 +856,8 @@ def download_internet_archive(args, url: str) -> str | None:
             if private_files:
                 log.info("Internet Archive item %s has no downloadable public original files", identifier)
                 return str(Path(args.prefix).expanduser() / identifier)
-            raise RuntimeError(f"Internet Archive item has no downloadable original files: {identifier}")
+            msg = f"Internet Archive item has no downloadable original files: {identifier}"
+            raise RuntimeError(msg)
 
         destdir = str(Path(args.prefix).expanduser())
         archive_root = Path(destdir).expanduser().resolve() / identifier
@@ -865,7 +867,8 @@ def download_internet_archive(args, url: str) -> str | None:
             progress_started = True
             local_path = archive_root / archive_file.name
             if not local_path.resolve().is_relative_to(archive_root):
-                raise RuntimeError(f"Unsafe Internet Archive file path: {archive_file.name}")
+                msg = f"Unsafe Internet Archive file path: {archive_file.name}"
+                raise RuntimeError(msg)
 
             remote_size = nums.safe_int(getattr(archive_file, "size", None))
             if local_path.is_file() and remote_size is not None and local_path.stat().st_size == remote_size:
@@ -897,15 +900,17 @@ def download_internet_archive(args, url: str) -> str | None:
     ) as excinfo:
         target = f"{identifier}/{current_file}" if current_file else identifier
         access_message = " (access-restricted-item=true; item may require a loan)" if access_restricted else ""
-        raise RuntimeError(f"Internet Archive download failed for {target}{access_message}: {excinfo}") from excinfo
+        msg = f"Internet Archive download failed for {target}{access_message}: {excinfo}"
+        raise RuntimeError(msg) from excinfo
     finally:
         if progress_started:
             print(file=sys.stderr)
 
     if errors:
         access_message = " (access-restricted-item=true; item may require a loan)" if access_restricted else ""
+        msg = f"Internet Archive files failed to download for {identifier}{access_message}: {', '.join(errors)}"
         raise RuntimeError(
-            f"Internet Archive files failed to download for {identifier}{access_message}: {', '.join(errors)}"
+            msg
         )
 
     return str(Path(args.prefix).expanduser() / identifier)

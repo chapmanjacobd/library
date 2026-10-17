@@ -311,7 +311,7 @@ def process_media() -> None:
     args = parse_args()
     media = collect_media(args)
 
-    mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+    mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k != "db"})
     with concurrent.futures.ThreadPoolExecutor() as executor:  # mostly for lsar but also ffprobe
         futures = {executor.submit(check_shrink, mp_args, m) for m in media}
     media = iterables.conform(v.result() for v in futures)
@@ -468,7 +468,7 @@ def process_media() -> None:
                     if m["media_type"] in ("Audio", "Video", "Image"):
                         m["new_path"] = str(new_path)
                         m["new_size"] = os.stat(new_path).st_size
-                    elif m["media_type"] in ("Text",):
+                    elif m["media_type"] == "Text":
                         m["new_path"] = str(new_path)
                         for p in [
                             os.path.join(new_path, "index.html"),

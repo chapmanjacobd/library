@@ -49,7 +49,7 @@ def media_select_sql(args, m_columns):
     if "played" in " ".join(sys.argv):
         cols.append("time_last_played")
     args.select = list(
-        iterables.ordered_set([c for c in cols if c in m_columns or c in ["*"]] + getattr(args, "select", []))
+        iterables.ordered_set([c for c in cols if c in m_columns or c == "*"] + getattr(args, "select", []))
     )
     if args.action == consts.SC.read and "tags" in m_columns:
         if "duration" in args.select:
@@ -380,7 +380,7 @@ def sort_items_by_criteria(args, items):
     def get_sort_key(item):
         sort_values = []
         if not getattr(args, "sort", None):
-            return tuple()
+            return ()
 
         sort_exprs = args.sort if isinstance(args.sort, list) else args.sort.split(",")
         for s in sort_exprs:

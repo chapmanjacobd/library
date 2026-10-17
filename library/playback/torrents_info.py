@@ -428,7 +428,7 @@ def get_error_messages(t):
         msg = tr.msg
         if not msg:
             continue
-        if msg in ["This torrent is private"]:
+        if msg == "This torrent is private":
             continue
         errors.append((tr, msg))
     return errors
@@ -661,7 +661,7 @@ def torrents_info():
         torrents = sorted(torrents, key=lambda t: len(torrent_files(t)), reverse=reverse_sort)
     elif args.sort in ["size", "total_size"]:
         torrents = sorted(torrents, key=lambda t: t.total_size, reverse=reverse_sort)
-    elif args.sort in ["avg_size"]:
+    elif args.sort == "avg_size":
         torrents = sorted(torrents, key=lambda t: mean([f.size for f in torrent_files(t)]), reverse=reverse_sort)
     elif args.sort in ["network", "download+upload", "ingress+egress"]:
         torrents = sorted(

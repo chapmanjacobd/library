@@ -5,7 +5,7 @@ from library.mediadb import optimize_db
 
 def test_optimize_db_passes_parsed_arguments(monkeypatch, tmp_path):
     captured = []
-    monkeypatch.setattr(optimize_db.db_utils, "optimize", lambda args: captured.append(args))
+    monkeypatch.setattr(optimize_db.db_utils, "optimize", captured.append)
     database = str(tmp_path / "optimize.db")
     tmp_path.joinpath("optimize.db").touch()
     monkeypatch.setattr(sys, "argv", ["optimize", database, "--fts", "--force"])

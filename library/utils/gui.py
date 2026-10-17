@@ -141,7 +141,7 @@ class MrSuperDialogue:
         raise NotImplementedError
 
     @staticmethod
-    def get_monitor_from_coord(coord_x, coord_y):  # noqa: ANN205; -> Monitor
+    def get_monitor_from_coord(coord_x, coord_y):  # noqa: ANN205
         import screeninfo
 
         monitors = screeninfo.get_monitors()

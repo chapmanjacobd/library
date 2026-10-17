@@ -13,7 +13,8 @@ from library.utils.filter_engine import (
 
 
 def test_human_to_lambda_part():
-    dummy_conv = lambda x: int(x)  # identity converter for simplicity in tests
+    def dummy_conv(x):
+        return int(x)  # identity converter for simplicity in tests
 
     assert human_to_lambda_part(10, dummy_conv, ">5") is True
     assert human_to_lambda_part(10, dummy_conv, "<5") is False
@@ -25,7 +26,8 @@ def test_human_to_lambda_part():
 
 
 def test_human_to_sql_part():
-    dummy_conv = lambda x: int(x)
+    def dummy_conv(x):
+        return int(x)
 
     assert human_to_sql_part(dummy_conv, "size", ">5").strip() == "and size > 5"
     assert human_to_sql_part(dummy_conv, "size", "10%10").strip() == "and 9 <= size and size <= 11"

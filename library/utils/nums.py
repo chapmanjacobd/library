@@ -94,7 +94,8 @@ def human_to_bytes(input_str, binary=True) -> int:
 
     values = re.findall(r"\d+\.?\d*", input_str)
     if not values:
-        raise ValueError(f"No numeric value found in size: {input_str!r}")
+        msg = f"No numeric value found in size: {input_str!r}"
+        raise ValueError(msg)
     value = values[0]
 
     unit = re.findall(r"[a-z]+", input_str, re.IGNORECASE)
@@ -160,7 +161,8 @@ def human_to_seconds(input_str):
 
     values = re.findall(r"\d+\.?\d*", input_str)
     if not values:
-        raise ValueError(f"No numeric value found in duration: {input_str!r}")
+        msg = f"No numeric value found in duration: {input_str!r}"
+        raise ValueError(msg)
     value = values[0]
 
     unit = re.findall(r"[a-z]+", input_str, re.IGNORECASE)
@@ -173,7 +175,8 @@ def human_to_seconds(input_str):
         unit = "m"
 
     if unit not in time_units:
-        raise ValueError(f"Unknown time unit {unit!r} in duration: {input_str!r}")
+        msg = f"Unknown time unit {unit!r} in duration: {input_str!r}"
+        raise ValueError(msg)
 
     return int(float(value) * time_units[unit])
 

@@ -51,7 +51,7 @@ def select_all(args, html_content):
     soup = BeautifulSoup(html_content, "lxml")
 
     for item in soup.find_all():
-        if item.name in ["meta"]:
+        if item.name == "meta":
             continue
 
         for descendant in item.descendants:

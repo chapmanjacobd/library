@@ -203,7 +203,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         if "deleted" in media[0]:
             D["avg_deleted"] = int(nums.safe_mean(m.get("deleted") for m in media) or 0)
 
-        if "duration" in media[0] and action not in (SC.download_status,):
+        if "duration" in media[0] and action != SC.download_status:
             D["duration"] = total_duration
             D["avg_duration"] = nums.safe_mean(m.get("duration") for m in media)
 
@@ -243,7 +243,7 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         for k in set.union(*(set(d.keys()) for d in media)):
             if k.endswith("size"):
                 printing.col_filesize(media, k)
-            elif k.endswith("duration") or k in ("playhead",):
+            elif k.endswith("duration") or k == "playhead":
                 if action in (SC.disk_usage, SC.big_dirs, SC.playlists):
                     printing.col_duration_short(media, k)
                 else:

@@ -40,7 +40,7 @@ def gen_d(line):
 
 
 def json_keys_rename():
-    args, unknown_args = parse_utils()
+    _args, unknown_args = parse_utils()
 
     key_mapping = arg_utils.dict_from_unknown_args(unknown_args)
     if not key_mapping:

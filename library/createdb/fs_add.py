@@ -307,7 +307,7 @@ def scan_path(args, path_str: str) -> int:
                 )
 
                 mp_args = argparse.Namespace(
-                    playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
+                    playlist_path=path, **{k: v for k, v in args.__dict__.items() if k != "db"}
                 )
 
                 thread_paths = []

@@ -9,7 +9,8 @@ def _figure_by_title(title):
         for ax in plt.figure(num).axes:
             if ax.get_title() == title:
                 return ax
-    raise AssertionError(f"no figure titled {title!r}")
+    msg = f"no figure titled {title!r}"
+    raise AssertionError(msg)
 
 
 @pytest.mark.parametrize(

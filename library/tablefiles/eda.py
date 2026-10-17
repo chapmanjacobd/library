@@ -197,7 +197,7 @@ def file_eda(args, path):
         breakpoint()
 
     for dft in dfs:
-        df_name, df = dft
+        df_name, _df = dft
 
         if args.table_name == "stdin":
             print(f"## stdin:{df_name}")

@@ -352,6 +352,7 @@ def _download(usage, *, links: bool = False, database_positional: bool = False) 
         except Exception:
             print("db:", args.database)
             raise
+    return None
 
 
 def _download_builtin(args, m, original_path, dl_paths) -> bool:

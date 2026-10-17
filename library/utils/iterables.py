@@ -308,7 +308,7 @@ def list_dict_summary(l, stat_funcs=None):
     for stat_name, stat_func in stat_funcs.items():
         stat_result = {}
         for key, values in summary.items():
-            if key in ("count",):
+            if key == "count":
                 stat_result[key] = int(stat_func(values))
             else:
                 stat_result[key] = stat_func(values)

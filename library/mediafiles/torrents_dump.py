@@ -61,7 +61,7 @@ def torrents_dump():
     rows = []
     for torrent_path, d in torrents:
         torrent = torrents_add.torrent_decode(torrent_path)
-        trackers = [t for t in torrent.trackers()]
+        trackers = list(torrent.trackers())
         announce_urls = []
         for t in sorted(trackers, key=lambda t: (t.source, t.tier)):
             try:
@@ -79,7 +79,6 @@ def torrents_dump():
                 "time_uploaded": strings.relative_datetime(d["time_uploaded"]),
                 "time_created": strings.relative_datetime(d["time_created"]),
                 "time_modified": strings.relative_datetime(d["time_modified"]),
-                "time_created": strings.relative_datetime(d["time_created"]),
                 "files": d["files"][0]["path"] + ", ...",
                 "announce_urls": " ".join(announce_urls),
                 "web_seeds": " ".join(d["web_seeds"]),

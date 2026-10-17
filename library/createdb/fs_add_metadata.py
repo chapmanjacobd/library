@@ -53,7 +53,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[s
     except OSError as e:
         errmsg = str(e)
         if path not in errmsg:
-            errmsg = " ".join([path, errmsg])
+            errmsg = f"{path} {errmsg}"
         log.error("%s: %s", type(e).__name__, errmsg)
         return None
     except Exception as excinfo:
@@ -145,7 +145,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[s
         elif (
             objects.is_profile(mp_args, DBType.video)
             and process_ext in consts.VIDEO_EXTENSIONS
-            and Path(path).suffix not in [".av1.mkv"]
+            and Path(path).suffix != ".av1.mkv"
         ):
             result = process_ffmpeg.process_path(mp_args, path)
             if result is None:

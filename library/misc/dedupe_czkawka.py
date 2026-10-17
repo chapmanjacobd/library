@@ -81,7 +81,7 @@ def parse_czkawka_line(line):
 
     image_match = re.match(image_pattern, line)
     if image_match:
-        path, resolution, size_value, size_unit = image_match.groups()
+        path, _resolution, size_value, size_unit = image_match.groups()
         return path.strip(), float(size_value), size_unit
 
     video_match = re.match(video_pattern, line)

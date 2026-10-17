@@ -16,7 +16,7 @@ def test_get_video_download_environment_error():
 
 
 @pytest.mark.parametrize(
-    "ydl_log, saved_error",
+    ("ydl_log", "saved_error"),
     [
         (
             {
@@ -49,7 +49,7 @@ def test_get_video_download_re():
 
 
 @pytest.mark.parametrize(
-    "ydl_log, saved_error",
+    ("ydl_log", "saved_error"),
     [
         (
             {

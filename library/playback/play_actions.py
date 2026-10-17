@@ -239,7 +239,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
         args.play_in_order = None
 
     if args.mpv_socket is None:
-        if args.action in (SC.listen,):
+        if args.action == SC.listen:
             args.mpv_socket = consts.DEFAULT_MPV_LISTEN_SOCKET
         else:
             args.mpv_socket = consts.DEFAULT_MPV_WATCH_SOCKET
@@ -289,7 +289,7 @@ def file_or_folder_media(args, paths):
     if any(s not in args.defaults for s in ["duration", "start", "end"]):
         with ThreadPoolExecutor() as parallel:
             mp_args = argparse.Namespace(
-                playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
+                playlist_path=path, **{k: v for k, v in args.__dict__.items() if k != "db"}
             )
             media = parallel.map(partial(fs_add_metadata.extract_metadata, mp_args), [m["path"] for m in media])
             media = list(filter(None, media))
@@ -326,7 +326,8 @@ def process_playqueue(args) -> None:
         args.select_sql = sqlgroups.media_select_sql(args, m_columns)
 
         if args.action == SC.filesystem:
-            db_sql_func = lambda a: sqlgroups.fs_sql(a, a.limit)
+            def db_sql_func(a):
+                return sqlgroups.fs_sql(a, a.limit)
         else:
             db_sql_func = sqlgroups.media_sql
 

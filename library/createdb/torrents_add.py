@@ -28,7 +28,7 @@ def parse_args():
 
 def get_tracker_domain(torrent):
     trackers = torrent.trackers()
-    trackers = [t for t in trackers]
+    trackers = list(trackers)
     if not trackers:
         return torrent.source
 

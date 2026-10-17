@@ -109,7 +109,7 @@ def detect_mimetype(path):
     elif p.is_dir():
         file_type = "directory"
     else:
-        file_type, encoding = mimetypes.guess_type(path, strict=False)
+        file_type, _encoding = mimetypes.guess_type(path, strict=False)
 
     if ext and file_type is None:
         pandas_ext = {
@@ -280,7 +280,7 @@ def read_file_to_dataframes(
         ds = xr.open_dataset(path)
         df = ds.to_dataframe()
         dfs.append(NDF(None, df))
-    elif mimetype in ("zarr",):
+    elif mimetype == "zarr":
         import xarray as xr  # type: ignore
 
         ds = xr.open_zarr(path)
@@ -368,13 +368,13 @@ def read_file_to_dataframes(
         if path.startswith("http"):
             path = StringIO(web.extract_html(path))
         dfs.extend(NDF(None, df) for df in pd.read_html(path, skiprows=start_row, encoding=encoding))
-    elif mimetype in ("stata",):
+    elif mimetype == "stata":
         df = pd.read_stata(path)
         dfs.append(NDF(None, df))
-    elif mimetype in ("feather",):
+    elif mimetype == "feather":
         df = pd.read_feather(path)
         dfs.append(NDF(None, df))
-    elif mimetype in ("orc",):
+    elif mimetype == "orc":
         df = pd.read_orc(path)
         dfs.append(NDF(None, df))
     elif "pdf" in mimetype:

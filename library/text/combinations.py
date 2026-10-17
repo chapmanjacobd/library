@@ -15,7 +15,7 @@ def parse_utils():
 
 
 def combinations():
-    args, unknown_args = parse_utils()
+    _args, unknown_args = parse_utils()
 
     data = arg_utils.dict_of_lists_from_unknown_args(unknown_args)
     if not data:

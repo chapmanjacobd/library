@@ -65,7 +65,7 @@ def update_references(path, replacements):
 
 
 def get_media_type(ext):
-    """Return MIME type for a file extension"""
+    """Return MIME type for a file extension."""
     ext = ext.lower()
     media_types = {
         ".avif": "image/avif",
@@ -81,7 +81,7 @@ def get_media_type(ext):
 
 
 def update_manifest(output_path, avif_files):
-    """Update content.opf manifest with converted image references"""
+    """Update content.opf manifest with converted image references."""
     manifest_path = output_path / "content.opf"
 
     try:
@@ -294,7 +294,7 @@ def process_path(args, path) -> str | None:
     image_paths = shell_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
 
     mp_image_args = argparse.Namespace(
-        **{k: v for k, v in args.__dict__.items() if k not in {"db"}} | {"delete_larger": True, "delete_original": False}
+        **{k: v for k, v in args.__dict__.items() if k != "db"} | {"delete_larger": True, "delete_original": False}
     )
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {

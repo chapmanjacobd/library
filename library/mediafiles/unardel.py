@@ -98,7 +98,7 @@ def unardel() -> None:
     args = parse_args()
     media = collect_media(args)
 
-    mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+    mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k != "db"})
     with concurrent.futures.ThreadPoolExecutor() as executor:  # for lsar
         futures = {executor.submit(check_shrink, mp_args, m) for m in media}
     media = iterables.conform(v.result() for v in futures)

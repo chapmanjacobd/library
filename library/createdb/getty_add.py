@@ -61,7 +61,7 @@ def activity_stream_extract(args, json_data):
                     args.db["activity_stream"].delete_where("path = ?", [obj.get("id")])
             elif type_ == "Update":
                 continue  # TODO: implement in-band Update mechanism
-            elif type_ not in ["Create"]:
+            elif type_ != "Create":
                 raise
 
             obj_info = {

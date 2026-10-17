@@ -126,7 +126,7 @@ class PortForwardHandler(socketserver.BaseRequestHandler):
             (self.chain_host, self.chain_port),  # type: ignore
         )
         while True:
-            r, w, x = select.select([self.request, chan], [], [])
+            r, _w, _x = select.select([self.request, chan], [], [])
             if self.request in r:
                 data = self.request.recv(1024)
                 if len(data) == 0:
