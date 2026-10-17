@@ -17,7 +17,8 @@ def test_live_skip():
     tube_add([dl_db, URL])
     lb(
         [
-            "dl",
+            "download",
+            "--db",
             dl_db,
             "--video",
             "-o",
@@ -37,7 +38,8 @@ def test_live():
     tube_add([dl_db, URL])
     lb(
         [
-            "dl",
+            "download",
+            "--db",
             dl_db,
             "--video",
             "-o",

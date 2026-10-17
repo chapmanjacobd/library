@@ -340,16 +340,6 @@ def test_links_download_explicit_profile_skips_resolution(monkeypatch):
     assert routed["builtin"] == ["https://x/clip"]
 
 
-def test_direct_download_stays_builtin(monkeypatch):
-    routed = _patch_backend_routing(monkeypatch)
-    monkeypatch.setattr("sys.argv", ["direct-download", "https://x/clip"])
-
-    extract_links.direct_download()
-
-    assert routed["tube"] == []
-    assert routed["builtin"] == ["https://x/clip"]
-
-
 def test_links_download_direct_uses_builtin(monkeypatch):
     """`links-download --direct` must bypass yt-dlp/gallery-dl routing even for a
     supported URL."""
@@ -374,4 +364,3 @@ def test_links_download_safe_skips_unsafe_links(monkeypatch):
 
     assert routed["tube"] == ["https://x/clip"]
     assert routed["builtin"] == []
-

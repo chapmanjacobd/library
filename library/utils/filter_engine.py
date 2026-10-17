@@ -263,7 +263,7 @@ def construct_search_bindings(include, exclude, columns, exact=False, flexible_s
 
 
 def search_filter(args, m_columns, table="media", table_prefix="m."):
-    if args.db[table].detect_fts() and args.fts and args.include:
+    if getattr(args, "db", None) is not None and args.db[table].detect_fts() and args.fts and args.include:
         table, search_bindings = fts_search_sql(
             table,
             fts_table=args.db[table].detect_fts(),

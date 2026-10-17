@@ -9,8 +9,8 @@ from tests.utils import v_db
 
 def test_tw_print(capsys):
     for lb_command in [
-        ["tw", v_db, "-p"],
-        ["dl", v_db, "-p"],
+        ["tw", "--db", v_db, "-p"],
+        ["download", "--db", v_db, "-p"],
         ["pl", v_db],
         ["ds", v_db],
     ]:
@@ -19,10 +19,10 @@ def test_tw_print(capsys):
         assert "Agg" not in captured
 
     for lb_command in [
-        ["tw", v_db, "-p", "a"],
-        ["tw", v_db, "-pa"],
+        ["tw", "--db", v_db, "-p", "a"],
+        ["tw", "--db", v_db, "-pa"],
         ["pl", v_db, "-pa"],
-        ["dl", v_db, "-p", "a"],
+        ["download", "--db", v_db, "-p", "a"],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")

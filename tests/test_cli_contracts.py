@@ -28,7 +28,7 @@ from tests.utils import v_db
         ["cluster-sort", "--text"],
         ["export-text", "--format", "json", ":memory:"],
         ["download", "--safe", "--filesystem", v_db],
-        ["media", "--chromecast", v_db],
+        ["media", "--chromecast", "--db", v_db],
         ["similar-files", "tests/data"],
         ["similar-folders", "tests/data"],
     ],
@@ -67,7 +67,7 @@ def test_delete_original_is_independent_of_delete_larger(monkeypatch):
 
 
 def test_download_defaults_to_auto(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["download", v_db, "--print"])
+    monkeypatch.setattr("sys.argv", ["download", "--db", v_db, "--print"])
 
     args = download.parse_args()
 
@@ -75,7 +75,7 @@ def test_download_defaults_to_auto(monkeypatch):
 
 
 def test_download_media_type_auto(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["download", "--media-type", "auto", v_db, "--print"])
+    monkeypatch.setattr("sys.argv", ["download", "--media-type", "auto", "--db", v_db, "--print"])
 
     args = download.parse_args()
 
@@ -83,25 +83,80 @@ def test_download_media_type_auto(monkeypatch):
 
 
 def test_download_links_defaults_to_auto(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["download-links", v_db, "--print"])
+    monkeypatch.setattr("sys.argv", ["links-download", "--db", v_db, "--print"])
 
     args = download.parse_args(usage.download_links, links=True)
 
     assert args.profile == DBType.auto
 
 
+def test_database_download_does_not_register_link_spider_options(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["download", "--db", v_db, "--print"])
+
+    args = download.parse_args()
+
+    assert not hasattr(args, "recursive")
+    assert not hasattr(args, "webcache")
+
+
+def test_database_link_download_registers_link_spider_options(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links-download", "--db", v_db, "--recursive", "--webcache", "--print"])
+
+    args = download.parse_args(usage.download_links, links=True)
+
+    assert args.recursive is True
+    assert args.webcache is True
+
+
 def test_links_download_defaults_to_auto(monkeypatch):
     monkeypatch.setattr("sys.argv", ["links-download", "https://example.com/"])
 
-    args = extract_links.parse_args_links_download()
+    args = download.parse_args(usage.links_download, links=True)
 
     assert args.profile == DBType.auto
+
+
+def test_database_download_positional_is_the_database(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["database-download", v_db, "--print"])
+
+    args = download.parse_args(usage.download_database, database_positional=True)
+
+    assert args.database == v_db
+
+
+def test_download_requires_db_flag_for_databases(monkeypatch):
+    """`lb download`/`lb dl` must use `--db`; a bare positional is a URL/path, not a database."""
+    monkeypatch.setattr("sys.argv", ["download", v_db, "--print"])
+
+    args = download.parse_args()
+
+    assert args.database is None
+    assert args.paths == [v_db]
+
+
+def test_download_with_db_treats_paths_as_filters(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["download", "--db", v_db, "https://example.com/", "--print"])
+
+    args = download.parse_args()
+
+    assert args.database == v_db
+    assert args.paths == []
+    assert args.include == ["https://example.com/"]
+
+
+def test_links_download_with_db_delegates_to_database_download(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.mediadb.download.download_links", lambda: called.append(sys.argv[1:]))
+
+    lb(["links-download", "--db", "links.db", "https://example.com/"])
+
+    assert called == [["--db", "links.db", "https://example.com/"]]
 
 
 def test_links_download_accepts_direct(monkeypatch):
     monkeypatch.setattr("sys.argv", ["links-download", "--direct", "https://example.com/"])
 
-    args = extract_links.parse_args_links_download()
+    args = download.parse_args(usage.links_download, links=True)
 
     assert args.direct is True
 
@@ -109,39 +164,45 @@ def test_links_download_accepts_direct(monkeypatch):
 def test_links_download_accepts_text(monkeypatch):
     monkeypatch.setattr("sys.argv", ["links-download", "--text", "https://example.com/"])
 
-    args = extract_links.parse_args_links_download()
+    args = download.parse_args(usage.links_download, links=True)
 
     assert args.profile == DBType.text
 
 
-def test_direct_download_has_no_profile_or_safe(monkeypatch):
-    """direct-download only uses the built-in downloader, so it must not advertise
-    profile/media-type/safe options that would be ignored."""
-    monkeypatch.setattr("sys.argv", ["direct-download", "https://example.com/x"])
+def test_direct_download_usage_keeps_top_level_route():
+    text = __main__.canonicalize_usage_for_command(usage.download, "download")
 
-    args = extract_links.parse_args_direct_download()
+    assert "library download --db dl.db" in text
+    assert "library database download --db dl.db" not in text
+
+
+def test_download_accepts_direct_and_safe(monkeypatch):
+    """`lb download` routes by default (auto) but `--direct` selects the built-in downloader."""
+    monkeypatch.setattr("sys.argv", ["download", "--direct", "https://example.com/x"])
+
+    args = download.parse_args()
 
     assert args.direct is True
-    assert not hasattr(args, "profile")
-    assert not hasattr(args, "safe")
+    assert args.profile == DBType.auto
+    assert hasattr(args, "safe")
 
 
 def test_nested_command_dispatches_to_canonical_target(monkeypatch):
     called = []
     monkeypatch.setattr("library.playback.play_actions.watch", lambda: called.append(sys.argv[1:]))
 
-    lb(["play", "video", "video.db"])
+    lb(["play", "video", "--db", "video.db"])
 
-    assert called == [["video.db"]]
+    assert called == [["--db", "video.db"]]
 
 
 def test_legacy_flat_command_dispatches_to_existing_target(monkeypatch):
     called = []
     monkeypatch.setattr("library.playback.play_actions.watch", lambda: called.append(sys.argv[1:]))
 
-    lb(["watch", "video.db"])
+    lb(["watch", "--db", "video.db"])
 
-    assert called == [["video.db"]]
+    assert called == [["--db", "video.db"]]
 
 
 def test_nested_links_download_dispatches_to_existing_entrypoint(monkeypatch):
@@ -155,7 +216,7 @@ def test_nested_links_download_dispatches_to_existing_entrypoint(monkeypatch):
 
 def test_nested_direct_download_dispatches_to_existing_entrypoint(monkeypatch):
     called = []
-    monkeypatch.setattr("library.text.extract_links.direct_download", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.mediadb.download.download", lambda: called.append(sys.argv[1:]))
 
     lb(["download", "https://example.com/file.zip"])
 
@@ -174,13 +235,21 @@ def test_download_without_db_is_direct(monkeypatch):
     assert called == [["https://example.com/file.zip"]]
 
 
-def test_download_with_db_delegates_to_database_download(monkeypatch):
+def test_download_with_db_preserves_argv(monkeypatch):
     called = []
     monkeypatch.setattr("library.mediadb.download.download", lambda: called.append(sys.argv[1:]))
 
     lb(["download", "--db", "dl.db", "--prefix", "/tmp/out"])
 
-    # the db override is injected as the database positional, everything else is preserved
+    assert called == [["--db", "dl.db", "--prefix", "/tmp/out"]]
+
+
+def test_database_download_dispatches_to_distinct_entrypoint(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.mediadb.download.download_database", lambda: called.append(sys.argv[1:]))
+
+    lb(["database", "download", "dl.db", "--prefix", "/tmp/out"])
+
     assert called == [["dl.db", "--prefix", "/tmp/out"]]
 
 
@@ -238,8 +307,9 @@ def test_help_without_query_prints_top_level_help(capsys):
     ("nested", "usage_prefix"),
     [
         (["play", "video", "-h"], "usage: library play video"),
+        (["links", "download", "-h"], "usage: library links download"),
         (["database", "search", "-h"], "usage: library database search"),
-        (["database", "filesystem", "list", "-h"], "usage: library database filesystem list"),
+        (["database", "filesystem", "list", "-h"], "usage: library filesystem list"),
         (["file", "hash", "-h"], "usage: library file hash"),
         (["text", "sort", "regex", "-h"], "usage: library text sort regex"),
         (["playback", "next", "-h"], "usage: library playback next"),
@@ -257,7 +327,7 @@ def test_nested_leaf_help_uses_canonical_usage(nested, usage_prefix, capsys):
     assert exc_info.value.code == 0
     first_line = capsys.readouterr().out.splitlines()[0]
     assert first_line.startswith(usage_prefix)
-    assert first_line.count(" ".join(nested[:-1])) == 1
+    assert first_line.count(usage_prefix.removeprefix("usage: library ")) == 1
 
 
 def test_help_search_accepts_ordinary_searches(capsys):
@@ -328,8 +398,9 @@ def test_generated_readme_documents_every_nested_command():
 
     for path in __main__._canonical_nested_paths_for_all_groups():
         assert f"###### {path}\n" in readme
-        # the per-command example and its usage header must use the canonical path, too
-        assert f"    $ library {path} -h\n    usage: library {path}" in readme
+        target, _consumed = __main__._nested_target(path.split())
+        canonical_path = __main__._canonical_target_paths().get(target, path)
+        assert f"    $ library {path} -h\n    usage: library {canonical_path}" in readme
 
 
 def test_nested_unknown_command_suggests_group_usage(capsys):
@@ -373,6 +444,32 @@ def test_db_and_fs_are_resource_group_aliases():
     assert _nested_target(["db", "add", "filesystem"]) == ("fs-add", 3)
     assert _nested_target(["fs", "stats", "mounts"]) == ("mount-stats", 3)
     assert _nested_target(["database", "fs", "list"]) == ("filesystem", 3)
+    assert _nested_target(["filesystem", "list"]) == ("filesystem", 2)
+    assert _nested_target(["fs", "usage"]) == ("disk-usage", 2)
+
+
+def test_top_level_filesystem_routes_dispatch_to_migrated_commands(monkeypatch):
+    called = []
+    monkeypatch.setattr("library.fsdb.filesystem.filesystem", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.fsdb.disk_usage.disk_usage", lambda: called.append(sys.argv[1:]))
+
+    lb(["fs", "list", "--db", "files.db"])
+    lb(["filesystem", "usage", "--db", "files.db"])
+
+    assert called == [
+        ["--db", "files.db"],
+        ["--db", "files.db"],
+    ]
+
+
+def test_migrated_path_parsers_promote_legacy_database_position():
+    args = argparse.Namespace(database=None, paths=["tests/data/video.db", "path-filter"], include=[])
+
+    arggroups.database_paths_post(args, legacy_database=True)
+
+    assert args.database == "tests/data/video.db"
+    assert args.include == ["path-filter"]
+    assert args.paths == []
 
 
 def test_expand_profiles_auto_expands_to_all_media_types(monkeypatch):
@@ -437,12 +534,12 @@ def test_resolve_profiles_require_deps_false_keeps_all_media_types(monkeypatch):
 def test_profile_extensions_maps_media_types():
     exts = arggroups.profile_extensions([DBType.text], ocr=True, speech_recognition=True)
 
-    assert consts.TEXTRACT_EXTENSIONS <= exts
-    assert consts.OCR_EXTENSIONS <= exts
-    assert consts.SPEECH_RECOGNITION_EXTENSIONS <= exts
+    assert exts >= consts.TEXTRACT_EXTENSIONS
+    assert exts >= consts.OCR_EXTENSIONS
+    assert exts >= consts.SPEECH_RECOGNITION_EXTENSIONS
 
     video_only = arggroups.profile_extensions([DBType.video])
-    assert consts.VIDEO_EXTENSIONS <= video_only
+    assert video_only >= consts.VIDEO_EXTENSIONS
     # filesystem is not a media type and contributes no extensions
     assert arggroups.profile_extensions([DBType.filesystem]) == set()
 

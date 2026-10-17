@@ -364,6 +364,8 @@ def construct_playlists_query(args) -> tuple[str, dict]:
 def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     pl_columns = db_utils.columns(args, "playlists")
+    args.filter_sql = getattr(args, "filter_sql", [])
+    args.filter_bindings = getattr(args, "filter_bindings", {})
 
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
@@ -378,7 +380,8 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         def is_supported(url):
             return safe_supported(args, url)
 
-        args.db.register_function(is_supported, deterministic=True)
+        if getattr(args, "db", None) is not None:
+            args.db.register_function(is_supported, deterministic=True)
         safe_filter = True
 
     if "time_modified" in m_columns and not dl_status:

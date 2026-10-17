@@ -213,11 +213,8 @@ If you don't know the exact name of your chromecast group run `catt scan`
     arggroups.media_scan(parser)
     arggroups.debug(parser)
 
-    db_parser = parser.add_argument_group("Database")
-    db_parser.add_argument("--db", "-db", help="Positional argument override")
-    db_parser.add_argument("paths", nargs="+", action=argparse_utils.ArgparseDBOrPaths)
-    arggroups.capability_soft_delete(parser)
-    arggroups.capability_delete(parser)
+    arggroups.database_optional(parser)
+    arggroups.paths_or_stdin(parser, required=False)
 
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
@@ -228,6 +225,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
     if args.chromecast and action not in (SC.watch, SC.listen):
         parser.error("--chromecast is supported only with watch or listen")
 
+    arggroups.database_paths_post(args, legacy_database=True)
     arggroups.args_post(args, parser)
     arggroups.sql_fs_post(args)
     arggroups.files_post(args)

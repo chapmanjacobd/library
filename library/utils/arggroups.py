@@ -132,7 +132,7 @@ def printing(parser):
 Printing modes
 -p    # print as a table
 -p a  # print an aggregate report
--p b  # print a big-dirs report (see library bigdirs -h for more info)
+-p b  # print a big-dirs report (see library folder large -h for more info)
 -p f  # print fields (defaults to path; useful for piping to utilities like xargs or GNU Parallel)
 -p d  # mark deleted
 -p w  # mark watched
@@ -239,6 +239,15 @@ def database(parent_parser, *, soft_delete=True):
     capability_delete(parent_parser)
 
 
+def database_optional(parent_parser, *, soft_delete=True):
+    parser = parent_parser.add_argument_group("Database")
+    parser.add_argument("--db", "-db", dest="database", metavar="DATABASE", help="SQLite database to query")
+    parent_parser.set_defaults(db=None)
+    if soft_delete:
+        capability_soft_delete(parent_parser)
+    capability_delete(parent_parser)
+
+
 def paths_or_stdin(parent_parser, required=True, destination=False):
     parser = parent_parser.add_argument_group("Paths")
     parser.add_argument("--from-json", "--json", action="store_true", help="Read JSON or JSONL from stdin")
@@ -254,25 +263,25 @@ def paths_or_stdin(parent_parser, required=True, destination=False):
         )
 
 
-def database_or_paths(parent_parser, required=True, destination=False):
-    parser = parent_parser.add_argument_group("Database")
-    parser.add_argument("--db", "-db", help="Positional argument override")
-    capability_soft_delete(parent_parser)
-    capability_delete(parent_parser)
+def database_paths_post(args, *, legacy_database=False):
+    if legacy_database and not args.database and args.paths:
+        candidate = args.paths[0]
+        if (
+            candidate == ":memory:"
+            or argparse_utils.is_sqlite(candidate)
+            or (
+                not candidate.startswith(("http://", "https://"))
+                and Path(candidate).suffix.lower() in consts.SQLITE_EXTENSIONS
+            )
+        ):
+            args.database = candidate
+            args.paths = args.paths[1:]
 
-    parser = parent_parser.add_argument_group("Paths")
-    parser.add_argument("--from-json", "--json", action="store_true", help="Read JSON or JSONL from stdin")
-
-    if destination:
-        parser.add_argument("paths", nargs="+", action=argparse_utils.ArgparseDBOrPaths, metavar="DB_OR_PATH")
-    else:
-        parser.add_argument(
-            "paths",
-            nargs="*",
-            default=argparse_utils.STDIN_DASH if required else None,
-            action=argparse_utils.ArgparseDBOrPaths,
-            metavar="DB_OR_PATH",
-        )
+    if args.database:
+        args.include.extend(args.paths or [])
+        args.paths = []
+    elif args.paths is None:
+        args.paths = argparse_utils.STDIN_DASH
 
 
 def sql_fs(parent_parser):
@@ -1181,7 +1190,7 @@ def group_folders(parent_parser):
         action="count",
         default=0,
         help="""Group media by folders
-Recommended to use with -L inf and --duration or --depth filters; see `lb big-dirs -h` for more info""",
+Recommended to use with -L inf and --duration or --depth filters; see `library folder large -h` for more info""",
     )
 
     parser.add_argument("--episode", "--episodic", action="store_true", help="Shorthand for --file-counts '>1'")

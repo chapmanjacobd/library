@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from library.__main__ import library as lb
-from library.__main__ import _canonical_nested_paths_for_all_groups, modules
+from library.__main__ import _canonical_nested_paths_for_all_groups, _canonical_target_paths, _nested_target, modules
 from tests.utils import p
 
 subcommands = _canonical_nested_paths_for_all_groups()
@@ -32,8 +32,9 @@ def test_usage(capsys, subcommand):
 
     usage = capsys.readouterr().out.splitlines()[0]
     assert usage.startswith("usage: library")
-    # Every advertised command must show its own canonical path in the usage header
-    assert subcommand in usage
+    target, _consumed = _nested_target(subcommand.split())
+    canonical_path = _canonical_target_paths().get(target, subcommand)
+    assert canonical_path in usage
 
 
 def get_test_name(s):

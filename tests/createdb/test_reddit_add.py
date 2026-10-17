@@ -19,7 +19,7 @@ class TestReddit(unittest.TestCase):
 
     @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
-        lb(["wt", reddit_db])
+        lb(["wt", "--db", reddit_db])
         out = play_mocked.call_args[0][1]
         assert len(out) > 0
 
@@ -35,8 +35,8 @@ class TestReddit(unittest.TestCase):
         assert len(media) > 0
 
     def test_print(self):
-        lb(["wt", reddit_db, "-p"])
-        lb(["dl", reddit_db, "-p"])
+        lb(["wt", "--db", reddit_db, "-p"])
+        lb(["download", "--db", reddit_db, "-p"])
         lb(["pl", reddit_db])
         lb(["ds", reddit_db])
 

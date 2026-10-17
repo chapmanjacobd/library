@@ -34,12 +34,6 @@ def _add_link_extraction(parser):
     arggroups.spider(parser)
 
 
-def _add_download_options(parser):
-    arggroups.download(parser, direct=True)
-    arggroups.download_subtitle(parser)
-    arggroups.download_media_filters(parser)
-
-
 def _post_link_extraction(args):
     arggroups.filter_links_post(args)
     web.requests_session(args)
@@ -59,64 +53,6 @@ def parse_args_extract():
     arggroups.extractor_post(args)
     _post_link_extraction(args)
     return args
-
-
-def parse_args_links_download():
-    parser = _base_parser(usage_mod.links_download)
-    _add_link_extraction(parser)
-    _add_download_options(parser)
-    parser.set_defaults(download=True, direct=False)
-
-    arggroups.debug(parser)
-    arggroups.paths_or_stdin(parser)
-    args = parser.parse_intermixed_args()
-    arggroups.args_post(args, parser)
-
-    # local import: library.mediadb.download imports this module at module level
-    from library.mediadb import download as download_mod
-
-    download_mod.validate_safe(args, parser, extracts_links=True)
-    arggroups.extractor_post(args)
-    _post_link_extraction(args)
-    return args
-
-
-def parse_args_direct_download():
-    parser = _base_parser(usage_mod.direct_download)
-    # A pure built-in downloader: no profile/media-type or yt-dlp/gallery-dl filters.
-    arggroups.download(parser, profile=False, safe=False)
-    parser.add_argument(
-        "--db",
-        "-db",
-        help="Download media recorded in a database instead of downloading the given URLs directly",
-    )
-    parser.set_defaults(download=True, direct=True)
-
-    arggroups.debug(parser)
-    arggroups.paths_or_stdin(parser)
-    args = parser.parse_intermixed_args()
-    arggroups.args_post(args, parser)
-
-    arggroups.extractor_post(args)
-    web.requests_session(args)
-    return args
-
-
-def _split_db_override(argv: list[str]) -> tuple[str | None, list[str]]:
-    """Split `--db DB` (or `--db=DB`) out of argv.
-
-    `library download` is a direct URL downloader unless `--db` is given, in which case
-    it behaves like the database-backed downloader (the db is injected as the database
-    positional so the existing parser is reused unchanged).
-    """
-    for index, arg in enumerate(argv):
-        if arg in {"--db", "-db"}:
-            if index + 1 >= len(argv):
-                return None, argv  # let argparse report the missing value
-            return argv[index + 1], argv[:index] + argv[index + 2 :]
-        if arg.startswith(("--db=", "-db=")):
-            return arg.split("=", 1)[1], argv[:index] + argv[index + 1 :]
-    return None, argv
 
 
 def is_desired_url(args, link, link_text, before, after) -> bool:
@@ -493,7 +429,7 @@ def print_or_download(args, d, backend_args_cache):
 
 def _download_paths(args, backend_args_cache) -> None:
     for url in shell_utils.gen_paths(args):
-        if args.url_encode:
+        if getattr(args, "url_encode", False):
             url = web.url_encode(url).strip()
         if args.download:
             _download_one(args, url, backend_args_cache)
@@ -506,22 +442,10 @@ def extract_links() -> None:
 
 
 def links_download() -> None:
-    _run_extract(parse_args_links_download())
+    # local import: library.mediadb.download imports this module at module level
+    from library.mediadb import download as download_mod
 
-
-def direct_download() -> None:
-    """`library download`: direct URL download, or database download when `--db` is given."""
-    database, argv = _split_db_override(sys.argv[1:])
-    if database is not None:
-        program = sys.argv[0] if sys.argv else "library download"
-        sys.argv = [program, database, *argv]
-
-        # local import: library.mediadb.download imports this module at module level
-        from library.mediadb import download as download_mod
-
-        return download_mod.download()
-
-    _download_paths(parse_args_direct_download(), {})
+    download_mod.download_links()
 
 
 def _run_extract(args) -> None:

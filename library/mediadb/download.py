@@ -27,7 +27,7 @@ from library.utils.log_utils import log
 from library.utils.sqlgroups import construct_download_query
 
 
-def parse_args(usage=None, *, links: bool = False):
+def parse_args(usage=None, *, links: bool = False, database_positional: bool = False):
     parser = argparse_utils.ArgumentParser(usage=usage or usage_mod.download)
     arggroups.sql_fs(parser)
 
@@ -36,7 +36,8 @@ def parse_args(usage=None, *, links: bool = False):
     arggroups.requests(parser)
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
-    arggroups.spider(parser)
+    if links:
+        arggroups.spider(parser)
 
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
@@ -50,13 +51,25 @@ def parse_args(usage=None, *, links: bool = False):
     parser.set_defaults(same_file_threads=1, full_scan_if_corrupt="7%")
     arggroups.debug(parser)
 
-    arggroups.database(parser)
+    arggroups.database_optional(parser)
+    if database_positional:
+        parser.add_argument("database_path", nargs="?", metavar="DATABASE", help="SQLite database to query")
     arggroups.paths_or_stdin(parser, required=False)
 
-    parser.set_defaults(fts=False)
+    parser.set_defaults(fts=False, download=True)
     args, unk = parser.parse_known_intermixed_args()
 
-    args.extract_links = links or args.recursive or args.webcache
+    if database_positional and not args.database and getattr(args, "database_path", None):
+        args.database = args.database_path
+
+    if args.database and args.from_json:
+        # `--from-json` supplies media rows (eg. piped from `filesystem list --to-json`),
+        # not database filters, so keep them as paths
+        args.paths = args.paths or []
+    else:
+        arggroups.database_paths_post(args, legacy_database=False)
+
+    args.extract_links = links or getattr(args, "recursive", False) or getattr(args, "webcache", False)
 
     if unk and not args.profile in (DBType.video, DBType.audio, DBType.auto):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
@@ -79,6 +92,11 @@ def download(args=None) -> None:
         sys.argv = ["lb", *args]
 
     _download(usage_mod.download)
+
+
+def download_database() -> None:
+    """`library database download DATABASE` is `library download --db DATABASE`."""
+    _download(usage_mod.download_database, database_positional=True)
 
 
 def download_links(args=None) -> None:
@@ -181,8 +199,13 @@ def safe_supported(args, path) -> bool:
     return True
 
 
-def _download(usage, *, links: bool = False) -> None:
-    args = parse_args(usage, links=links)
+def _download(usage, *, links: bool = False, database_positional: bool = False) -> None:
+    args = parse_args(usage, links=links, database_positional=database_positional)
+
+    if not args.database:
+        if links:
+            return extract_links._run_extract(args)
+        return extract_links._download_paths(args, {})
 
     if not args.simulate:
         db_playlists.create(args)

@@ -18,7 +18,7 @@ elif consts.IS_MAC:
 
 
 def test_disk_usage(assert_unchanged, capsys):
-    lb(["du", v_db, "-td", "--parents", "--depth=2", "--to-json"])
+    lb(["du", "--db", v_db, "-td", "--parents", "--depth=2", "--to-json"])
     captured = capsys.readouterr().out
     assert_unchanged(
         [json.loads(line) for line in captured.strip().split("\n")], basename=f"test_disk_usage.{platform}"
@@ -28,7 +28,7 @@ def test_disk_usage(assert_unchanged, capsys):
 def test_disk_usage_min_depth(capsys):
     from pathlib import Path
 
-    lb(["du", v_db, "-td", "--parents", "--min-depth=3", "--to-json"])
+    lb(["du", "--db", v_db, "-td", "--parents", "--min-depth=3", "--to-json"])
     paths = {json.loads(line)["path"] for line in capsys.readouterr().out.strip().split("\n")}
 
     cwd = Path.cwd()

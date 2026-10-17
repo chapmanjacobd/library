@@ -14,7 +14,11 @@ def parse_args():
     arggroups.requests(parser)
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     arggroups.selenium(parser)
-    parser.add_argument("--skip-links", action="store_true")
+    parser.add_argument(
+        "--filter-links",
+        action="store_true",
+        help="Exclude text found inside anchor elements",
+    )
 
     parser.add_argument("--download", "--save", "--write", action="store_true")
 
@@ -56,7 +60,7 @@ def select_all(args, html_content):
                 parent_name = parent.name if parent else None
 
                 if parent_name == "a":
-                    if not args.skip_links:
+                    if not args.filter_links:
                         yield strings.un_paragraph(descendant.get_text(strip=True))
                 else:
                     yield strings.un_paragraph(descendant.get_text(strip=True))

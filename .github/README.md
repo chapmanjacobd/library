@@ -18,7 +18,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install library
 
-Should also work on Mac OS.
+Mac OS is also supported.
 
 ### External dependencies
 
@@ -34,17 +34,16 @@ Internet Archive downloads), and `cdx_toolkit` (used by the
     pip install "library[deluxe]"
 
 Torrent metadata commands (`database add torrents` and `torrent dump`) require
-the Python bindings for libtorrent-rasterbar, published on PyPI as
-`libtorrent`. `library[deluxe]` installs them on Python 3.12 and 3.13. The
-libtorrent-rasterbar project does not publish Python 3.14 wheels yet, so on
-Python 3.14 install the bindings with a system or distro package:
+the `libtorrent` Python bindings. They are included by `library[deluxe]` on
+Python 3.12 and 3.13. On Python 3.14, libtorrent-rasterbar bindings are
+usually provided by distro packages rather than PyPI:
 
 * Debian/Ubuntu: `sudo apt install python3-libtorrent`
 * Fedora: `sudo dnf install rb_libtorrent-python3`
 * macOS/Homebrew: `brew install libtorrent-rasterbar`
 
 The Debian, Fedora, and Homebrew packages are built for their system or
-Homebrew Python and may not be importable from a separate uv virtualenv. There
+Homebrew Python and are not importable from a separate uv virtualenv. There
 is no official Scoop package for the Python bindings; on Windows, use Python
 3.13 and `pip install "library[deluxe]"`.
 
@@ -56,7 +55,7 @@ is no official Scoop package for the Python bindings; on Windows, use Python
 
 For thirty terabytes of video the initial scan takes about four hours to complete.
 After that, subsequent scans of the path (or any subpaths) are much quicker--only
-new files will be read by `ffprobe`.
+new files are read by `ffprobe`.
 
     library database add filesystem tv.db ./video/folder/
 
@@ -82,7 +81,7 @@ Download playlist and channel metadata. Break free of the YouTube algo~
 
 [![termtosvg](./examples/tubeadd.svg "library database add video example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
 
-And you can always add more later--even from different websites.
+And you can add more at any time--even from different websites.
 
     library database add video maker.db https://vimeo.com/terburg
 
@@ -107,8 +106,8 @@ Or in BASH:
 
 #### 1a. Get new videos for saved playlists
 
-Tubeupdate will go through the list of added playlists and fetch metadata for
-any videos not previously seen.
+Tubeupdate goes through the list of stored playlists and fetches metadata for
+any videos not seen before.
 
     library database update video tube.db
 
@@ -132,7 +131,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.0; 114 subcommands)
+    library (v4.0.0; 118 subcommands)
 
     Create database subcommands:
     ╭──────────────────────────┬──────────────────────────────────────────╮
@@ -183,8 +182,6 @@ flat commands are now only reachable through a group (for example
     ├───────────────────────┼────────────────────────────────────────────────┤
     │ links download        │ Download links from lists of web links         │
     ├───────────────────────┼────────────────────────────────────────────────┤
-    │ download              │ Download URLs directly                         │
-    ├───────────────────────┼────────────────────────────────────────────────┤
     │ text extract          │ Extract human text from lists of web links     │
     ├───────────────────────┼────────────────────────────────────────────────┤
     │ text markdown links   │ Extract titles from lists of web links         │
@@ -224,17 +221,17 @@ flat commands are now only reachable through a group (for example
     ╰─────────────────────────┴─────────────────────────────────────────────────────────────────────╯
 
     File subcommands:
-    ╭──────────────────────────┬─────────────────────────────────────────────────────╮
-    │ file normalize           │ Clean file paths                                    │
-    ├──────────────────────────┼─────────────────────────────────────────────────────┤
-    │ file hash                │ Calculate a hash based on small file segments       │
-    ├──────────────────────────┼─────────────────────────────────────────────────────┤
-    │ file compare             │ Compare files using sample-hash and other shortcuts │
-    ├──────────────────────────┼─────────────────────────────────────────────────────┤
-    │ database filesystem list │ Find files by mimetype and size                     │
-    ├──────────────────────────┼─────────────────────────────────────────────────────┤
-    │ file similar             │ Find similar files based on filename and size       │
-    ╰──────────────────────────┴─────────────────────────────────────────────────────╯
+    ╭─────────────────┬─────────────────────────────────────────────────────╮
+    │ file normalize  │ Clean file paths                                    │
+    ├─────────────────┼─────────────────────────────────────────────────────┤
+    │ file hash       │ Calculate a hash based on small file segments       │
+    ├─────────────────┼─────────────────────────────────────────────────────┤
+    │ file compare    │ Compare files using sample-hash and other shortcuts │
+    ├─────────────────┼─────────────────────────────────────────────────────┤
+    │ filesystem list │ Find files by mimetype and size                     │
+    ├─────────────────┼─────────────────────────────────────────────────────┤
+    │ file similar    │ Find similar files based on filename and size       │
+    ╰─────────────────┴─────────────────────────────────────────────────────╯
 
     Tabular data subcommands:
     ╭────────────────┬──────────────────────────────────────────────────────╮
@@ -284,11 +281,11 @@ flat commands are now only reachable through a group (for example
     ╰────────────────────────────┴───────────────────────────────────────────────────────╯
 
     Filesystem Database subcommands:
-    ╭───────────────────────────┬──────────────────────────╮
-    │ database filesystem usage │ Show disk usage          │
-    ├───────────────────────────┼──────────────────────────┤
-    │ database search           │ Search a SQLite database │
-    ╰───────────────────────────┴──────────────────────────╯
+    ╭──────────────────┬──────────────────────────╮
+    │ filesystem usage │ Show disk usage          │
+    ├──────────────────┼──────────────────────────┤
+    │ database search  │ Search a SQLite database │
+    ╰──────────────────┴──────────────────────────╯
 
     Media Database subcommands:
     ╭──────────────────────────┬─────────────────────────────────────────────────────────────╮
@@ -296,9 +293,7 @@ flat commands are now only reachable through a group (for example
     ├──────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database playlists       │ List stored playlists                                       │
     ├──────────────────────────┼─────────────────────────────────────────────────────────────┤
-    │ database download        │ Download media                                              │
-    ├──────────────────────────┼─────────────────────────────────────────────────────────────┤
-    │ database download links  │ Download links found in pages                               │
+    │ download                 │ Download media                                              │
     ├──────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database download status │ Show download status                                        │
     ├──────────────────────────┼─────────────────────────────────────────────────────────────┤
@@ -389,13 +384,25 @@ flat commands are now only reachable through a group (for example
     ├──────────────────────────────────────┼────────────────────────────────────────────┤
     │ play images                          │ View images                                │
     ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ database filesystem list             │ Find files by mimetype and size            │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ database filesystem usage            │ Show disk usage                            │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
     │ database filesystem usage extensions │ Show disk usage grouped by file extension  │
     ├──────────────────────────────────────┼────────────────────────────────────────────┤
     │ database filesystem usage mimetypes  │ Show disk usage grouped by MIME type       │
     ├──────────────────────────────────────┼────────────────────────────────────────────┤
     │ database filesystem usage sizes      │ Show disk usage grouped by file size       │
     ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ database download                    │ Download media recorded in a database      │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
     │ shrink audio                         │ Shrink audio to Opus                       │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ filesystem usage extensions          │ Show disk usage grouped by file extension  │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ filesystem usage mimetypes           │ Show disk usage grouped by MIME type       │
+    ├──────────────────────────────────────┼────────────────────────────────────────────┤
+    │ filesystem usage sizes               │ Show disk usage grouped by file size       │
     ├──────────────────────────────────────┼────────────────────────────────────────────┤
     │ folder merge copy                    │ Copy files and merge folders               │
     ├──────────────────────────────────────┼────────────────────────────────────────────┤
@@ -464,7 +471,7 @@ Wake up to your own music on your Chromecast speaker group _only when you are ho
 `tabs` is a way to organize your visits to URLs that you want to remember every once in a while.
 
 The main benefit of tabs is that you can have a large amount of tabs saved (say 500 monthly tabs) and only the smallest
-amount of tabs to satisfy that goal (500/30) tabs will open each day. 17 tabs per day seems manageable--500 all at once does not.
+amount of tabs to satisfy that goal (500/30) tabs open each day. 17 tabs per day seems manageable--500 all at once does not.
 
 The use-case of tabs are websites that you know are going to change: subreddits, games,
 or tools that you want to use for a few minutes daily, weekly, monthly, quarterly, or yearly.
@@ -477,7 +484,7 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 2. Add library tabs to cron
 
-library tabs open is meant to run **once per day**. Here is how you would configure it with `crontab`:
+library tabs open runs **once per day**. Configure it with `crontab`:
 
     45 9 * * * DISPLAY=:0 library tabs open /home/my/tabs.db
 
@@ -520,19 +527,19 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>Curate with library folder large</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
-The folder large subcommand was written for that purpose:
+The folder large subcommand serves that purpose:
 
     $ library folder large fs/d.db
 
-You may filter by folder depth (similar to QDirStat or WizTree)
+Filter by folder depth (similar to QDirStat or WizTree)
 
     $ library folder large --depth=3 audio.db
 
-There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
+There is also a flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--you can see who wrote those songs and delete all their other songs...)
 
     $ library folder large --sort-groups-by deleted audio.db
 
-Recently, this functionality has also been integrated into play subcommands so you could just do this:
+The play subcommands also support this functionality:
 
     $ library play video --big-dirs ./my.db
     $ lb wt -B  # shorthand equivalent
@@ -678,7 +685,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library database add filesystem --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
         # I use that with this to keep my folders organized
-        library play video -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
+        library play video --db mixed.db -w 'video_count=0 and audio_count>=1' -pf | parallel mv {} ~/d/82_Audiobooks/
 
     Remove path roots with --force
 
@@ -748,7 +755,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Re-scan using a different profile
 
-        library play media v.db -w 'size is null' --ext wmv,3gp,mp4 -pf | library database add web --media --force --video v.db -
+        library play media --db v.db -w 'size is null' --ext wmv,3gp,mp4 -pf | library database add web --media --force --video v.db -
 
     Check download size of all videos matching some criteria
 
@@ -764,7 +771,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Stream directly to mpv
 
-        library play video open_dir.db
+        library play video --db open_dir.db
 
 
 </details>
@@ -1140,7 +1147,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Print similar paths
 
-        library database filesystem list 0day.db -pa --cluster --print-groups
+        library filesystem list --db 0day.db -pa --cluster --print-groups
 
 
 
@@ -1241,11 +1248,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Download links from lists of web links</summary>
 
     $ library links download -h
-    usage: library links download PATH ... [optional args]
+    usage: library links download [PATH ...] [--db DATABASE] [optional args]
 
     Extract links from the given pages and download them. Each link is routed by the active
     profile (auto by default): yt-dlp for video/audio, gallery-dl for images, and the built-in
-    downloader for everything else.
+    downloader for everything else. Pass --direct to always download with the built-in
+    downloader instead of yt-dlp/gallery-dl.
+
+    Pass --db to read pages from a database and record download results. The given PATHs are
+    then database filters rather than pages to extract from:
+
+        library links download --db links.db
+        library links download --db links.db --include https://example.com/docs/
 
     Follow same-domain links recursively, or read a web archive CDX index, with the same
     options as `library links extract`:
@@ -1256,36 +1270,16 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### download
-
-<details><summary>Download URLs directly</summary>
-
-    $ library download -h
-    usage: library download URL ... [--db DATABASE] [optional args]
-
-    Download the given URLs directly without extracting links from pages.
-
-        library download https://example.com/file.zip
-
-    Pass --db to download the media recorded in a database instead. Results are recorded,
-    pages can be resolved into links, and the database media filters apply:
-
-        library download --db dl.db
-        library download --db dl.db --media-type auto --prefix ~/output/
-
-
-</details>
-
 ###### text extract
 
 <details><summary>Extract human text from lists of web links</summary>
 
     $ library text extract -h
-    usage: library text extract PATH ... [--skip-links]
+    usage: library text extract PATH ... [--filter-links]
 
     Sorting suggestions
 
-        library text extract --skip-links --local-html (cb -t text/html | psub) | library text sort cluster --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+        library text extract --filter-links --local-html (cb -t text/html | psub) | library text sort cluster --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
 
     Select text by CSS selector
 
@@ -1479,7 +1473,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         # move new music for this week
         library folder merge relative-move (
-            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+            library play audio --db audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/sync/weekly/
 
 
@@ -1704,7 +1698,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Show large folders</summary>
 
     $ library folder large -h
-    usage: library folder large PATH ... [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played]
+    usage: library folder large [PATH ...] [--db DATABASE] [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played]
 
     See what folders take up space
 
@@ -1731,10 +1725,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Load from fs database
 
-        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library folder large --from-json
+        library filesystem list --db video.db --cols path,duration,size,time_deleted --to-json | library folder large --from-json
 
         Only include files between 1MiB and 5MiB
-        library database filesystem list video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library folder large --from-json
+        library filesystem list --db video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library folder large --from-json
 
     You can even sort by auto-MCDA ~LOL~
 
@@ -1777,7 +1771,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Read paths from dbs
 
-        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -v
+        library filesystem list --db audio.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -v
 
     Print only paths
 
@@ -1786,7 +1780,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         /home/xk/d/dump/datasets/vector/output2/
 
     How I use it
-        library database filesystem list video.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -FS=+8G --filter-names --filter-counts --filter-durations
+        library filesystem list --db video.db --cols path,duration,size,time_deleted --to-json | library folder similar --from-json -FS=+8G --filter-names --filter-counts --filter-durations
 
 
 </details>
@@ -1845,16 +1839,16 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### database filesystem list
+###### filesystem list
 
 <details><summary>Find files by mimetype and size</summary>
 
-    $ library database filesystem list -h
-    usage: library database filesystem list
+    $ library filesystem list -h
+    usage: library filesystem list [--db DATABASE] [PATH ...]
 
     List files and filter by specific file types
 
-        library database filesystem list
+        library filesystem list
 
 
 </details>
@@ -1880,7 +1874,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Read paths from dbs
 
-        library database filesystem list audio.db --cols path,duration,size,time_deleted --to-json | library file similar --from-json -v
+        library filesystem list --db audio.db --cols path,duration,size,time_deleted --to-json | library file similar --from-json -v
 
     How I use it
         library file similar --filter-names --filter-durations --estimated-duplicates 3 .
@@ -2132,7 +2126,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach
 
         library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
-        library file check (library database filesystem list tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+        library file check (library filesystem list --db tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
 
     The above can now be done in one command via `--full-scan-if-corrupt`
 
@@ -2140,7 +2134,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Corruption stats
 
-        library database filesystem list tmp.db -w 'corruption>15' -pa
+        library filesystem list --db tmp.db -w 'corruption>15' -pa
         path         count  duration             avg_duration         size    avg_size
         ---------  -------  -------------------  --------------  ---------  ----------
         Aggregate      907  15 days and 9 hours  24 minutes      130.6 GiB   147.4 MiB
@@ -2171,12 +2165,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Estimate and execute potential disk space savings</summary>
 
     $ library shrink media -h
-    usage: library shrink media DATABASE_OR_PATH
+    usage: library shrink media [PATH ...] [--db DATABASE]
 
     Running fsadd first to create a video database will be faster because it runs many files in parallel
 
         library database add filesystem --video video.db ~/Videos/
-        library shrink media video.db
+        library shrink media --db video.db
 
     But using media folder/file paths directly is also supported
 
@@ -2184,7 +2178,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Find invalid media to attempt to transcode or delete
 
-        library shrink media --invalid --no-valid --delete-unplayable video.db
+        library shrink media --db video.db --invalid --no-valid --delete-unplayable
 
     If not installed, related file extensions will be skipped during scan:
 
@@ -2421,16 +2415,16 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 ### Filesystem Database subcommands
 
-###### database filesystem usage
+###### filesystem usage
 
 <details><summary>Show disk usage</summary>
 
-    $ library database filesystem usage -h
-    usage: library database filesystem usage DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+    $ library filesystem usage -h
+    usage: library filesystem usage [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
 
     To aggregate to high level folders use --parents and --depth
 
-        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
         path                    size    count    folders
         ------------------  --------  -------  ---------
         /mnt/d7/processed/  685.8GiB    30783       2508
@@ -2442,8 +2436,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files smaller than 1kib
 
-        library database filesystem usage du.db --size=-1Ki
-        library database filesystem usage du.db -S-1Ki
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
         | path                                  |      size |   count |
         |---------------------------------------|-----------|---------|
         | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
@@ -2460,8 +2454,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files with a specific depth
 
-        library database filesystem usage du.db --depth 19
-        library database filesystem usage du.db -d 19
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
         | path                                                                                                                                                                |     size |
         |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
         | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
@@ -2469,8 +2463,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Group by extension
 
-        library database filesystem usage extensions du.db
-        library database filesystem usage du.db --group-by-extension
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
         path        size    count
         ------  --------  -------
         avi      1.8 GiB        5
@@ -2554,7 +2548,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Find some words to block based on frequency / recency of downloaded media
 
-        library play video dl.db -u time_downloaded desc -L 10000 -pf | library text nouns | sort | uniq -c | sort -g
+        library play video --db dl.db -u time_downloaded desc -L 10000 -pf | library text nouns | sort | uniq -c | sort -g
         ...
         183 ArchiveOrg
         187 Documentary
@@ -2602,121 +2596,50 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
-###### database download
+###### download
 
 <details><summary>Download media</summary>
 
-    $ library database download -h
-    usage: library database download DATABASE [--prefix /mnt/d/] [--media-type {auto,video,audio,image,text,filesystem}] [--safe]
+    $ library download -h
+    usage: library download [PATH ...] [--db DATABASE] [--prefix /mnt/d/] [--media-type {auto,video,audio,image,text,filesystem}] [--safe]
 
-    Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
-    The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
-    checking which backend supports it (is_supported); unsupported URLs fall back to the
-    built-in downloader. `--safe` supports the auto, audio, video, and image profiles only
-    (not --direct or --media-type filesystem/text).
+    Download the given URLs. Files are saved to <prefix>/<extractor>/. The default prefix is
+    the current working directory. The default download profile is auto: each URL is sent to
+    yt-dlp or gallery-dl by checking which backend supports it (is_supported); unsupported
+    URLs fall back to the built-in downloader. `--safe` supports the auto, audio, video, and
+    image profiles only (not --direct or --media-type filesystem/text).
 
-    Equivalent to `library download --db DATABASE ...`.
+        library download https://example.com/file.zip
 
-    By default things download in a random order
+    Pass --direct to always download with the built-in downloader instead of yt-dlp/gallery-dl:
 
-        library database download dl.db --prefix ~/output/path/root/
+        library download --direct https://example.com/file.zip
 
-    But you can sort; eg. oldest first
+    The `dl` alias has the same behavior. A database is selected only with `--db`.
 
-        library database download dl.db -u m.time_modified,m.time_created
+    Pass --db to download the media recorded in a database instead. The given PATHs are then
+    database filters rather than URLs to download directly, and results are recorded back to
+    the database:
 
-    Limit downloads to a specified playlist URLs
+        library download --db dl.db --prefix ~/output/path/root/
+        library download --db dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
+        library download --db dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
 
-        library database filesystem list video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library database download --video video.db --from-json -
+    By default things download in a random order; you can sort, eg. oldest first
 
-    Limit downloads to a specified video URLs or substring
+        library download --db dl.db -u m.time_modified,m.time_created
 
-        library database download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
-        library database download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
+    Read media rows (JSON or JSONL) from stdin to download them directly
 
-    To download files linked within each page, use the pages/url-focused variant. Only links
-    within the same domain and parent directory as the seed are followed; other links are
-    downloaded but not followed:
+        library filesystem list --db video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library download --from-json -
 
-        library database download links links.db --recursive --prefix ~/mirror/ https://example.com/docs/
+    Print the queued up downloads without downloading
 
-    By default each URL is routed to yt-dlp/gallery-dl by is_supported. Pass --direct to
-    download the given URLs with the built-in downloader instead:
+        library download --db dl.db --print
 
-        library database download dl.db --direct https://example.com/file.zip
+    `library database download DATABASE` is an alias of `library download --db DATABASE`
 
-    Download a site's archived pages from the Internet Archive Wayback Machine using the CDX API.
-    `--webcache` implies link extraction; extracted links are routed by the active profile (the
-    default profile is auto). Add `--recursive` to also parse the archived pages for further links:
-
-        library database download links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
-
-    Maximizing the variety of subdomains
-
-        library database download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
-
-    Print list of queued up downloads
-
-        library database download --print
-
-    Print list of saved playlists
-
-        library database playlists dl.db -p a
-
-    Print download queue groups
-
-        library database download status audio.db
-
-    Check videos before downloading
-
-        library play video open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
-
-        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
-        using the ask-keep action marks a video as deleted when you 'quit 4' and marks a video as watched when you 'quit'.
-
-        For example, here I bind "'" to "MOVE" and  "j" to "DELETE" when using -k ask_move_or_delete
-
-            ' quit
-            j quit 4
-
-        This is pretty intuitive after you use it a few times but another option is to
-        define your own post-actions
-
-            `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
-
-        Bind keys in mpv input.conf:
-
-            k quit 5  # goes to keep.txt
-            r quit 6  # goes to rejected.txt
-
-    Download checked videos
-
-        library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
-
-
-</details>
-
-###### database download links
-
-<details><summary>Download links found in pages</summary>
-
-    $ library database download links -h
-    usage: library database download links DATABASE [URL_OR_PATH ...] [optional args]
-
-    Download the files linked within each page. The default download profile is auto: each
-    extracted link is routed to yt-dlp/gallery-dl by is_supported, falling back to the built-in
-    downloader. Link extraction is implied, so the given database rows (or url/path arguments)
-    are treated as pages whose inner links are downloaded.
-
-    Follow same-domain links recursively:
-
-        library database download links links.db --recursive --prefix ~/mirror/
-
-    Download archived pages from the Internet Archive Wayback Machine using the CDX API.
-    `--webcache` extracts links from archived pages; add `--recursive` to also parse them for
-    further links:
-
-        library database download links links.db --webcache --prefix ~/mirror/ https://example.com/docs/
+        library database download dl.db
 
 
 </details>
@@ -2796,7 +2719,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library database history web_add.image.db --completed
 
-    Show only completed history
+    Show only in-progress history
 
         library database history web_add.image.db --in-progress
 
@@ -2929,7 +2852,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Watch / Listen</summary>
 
     $ library play video -h
-    usage: library play video DATABASE [optional args]
+    usage: library play video [PATH ...] [--db DATABASE] [optional args]
 
     Control playback
 
@@ -2942,12 +2865,12 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
-        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
-        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+        mpv --playlist=(lb wt --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt --db videos.db --ext mp4 -p f)  # BASH, all videos
 
     Print an aggregate report of deleted media
 
-        library database filesystem list -w time_deleted!=0 -pa
+        library filesystem list -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
@@ -2977,7 +2900,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View most recent files
 
-        library play video web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        library play video --db web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
         path                                                                                                                      width    height       size  time_modified
         ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
         https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
@@ -2994,16 +2917,16 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     How I use it
 
-        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
-        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+        lb lt --db ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt --db ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
 
         When sorting videos
         focus_under_mouse
-        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        lb wt --db ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
         focus_follows_mouse
 
         On-the-go mobile smartphone mode (Android)
-        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+        repeat lb wt --db ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
 
 
 </details>
@@ -3560,7 +3483,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Play media of any supported type</summary>
 
     $ library play media -h
-    usage: library play media DATABASE [optional args]
+    usage: library play media [PATH ...] [--db DATABASE] [optional args]
 
     Control playback
 
@@ -3573,12 +3496,12 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
-        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
-        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+        mpv --playlist=(lb wt --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt --db videos.db --ext mp4 -p f)  # BASH, all videos
 
     Print an aggregate report of deleted media
 
-        library database filesystem list -w time_deleted!=0 -pa
+        library filesystem list -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
@@ -3608,7 +3531,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View most recent files
 
-        library play media web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        library play media --db web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
         path                                                                                                                      width    height       size  time_modified
         ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
         https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
@@ -3625,16 +3548,16 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     How I use it
 
-        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
-        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+        lb lt --db ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt --db ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
 
         When sorting videos
         focus_under_mouse
-        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        lb wt --db ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
         focus_follows_mouse
 
         On-the-go mobile smartphone mode (Android)
-        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+        repeat lb wt --db ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
 
 
 </details>
@@ -3644,7 +3567,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Listen to audio</summary>
 
     $ library play audio -h
-    usage: library play audio DATABASE [optional args]
+    usage: library play audio [PATH ...] [--db DATABASE] [optional args]
 
     Control playback
 
@@ -3657,12 +3580,12 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
-        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
-        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+        mpv --playlist=(lb wt --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt --db videos.db --ext mp4 -p f)  # BASH, all videos
 
     Print an aggregate report of deleted media
 
-        library database filesystem list -w time_deleted!=0 -pa
+        library filesystem list -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
@@ -3692,7 +3615,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View most recent files
 
-        library play audio web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        library play audio --db web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
         path                                                                                                                      width    height       size  time_modified
         ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
         https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
@@ -3709,16 +3632,16 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     How I use it
 
-        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
-        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+        lb lt --db ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt --db ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
 
         When sorting videos
         focus_under_mouse
-        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        lb wt --db ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
         focus_follows_mouse
 
         On-the-go mobile smartphone mode (Android)
-        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+        repeat lb wt --db ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
 
 
 </details>
@@ -3728,7 +3651,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Read text</summary>
 
     $ library play text -h
-    usage: library play text DATABASE [optional args]
+    usage: library play text [PATH ...] [--db DATABASE] [optional args]
 
     Control playback
 
@@ -3741,12 +3664,12 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
-        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
-        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+        mpv --playlist=(lb wt --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt --db videos.db --ext mp4 -p f)  # BASH, all videos
 
     Print an aggregate report of deleted media
 
-        library database filesystem list -w time_deleted!=0 -pa
+        library filesystem list -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
@@ -3776,7 +3699,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View most recent files
 
-        library play text web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        library play text --db web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
         path                                                                                                                      width    height       size  time_modified
         ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
         https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
@@ -3793,16 +3716,16 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     How I use it
 
-        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
-        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+        lb lt --db ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt --db ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
 
         When sorting videos
         focus_under_mouse
-        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        lb wt --db ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
         focus_follows_mouse
 
         On-the-go mobile smartphone mode (Android)
-        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+        repeat lb wt --db ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
 
 
 </details>
@@ -3812,7 +3735,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>View images</summary>
 
     $ library play images -h
-    usage: library play images DATABASE [optional args]
+    usage: library play images [PATH ...] [--db DATABASE] [optional args]
 
     Control playback
 
@@ -3825,12 +3748,12 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
-        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
-        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+        mpv --playlist=(lb wt --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt --db videos.db --ext mp4 -p f)  # BASH, all videos
 
     Print an aggregate report of deleted media
 
-        library database filesystem list -w time_deleted!=0 -pa
+        library filesystem list -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
@@ -3860,7 +3783,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     View most recent files
 
-        library play images web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        library play images --db web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
         path                                                                                                                      width    height       size  time_modified
         ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
         https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
@@ -3877,30 +3800,44 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     How I use it
 
-        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
-        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+        lb lt --db ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt --db ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
 
         When sorting videos
         focus_under_mouse
-        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        lb wt --db ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library shrink audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
         focus_follows_mouse
 
         On-the-go mobile smartphone mode (Android)
-        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
+        repeat lb wt --db ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
 
 
 </details>
 
-###### database filesystem usage extensions
+###### database filesystem list
 
-<details><summary>Show disk usage grouped by file extension</summary>
+<details><summary>Find files by mimetype and size</summary>
 
-    $ library database filesystem usage extensions -h
-    usage: library database filesystem usage extensions DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+    $ library database filesystem list -h
+    usage: library filesystem list [--db DATABASE] [PATH ...]
+
+    List files and filter by specific file types
+
+        library filesystem list
+
+
+</details>
+
+###### database filesystem usage
+
+<details><summary>Show disk usage</summary>
+
+    $ library database filesystem usage -h
+    usage: library filesystem usage [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
 
     To aggregate to high level folders use --parents and --depth
 
-        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
         path                    size    count    folders
         ------------------  --------  -------  ---------
         /mnt/d7/processed/  685.8GiB    30783       2508
@@ -3912,8 +3849,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files smaller than 1kib
 
-        library database filesystem usage du.db --size=-1Ki
-        library database filesystem usage du.db -S-1Ki
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
         | path                                  |      size |   count |
         |---------------------------------------|-----------|---------|
         | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
@@ -3930,8 +3867,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files with a specific depth
 
-        library database filesystem usage du.db --depth 19
-        library database filesystem usage du.db -d 19
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
         | path                                                                                                                                                                |     size |
         |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
         | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
@@ -3939,8 +3876,69 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Group by extension
 
-        library database filesystem usage extensions du.db
-        library database filesystem usage du.db --group-by-extension
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
+
+
+</details>
+
+###### database filesystem usage extensions
+
+<details><summary>Show disk usage grouped by file extension</summary>
+
+    $ library database filesystem usage extensions -h
+    usage: library filesystem usage extensions [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
         path        size    count
         ------  --------  -------
         avi      1.8 GiB        5
@@ -3957,11 +3955,11 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Show disk usage grouped by MIME type</summary>
 
     $ library database filesystem usage mimetypes -h
-    usage: library database filesystem usage mimetypes DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+    usage: library filesystem usage mimetypes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
 
     To aggregate to high level folders use --parents and --depth
 
-        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
         path                    size    count    folders
         ------------------  --------  -------  ---------
         /mnt/d7/processed/  685.8GiB    30783       2508
@@ -3973,8 +3971,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files smaller than 1kib
 
-        library database filesystem usage du.db --size=-1Ki
-        library database filesystem usage du.db -S-1Ki
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
         | path                                  |      size |   count |
         |---------------------------------------|-----------|---------|
         | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
@@ -3991,8 +3989,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files with a specific depth
 
-        library database filesystem usage du.db --depth 19
-        library database filesystem usage du.db -d 19
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
         | path                                                                                                                                                                |     size |
         |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
         | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
@@ -4000,8 +3998,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Group by extension
 
-        library database filesystem usage extensions du.db
-        library database filesystem usage du.db --group-by-extension
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
         path        size    count
         ------  --------  -------
         avi      1.8 GiB        5
@@ -4018,11 +4016,11 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Show disk usage grouped by file size</summary>
 
     $ library database filesystem usage sizes -h
-    usage: library database filesystem usage sizes DATABASE [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+    usage: library filesystem usage sizes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
 
     To aggregate to high level folders use --parents and --depth
 
-        library database filesystem usage d7.db --parents -D=-4 --file-counts=+20000
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
         path                    size    count    folders
         ------------------  --------  -------  ---------
         /mnt/d7/processed/  685.8GiB    30783       2508
@@ -4034,8 +4032,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files smaller than 1kib
 
-        library database filesystem usage du.db --size=-1Ki
-        library database filesystem usage du.db -S-1Ki
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
         | path                                  |      size |   count |
         |---------------------------------------|-----------|---------|
         | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
@@ -4052,8 +4050,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Only include files with a specific depth
 
-        library database filesystem usage du.db --depth 19
-        library database filesystem usage du.db -d 19
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
         | path                                                                                                                                                                |     size |
         |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
         | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
@@ -4061,8 +4059,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Group by extension
 
-        library database filesystem usage extensions du.db
-        library database filesystem usage du.db --group-by-extension
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
         path        size    count
         ------  --------  -------
         avi      1.8 GiB        5
@@ -4070,6 +4068,85 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         mkv     49.2 GiB      159
         mp4     86.7 GiB      613
         4 file extensions
+
+
+</details>
+
+###### database download
+
+<details><summary>Download media recorded in a database</summary>
+
+    $ library database download -h
+    usage: library database download DATABASE [PATH ...] [--prefix /mnt/d/] [--media-type {auto,video,audio,image,text,filesystem}] [--safe]
+
+    Download the media recorded in DATABASE. This is an alias of `library download --db DATABASE`;
+    the only difference is that DATABASE is taken as a positional argument.
+
+    Files are saved to <prefix>/<extractor>/. The default prefix is the current working directory.
+    The default download profile is auto: each URL is sent to yt-dlp or gallery-dl by
+    checking which backend supports it (is_supported); unsupported URLs fall back to the
+    built-in downloader. `--safe` supports the auto, audio, video, and image profiles only
+    (not --direct or --media-type filesystem/text).
+
+    By default things download in a random order
+
+        library database download dl.db --prefix ~/output/path/root/
+
+    But you can sort; eg. oldest first
+
+        library database download dl.db -u m.time_modified,m.time_created
+
+    Limit downloads to a specified video URLs or substring
+
+        library database download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
+        library database download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
+
+    By default each URL is routed to yt-dlp/gallery-dl by is_supported. Pass --direct to
+    download with the built-in downloader instead:
+
+        library database download dl.db --direct https://example.com/file.zip
+
+    Maximizing the variety of subdomains
+
+        library database download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
+
+    Print list of queued up downloads
+
+        library database download --print
+
+    Print list of saved playlists
+
+        library database playlists dl.db -p a
+
+    Print download queue groups
+
+        library database download status audio.db
+
+    Check videos before downloading
+
+        library play video --db open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
+
+        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
+        using the ask-keep action marks a video as deleted when you 'quit 4' and marks a video as watched when you 'quit'.
+
+        For example, here I bind "'" to "MOVE" and  "j" to "DELETE" when using -k ask_move_or_delete
+
+            ' quit
+            j quit 4
+
+        This is pretty intuitive after you use it a few times but another option is to
+        define your own post-actions
+
+            `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
+
+        Bind keys in mpv input.conf:
+
+            k quit 5  # goes to keep.txt
+            r quit 6  # goes to rejected.txt
+
+    Download checked videos
+
+        library database download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
 
 
 </details>
@@ -4099,6 +4176,189 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/video.db "select sum(size)-sum(duration*100000) from media where time_deleted=0 and video_count>=1 and video_codecs != 'av1' and size/duration > 100000")
         numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/audio.db "select sum(size)-sum(duration*18000) from media where time_deleted=0 and video_count=0 and audio_count>=1 and audio_codecs != 'opus' and size/duration > 18000")
+
+
+</details>
+
+###### filesystem usage extensions
+
+<details><summary>Show disk usage grouped by file extension</summary>
+
+    $ library filesystem usage extensions -h
+    usage: library filesystem usage extensions [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
+
+
+</details>
+
+###### filesystem usage mimetypes
+
+<details><summary>Show disk usage grouped by MIME type</summary>
+
+    $ library filesystem usage mimetypes -h
+    usage: library filesystem usage mimetypes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
+
+
+</details>
+
+###### filesystem usage sizes
+
+<details><summary>Show disk usage grouped by file size</summary>
+
+    $ library filesystem usage sizes -h
+    usage: library filesystem usage sizes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+
+    To aggregate to high level folders use --parents and --depth
+
+        library filesystem usage --db d7.db --parents -D=-4 --file-counts=+20000
+        path                    size    count    folders
+        ------------------  --------  -------  ---------
+        /mnt/d7/processed/  685.8GiB    30783       2508
+        /mnt/d7/dump/         2.1TiB  1741160     184883
+        /mnt/d7/check/        9.0TiB   735410     117866
+        /mnt/d7/             16.4TiB  2539139     306036
+        /mnt/                16.4TiB  2539139     306036
+        /                    16.4TiB  2539139     306036
+
+    Only include files smaller than 1kib
+
+        library filesystem usage --db du.db --size=-1Ki
+        library filesystem usage --db du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.venv            |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library filesystem usage --db du.db --depth 19
+        library filesystem usage --db du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.12/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+    Group by extension
+
+        library filesystem usage extensions --db du.db
+        library filesystem usage --db du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
 
 
 </details>
@@ -4151,7 +4411,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         # move new music for this week
         library folder merge relative-move (
-            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+            library play audio --db audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/sync/weekly/
 
 
@@ -4205,7 +4465,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         # move new music for this week
         library folder merge relative-move (
-            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+            library play audio --db audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/sync/weekly/
 
 
@@ -4259,7 +4519,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         # move new music for this week
         library folder merge relative-move (
-            library play audio audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+            library play audio --db audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/sync/weekly/
 
 

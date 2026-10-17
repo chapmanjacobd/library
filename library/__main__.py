@@ -32,7 +32,6 @@ progs = {
         "regex_sort": "Sort text by regex split and corpus comparison",
         "extract_links": "Extract inner links from lists of web links",
         "links_download": "Download links from lists of web links",
-        "direct_download": "Download URLs directly",
         "extract_text": "Extract human text from lists of web links",
         "markdown_links": "Extract titles from lists of web links",
         "expand_links": "Expand search urls with query text",
@@ -93,7 +92,6 @@ progs = {
         "block": "Block a channel",
         "playlists": "List stored playlists",
         "download": "Download media",
-        "download_links": "Download links found in pages",
         "download_status": "Show download status",
         "redownload": "Re-download deleted/lost media",
         "history": "Show and manage playback history",
@@ -213,7 +211,7 @@ modules = {
     "library.fsdb.search_db.search_db": ["s", "sdb", "search-dbs"],
     "library.mediadb.block.block": [],
     "library.mediadb.download.download": ["dl"],
-    "library.mediadb.download.download_links": [],
+    "library.mediadb.download.download_database": [],
     "library.mediadb.download_status.download_status": ["ds", "dl-status"],
     "library.mediadb.history.history": ["hi", "log"],
     "library.mediadb.history_add.history_add": ["add-history"],
@@ -263,7 +261,6 @@ modules = {
     "library.text.regex_sort.regex_sort": ["rs", "resort"],
     "library.text.extract_links.extract_links": ["links_extract"],
     "library.text.extract_links.links_download": [],
-    "library.text.extract_links.direct_download": [],
     "library.text.extract_text.extract_text": ["text_extract"],
     "library.text.markdown_links.markdown_links": ["markdown-urls"],
     "library.text.expand_links.expand_links": ["search-urls", "search-links"],
@@ -340,7 +337,7 @@ NESTED_COMMANDS = {
                 "sizes": "sizes",
             },
         },
-        "download": {"_target": "download", "links": "download-links", "status": "download-status"},
+        "download": {"_target": "download-database", "status": "download-status"},
         "history": {"_target": "history", "add": "history-add"},
         "playlists": "playlists",
         "stats": "stats",
@@ -355,7 +352,7 @@ NESTED_COMMANDS = {
         "text": "process-text",
     },
     "captions": "search",
-    "download": "direct-download",
+    "download": "download",
     "torrent": {
         "info": "torrents-info",
         "start": "torrents-start",
@@ -380,6 +377,13 @@ NESTED_COMMANDS = {
         "diff": "incremental-diff",
     },
     "filesystem": {
+        "list": "filesystem",
+        "usage": {
+            "_target": "disk-usage",
+            "extensions": "extensions",
+            "mimetypes": "mimetypes",
+            "sizes": "sizes",
+        },
         "stats": {"mounts": "mount-stats"},
         "free": {"mounts": "disk-free"},
     },
@@ -447,15 +451,28 @@ NESTED_DESCRIPTIONS = {
     "database filesystem usage extensions": "Show disk usage grouped by file extension",
     "database filesystem usage mimetypes": "Show disk usage grouped by MIME type",
     "database filesystem usage sizes": "Show disk usage grouped by file size",
+    "filesystem usage extensions": "Show disk usage grouped by file extension",
+    "filesystem usage mimetypes": "Show disk usage grouped by MIME type",
+    "filesystem usage sizes": "Show disk usage grouped by file size",
     "shrink audio": "Shrink audio to Opus",
     "folder merge copy": "Copy files and merge folders",
     "folder merge relative-move": "Move files while preserving relative paths",
     "folder merge relative-copy": "Copy files while preserving relative paths",
+    "database download": "Download media recorded in a database",
 }
 
 for _group in NESTED_COMMANDS:
     _group_alias = _group.removesuffix("s") if _group.endswith("s") else f"{_group}s"
     NESTED_GROUP_ALIASES.setdefault(_group_alias, _group)
+
+
+PREFERRED_NESTED_PATHS = {
+    "filesystem": "filesystem list",
+    "disk-usage": "filesystem usage",
+    "extensions": "filesystem usage extensions",
+    "mimetypes": "filesystem usage mimetypes",
+    "sizes": "filesystem usage sizes",
+}
 
 
 def _canonical_nested_paths(
@@ -654,6 +671,9 @@ def _canonical_target_paths() -> dict[str, str]:
         target = _nested_target(path.split())
         if target is not None:
             target_paths.setdefault(target[0], path)
+    for target, path in PREFERRED_NESTED_PATHS.items():
+        if _nested_target(path.split()) == (target, len(path.split())):
+            target_paths[target] = path
     return target_paths
 
 
@@ -719,6 +739,7 @@ def _module_canonical_paths() -> dict[str, str]:
 
 def _legacy_command_paths() -> dict[str, str]:
     canonical_paths = _module_canonical_paths()
+    canonical_target_paths = _canonical_target_paths()
     legacy_paths = {}
     for module, aliases in modules.items():
         canonical_path = canonical_paths.get(module)
@@ -733,7 +754,13 @@ def _legacy_command_paths() -> dict[str, str]:
             *_expanded_aliases(module, aliases),
         }
         for legacy_name in legacy_names:
-            legacy_paths.setdefault(legacy_name, canonical_path)
+            nested_target = _nested_target([legacy_name])
+            nested_path = (
+                canonical_target_paths.get(nested_target[0])
+                if nested_target is not None and nested_target[1] == 1
+                else None
+            )
+            legacy_paths.setdefault(legacy_name, nested_path or canonical_path)
     return legacy_paths
 
 
@@ -744,7 +771,22 @@ def canonicalize_usage(text: str) -> str:
 
     commands = "|".join(re.escape(command) for command in sorted(legacy_paths, key=len, reverse=True))
     pattern = re.compile(rf"(?<!\w)(library\s+)({commands})(?![\w-])")
-    return pattern.sub(lambda match: f"{match.group(1)}{legacy_paths[match.group(2)]}", text)
+
+    def replace(match: re.Match) -> str:
+        legacy_command = match.group(2)
+        canonical_command = legacy_paths[legacy_command]
+        canonical_suffix = canonical_command.removeprefix(legacy_command)
+        remainder = text[match.end() :]
+        is_nested_command = any(
+            path.startswith(f"{legacy_command} ")
+            and remainder.startswith(path.removeprefix(legacy_command))
+            for path in _canonical_nested_paths_for_all_groups()
+        )
+        if (canonical_suffix and remainder.startswith(canonical_suffix)) or is_nested_command:
+            return match.group(0)
+        return f"{match.group(1)}{canonical_command}"
+
+    return pattern.sub(replace, text)
 
 
 def _resolve_target(command: str) -> str | None:

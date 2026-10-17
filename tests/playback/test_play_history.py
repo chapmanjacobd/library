@@ -36,9 +36,9 @@ history_flags = [
 def test_history_flags(play_mocked, flags, count, first):
     if count == 0:
         with pytest.raises(SystemExit):
-            lb(["media", history_db, *shlex.split(flags)])
+            lb(["media", "--db", history_db, *shlex.split(flags)])
     else:
-        lb(["media", history_db, *shlex.split(flags), "-u", "path"])
+        lb(["media", "--db", history_db, *shlex.split(flags), "-u", "path"])
         out = play_mocked.call_args[0][1]
 
         assert len(out) == count

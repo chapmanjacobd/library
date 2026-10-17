@@ -28,9 +28,10 @@ def parse_args() -> argparse.Namespace:
     arggroups.group_folders(parser)
     arggroups.debug(parser)
 
-    arggroups.database_or_paths(parser, destination=True)
-    parser.add_argument("search", nargs="*")
+    arggroups.database_optional(parser)
+    arggroups.paths_or_stdin(parser, required=False)
     args = parser.parse_intermixed_args()
+    arggroups.database_paths_post(args, legacy_database=True)
     arggroups.args_post(args, parser)
 
     arggroups.files_post(args)

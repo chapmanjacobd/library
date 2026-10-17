@@ -47,7 +47,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install library
 
-Should also work on Mac OS.
+Mac OS is also supported.
 
 ### External dependencies
 
@@ -63,17 +63,16 @@ Internet Archive downloads), and `cdx_toolkit` (used by the
     pip install "library[deluxe]"
 
 Torrent metadata commands (`database add torrents` and `torrent dump`) require
-the Python bindings for libtorrent-rasterbar, published on PyPI as
-`libtorrent`. `library[deluxe]` installs them on Python 3.12 and 3.13. The
-libtorrent-rasterbar project does not publish Python 3.14 wheels yet, so on
-Python 3.14 install the bindings with a system or distro package:
+the `libtorrent` Python bindings. They are included by `library[deluxe]` on
+Python 3.12 and 3.13. On Python 3.14, libtorrent-rasterbar bindings are
+usually provided by distro packages rather than PyPI:
 
 * Debian/Ubuntu: `sudo apt install python3-libtorrent`
 * Fedora: `sudo dnf install rb_libtorrent-python3`
 * macOS/Homebrew: `brew install libtorrent-rasterbar`
 
 The Debian, Fedora, and Homebrew packages are built for their system or
-Homebrew Python and may not be importable from a separate uv virtualenv. There
+Homebrew Python and are not importable from a separate uv virtualenv. There
 is no official Scoop package for the Python bindings; on Windows, use Python
 3.13 and `pip install "library[deluxe]"`.
 
@@ -85,7 +84,7 @@ is no official Scoop package for the Python bindings; on Windows, use Python
 
 For thirty terabytes of video the initial scan takes about four hours to complete.
 After that, subsequent scans of the path (or any subpaths) are much quicker--only
-new files will be read by `ffprobe`.
+new files are read by `ffprobe`.
 
     library database add filesystem tv.db ./video/folder/
 
@@ -111,7 +110,7 @@ Download playlist and channel metadata. Break free of the YouTube algo~
 
 [![termtosvg](./examples/tubeadd.svg "library database add video example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
 
-And you can always add more later--even from different websites.
+And you can add more at any time--even from different websites.
 
     library database add video maker.db https://vimeo.com/terburg
 
@@ -136,8 +135,8 @@ Or in BASH:
 
 #### 1a. Get new videos for saved playlists
 
-Tubeupdate will go through the list of added playlists and fetch metadata for
-any videos not previously seen.
+Tubeupdate goes through the list of stored playlists and fetches metadata for
+any videos not seen before.
 
     library database update video tube.db
 
@@ -222,7 +221,7 @@ Wake up to your own music on your Chromecast speaker group _only when you are ho
 `tabs` is a way to organize your visits to URLs that you want to remember every once in a while.
 
 The main benefit of tabs is that you can have a large amount of tabs saved (say 500 monthly tabs) and only the smallest
-amount of tabs to satisfy that goal (500/30) tabs will open each day. 17 tabs per day seems manageable--500 all at once does not.
+amount of tabs to satisfy that goal (500/30) tabs open each day. 17 tabs per day seems manageable--500 all at once does not.
 
 The use-case of tabs are websites that you know are going to change: subreddits, games,
 or tools that you want to use for a few minutes daily, weekly, monthly, quarterly, or yearly.
@@ -235,7 +234,7 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 2. Add library tabs to cron
 
-library tabs open is meant to run **once per day**. Here is how you would configure it with `crontab`:
+library tabs open runs **once per day**. Configure it with `crontab`:
 
     45 9 * * * DISPLAY=:0 library tabs open /home/my/tabs.db
 
@@ -278,19 +277,19 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>Curate with library folder large</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
-The folder large subcommand was written for that purpose:
+The folder large subcommand serves that purpose:
 
     $ library folder large fs/d.db
 
-You may filter by folder depth (similar to QDirStat or WizTree)
+Filter by folder depth (similar to QDirStat or WizTree)
 
     $ library folder large --depth=3 audio.db
 
-There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
+There is also a flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--you can see who wrote those songs and delete all their other songs...)
 
     $ library folder large --sort-groups-by deleted audio.db
 
-Recently, this functionality has also been integrated into play subcommands so you could just do this:
+The play subcommands also support this functionality:
 
     $ library play video --big-dirs ./my.db
     $ lb wt -B  # shorthand equivalent

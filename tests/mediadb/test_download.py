@@ -21,7 +21,9 @@ def test_download_links_recursive(temp_db, crawl_server, tmp_path):
     lb(["links-add", db1, "--no-extract", crawl_server])
     lb(
         [
-            "dl",
+            "links",
+            "download",
+            "--db",
             db1,
             "--filesystem",
             "--recursive",
@@ -40,7 +42,7 @@ def test_download_links_recursive(temp_db, crawl_server, tmp_path):
 
 
 def test_download_add_without_db_is_noop():
-    """DB-less commands (eg. `library links-download`) download without recording; download_add
+    """DB-less commands (eg. `library links download`) download without recording; download_add
     must tolerate a missing database."""
     db_media.download_add(SimpleNamespace(), "https://example.com/x")  # must not raise
 
@@ -98,7 +100,7 @@ def test_download_auto_dispatches_resolved_links(temp_db, monkeypatch):
         download_mod, "_download_builtin", lambda _args, _m, _orig, paths: routed["builtin"].extend(paths)
     )
 
-    lb(["dl", db1, "--auto", "--recursive", "--force"])
+    lb(["links", "download", "--db", db1, "--auto", "--recursive", "--force"])
 
     assert routed["tube"] == ["https://example.com/clip"]
     assert routed["gallery"] == ["https://example.com/pic"]
@@ -131,7 +133,7 @@ def test_safe_with_link_extraction_checks_links_not_seed(temp_db, monkeypatch):
         download_mod, "_download_builtin", lambda _args, _m, _orig, paths: routed["builtin"].extend(paths)
     )
 
-    lb(["dl", db1, "--safe", "--recursive", "--force"])
+    lb(["links", "download", "--db", db1, "--safe", "--recursive", "--force"])
 
     assert routed["tube"] == ["https://example.com/clip"]
     assert routed["gallery"] == ["https://example.com/pic"]
@@ -154,7 +156,7 @@ def test_safe_image_excludes_direct_links(temp_db, monkeypatch):
         download_mod.gallery_backend, "download", lambda _args, m: routed["gallery"].append(m["path"])
     )
 
-    lb(["dl", db1, "--image", "--safe", "--force"])
+    lb(["download", "--db", db1, "--image", "--safe", "--force"])
 
     assert routed["gallery"] == ["https://example.com/album"]
 
@@ -177,7 +179,7 @@ def test_safe_without_link_extraction_filters_rows(temp_db, monkeypatch):
         download_mod, "_download_builtin", lambda _args, _m, _orig, paths: routed["builtin"].extend(paths)
     )
 
-    lb(["dl", db1, "--safe", "--force"])
+    lb(["download", "--db", db1, "--safe", "--force"])
 
     assert routed["tube"] == ["https://example.com/clip"]
     assert routed["builtin"] == []
@@ -189,7 +191,7 @@ def test_safe_filter_is_pushed_into_sql(temp_db, monkeypatch):
     db1 = temp_db()
     lb(["links-add", db1, "--insert-only", "https://example.com/clip"])
 
-    monkeypatch.setattr("sys.argv", ["download", db1, "--safe", "--print"])
+    monkeypatch.setattr("sys.argv", ["download", "--db", db1, "--safe", "--print"])
     args = download_mod.parse_args()
 
     query, _ = sqlgroups.construct_download_query(args)
@@ -197,11 +199,10 @@ def test_safe_filter_is_pushed_into_sql(temp_db, monkeypatch):
     assert "is_supported(m.path)" in query
 
 
-def test_download_process_preserves_unsupported_extension(temp_db, crawl_server, tmp_path):
+def test_download_process_preserves_unsupported_extension(crawl_server, tmp_path):
     lb(
         [
-            "dl",
-            temp_db(),
+            "download",
             "--filesystem",
             "--process",
             "--force",
@@ -216,7 +217,8 @@ def test_yt():
     tube_add([dl_db, URL])
     lb(
         [
-            "dl",
+            "download",
+            "--db",
             dl_db,
             "--video",
             f"--prefix={STORAGE_PREFIX}",

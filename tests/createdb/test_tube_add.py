@@ -13,14 +13,14 @@ if consts.VOLKSWAGEN:
 
 @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_search(play_mocked):
-    lb(["wt", tube_db, "-s", "MUST TURN"])
+    lb(["wt", "--db", tube_db, "-s", "MUST TURN"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 
 
 @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_sort(play_mocked):
-    lb(["wt", tube_db, "-u", "duration"])
+    lb(["wt", "--db", tube_db, "-u", "duration"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 

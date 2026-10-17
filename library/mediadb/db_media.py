@@ -373,7 +373,7 @@ def download_add(
         return
 
     if getattr(args, "db", None) is None:
-        # DB-less commands (eg. `library links-download`) still download, they just have
+        # DB-less commands (eg. `library links download`) still download, they just have
         # nowhere to record the result
         log.debug("No database connected; skipping download metadata for %s", webpath)
         return
