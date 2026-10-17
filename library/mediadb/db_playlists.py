@@ -91,12 +91,29 @@ def consolidate(args, v: dict) -> dict:
     return objects.dict_filter_bool(cv) or {}
 
 
-def get_id(args, playlist_path) -> int:
-    return args.db.pop("select id from playlists where path=?", [str(playlist_path)])
+def _normalize_extractor_config(args, extractor_config=None) -> str:
+    extractor_config = (
+        getattr(args, "extractor_config", None) if extractor_config is None else extractor_config
+    )
+    if isinstance(extractor_config, str):
+        try:
+            extractor_config = json.loads(extractor_config)
+        except json.JSONDecodeError:
+            return extractor_config
+    return json.dumps(extractor_config or {}, sort_keys=True)
+
+
+def get_id(args, playlist_path, extractor_config=None) -> int | None:
+    config = _normalize_extractor_config(args, extractor_config)
+    return args.db.pop(
+        "select id from playlists where path=? and extractor_config=?",
+        [str(playlist_path), config],
+    )
 
 
 def _add(args, entry):
-    playlists_id = get_id(args, entry["path"])
+    entry = {**entry, "extractor_config": _normalize_extractor_config(args, entry.get("extractor_config"))}
+    playlists_id = get_id(args, entry["path"], entry["extractor_config"])
     if getattr(args, "simulate", False):
         return playlists_id
 
@@ -109,14 +126,18 @@ def _add(args, entry):
         entry["time_created"] = consts.APPLICATION_START
         entry["hours_update_delay"] = 70  # about three days
         args.db["playlists"].insert(entry, alter=True)
-        playlists_id = get_id(args, entry["path"])
+        playlists_id = get_id(args, entry["path"], entry["extractor_config"])
         assert playlists_id is not None
     return playlists_id
 
 
-def exists(args, playlist_path) -> bool:
+def exists(args, playlist_path, extractor_config=None) -> bool:
+    config = _normalize_extractor_config(args, extractor_config)
     try:
-        known = args.db.pop("select 1 from playlists where path=?", [str(playlist_path)])
+        known = args.db.pop(
+            "select 1 from playlists where path=? and extractor_config=?",
+            [str(playlist_path), config],
+        )
     except sqlite3.OperationalError as excinfo:
         log.debug(excinfo)
         return False
@@ -125,11 +146,12 @@ def exists(args, playlist_path) -> bool:
     return True
 
 
-def get_parentpath_playlists_id(args, playlist_path) -> int | None:
+def get_parentpath_playlists_id(args, playlist_path, extractor_config=None) -> int | None:
+    config = _normalize_extractor_config(args, extractor_config)
     try:
         known = args.db.pop(
-            "SELECT id FROM playlists WHERE ? LIKE path || ? || '%' AND path != ?",
-            [str(playlist_path), os.sep, str(playlist_path)],
+            "SELECT id FROM playlists WHERE ? LIKE path || ? || '%' AND path != ? AND extractor_config=?",
+            [str(playlist_path), os.sep, str(playlist_path), config],
         )
     except sqlite3.OperationalError as excinfo:
         log.debug(excinfo)
@@ -142,6 +164,7 @@ def mark_media_deleted(args, playlist_paths) -> int:
         return 0
 
     playlist_paths = iterables.conform(playlist_paths)
+    config = _normalize_extractor_config(args)
 
     deleted_playlist_count = 0
     deleted_media_count = 0
@@ -154,8 +177,8 @@ def mark_media_deleted(args, playlist_paths) -> int:
                     set time_deleted={consts.APPLICATION_START}
                     where path in ("""
                     + ",".join(["?"] * len(chunk_paths))
-                    + ")",
-                    (*chunk_paths,),
+                    + ") and extractor_config = ?",
+                    (*chunk_paths, config),
                 )
                 deleted_playlist_count += cursor.rowcount
 
@@ -170,8 +193,8 @@ def mark_media_deleted(args, playlist_paths) -> int:
                             SELECT id from playlists
                             WHERE path IN ("""
                         + ",".join(["?"] * len(chunk_paths))
-                        + "))",
-                        (*chunk_paths,),
+                        + ") AND extractor_config = ?)",
+                        (*chunk_paths, config),
                     )
                     deleted_media_count += cursor.rowcount
         except sqlite3.OperationalError:  # no such column: playlists_id
@@ -182,16 +205,18 @@ def mark_media_deleted(args, playlist_paths) -> int:
     return deleted_playlist_count
 
 
-def delete_subpath_playlists(args, playlist_path, replacement_playlist_id=None) -> int | None:
+def delete_subpath_playlists(args, playlist_path, replacement_playlist_id=None, extractor_config=None) -> int | None:
     if getattr(args, "simulate", False):
         return 0
 
+    config = _normalize_extractor_config(args, extractor_config)
     subpath_filter = """
         COALESCE(time_deleted, 0)=0
         AND path LIKE ?
         AND path != ?
+        AND extractor_config = ?
     """
-    subpath_params = [str(playlist_path) + os.sep + "%", str(playlist_path)]
+    subpath_params = [str(playlist_path) + os.sep + "%", str(playlist_path), config]
 
     if replacement_playlist_id:
         try:
@@ -224,29 +249,36 @@ def delete_subpath_playlists(args, playlist_path, replacement_playlist_id=None) 
 
 def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key=None) -> int:
     playlist_path = playlist_path.strip()
+    playlist = consolidate(args, objects.dumbcopy(info))
+    config = playlist.get("extractor_config", _normalize_extractor_config(args))
     if playlist_path and check_subpath:
-        parentpath_playlist_id = get_parentpath_playlists_id(args, playlist_path)
+        parentpath_playlist_id = get_parentpath_playlists_id(args, playlist_path, config)
         if parentpath_playlist_id:
             return parentpath_playlist_id
 
-    playlist = consolidate(args, objects.dumbcopy(info))
     if playlist_path:
         playlist = {**playlist, "path": playlist_path}
     if extractor_key:
         playlist["extractor_key"] = extractor_key
     playlists_id = _add(args, objects.dict_filter_bool(playlist) or {})
     if playlist_path and check_subpath:
-        delete_subpath_playlists(args, playlist_path, replacement_playlist_id=playlists_id)
+        delete_subpath_playlists(
+            args,
+            playlist_path,
+            replacement_playlist_id=playlists_id,
+            extractor_config=config,
+        )
     return playlists_id
 
 
-def media_exists(args, path, playlist_path) -> bool:
+def media_exists(args, path, playlist_path, extractor_config=None) -> bool:
     m_columns = db_utils.columns(args, "media")
+    config = _normalize_extractor_config(args, extractor_config)
 
     try:
         known = args.db.execute(
-            f"select 1 from media where playlists_id in (select id from playlists where path = ?) and (path=? or {'webpath' if 'webpath' in m_columns else 'path'}=?)",
-            [str(playlist_path), str(path), str(path)],
+            f"select 1 from media where playlists_id in (select id from playlists where path = ? and extractor_config = ?) and (path=? or {'webpath' if 'webpath' in m_columns else 'path'}=?)",
+            [str(playlist_path), config, str(path), str(path)],
         ).fetchone()
     except sqlite3.OperationalError as excinfo:
         log.debug(excinfo)
@@ -257,13 +289,14 @@ def media_exists(args, path, playlist_path) -> bool:
     return True
 
 
-def update_more_frequently(args, playlist_path) -> None:
+def update_more_frequently(args, playlist_path, extractor_config=None) -> None:
     if getattr(args, "simulate", False):
         return
 
     if "playlists" not in args.db.table_names():
         return
 
+    config = _normalize_extractor_config(args, extractor_config)
     try:
         with args.db.conn:
             args.db.conn.execute(
@@ -277,8 +310,9 @@ def update_more_frequently(args, playlist_path) -> None:
                 END
                 WHERE hours_update_delay IS NOT NULL
                     AND path = ?
+                    AND extractor_config = ?
                 """,
-                [playlist_path],
+                [playlist_path, config],
             )
     except sqlite3.OperationalError:
         try:
@@ -288,13 +322,14 @@ def update_more_frequently(args, playlist_path) -> None:
             raise
 
 
-def update_less_frequently(args, playlist_path) -> None:
+def update_less_frequently(args, playlist_path, extractor_config=None) -> None:
     if getattr(args, "simulate", False):
         return
 
     if "playlists" not in args.db.table_names():
         return
 
+    config = _normalize_extractor_config(args, extractor_config)
     try:
         with args.db.conn:
             args.db.conn.execute(
@@ -308,8 +343,9 @@ def update_less_frequently(args, playlist_path) -> None:
                 END
                 WHERE hours_update_delay IS NOT NULL
                     AND path = ?
+                    AND extractor_config = ?
                 """,
-                [playlist_path],
+                [playlist_path, config],
             )
     except sqlite3.OperationalError:
         try:
@@ -349,4 +385,4 @@ def save_undownloadable(args, playlist_path) -> None:
     _add(args, consolidate(args, entry) | {"path": playlist_path})
 
     if args.action == consts.SC.tube_update:
-        update_less_frequently(args, playlist_path)
+        update_less_frequently(args, playlist_path, args.extractor_config)

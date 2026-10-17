@@ -7,6 +7,7 @@ from library.createdb import fs_add_metadata
 from library.createdb.subtitle import clean_up_temp_dirs
 from library.editdb.dedupe_db import dedupe_rows
 from library.fsdb import folder_stats
+from library.mediadb import db_playlists
 from library.utils import consts, date_utils, db_utils, iterables, log_utils, objects, processes, sql_utils, strings
 from library.utils.consts import DBType
 from library.utils.log_utils import log
@@ -557,14 +558,19 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
 def get_playlist_media(args, playlist_paths) -> list[dict]:
     select_sql = getattr(args, "select_sql", None) or "\n        , ".join(s for s in args.select)
 
+    playlist_ids = [db_playlists.get_id(args, path) for path in playlist_paths]
+    playlist_ids = [playlist_id for playlist_id in playlist_ids if playlist_id is not None]
+    if not playlist_ids:
+        return []
+
     playlists_subquery = (
         """AND playlists_id in (
-        SELECT rowid as id from playlists
-        WHERE path IN ("""
-        + ",".join(f":playlist{i}" for i, _ in enumerate(playlist_paths))
+        SELECT id from playlists
+        WHERE id IN ("""
+        + ",".join(f":playlist{i}" for i, _ in enumerate(playlist_ids))
         + "))"
     )
-    playlists_params = {f"playlist{i}": p for i, p in enumerate(playlist_paths)}
+    playlists_params = {f"playlist{i}": p for i, p in enumerate(playlist_ids)}
 
     query = f"""WITH m as (
             SELECT

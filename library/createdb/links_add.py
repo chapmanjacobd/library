@@ -435,9 +435,9 @@ def links_update() -> None:
             new_media = extractor(args_env, playlist["path"])
 
             if new_media > 0:
-                db_playlists.update_more_frequently(args, playlist["path"])
+                db_playlists.update_more_frequently(args, playlist["path"], extractor_config)
             else:
-                db_playlists.update_less_frequently(args, playlist["path"])
+                db_playlists.update_less_frequently(args, playlist["path"], extractor_config)
 
             if playlist_count > 3:
                 time.sleep(random.uniform(0.05, 2))

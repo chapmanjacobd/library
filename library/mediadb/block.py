@@ -2,6 +2,7 @@ import sys
 
 from library import usage
 from library.createdb import tube_backend
+from library.mediadb import db_playlists
 from library.playback import media_printer, post_actions
 from library.utils import arggroups, argparse_utils, consts, db_utils, devices, iterables, shell_utils, strings
 from library.utils.log_utils import log
@@ -150,41 +151,44 @@ def block(args=None) -> None:
         for p in playlist_paths:
             add_to_blocklist(args, [p])
 
+        playlist_ids = [db_playlists.get_id(args, path) for path in playlist_paths]
+        playlist_ids = [playlist_id for playlist_id in playlist_ids if playlist_id is not None]
         if not args.simulate:
-            with args.db.conn:
-                args.db.conn.execute(
-                    f"""UPDATE playlists
-                    SET time_deleted={consts.APPLICATION_START}
-                    WHERE path IN ("""
-                    + ",".join(["?"] * len(playlist_paths))
-                    + ")",
-                    (*playlist_paths,),
-                )
-            with args.db.conn:
-                args.db.conn.execute(
-                    f"""UPDATE media
-                    SET time_deleted={consts.APPLICATION_START}
-                    WHERE path LIKE 'http%'
-                    AND playlists_id in (
-                        SELECT id from playlists
-                        WHERE path IN ("""
-                    + ",".join(["?"] * len(playlist_paths))
-                    + "))",
-                    (*playlist_paths,),
-                )
+            if playlist_ids:
+                with args.db.conn:
+                    args.db.conn.execute(
+                        f"""UPDATE playlists
+                        SET time_deleted={consts.APPLICATION_START}
+                        WHERE id IN ("""
+                        + ",".join(["?"] * len(playlist_ids))
+                        + ")",
+                        (*playlist_ids,),
+                    )
+                with args.db.conn:
+                    args.db.conn.execute(
+                        f"""UPDATE media
+                        SET time_deleted={consts.APPLICATION_START}
+                        WHERE path LIKE 'http%'
+                        AND playlists_id IN ("""
+                        + ",".join(["?"] * len(playlist_ids))
+                        + ")",
+                        (*playlist_ids,),
+                    )
 
-        playlist_media = list(
-            args.db.query(
-                """SELECT path, size FROM media
-                WHERE coalesce(time_deleted, 0)=0
-                AND time_downloaded > 0
-                AND playlists_id in (
-                    SELECT id from playlists
-                    WHERE path IN ("""
-                + ",".join(["?"] * len(playlist_paths))
-                + "))",
-                (*playlist_paths,),
-            ),
+        playlist_media = (
+            list(
+                args.db.query(
+                    """SELECT path, size FROM media
+                    WHERE coalesce(time_deleted, 0)=0
+                    AND time_downloaded > 0
+                    AND playlists_id IN ("""
+                    + ",".join(["?"] * len(playlist_ids))
+                    + ")",
+                    (*playlist_ids,),
+                ),
+            )
+            if playlist_ids
+            else []
         )
         total_size = sum(d["size"] or 0 for d in playlist_media)
         paths_to_delete = [d["path"] for d in playlist_media]

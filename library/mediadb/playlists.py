@@ -34,16 +34,16 @@ def delete_playlists(args, playlists) -> None:
     deleted_media_count = 0
     try:
         online_media = [p for p in playlists if p.startswith("http")]
-        if online_media:
+        online_playlist_ids = [db_playlists.get_id(args, path) for path in online_media]
+        online_playlist_ids = [playlist_id for playlist_id in online_playlist_ids if playlist_id is not None]
+        if online_playlist_ids:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     """DELETE from media where
-                    playlists_id in (
-                        SELECT id from playlists
-                        WHERE path IN ("""
-                    + ",".join(["?"] * len(online_media))
-                    + "))",
-                    (*online_media,),
+                    playlists_id IN ("""
+                    + ",".join(["?"] * len(online_playlist_ids))
+                    + ")",
+                    (*online_playlist_ids,),
                 )
                 deleted_media_count += cursor.rowcount
     except sqlite3.OperationalError:  # no such column: playlists_id
@@ -52,11 +52,14 @@ def delete_playlists(args, playlists) -> None:
     deleted_playlist_count = 0
     with args.db.conn:
         playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
-        cursor = args.db.conn.execute(
-            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")",
-            playlist_paths,
-        )
-        deleted_playlist_count = cursor.rowcount
+        playlist_ids = [db_playlists.get_id(args, path) for path in playlist_paths]
+        playlist_ids = [playlist_id for playlist_id in playlist_ids if playlist_id is not None]
+        if playlist_ids:
+            cursor = args.db.conn.execute(
+                "delete from playlists where id in (" + ",".join(["?"] * len(playlist_ids)) + ")",
+                playlist_ids,
+            )
+            deleted_playlist_count = cursor.rowcount
 
     local_media = [p.rstrip(os.sep) for p in playlists if not p.startswith("http")]
     for folder in local_media:

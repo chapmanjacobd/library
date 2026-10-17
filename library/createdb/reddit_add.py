@@ -201,6 +201,7 @@ def save_post(args, post_dict, subreddit_path) -> None:
 
 
 def since_last_created(args, playlist_path):
+    playlist_id = db_playlists.get_id(args, playlist_path)
     latest_post_utc = args.db.pop(
         """
         select max(time_created)
@@ -209,9 +210,9 @@ def since_last_created(args, playlist_path):
             UNION ALL
             select time_created, playlists_id from media
         )
-        where playlists_id = (select id from playlists where path = ?)
+        where playlists_id = ?
     """,
-        [playlist_path],
+        [playlist_id],
         ignore_errors=["no such column", "no such table"],
     )
     if latest_post_utc:
@@ -367,8 +368,8 @@ def reddit_update(args=None) -> None:
             elif extractor_key == "reddit_praw_redditor":
                 redditor_new(args, {"path": path, "name": name})
 
-            db_playlists.update_more_frequently(args, playlist["path"])
+            db_playlists.update_more_frequently(args, playlist["path"], playlist["extractor_config"])
         except skip_errors as excinfo:
-            db_playlists.update_less_frequently(args, playlist["path"])
+            db_playlists.update_less_frequently(args, playlist["path"], playlist["extractor_config"])
             log.error("[%s] skipping: %s", name, excinfo)
             continue

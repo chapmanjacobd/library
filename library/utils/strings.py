@@ -24,11 +24,6 @@ def safe_json_loads(s):
         return json.loads(re.sub(r"[\x00-\x1f\x7f-\x9f]", "", s))
 
 
-def safe_json_load(path):
-    binary_data = pathlib.Path(path).read_bytes()
-    return safe_json_loads(binary_data.decode("utf-8", errors="replace"))
-
-
 def repeat_until_same(fn):  # noqa: ANN201
     def wrapper(*args, **kwargs):
         p = args[0]

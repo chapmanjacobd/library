@@ -235,6 +235,7 @@ def yt_subs_config(args):
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict] | None:
     yt_dlp = load_module_level_yt_dlp()
+    playlist_id = db_playlists.get_id(args, playlist_path, playlist_dl_opts)
 
     tables = args.db.table_names()
     m_columns = db_utils.columns(args, "media")
@@ -284,10 +285,10 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
                         , playlists_id
                     FROM media
                     WHERE COALESCE(time_deleted, 0)=0
-                        AND playlists_id = (select id from playlists where path = ?)
+                        AND playlists_id = ?
                         {'AND width is null' if 'width' in m_columns else ''}
                     """,
-                    [playlist_path],
+                        [playlist_id],
                 ).fetchall()
             )
 
