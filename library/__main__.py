@@ -101,6 +101,12 @@ progs = {
         "document convert images pdf": "Convert folders of images into image PDFs",
         "document adjust pdf": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
     },
+    "Video extraction subcommands": {
+        "video extract audio": "Extract audio streams without re-encoding",
+        "video extract subtitles": "Extract embedded subtitle streams",
+        "video extract scenes": "Extract scene changes as video, images, or contact sheets",
+        "video extract keyframes": "Extract keyframes as video, images, or slow-motion video",
+    },
     "Text processing subcommands": {
         "text sort regex": "Sort text by regex split and corpus comparison",
         "text sort cluster": "Sort text by similarity",
@@ -240,6 +246,10 @@ modules = {
     "library.mediadb.redownload.redownload": ["re-dl", "re-download"],
     "library.mediadb.search.search": ["sc", "search-captions"],
     "library.mediafiles.media_check.media_check": ["check_media"],
+    "library.mediafiles.extract.extract_audio": [],
+    "library.mediafiles.extract.extract_subtitles": [],
+    "library.mediafiles.extract.extract_scenes": [],
+    "library.mediafiles.extract.extract_keyframes": [],
     "library.mediafiles.process_media.process_media": [],
     "library.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video", "video-process"],
     "library.mediafiles.process_ffmpeg.process_audio": ["audio-process"],
@@ -362,6 +372,14 @@ NESTED_COMMANDS = {
         "audio": "process-audio",
         "image": "process-image",
         "text": "process-text",
+    },
+    "video": {
+        "extract": {
+            "audio": "extract-audio",
+            "subtitles": "extract-subtitles",
+            "scenes": "extract-scenes",
+            "keyframes": "extract-keyframes",
+        }
     },
     "image": {"sort": {"cluster": "cluster-images"}},
     "captions": "search",

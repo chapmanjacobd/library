@@ -131,7 +131,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.0; 114 subcommands)
+    library (v4.0.0; 118 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
@@ -311,6 +311,17 @@ flat commands are now only reachable through a group (for example
     ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ document adjust pdf         │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
     ╰─────────────────────────────┴───────────────────────────────────────────────────────────────────────────╯
+
+    Video extraction subcommands:
+    ╭─────────────────────────┬───────────────────────────────────────────────────────────╮
+    │ video extract audio     │ Extract audio streams without re-encoding                 │
+    ├─────────────────────────┼───────────────────────────────────────────────────────────┤
+    │ video extract subtitles │ Extract embedded subtitle streams                         │
+    ├─────────────────────────┼───────────────────────────────────────────────────────────┤
+    │ video extract scenes    │ Extract scene changes as video, images, or contact sheets │
+    ├─────────────────────────┼───────────────────────────────────────────────────────────┤
+    │ video extract keyframes │ Extract keyframes as video, images, or slow-motion video  │
+    ╰─────────────────────────┴───────────────────────────────────────────────────────────╯
 
     Text processing subcommands:
     ╭─────────────────────┬────────────────────────────────────────────────╮
@@ -3426,6 +3437,82 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library document adjust pdf --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
         library document adjust pdf -b 105 -c 120 -C 80 -s 110 scan001.pdf
+
+
+</details>
+
+### Video extraction subcommands
+
+###### video extract audio
+
+<details><summary>Extract audio streams without re-encoding</summary>
+
+    $ library video extract audio -h
+    usage: library video extract audio PATH ... [--output PATH] [--all-audio] [--delete]
+
+    Extract the first audio stream without re-encoding:
+
+        library video extract audio video.mp4
+
+    Extract every audio stream and optionally move the source to the trash after success:
+
+        library video extract audio --all-audio --delete video.mkv
+
+
+</details>
+
+###### video extract subtitles
+
+<details><summary>Extract embedded subtitle streams</summary>
+
+    $ library video extract subtitles -h
+    usage: library video extract subtitles PATH ... [--stream N] [--format {srt,vtt,ass}] [--stdout]
+
+    Extract an embedded subtitle stream to a sidecar file:
+
+        library video extract subtitles video.mkv
+
+    Print one embedded subtitle stream as SRT:
+
+        library video extract subtitles --stdout --stream 1 video.mkv
+
+
+</details>
+
+###### video extract scenes
+
+<details><summary>Extract scene changes as video, images, or contact sheets</summary>
+
+    $ library video extract scenes -h
+    usage: library video extract scenes PATH ... [--mode {video,images,contact-sheet}]
+
+    Create a video containing scene changes:
+
+        library video extract scenes video.mp4
+
+    Extract scene-change images or a contact sheet:
+
+        library video extract scenes --images video.mp4
+        library video extract scenes --contact-sheet video.mp4
+
+
+</details>
+
+###### video extract keyframes
+
+<details><summary>Extract keyframes as video, images, or slow-motion video</summary>
+
+    $ library video extract keyframes -h
+    usage: library video extract keyframes PATH ... [--mode {video,images,slow}]
+
+    Keep only keyframes in a stream-copy output:
+
+        library video extract keyframes video.mp4
+
+    Extract keyframe images or create an eight-times-slower keyframe video:
+
+        library video extract keyframes --images video.mp4
+        library video extract keyframes --slow video.mp4
 
 
 </details>
