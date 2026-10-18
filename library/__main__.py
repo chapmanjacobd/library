@@ -93,13 +93,15 @@ progs = {
     "Media processing subcommands": {
         "file check": "Check video and audio files for corruption via ffmpeg",
         "shrink media": "Estimate and execute potential disk space savings",
+        "shrink table": "Convert table-like files to compressed Parquet",
         "shrink video": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
         "shrink audio": "Shrink audio to Opus",
         "shrink image": "Shrink images to AV1 image format (.avif)",
         "shrink text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
         "archive extract": "Extract from archives and delete all associated multi-part archive files",
-        "document convert images pdf": "Convert folders of images into image PDFs",
+        "document convert": "Convert images, PDFs, and text-like documents to PDF",
         "document adjust pdf": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
+        "document pdf header": "Stamp rendered Markdown/text onto PDF pages",
     },
     "Video extraction subcommands": {
         "video extract audio": "Extract audio streams without re-encoding",
@@ -108,6 +110,7 @@ progs = {
         "video extract keyframes": "Extract keyframes as video, images, or slow-motion video",
     },
     "Text processing subcommands": {
+        "text convert": "Convert Markdown and text-like documents to PDF",
         "text sort regex": "Sort text by regex split and corpus comparison",
         "text sort cluster": "Sort text by similarity",
         "text extract": "Extract human text from lists of web links",
@@ -121,6 +124,7 @@ progs = {
         "json rename-keys": "Rename JSON keys by substring match",
     },
     "Image processing subcommands": {
+        "image convert": "Convert images and comic archives into PDFs",
         "image sort cluster": "Sort images by similarity",
     },
     "Data import subcommands": {
@@ -256,8 +260,10 @@ modules = {
     "library.mediafiles.process_image.process_image": ["image-process"],
     "library.mediafiles.unardel.unardel": ["unarchive", "unar"],
     "library.mediafiles.process_text.process_text": ["text-process"],
-    "library.mediafiles.images_to_pdf.images_to_pdf": ["images2pdf"],
+    "library.mediafiles.images_to_pdf.image_convert": [],
+    "library.mediafiles.document_convert.document_convert": [],
     "library.mediafiles.pdf_edit.pdf_edit": [],
+    "library.mediafiles.pdf_header.pdf_header": [],
     "library.mediafiles.torrents_dump.torrents_dump": ["torrent-dump"],
     "library.mediafiles.torrents_start.torrents_start": ["torrent-start"],
     "library.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
@@ -288,6 +294,7 @@ modules = {
     "library.tablefiles.markdown_tables.markdown_tables": [],
     "library.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "library.tablefiles.plot.plot": ["plots", "chart", "graph"],
+    "library.tablefiles.process_table.process_table": [],
     "library.text.cluster_sort.cluster_images_sort": ["cluster-images"],
     "library.text.cluster_sort.cluster_sort": ["cs"],
     "library.text.regex_sort.regex_sort": ["rs", "resort"],
@@ -302,6 +309,7 @@ modules = {
     "library.text.timestamps.timestamps": ["timestamp", "datetime"],
     "library.text.json_keys_rename.json_keys_rename": [],
     "library.text.combinations.combinations": ["combos"],
+    "library.text.convert.text_convert": [],
 }
 
 
@@ -372,6 +380,7 @@ NESTED_COMMANDS = {
         "audio": "process-audio",
         "image": "process-image",
         "text": "process-text",
+        "table": "process-table",
     },
     "video": {
         "extract": {
@@ -381,7 +390,7 @@ NESTED_COMMANDS = {
             "keyframes": "extract-keyframes",
         }
     },
-    "image": {"sort": {"cluster": "cluster-images"}},
+    "image": {"convert": "image-convert", "sort": {"cluster": "cluster-images"}},
     "captions": "search",
     "download": "download",
     "torrent": {
@@ -442,14 +451,12 @@ NESTED_COMMANDS = {
             "relative-copy": "relcp",
         },
     },
-    "document": {
-        "convert": {"images": {"pdf": "images-to-pdf"}},
-        "adjust": {"pdf": "pdf-edit"},
-    },
+    "document": {"convert": "document-convert", "pdf": {"header": "pdf-header"}, "adjust": {"pdf": "pdf-edit"}},
     "json": {"rename-keys": "json-keys-rename"},
     "archive": {"extract": "unardel"},
     "help": {"search": "search-help"},
     "text": {
+        "convert": "text-convert",
         "extract": "extract-text",
         "sort": {"regex": "regex-sort", "cluster": "cluster-sort"},
         "markdown": {"links": "markdown-links"},

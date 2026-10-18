@@ -1,5 +1,6 @@
-import argparse, os, subprocess
+import argparse, os, subprocess, sys
 from pathlib import Path
+from shutil import which
 
 from natsort import natsorted
 
@@ -10,7 +11,7 @@ from library.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.images_to_pdf)
+    parser = argparse_utils.ArgumentParser(usage=usage.image_convert)
     parser.add_argument(
         "--delete-original", action=argparse.BooleanOptionalAction, default=False, help="Delete source images"
     )
@@ -48,6 +49,10 @@ def convert_to_image_pdf(args, image_paths, pdf_path):
     if args.simulate:
         print("img2pdf", *image_paths, pdf_path)
         return pdf_path
+
+    if any(path_utils.ext(path) not in consts.PIL_EXTENSIONS for path in image_paths) and which("magick") is None:
+        print("Required command not found: magick", file=sys.stderr)
+        raise SystemExit(1)
 
     import img2pdf
     image_stats = os.stat(image_paths[0])
@@ -90,6 +95,7 @@ def process_paths(args, paths):
 
     output_path = convert_to_image_pdf(args, paths, pdf_path)
     log.info("Saved %s", output_path)
+    return output_path
 
 
 def gen_arg_groups(args):
@@ -133,7 +139,7 @@ def gen_arg_groups(args):
         yield individual_files
 
 
-def images_to_pdf():
+def image_convert():
     args = parse_args()
 
     for group_paths in gen_arg_groups(args):

@@ -2034,18 +2034,29 @@ unardel = """library archive extract PATH ...
     Extract from archives, including nested archives, and delete all source archives
 """
 
-images_to_pdf = """library document convert images pdf PATH ...
+image_convert = """library image convert PATH ...
 
     Convert groups of images to PDF
 
-        library document convert images pdf folder_with_images/
-        library document convert images pdf page00*.jpg
-        library document convert images pdf page00*.avif  # many file formats supported
+        library image convert folder_with_images/
+        library image convert page00*.jpg
+        library image convert page00*.avif  # many file formats supported
 
     Convert comics (CBZ, CBR) to PDF
 
-        library document convert images pdf my_ebook.cbr
-        library document convert images pdf https://site/my_ebook.cbz
+        library image convert my_ebook.cbr
+        library image convert https://site/my_ebook.cbz
+"""
+
+document_convert = """library document convert PATH ... [--ocr] [--open]
+
+    Convert an input document to PDF based on its detected MIME type or extension.
+    Images are assembled into a PDF, PDFs are rasterized and rebuilt, and text-like
+    documents are converted with Pandoc.
+
+        library document convert scan.jpg
+        library document convert notes.md
+        library document convert report.pdf --output-path report-flat.pdf
 """
 
 pdf_edit = """library document adjust pdf PATH ...
@@ -2061,6 +2072,30 @@ pdf_edit = """library document adjust pdf PATH ...
         library document adjust pdf -b 105 -c 120 -C 80 -s 110 scan001.pdf
 """
 
+pdf_header = """library document pdf header HEADER_TEXT INPUT.pdf [--output-path OUTPUT.pdf]
+
+    Render HEADER_TEXT with Pandoc and stamp it onto every page of INPUT.pdf with pdftk.
+
+        library document pdf header "Draft - October 2026" input.pdf
+        library document pdf header "Confidential" input.pdf -o stamped.pdf
+"""
+
+text_convert = """library text convert PATH ... [--ocr]
+
+    Convert Markdown or text-like files to PDF with Pandoc. OCR is optional and
+    is useful when the conversion pipeline produces a raster-only PDF.
+
+        library text convert notes.md
+        library text convert scanned-text.pdf --ocr
+"""
+
+process_table = """library shrink table PATH ... [--output-path OUTPUT.parquet]
+
+    Convert table-like files to compressed Parquet using pandas.
+
+        library shrink table data.csv
+        library shrink table workbook.xlsx --join-tables --compression zstd
+"""
 computers_add = """library database add computers DATABASE HOSTNAME ...
 
     Create a SQLite database of SSH-able computers and their disks (nodes are playlists, node disks are media)

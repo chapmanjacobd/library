@@ -131,7 +131,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.0; 118 subcommands)
+    library (v4.0.0; 122 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
@@ -292,25 +292,29 @@ flat commands are now only reachable through a group (for example
     ╰─────────────────────────────┴───────────────────────────────────────────╯
 
     Media processing subcommands:
-    ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────────╮
-    │ file check                  │ Check video and audio files for corruption via ffmpeg                     │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink media                │ Estimate and execute potential disk space savings                         │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink video                │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink audio                │ Shrink audio to Opus                                                      │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink image                │ Shrink images to AV1 image format (.avif)                                 │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink text                 │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ archive extract             │ Extract from archives and delete all associated multi-part archive files  │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ document convert images pdf │ Convert folders of images into image PDFs                                 │
-    ├─────────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ document adjust pdf         │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
-    ╰─────────────────────────────┴───────────────────────────────────────────────────────────────────────────╯
+    ╭─────────────────────┬───────────────────────────────────────────────────────────────────────────╮
+    │ file check          │ Check video and audio files for corruption via ffmpeg                     │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ shrink media        │ Estimate and execute potential disk space savings                         │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ shrink table        │ Convert table-like files to compressed Parquet                            │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ shrink video        │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ shrink audio        │ Shrink audio to Opus                                                      │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ shrink image        │ Shrink images to AV1 image format (.avif)                                 │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ shrink text         │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ archive extract     │ Extract from archives and delete all associated multi-part archive files  │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ document convert    │ Convert images, PDFs, and text-like documents to PDF                      │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ document adjust pdf │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
+    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ document pdf header │ Stamp rendered Markdown/text onto PDF pages                               │
+    ╰─────────────────────┴───────────────────────────────────────────────────────────────────────────╯
 
     Video extraction subcommands:
     ╭─────────────────────────┬───────────────────────────────────────────────────────────╮
@@ -324,34 +328,38 @@ flat commands are now only reachable through a group (for example
     ╰─────────────────────────┴───────────────────────────────────────────────────────────╯
 
     Text processing subcommands:
-    ╭─────────────────────┬────────────────────────────────────────────────╮
-    │ text sort regex     │ Sort text by regex split and corpus comparison │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text sort cluster   │ Sort text by similarity                        │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text extract        │ Extract human text from lists of web links     │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text markdown links │ Extract titles from lists of web links         │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text expand links   │ Expand search urls with query text             │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text combinations   │ Enumerate possible combinations                │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text nouns          │ Unstructured text -> compound nouns (stdin)    │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text timestamps     │ Unstructured text -> timestamps                │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text dates          │ Unstructured text -> dates                     │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ text times          │ Unstructured text -> times                     │
-    ├─────────────────────┼────────────────────────────────────────────────┤
-    │ json rename-keys    │ Rename JSON keys by substring match            │
-    ╰─────────────────────┴────────────────────────────────────────────────╯
+    ╭─────────────────────┬─────────────────────────────────────────────────╮
+    │ text convert        │ Convert Markdown and text-like documents to PDF │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text sort regex     │ Sort text by regex split and corpus comparison  │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text sort cluster   │ Sort text by similarity                         │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text extract        │ Extract human text from lists of web links      │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text markdown links │ Extract titles from lists of web links          │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text expand links   │ Expand search urls with query text              │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text combinations   │ Enumerate possible combinations                 │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text nouns          │ Unstructured text -> compound nouns (stdin)     │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text timestamps     │ Unstructured text -> timestamps                 │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text dates          │ Unstructured text -> dates                      │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ text times          │ Unstructured text -> times                      │
+    ├─────────────────────┼─────────────────────────────────────────────────┤
+    │ json rename-keys    │ Rename JSON keys by substring match             │
+    ╰─────────────────────┴─────────────────────────────────────────────────╯
 
     Image processing subcommands:
-    ╭────────────────────┬───────────────────────────╮
-    │ image sort cluster │ Sort images by similarity │
-    ╰────────────────────┴───────────────────────────╯
+    ╭────────────────────┬─────────────────────────────────────────────╮
+    │ image convert      │ Convert images and comic archives into PDFs │
+    ├────────────────────┼─────────────────────────────────────────────┤
+    │ image sort cluster │ Sort images by similarity                   │
+    ╰────────────────────┴─────────────────────────────────────────────╯
 
     Data import subcommands:
     ╭────────────────────────────────┬────────────────────────────────────────────────────╮
@@ -3300,6 +3308,21 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
+###### shrink table
+
+<details><summary>Convert table-like files to compressed Parquet</summary>
+
+    $ library shrink table -h
+    usage: library shrink table PATH ... [--output-path OUTPUT.parquet]
+
+    Convert table-like files to compressed Parquet using pandas.
+
+        library shrink table data.csv
+        library shrink table workbook.xlsx --join-tables --compression zstd
+
+
+</details>
+
 ###### shrink video
 
 <details><summary>Shrink video/audio to AV1/Opus format (.mkv, .mka)</summary>
@@ -3400,23 +3423,20 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
-###### document convert images pdf
+###### document convert
 
-<details><summary>Convert folders of images into image PDFs</summary>
+<details><summary>Convert images, PDFs, and text-like documents to PDF</summary>
 
-    $ library document convert images pdf -h
-    usage: library document convert images pdf PATH ...
+    $ library document convert -h
+    usage: library document convert PATH ... [--ocr] [--open]
 
-    Convert groups of images to PDF
+    Convert an input document to PDF based on its detected MIME type or extension.
+    Images are assembled into a PDF, PDFs are rasterized and rebuilt, and text-like
+    documents are converted with Pandoc.
 
-        library document convert images pdf folder_with_images/
-        library document convert images pdf page00*.jpg
-        library document convert images pdf page00*.avif  # many file formats supported
-
-    Convert comics (CBZ, CBR) to PDF
-
-        library document convert images pdf my_ebook.cbr
-        library document convert images pdf https://site/my_ebook.cbz
+        library document convert scan.jpg
+        library document convert notes.md
+        library document convert report.pdf --output-path report-flat.pdf
 
 
 </details>
@@ -3437,6 +3457,21 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library document adjust pdf --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
         library document adjust pdf -b 105 -c 120 -C 80 -s 110 scan001.pdf
+
+
+</details>
+
+###### document pdf header
+
+<details><summary>Stamp rendered Markdown/text onto PDF pages</summary>
+
+    $ library document pdf header -h
+    usage: library document pdf header HEADER_TEXT INPUT.pdf [--output-path OUTPUT.pdf]
+
+    Render HEADER_TEXT with Pandoc and stamp it onto every page of INPUT.pdf with pdftk.
+
+        library document pdf header "Draft - October 2026" input.pdf
+        library document pdf header "Confidential" input.pdf -o stamped.pdf
 
 
 </details>
@@ -3518,6 +3553,22 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 </details>
 
 ### Text processing subcommands
+
+###### text convert
+
+<details><summary>Convert Markdown and text-like documents to PDF</summary>
+
+    $ library text convert -h
+    usage: library text convert PATH ... [--ocr]
+
+    Convert Markdown or text-like files to PDF with Pandoc. OCR is optional and
+    is useful when the conversion pipeline produces a raster-only PDF.
+
+        library text convert notes.md
+        library text convert scanned-text.pdf --ocr
+
+
+</details>
 
 ###### text sort regex
 
@@ -3756,6 +3807,27 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 </details>
 
 ### Image processing subcommands
+
+###### image convert
+
+<details><summary>Convert images and comic archives into PDFs</summary>
+
+    $ library image convert -h
+    usage: library image convert PATH ...
+
+    Convert groups of images to PDF
+
+        library image convert folder_with_images/
+        library image convert page00*.jpg
+        library image convert page00*.avif  # many file formats supported
+
+    Convert comics (CBZ, CBR) to PDF
+
+        library image convert my_ebook.cbr
+        library image convert https://site/my_ebook.cbz
+
+
+</details>
 
 ###### image sort cluster
 

@@ -15,7 +15,7 @@ def test_process_image():
 
     output_path = Path(temp_dir.name, "output.pdf")
 
-    lb(["images-to-pdf", input_path1, input_path2, "--output-path", str(output_path)])
+    lb(["image", "convert", input_path1, input_path2, "--output-path", str(output_path)])
 
     output_stats = output_path.stat()
     assert output_stats.st_size >= 9999
