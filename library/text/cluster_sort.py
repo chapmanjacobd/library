@@ -20,16 +20,9 @@ from library.utils import (
 from library.utils.log_utils import Timer, log
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.cluster_sort)
-
-    parser.add_argument(
-        "--image",
-        action="store_true",
-        dest="image",
-        help="Read image data",
-    )
-    parser.set_defaults(image=False)
+def _parse_args(image: bool) -> argparse.Namespace:
+    usage_text = usage.cluster_images_sort if image else usage.cluster_sort
+    parser = argparse_utils.ArgumentParser(usage=usage_text)
 
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
@@ -42,6 +35,14 @@ def parse_args() -> argparse.Namespace:
     arggroups.args_post(args, parser)
 
     return args
+
+
+def parse_args() -> argparse.Namespace:
+    return _parse_args(image=False)
+
+
+def parse_image_args() -> argparse.Namespace:
+    return _parse_args(image=True)
 
 
 def map_cluster_to_paths(paths, clusters):
@@ -348,15 +349,13 @@ def filter_near_duplicates(groups: list[dict]) -> list[dict]:
     return regrouped_data
 
 
-def cluster_sort() -> None:
-    args = parse_args()
-
+def _cluster_sort(args: argparse.Namespace, image: bool) -> None:
     lines = args.input_path.readlines()
     args.input_path.close()
 
     lines = [s.rstrip("\n") for s in lines if s.strip()]
 
-    if args.image:
+    if image:
         groups = cluster_images(lines, args.clusters)
     else:
         groups = cluster_paths(args, lines)
@@ -376,7 +375,7 @@ def cluster_sort() -> None:
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))
 
-        if args.image:
+        if image:
             for i, group in enumerate(groups, start=1):
                 paths = [s.rstrip("\n") for s in group["grouped_paths"]]
                 shell_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
@@ -402,3 +401,11 @@ def cluster_sort() -> None:
                 output_fd.writelines(lines)
         else:
             printing.pipe_lines(lines)
+
+
+def cluster_sort() -> None:
+    _cluster_sort(parse_args(), image=False)
+
+
+def cluster_images_sort() -> None:
+    _cluster_sort(parse_image_args(), image=True)

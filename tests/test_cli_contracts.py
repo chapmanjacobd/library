@@ -51,6 +51,8 @@ def test_backend_add_commands_reject_mismatching_profiles(monkeypatch, parse_arg
         ["cluster-sort", "--audio"],
         ["cluster-sort", "--video"],
         ["cluster-sort", "--text"],
+        ["cluster-sort", "--image"],
+        ["cluster-sort", "--images"],
         ["export-text", "--format", "json", ":memory:"],
         ["download", "--safe", "--filesystem", v_db],
         ["media", "--chromecast", "--db", v_db],
@@ -315,6 +317,20 @@ def test_nested_alias_dispatches_with_canonical_program(monkeypatch):
     assert called == [("library filesystem list", ["--db", "files.db"])]
 
 
+@pytest.mark.parametrize("command", [["open-directory"], ["web"]])
+def test_database_directory_command_dispatches_with_canonical_program(monkeypatch, command):
+    called = []
+
+    def record_call():
+        called.append((sys.argv[0], sys.argv[1:]))
+
+    monkeypatch.setattr("library.createdb.web_add.web_add", record_call)
+
+    lb(["database", "add", *command])
+
+    assert called == [("library database add open-directory", [])]
+
+
 def test_canonicalize_usage_rewrites_legacy_flat_commands_only():
     text = "library fs-add ROOT\nlibrary database add filesystem ROOT\n"
 
@@ -429,6 +445,7 @@ def test_help_without_query_prints_top_level_help(capsys):
         (["filesystem", "list", "-h"], "usage: library filesystem list"),
         (["file", "hash", "-h"], "usage: library file hash"),
         (["text", "sort", "regex", "-h"], "usage: library text sort regex"),
+        (["image", "sort", "cluster", "-h"], "usage: library image sort cluster"),
         (["playback", "next", "-h"], "usage: library playback next"),
         (["folder", "merge", "copy", "-h"], "usage: library folder merge copy"),
         (["folder", "move", "list", "-h"], "usage: library folder move list"),
@@ -481,11 +498,26 @@ def test_help_search_indexes_nested_only_commands(capsys):
 
 def test_usage_catalog_lists_executable_help_path_only():
     output = __main__.usage()
+    catalog = __main__._command_catalog()  # noqa: SLF001
+    commands = [command for _category, category_commands in catalog for command, _description in category_commands]
 
     assert re.search(r"│ help search\s+│", output)
     assert not re.search(r"│ help\s+│", output)
     assert "play audio" in output
     assert "Show disk usage grouped by file extension" in output
+    assert len(catalog) >= 14
+    assert "Other subcommands" not in dict(catalog)
+    assert len(commands) >= 99
+    assert len(commands) == len(set(commands))
+    assert set(commands) == set(__main__._canonical_nested_paths_for_all_groups())  # noqa: SLF001
+
+
+def test_usage_catalog_normalizes_nested_aliases():
+    catalog = dict(__main__._command_catalog())
+    commands = dict(catalog["Database updating subcommands"])
+
+    assert "database update open-directory" in commands
+    assert "database update web" not in commands
 
 
 def test_nested_help_examples_use_canonical_commands(capsys):
@@ -596,6 +628,11 @@ def test_json_key_renaming_is_nested_under_json():
 def test_image_pdf_conversion_has_explicit_output_format():
     assert _nested_target(["document", "convert", "images", "pdf"]) == ("images-to-pdf", 4)
     assert _nested_target(["document", "to-pdf", "images"]) is None
+
+
+def test_cluster_sort_images_is_a_nested_subcommand():
+    assert _nested_target(["text", "sort", "cluster"]) == ("cluster-sort", 3)
+    assert _nested_target(["image", "sort", "cluster"]) == ("cluster-images", 3)
 
 
 def test_top_level_filesystem_routes_dispatch_to_migrated_commands(monkeypatch):
@@ -816,21 +853,21 @@ def test_is_profile_auto_matches_scannable_types():
     assert not objects.is_profile(args, DBType.filesystem)
 
 
-def test_cluster_sort_image_is_an_explicit_flag(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["cluster-sort", "--image"])
-
-    args = cluster_sort.parse_args()
-
-    assert args.image is True
-
-
 def test_cluster_sort_defaults_to_lines(monkeypatch):
     monkeypatch.setattr("sys.argv", ["cluster-sort"])
 
     args = cluster_sort.parse_args()
 
-    assert args.image is False
+    assert not hasattr(args, "image")
     assert not hasattr(args, "lines")
+
+
+def test_cluster_sort_image_mode_is_a_subcommand(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["cluster-images"])
+
+    args = cluster_sort.parse_image_args()
+
+    assert not hasattr(args, "image")
 
 
 def test_dedupe_media_type_leaves_strategy_unset(monkeypatch):
@@ -851,10 +888,10 @@ def test_dedupe_strategy_is_not_a_profile(monkeypatch):
     assert args.strategy == "extractor_id"
 
 
-def test_cluster_sort_image_is_not_a_profile(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["cluster-sort", "--image"])
+def test_cluster_sort_image_mode_is_not_a_profile(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["cluster-images"])
 
-    args = cluster_sort.parse_args()
+    args = cluster_sort.parse_image_args()
 
-    assert args.image is True
+    assert not hasattr(args, "image")
     assert not hasattr(args, "profile")

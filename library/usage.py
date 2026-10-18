@@ -814,15 +814,19 @@ cluster_sort = """library text sort cluster [input_path | stdin] [output_path | 
             {'grouped_paths': ['broccoli', 'green', 'yellow']}
         ]
 
+    Print similar paths
+
+        library filesystem list --db 0day.db -pa --cluster --print-groups
+
+"""
+
+cluster_images_sort = """library image sort cluster [input_path | stdin] [output_path | stdout]
+
     Auto-sort images into directories
 
         echo 'image1.jpg
         image2.jpg
-        image3.jpg' | library text sort cluster --image --move-groups
-
-    Print similar paths
-
-        library filesystem list --db 0day.db -pa --cluster --print-groups
+        image3.jpg' | library image sort cluster --move-groups
 
 """
 
@@ -1512,7 +1516,11 @@ download_links = links_download
 
 links_add = r"""library database add links DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
 
-    Database version of extract-links with pagination
+    Extract links from ordinary webpages into a database. This is useful for
+    article indexes, forums, search results, playlists, and other pages where
+    the links you want are embedded in HTML. Supports pagination, recursive
+    same-site crawling, link filters, browser-backed pages, and Internet Archive
+    CDX snapshots.
 
     By default it will add the URL param "?page=2" and so on...
 
@@ -1712,18 +1720,21 @@ media_check = """library file check [--chunk-size SECONDS] [--gap SECONDS OR 0.0
         [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
 """
 
-web_add = """library database add web [--auto | --filesystem | --video | --audio | --image | --text] DATABASE URL ...
+web_add = """library database add open-directory [--auto | --filesystem | --video | --audio | --image | --text] DATABASE URL ...
 
-    Scan open directories (multiple profiles can be selected or none at all)
+    Discover media files in Apache/Nginx-style directory listings and other
+    folder-like web indexes. It follows HTML subdirectories, treats non-HTML
+    links as media, and can collect filesystem, hash, audio, video, image, and
+    text metadata using one or more profiles.
 
-        library database add web open_dir.db http://1.1.1.1/  # simple spider
-        library database add web open_dir.db --filesystem http://1.1.1.1/
-        library database add web open_dir.db --video http://1.1.1.1/
-        library database add web open_dir.db --filesystem --video http://1.1.1.1/
+        library database add open-directory open_dir.db http://1.1.1.1/  # simple spider
+        library database add open-directory open_dir.db --filesystem http://1.1.1.1/
+        library database add open-directory open_dir.db --video http://1.1.1.1/
+        library database add open-directory open_dir.db --filesystem --video http://1.1.1.1/
 
     Re-scan using a different profile
 
-        library play media --db v.db -w 'size is null' --ext wmv,3gp,mp4 -pf | library database add web --media --force --video v.db -
+        library play media --db v.db -w 'size is null' --ext wmv,3gp,mp4 -pf | library database add open-directory --media --force --video v.db -
 
     Check download size of all videos matching some criteria
 
@@ -1742,7 +1753,7 @@ web_add = """library database add web [--auto | --filesystem | --video | --audio
         library play video --db open_dir.db
 """
 
-web_update = """library database update web DATABASE
+web_update = """library database update open-directory DATABASE
 
     Update saved open directories
 """

@@ -7,132 +7,151 @@ from library.utils import argparse_utils
 from library.utils.log_utils import log
 
 progs = {
-    "Create database subcommands": {
-        "fs_add": "Add local media",
-        "tube_add": "Add online video media (yt-dlp)",
-        "web_add": "Add open-directory media",
-        "gallery_add": "Add online gallery media (gallery-dl)",
-        "tabs_add": "Create a tabs database; Add URLs",
-        "links_add": "Create a link-scraping database",
-        "site_add": "Auto-scrape website data to SQLite",
-        "tables_add": "Add table-like data to SQLite",
-        "reddit_add": "Create a reddit database; Add subreddits",
-        "hn_add": "Create / Update a Hacker News database",
-        "getty_add": "Create / Update a Getty Museum database",
-        "substack": "Backup substack articles",
-        "tildes": "Backup tildes comments and topics",
-        "nicotine_import": "Import paths from nicotine+",
-        "places_import": "Import places of interest (POIs)",
-        "row_add": "Add arbitrary data to SQLite",
-        "computers_add": "Add computer info to SQLite",
-        "torrents_add": "Add torrent info to SQLite",
-    },
-    "Text subcommands": {
-        "cluster_sort": "Sort text and images by similarity",
-        "regex_sort": "Sort text by regex split and corpus comparison",
-        "extract_links": "Extract inner links from lists of web links",
-        "links_download": "Download links from lists of web links",
-        "extract_text": "Extract human text from lists of web links",
-        "markdown_links": "Extract titles from lists of web links",
-        "expand_links": "Expand search urls with query text",
-        "nouns": "Unstructured text -> compound nouns (stdin)",
-        "dates": "Unstructured text -> dates",
-        "times": "Unstructured text -> times",
-        "timestamps": "Unstructured text -> timestamps",
-        "json_keys_rename": "Rename JSON keys by substring match",
-        "combinations": "Enumerate possible combinations",
-    },
-    "Folder subcommands": {
-        "merge_mv": "Move files and merge folders in BSD/rsync style, rename if possible",
-        "mergerfs_cp": "cp files with reflink on mergerfs",
-        "scatter": "Scatter files between folders or disks",
-        "mv_list": "Find specific folders to move to different disks",
-        "mount_stats": "Show some relative mount stats",
-        "disk_free": "Show system-wide disk usage",
-        "big_dirs": "Show large folders",
-        "similar_folders": "Find similar folders based on folder name, size, and count",
-    },
-    "File subcommands": {
-        "christen": "Clean file paths",
-        "sample_hash": "Calculate a hash based on small file segments",
-        "sample_compare": "Compare files using sample-hash and other shortcuts",
-        "filesystem": "Find files by mimetype and size",
-        "similar_files": "Find similar files based on filename and size",
-    },
-    "Tabular data subcommands": {
-        "eda": "Exploratory Data Analysis on table-like files",
-        "mcda": "Multi-criteria Ranking for Decision Support",
-        "plot": "Plot table-like files. A CLI interface to matplotlib",
-        "markdown_tables": "Print markdown tables from table-like files",
-        "columns": "Print columns of table-like files",
-        "incremental_diff": "Diff large table-like files in chunks",
-    },
-    "Media File subcommands": {
-        "media_check": "Check video and audio files for corruption via ffmpeg",
-        "process_media": "Estimate and execute potential disk space savings",
-        "process_ffmpeg": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
-        "process_image": "Shrink images to AV1 image format (.avif)",
-        "process_text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
-        "unardel": "Extract from archives and delete all associated multi-part archive files",
-        "images_to_pdf": "Convert folders of images into image PDFs",
-        "pdf_edit": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
-        "torrents_dump": "Print torrent file info",
-        "torrents_start": "Start torrents (qBittorrent-nox)",
-    },
-    "Multi-database subcommands": {
-        "merge_dbs": "Merge SQLite databases",
-        "copy_play_counts": "Copy play history",
-        "allocate_torrents": "Use computers.db and torrents.db to allocate torrents",
-    },
-    "Filesystem Database subcommands": {
-        "disk_usage": "Show disk usage",
-        "search_db": "Search a SQLite database",
-    },
-    "Media Database subcommands": {
-        "block": "Block a channel",
-        "playlists": "List stored playlists",
-        "download": "Download media",
-        "download_status": "Show download status",
-        "redownload": "Re-download deleted/lost media",
-        "history": "Show and manage playback history",
-        "history_add": "Add history from paths",
-        "stats": "Show some event statistics (created, deleted, watched, etc)",
-        "search": "Search captions / subtitles",
-        "optimize": "Re-optimize database",
+    "Media collection subcommands": {
+        "database add filesystem": "Add local media",
+        "database add video": "Add online video media (yt-dlp)",
+        "database add gallery": "Add online gallery media (gallery-dl)",
+        "database add open-directory": "Discover media in HTTP directory listings and folder-like web indexes",
+        "database add reddit": "Create a reddit database; Add subreddits",
+        "database add hackernews": "Create / Update a Hacker News database",
+        "database add getty": "Create / Update a Getty Museum database",
+        "database add substack": "Backup substack articles",
+        "database add tildes": "Backup tildes comments and topics",
     },
     "Playback subcommands": {
-        "watch": "Watch / Listen",
-        "now": "Show what is currently playing",
-        "next": "Play next file and optionally delete current file",
-        "seek": "Set playback to a certain time, fast-forward or rewind",
-        "stop": "Stop all playback",
-        "pause": "Pause all playback",
-        "tabs_open": "Open your tabs for the day",
-        "links_open": "Open links from link dbs",
-        "torrents_info": "List torrents (qBittorrent-nox)",
-        "torrents_remaining": "Overview of torrents by drive (qBittorrent-nox)",
+        "play media": "Play media of any supported type",
+        "play video": "Watch / Listen",
+        "play audio": "Listen to audio",
+        "play text": "Read text",
+        "play images": "View images",
+        "playback now": "Show what is currently playing",
+        "playback next": "Play next file and optionally delete current file",
+        "playback seek": "Set playback to a certain time, fast-forward or rewind",
+        "playback stop": "Stop all playback",
+        "playback pause": "Pause all playback",
     },
-    "Database enrichment subcommands": {
-        "dedupe_db": "Dedupe SQLite tables",
-        "dedupe_media": "Dedupe similar media",
-        "merge_online_local": "Merge online and local data",
-        "mpv_watchlater": "Import mpv watchlater files to history",
-        "reddit_selftext": "Copy selftext links to media table",
-        "tabs_shuffle": "Randomize tabs.db a bit",
-        "pushshift": "Convert pushshift data to reddit.db format (stdin)",
+    "Web collection subcommands": {
+        "database add links": "Extract links from webpages, paginated lists, recursive sites, and web archives",
+        "links open": "Open links from link dbs",
+        "links extract": "Extract inner links from lists of web links",
+        "links download": "Download links from lists of web links",
+        "database add tabs": "Schedule URLs for recurring browser visits",
+        "tabs open": "Open your tabs for the day",
+        "tabs shuffle": "Randomize tabs.db a bit",
+        "database add site": "Extract structured website data into SQLite",
     },
-    "Update database subcommands": {
-        "fs_update": "Update local media",
-        "tube_update": "Update online video media",
-        "web_update": "Update open-directory media",
-        "gallery_update": "Update online gallery media",
-        "links_update": "Update a link-scraping database",
-        "reddit_update": "Update reddit media",
+    "Download subcommands": {
+        "download": "Download media",
+        "database download": "Download media recorded in a database",
+        "database download block": "Block a channel",
+        "database download status": "Show download status",
+        "database redownload": "Re-download deleted/lost media",
     },
-    "Misc subcommands": {
-        "export_text": "Export HTML files from SQLite databases",
-        "dedupe_czkawka": "Process czkawka diff output",
-        "help": "Search subcommands and help text",
+    "Database management subcommands": {
+        "database search": "Search a SQLite database",
+        "database merge": "Merge SQLite databases",
+        "database dedupe": "Dedupe SQLite tables",
+    },
+    "Media database management subcommands": {
+        "captions": "Search captions / subtitles",
+        "database playlists": "List stored playlists",
+        "database history": "Show and manage playback history",
+        "database history add": "Add history from paths",
+        "database stats": "Show some event statistics (created, deleted, watched, etc)",
+        "database copy play-counts": "Copy play history",
+        "database dedupe media": "Dedupe similar media",
+        "file dedupe czkawka": "Process czkawka diff output",
+        "database merge online-local": "Merge online and local data",
+        "database enrich reddit-selftext": "Copy selftext links to media table",
+        "database export html": "Export HTML files from SQLite databases",
+        "database optimize": "Re-optimize database",
+    },
+    "File and folder subcommands": {
+        "folder merge move": "Move files and merge folders in BSD/rsync style, rename if possible",
+        "folder merge copy": "Copy files and merge folders",
+        "folder merge relative-move": "Move files while preserving relative paths",
+        "folder merge relative-copy": "Copy files while preserving relative paths",
+        "folder copy mergerfs": "cp files with reflink on mergerfs",
+        "folder move list": "Find specific folders to move to different disks",
+        "folder large": "Show large folders",
+        "folder scatter": "Scatter files between folders or disks",
+        "folder similar": "Find similar folders based on folder name, size, and count",
+        "file normalize": "Clean file paths",
+        "file hash": "Calculate a hash based on small file segments",
+        "file compare": "Compare files using sample-hash and other shortcuts",
+        "file similar": "Find similar files based on filename and size",
+    },
+    "Filesystem inspection subcommands": {
+        "filesystem list": "Find files by mimetype and size",
+        "filesystem usage": "Show disk usage",
+        "filesystem usage extensions": "Show disk usage grouped by file extension",
+        "filesystem usage mimetypes": "Show disk usage grouped by MIME type",
+        "filesystem usage sizes": "Show disk usage grouped by file size",
+        "filesystem mounts stats": "Show some relative mount stats",
+        "filesystem mounts free": "Show system-wide disk usage",
+    },
+    "Media processing subcommands": {
+        "file check": "Check video and audio files for corruption via ffmpeg",
+        "shrink media": "Estimate and execute potential disk space savings",
+        "shrink video": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
+        "shrink audio": "Shrink audio to Opus",
+        "shrink image": "Shrink images to AV1 image format (.avif)",
+        "shrink text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
+        "archive extract": "Extract from archives and delete all associated multi-part archive files",
+        "document convert images pdf": "Convert folders of images into image PDFs",
+        "document adjust pdf": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
+    },
+    "Text processing subcommands": {
+        "text sort regex": "Sort text by regex split and corpus comparison",
+        "text sort cluster": "Sort text by similarity",
+        "text extract": "Extract human text from lists of web links",
+        "text markdown links": "Extract titles from lists of web links",
+        "text expand links": "Expand search urls with query text",
+        "text combinations": "Enumerate possible combinations",
+        "text nouns": "Unstructured text -> compound nouns (stdin)",
+        "text timestamps": "Unstructured text -> timestamps",
+        "text dates": "Unstructured text -> dates",
+        "text times": "Unstructured text -> times",
+        "json rename-keys": "Rename JSON keys by substring match",
+    },
+    "Image processing subcommands": {
+        "image sort cluster": "Sort images by similarity",
+    },
+    "Data import subcommands": {
+        "database add tables": "Add table-like data to SQLite",
+        "database add row": "Add arbitrary data to SQLite",
+        "database import pushshift": "Convert pushshift data to reddit.db format (stdin)",
+        "database import nicotine": "Import paths from nicotine+",
+        "database import mpv-watchlater": "Import mpv watchlater files to history",
+        "database import places": "Import places of interest (POIs)",
+    },
+    "Table analysis subcommands": {
+        "table analyze": "Exploratory Data Analysis on table-like files",
+        "table rank": "Multi-criteria Ranking for Decision Support",
+        "table plot": "Plot table-like files. A CLI interface to matplotlib",
+        "table markdown": "Print markdown tables from table-like files",
+        "table columns": "Print columns of table-like files",
+        "table diff": "Diff large table-like files in chunks",
+    },
+    "Torrent subcommands": {
+        "database add torrents": "Add torrent info to SQLite",
+        "database add computers": "Add computer info to SQLite",
+        "torrent allocate": "Use computers.db and torrents.db to allocate torrents",
+        "torrent info": "List torrents (qBittorrent-nox)",
+        "torrent start": "Start torrents (qBittorrent-nox)",
+        "torrent remaining": "Overview of torrents by mountpoint (qBittorrent-nox)",
+        "torrent dump": "Print torrent file info",
+    },
+    "Database updating subcommands": {
+        "database update filesystem": "Update local media",
+        "database update video": "Update online video media",
+        "database update web": "Update open-directory media",
+        "database update gallery": "Update online gallery media",
+        "database update reddit": "Update reddit media",
+        "database update links": "Update a link-scraping database",
+    },
+    "Help subcommands": {
+        "help search": "Search subcommands and help text",
     },
 }
 
@@ -259,6 +278,7 @@ modules = {
     "library.tablefiles.markdown_tables.markdown_tables": [],
     "library.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "library.tablefiles.plot.plot": ["plots", "chart", "graph"],
+    "library.text.cluster_sort.cluster_images_sort": ["cluster-images"],
     "library.text.cluster_sort.cluster_sort": ["cs"],
     "library.text.regex_sort.regex_sort": ["rs", "resort"],
     "library.text.extract_links.extract_links": ["links_extract"],
@@ -280,8 +300,8 @@ NESTED_COMMANDS = {
         "media": "media",
         "video": "watch",
         "audio": "listen",
-        "text": "read",
         "images": "view",
+        "text": "read",
     },
     "playback": {
         "next": "playback-next",
@@ -294,7 +314,7 @@ NESTED_COMMANDS = {
         "add": {
             "filesystem": "fs-add",
             "video": "tube-add",
-            "web": "web-add",
+            "open-directory": "web-add",
             "gallery": "gallery-add",
             "tabs": "tabs-add",
             "links": "links-add",
@@ -312,7 +332,7 @@ NESTED_COMMANDS = {
         "update": {
             "filesystem": "fs-update",
             "video": "tube-update",
-            "web": "web-update",
+            "open-directory": "web-update",
             "gallery": "gallery-update",
             "links": "links-update",
             "reddit": "reddit-update",
@@ -343,6 +363,7 @@ NESTED_COMMANDS = {
         "image": "process-image",
         "text": "process-text",
     },
+    "image": {"sort": {"cluster": "cluster-images"}},
     "captions": "search",
     "download": "download",
     "torrent": {
@@ -435,22 +456,7 @@ NESTED_COMMAND_ALIASES = {
     "fs": "filesystem",
     "ls": "list",
     "explore": "analyze",
-}
-
-NESTED_DESCRIPTIONS = {
-    "play media": "Play media of any supported type",
-    "play video": "Watch video",
-    "play audio": "Listen to audio",
-    "play text": "Read text",
-    "play images": "View images",
-    "filesystem usage extensions": "Show disk usage grouped by file extension",
-    "filesystem usage mimetypes": "Show disk usage grouped by MIME type",
-    "filesystem usage sizes": "Show disk usage grouped by file size",
-    "shrink audio": "Shrink audio to Opus",
-    "folder merge copy": "Copy files and merge folders",
-    "folder merge relative-move": "Move files while preserving relative paths",
-    "folder merge relative-copy": "Copy files while preserving relative paths",
-    "database download": "Download media recorded in a database",
+    "web": "open-directory",
 }
 
 for _group in NESTED_COMMANDS:
@@ -669,46 +675,35 @@ def _canonical_target_paths() -> dict[str, str]:
     return target_paths
 
 
-def _target_descriptions() -> dict[str, str]:
-    descriptions = {}
-    for category_progs in progs.values():
-        for command, description in category_progs.items():
-            target = _resolve_target(command)
-            if target is not None:
-                descriptions.setdefault(target, description)
-    return descriptions
-
-
 def _command_catalog() -> list[tuple[str, list[tuple[str, str]]]]:
-    target_paths = _canonical_target_paths()
-    target_descriptions = _target_descriptions()
     grouped_commands = []
+    canonical_paths = set(_canonical_nested_paths_for_all_groups())
+    canonical_target_paths = _canonical_target_paths()
     seen = set()
 
     for category, category_progs in progs.items():
         commands = []
-        for command, description in category_progs.items():
-            target = _resolve_target(command)
-            path = target_paths.get(target) if target else command.replace("_", "-")
-            if path in seen:
-                continue
-            seen.add(path)
-            commands.append((path, description))
+        for path, description in category_progs.items():
+            path_parts = path.split()
+            nested_target = _nested_target(path_parts)
+            canonical_path = (
+                canonical_target_paths.get(nested_target[0])
+                if nested_target is not None and nested_target[1] == len(path_parts)
+                else None
+            )
+            if canonical_path not in canonical_paths:
+                raise ValueError(f"Unknown canonical command path in {category}: {path}")
+            if canonical_path in seen:
+                raise ValueError(f"Duplicate canonical command path in {category}: {path}")
+            seen.add(canonical_path)
+            commands.append((canonical_path, description))
         if commands:
             grouped_commands.append((category, commands))
 
-    other_commands = []
-    for path in _canonical_nested_paths_for_all_groups():
-        if path in seen:
-            continue
-        target_info = _nested_target(path.split())
-        target = target_info[0] if target_info else None
-        description = NESTED_DESCRIPTIONS.get(path) or target_descriptions.get(target)
-        if description is None:
-            description = f"Run the {path} command"
-        other_commands.append((path, description))
-    if other_commands:
-        grouped_commands.append(("Other subcommands", other_commands))
+    missing_paths = canonical_paths - seen
+    if missing_paths:
+        missing = ", ".join(sorted(missing_paths))
+        raise ValueError(f"Canonical command paths are not categorized: {missing}")
 
     return grouped_commands
 

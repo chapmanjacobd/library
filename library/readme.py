@@ -150,7 +150,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 <details><summary>List all subcommands</summary>
 
-Commands are organized by resource. Use `database` (or `db`) for database
+Commands are organized by workflow. Use `database` (or `db`) for database
 operations, `filesystem` (or `fs`) for filesystem operations, `document` (or
 `doc`/`docs`) for document operations, and `file` (or `files`) for file
 operations. The `ls` alias can be used for nested list commands. Resource group
