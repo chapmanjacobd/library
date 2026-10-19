@@ -2,6 +2,19 @@
 authors = [
   {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
 ]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Topic :: Multimedia",
+  "Topic :: Utilities",
+]
 dependencies = [
   "beautifulsoup4>=4.10.0", # https://git.launchpad.net/beautifulsoup/commit/?id=34e0ce8a9dd43ada1c55b50a156fbce63b1e2ebb
   "sqlite-utils>=3.38",
@@ -22,6 +35,7 @@ dependencies = [
   "python-dateutil",
   "python-mpv-jsonipc",
   "regex",
+  "requests",
   "rich",
   "screeninfo",
   "tabulate",
@@ -30,6 +44,7 @@ dependencies = [
   'pyreadline3; platform_system == "Windows"',
 ]
 description = "xk media library"
+keywords = ["media", "library", "archive", "database", "ffmpeg", "yt-dlp", "mpv", "filesystem", "torrent"]
 version = "4.0.0"
 license = {file = "LICENSE"}
 name = "library"
@@ -86,7 +101,7 @@ lb = "library.__main__:library"
 library = "library.__main__:library"
 
 [build-system]
-requires = ["uv_build>=0.12.19"]
+requires = ["uv_build>=0.12.19,<0.14"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

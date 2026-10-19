@@ -125,8 +125,20 @@ def sanitize_url(args, path: str) -> str:
     return path
 
 
+def common_string_prefix(paths) -> str:
+    # os.path.commonprefix is deprecated in py3.15 but os.path.commonpath is not equivalent:
+    # this is character-based (suffixes are sliced by prefix length), not path-component-based
+    if not paths:
+        return ""
+    prefix = paths[0]
+    for path in paths[1:]:
+        while prefix and not path.startswith(prefix):
+            prefix = prefix[:-1]
+    return prefix
+
+
 def common_path_full(paths):
-    common_prefix = os.path.commonprefix(paths)
+    common_prefix = common_string_prefix(paths)
 
     suffix_words = []
     for path in paths:

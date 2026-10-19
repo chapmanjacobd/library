@@ -29,9 +29,10 @@ def _parse_args(image: bool) -> argparse.Namespace:
     parser.set_defaults(cluster_sort=True)
     arggroups.debug(parser)
 
-    parser.add_argument("input_path", nargs="?", type=argparse.FileType("r"), default="-")
+    parser.add_argument("input_path", nargs="?", default="-")
     parser.add_argument("output_path", nargs="?")
     args = parser.parse_args()
+    args.input_path = argparse_utils.open_text_input(parser, args.input_path)
     arggroups.args_post(args, parser)
 
     return args

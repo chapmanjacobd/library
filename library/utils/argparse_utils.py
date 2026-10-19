@@ -17,6 +17,16 @@ def read_stdin(prog=None):
     return [s.strip() for s in lines]
 
 
+def open_text_input(parser: argparse.ArgumentParser, path: str):
+    # argparse.FileType is deprecated; open the path (or use stdin) after parsing instead
+    if path == "-":
+        return sys.stdin
+    try:
+        return open(path)
+    except OSError as error:
+        parser.error(f"can't open '{path}': {error}")
+
+
 class ArgparseList(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None) or []

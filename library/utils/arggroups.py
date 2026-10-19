@@ -2006,10 +2006,11 @@ def table_like_post(args):
         processes.exit_error("No paths passed in")
 
     if args.from_json:
-        args.mimetype = "jsonl"
+        args.paths = ["\n".join(args.paths)]
+        # stdin may be a JSON array or JSON Lines; pandas only parses arrays correctly without lines=True
+        args.mimetype = "json" if args.paths[0].lstrip().startswith("[") else "jsonl"
         args.join_tables = True
         args.table_name = "stdin"
-        args.paths = ["\n".join(args.paths)]
 
 
 def spider(parent_parser):

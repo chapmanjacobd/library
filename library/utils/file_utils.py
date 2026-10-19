@@ -199,6 +199,17 @@ def retry_with_different_encodings(func):
 NDF = namedtuple("NamedDataFrame", ["df_name", "df"])
 
 
+def json_source(path: str):
+    # stdin content is passed around as a literal string but pandas only treats str as a path
+    # (pandas>=3 removed support for passing literal JSON strings), so wrap content in a buffer
+    if not path.lstrip().startswith(("{", "[")):
+        return path
+    with suppress(OSError):
+        if Path(path).exists():
+            return path
+    return StringIO(path)
+
+
 @retry_with_different_encodings
 def read_file_to_dataframes(
     path,
@@ -296,10 +307,10 @@ def read_file_to_dataframes(
         "json",
         "application/json",
     ):
-        df = pd.read_json(path, encoding=encoding)
+        df = pd.read_json(json_source(path), encoding=encoding)
         dfs.append(NDF(None, df))
     elif mimetype in ("jsonl", "json lines", "geojson lines"):
-        df = pd.read_json(path, nrows=end_row, lines=True, encoding=encoding)
+        df = pd.read_json(json_source(path), nrows=end_row, lines=True, encoding=encoding)
         dfs.append(NDF(None, df))
     elif mimetype in (
         "csv",

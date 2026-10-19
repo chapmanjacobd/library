@@ -1,7 +1,6 @@
 import os, sqlite3
 
 import humanize
-import pandas as pd
 
 from library import usage
 from library.utils import (
@@ -221,6 +220,8 @@ def allocate_torrents():
         processes.no_media_found()
 
     if "sort" in args.defaults:
+        import pandas as pd
+
         torrents = pd_utils.rank_dataframe(
             pd.DataFrame(torrents),
             {

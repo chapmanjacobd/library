@@ -84,7 +84,7 @@ def process_paths(args, paths):
 
     pdf_path = args.output_path
     if pdf_path is None:
-        prefix = os.path.commonprefix(paths)
+        prefix = path_utils.common_string_prefix(paths)
         parent = str(Path(paths[0]).parent)
 
         basename = parent

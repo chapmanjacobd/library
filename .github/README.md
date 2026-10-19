@@ -14,7 +14,7 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 <details><summary>Install</summary>
 
-Linux recommended but [Windows setup instructions](./Windows.md) available.
+Linux recommended but [Windows setup instructions](https://github.com/chapmanjacobd/library/blob/main/.github/Windows.md) available.
 
     pip install library
 
@@ -59,7 +59,7 @@ new files are read by `ffprobe`.
 
     library database add filesystem tv.db ./video/folder/
 
-![termtosvg](./examples/extract.svg)
+![termtosvg](https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/extract.svg)
 
 ### 2. Watch / Listen from local files
 
@@ -79,7 +79,7 @@ Download playlist and channel metadata. Break free of the YouTube algo~
 
     library database add video educational.db https://www.youtube.com/c/BranchEducation/videos
 
-[![termtosvg](./examples/tubeadd.svg "library database add video example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
+[![termtosvg](https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/tubeadd.svg "library database add video example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
 
 And you can add more at any time--even from different websites.
 

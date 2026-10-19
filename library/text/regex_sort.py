@@ -19,9 +19,10 @@ def parse_args() -> argparse.Namespace:
     arggroups.regex_sort(parser)
     arggroups.debug(parser)
 
-    parser.add_argument("input_path", nargs="?", type=argparse.FileType("r"), default="-")
+    parser.add_argument("input_path", nargs="?", default="-")
     parser.add_argument("output_path", nargs="?")
     args = parser.parse_args()
+    args.input_path = argparse_utils.open_text_input(parser, args.input_path)
 
     arggroups.regex_sort_post(args)
     arggroups.args_post(args, parser)
