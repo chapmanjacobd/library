@@ -1,6 +1,15 @@
 from library import __main__
+from library.utils import consts
 
 usage_details_md = []
+
+
+def _portable_usage(text: str) -> str:
+    return text.replace(consts.DEFAULT_MPV_LISTEN_SOCKET, "$XDG_RUNTIME_DIR/mpv_socket").replace(
+        consts.DEFAULT_MPV_WATCH_SOCKET,
+        "~/.config/mpv/socket",
+    )
+
 
 for category, category_progs in __main__._command_catalog():
     usage_details_md.append(f"\n### {category}\n")
@@ -9,7 +18,7 @@ for category, category_progs in __main__._command_catalog():
         prog_usage = __main__.command_usage(canonical_command)
 
         if prog_usage:
-            prog_usage = __main__.canonicalize_usage_for_command(prog_usage, canonical_command)
+            prog_usage = _portable_usage(__main__.canonicalize_usage_for_command(prog_usage, canonical_command))
             usage_details_md.append(
                 f"""
 ###### {canonical_command}

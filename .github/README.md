@@ -966,8 +966,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Or use `library playback next` or `library playback stop`
 
         Or create global shortcuts in your desktop environment by sending commands to mpv_socket
-        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
-        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+        echo 'playlist-next force' | socat - $XDG_RUNTIME_DIR/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - ~/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
         mpv --playlist=(library play video --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
@@ -1050,8 +1050,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Or use `library playback next` or `library playback stop`
 
         Or create global shortcuts in your desktop environment by sending commands to mpv_socket
-        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
-        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+        echo 'playlist-next force' | socat - $XDG_RUNTIME_DIR/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - ~/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
         mpv --playlist=(library play video --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
@@ -1134,8 +1134,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Or use `library playback next` or `library playback stop`
 
         Or create global shortcuts in your desktop environment by sending commands to mpv_socket
-        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
-        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+        echo 'playlist-next force' | socat - $XDG_RUNTIME_DIR/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - ~/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
         mpv --playlist=(library play video --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
@@ -1218,8 +1218,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Or use `library playback next` or `library playback stop`
 
         Or create global shortcuts in your desktop environment by sending commands to mpv_socket
-        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
-        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+        echo 'playlist-next force' | socat - $XDG_RUNTIME_DIR/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - ~/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
         mpv --playlist=(library play video --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
@@ -1302,8 +1302,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Or use `library playback next` or `library playback stop`
 
         Or create global shortcuts in your desktop environment by sending commands to mpv_socket
-        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library play audio default
-        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library play video default
+        echo 'playlist-next force' | socat - $XDG_RUNTIME_DIR/mpv_socket  # library play audio default
+        echo 'playlist-next force' | socat - ~/.config/mpv/socket  # library play video default
 
         If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
         mpv --playlist=(library play video --db videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
