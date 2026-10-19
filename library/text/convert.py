@@ -1,5 +1,5 @@
 from library import usage
-from library.mediafiles import document_convert
+from library.document import document_convert
 
 
 def parse_args():

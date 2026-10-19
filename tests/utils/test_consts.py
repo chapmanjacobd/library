@@ -9,7 +9,7 @@ def test_no_audio_image_extension_overlap():
 
 def test_quarterly_days_consistent():
     # C11: tabs_add.get_days() maps quarterly -> 89 while tabs_open.frequency_filter uses 91.
-    from library.createdb.tabs_add import get_days
+    from library.database.add.tabs_add import get_days
 
     assert get_days("quarterly") == 91
 

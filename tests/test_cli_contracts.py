@@ -11,12 +11,13 @@ from library import __main__
 from library.__main__ import library as lb
 from library.__main__ import _nested_group, _nested_target
 from library import usage
-from library.createdb import gallery_add, tube_add
-from library.editdb import dedupe_media
-from library.mediadb import download
-from library.mediafiles import process_image
+from library.database.add import gallery_add, tube_add
+from library.database.manage import dedupe_media
+from library.download import download
+from library.shrink import process_image
 from library.playback import playback_control
-from library.text import cluster_sort, extract_links
+from library.links import extract_links
+from library.text import cluster_sort
 from library.utils import arggroups, argparse_utils, consts, objects
 from library.utils.consts import DBType, SC
 from tests.utils import v_db
@@ -227,7 +228,7 @@ def test_download_with_db_treats_paths_as_filters(monkeypatch):
 
 def test_links_download_with_db_delegates_to_database_download(monkeypatch):
     called = []
-    monkeypatch.setattr("library.mediadb.download.download_links", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.download.download.download_links", lambda: called.append(sys.argv[1:]))
 
     lb(["links-download", "--db", "links.db", "https://example.com/"])
 
@@ -270,7 +271,7 @@ def test_download_accepts_direct_and_safe(monkeypatch):
 
 def test_nested_command_dispatches_to_canonical_target(monkeypatch):
     called = []
-    monkeypatch.setattr("library.playback.play_actions.watch", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.play.play_actions.watch", lambda: called.append(sys.argv[1:]))
 
     lb(["play", "video", "--db", "video.db"])
 
@@ -279,7 +280,7 @@ def test_nested_command_dispatches_to_canonical_target(monkeypatch):
 
 def test_legacy_flat_command_dispatches_to_existing_target(monkeypatch):
     called = []
-    monkeypatch.setattr("library.playback.play_actions.watch", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.play.play_actions.watch", lambda: called.append(sys.argv[1:]))
 
     lb(["watch", "--db", "video.db"])
 
@@ -288,7 +289,7 @@ def test_legacy_flat_command_dispatches_to_existing_target(monkeypatch):
 
 def test_nested_links_download_dispatches_to_existing_entrypoint(monkeypatch):
     called = []
-    monkeypatch.setattr("library.text.extract_links.links_download", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.links.extract_links.links_download", lambda: called.append(sys.argv[1:]))
 
     lb(["links", "download", "https://example.com/"])
 
@@ -297,7 +298,7 @@ def test_nested_links_download_dispatches_to_existing_entrypoint(monkeypatch):
 
 def test_nested_direct_download_dispatches_to_existing_entrypoint(monkeypatch):
     called = []
-    monkeypatch.setattr("library.mediadb.download.download", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.download.download.download", lambda: called.append(sys.argv[1:]))
 
     lb(["download", "https://example.com/file.zip"])
 
@@ -310,7 +311,7 @@ def test_nested_alias_dispatches_with_canonical_program(monkeypatch):
     def record_call():
         called.append((sys.argv[0], sys.argv[1:]))
 
-    monkeypatch.setattr("library.fsdb.filesystem.filesystem", record_call)
+    monkeypatch.setattr("library.filesystem.filesystem.filesystem", record_call)
 
     lb(["fs", "list", "--db", "files.db"])
 
@@ -324,7 +325,7 @@ def test_database_directory_command_dispatches_with_canonical_program(monkeypatc
     def record_call():
         called.append((sys.argv[0], sys.argv[1:]))
 
-    monkeypatch.setattr("library.createdb.web_add.web_add", record_call)
+    monkeypatch.setattr("library.database.add.web_add.web_add", record_call)
 
     lb(["database", "add", *command])
 
@@ -359,7 +360,7 @@ def test_version_flag_prints_version(capsys):
 def test_download_without_db_is_direct(monkeypatch):
     called = []
     monkeypatch.setattr(
-        "library.text.extract_links._download_paths",
+        "library.links.extract_links._download_paths",
         lambda _args, _cache: called.append(sys.argv[1:]),
     )
 
@@ -370,7 +371,7 @@ def test_download_without_db_is_direct(monkeypatch):
 
 def test_download_with_db_preserves_argv(monkeypatch):
     called = []
-    monkeypatch.setattr("library.mediadb.download.download", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.download.download.download", lambda: called.append(sys.argv[1:]))
 
     lb(["download", "--db", "dl.db", "--prefix", "/tmp/out"])
 
@@ -379,7 +380,7 @@ def test_download_with_db_preserves_argv(monkeypatch):
 
 def test_database_download_dispatches_to_distinct_entrypoint(monkeypatch):
     called = []
-    monkeypatch.setattr("library.mediadb.download.download_database", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.download.download.download_database", lambda: called.append(sys.argv[1:]))
 
     lb(["database", "download", "dl.db", "--prefix", "/tmp/out"])
 
@@ -641,8 +642,8 @@ def test_cluster_sort_images_is_a_nested_subcommand():
 
 def test_top_level_filesystem_routes_dispatch_to_migrated_commands(monkeypatch):
     called = []
-    monkeypatch.setattr("library.fsdb.filesystem.filesystem", lambda: called.append(sys.argv[1:]))
-    monkeypatch.setattr("library.fsdb.disk_usage.disk_usage", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.filesystem.filesystem.filesystem", lambda: called.append(sys.argv[1:]))
+    monkeypatch.setattr("library.filesystem.disk_usage.disk_usage", lambda: called.append(sys.argv[1:]))
 
     lb(["fs", "list", "--db", "files.db"])
     lb(["filesystem", "usage", "--db", "files.db"])

@@ -1,0 +1,132 @@
+import argparse
+from collections import Counter
+
+from library import usage
+from library.database.manage import db_history, db_media
+from library.play import media_printer
+from library.utils import arggroups, argparse_utils, consts, devices, processes, sqlgroups, web
+from library.utils.path_utils import domain_from_url
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse_utils.ArgumentParser(usage=usage.links_open)
+    arggroups.sql_fs(parser)
+
+    parser.add_argument("--path", action="store_true")
+    parser.add_argument("--title", action="store_true")
+    parser.add_argument("--title-prefix", "--prefix", nargs="+", action="extend")
+
+    parser.add_argument("--category", "-c")
+
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
+    arggroups.regex_sort(parser)
+    arggroups.related(parser)
+
+    parser.add_argument("--browser", nargs="?", const="default")
+    parser.add_argument("--max-same-domain", type=int, help="Limit to N tabs per domain")
+    arggroups.debug(parser)
+
+    arggroups.database(parser)
+    parser.add_argument("search", nargs="*")
+
+    parser.set_defaults(limit=str(consts.DEFAULT_OPEN_LIMIT), fts=False)
+    args = parser.parse_intermixed_args()
+    arggroups.args_post(args, parser)
+
+    arggroups.sql_fs_post(args)
+    arggroups.regex_sort_post(args)
+
+    if not args.title_prefix:
+        args.title_prefix = ["https://www.google.com/search?q=%"]
+    args.title_prefix = [s if "%" in s else s + "%" for s in args.title_prefix]
+
+    return args
+
+
+def make_souffle(args, media):
+    pan = []
+
+    urls = set()
+    for m in media:
+        m_urls = set()
+        if args.title:
+            for engine in args.title_prefix:
+                suffix = m.get("title") or m["path"]
+                m_urls.add(suffix if suffix.startswith("http") else web.construct_search(engine, suffix))
+
+        if not args.title or args.path:
+            if not m["path"].startswith("http"):
+                m_urls.update(web.construct_search(engine, m["path"]) for engine in args.title_prefix)
+            else:
+                m_urls.add(m["path"])
+
+        pan.extend([{**m, "url": url} for url in m_urls if url not in urls])
+        urls |= m_urls
+
+    return pan
+
+
+def play(args, media):
+    links = [m["url"] for m in media]
+    paths = [m["path"] for m in media]
+    if args.simulate:
+        print("Would open:", *links, sep="\n")
+        return
+    devices.browse(args.browser, links)
+    db_history.add(args, paths, time_played=consts.APPLICATION_START, mark_done=True)
+
+
+def links_open() -> None:
+    args = parse_args()
+    if not args.simulate:
+        db_history.create(args)
+
+    args.db.register_function(domain_from_url, deterministic=True)
+
+    is_whole_db_query = any(
+        [
+            args.cluster_sort,
+            args.regex_sort,
+            "a" in arggroups.get_compact_print_args(args),
+        ]
+    )
+
+    query, bindings = sqlgroups.construct_links_query(args, limit=None if is_whole_db_query else args.limit)
+    media = list(args.db.query(query, bindings))
+
+    if args.related >= consts.RELATED:
+        media = db_media.get_related_media(args, media[0])
+
+    if args.regex_sort:
+        from library.text import regex_sort
+
+        media = regex_sort.sort_dicts(args, media)
+    elif args.cluster_sort:
+        from library.text import cluster_sort
+
+        media = cluster_sort.sort_dicts(args, media)
+
+    if args.max_same_domain and args.max_same_domain > 0:
+        new_media = []
+        counts = Counter()
+        for d in media:
+            domain = domain_from_url(d["path"])
+            if counts[domain] < args.max_same_domain:
+                new_media.append(d)
+                counts[domain] += 1
+        media = new_media
+
+    if "a" not in arggroups.get_compact_print_args(args):
+        if is_whole_db_query:
+            media = media[: args.limit]
+        media = make_souffle(args, media)
+
+    if args.print:
+        media_printer.media_printer(args, media)
+        return
+
+    if not media:
+        processes.no_media_found()
+
+    play(args, media)

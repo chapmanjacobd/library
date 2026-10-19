@@ -1,7 +1,7 @@
 import os, random, shlex, shutil, subprocess, sys, time, webbrowser
 from pathlib import Path
 
-from library.files import sample_compare
+from library.file import sample_compare
 from library.utils import arggroups, consts, file_utils, path_utils, processes, strings
 from library.utils.log_utils import log
 

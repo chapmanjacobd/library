@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from library.folders import merge_mv
+from library.folder import merge_mv
 from library.utils import shell_utils
 
 
@@ -79,8 +79,8 @@ def test_rename_move_file_enospc_raises_after_logging_and_cleanup(mock_move, cap
     assert "No space left on device. dst" in caplog.text
 
 
-@patch("library.folders.merge_mv.log.debug")
-@patch("library.folders.merge_mv.shell_utils.rename_move_file")
+@patch("library.folder.merge_mv.log.debug")
+@patch("library.folder.merge_mv.shell_utils.rename_move_file")
 def test_mmv_file_does_not_log_moved_when_move_fails(mock_move, mock_debug):
     mock_move.return_value = None
 

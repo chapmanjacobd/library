@@ -7,7 +7,7 @@ import regex as re
 from natsort import ns
 
 from library import usage
-from library.tablefiles import mcda
+from library.table import mcda
 from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, printing, processes, strings
 from library.utils.log_utils import log
 from library.utils.objects import Reverser

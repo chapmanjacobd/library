@@ -2,7 +2,7 @@ import argparse, difflib, json
 from pathlib import Path
 
 from library import usage
-from library.tablefiles import eda, mcda
+from library.table import eda, mcda
 from library.utils import (
     arggroups,
     argparse_utils,

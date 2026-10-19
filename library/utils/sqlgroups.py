@@ -375,7 +375,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         # are pages, not downloads: `--safe` is applied to the extracted links instead.
         # `download._download` re-checks rows that did not come from this query
         # (--from-json / positional paths).
-        from library.mediadb.download import safe_supported
+        from library.download.download import safe_supported
 
         def is_supported(url):
             return safe_supported(args, url)

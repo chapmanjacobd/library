@@ -3,7 +3,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, element
 
 from library import usage
-from library.createdb import fs_add_metadata
+from library.database.add import fs_add_metadata
 from library.data.http_errors import HTTPStatus
 from library.utils import arggroups, argparse_utils, devices, iterables, printing, shell_utils, strings, web
 from library.utils.log_utils import log
