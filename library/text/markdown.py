@@ -4,6 +4,7 @@ import sys
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from library.utils import arggroups, argparse_utils
+import pathlib
 
 USAGE = {
     "markdown": """library text markdown [PATH ...]
@@ -72,8 +73,7 @@ def markdown() -> None:
         if path == "-":
             html = sys.stdin.read()
         else:
-            with open(path, encoding="utf-8") as stream:
-                html = stream.read()
+            html = pathlib.Path(path).read_text(encoding="utf-8")
         if index:
             print()
         sys.stdout.write(markdown_text(html))

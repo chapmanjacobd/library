@@ -64,6 +64,12 @@ def test_html_to_dict(html, expected_dict, expected_tables):
     assert output == expected_tables
 
 
+def test_html_to_dict_ignores_scripts_and_stylesheets():
+    assert html_to_dict("<div>content<script>alert(1)</script><style>body { color: red; }</style></div>") == {
+        "html": {"body": {"div": {"text": "content"}}}
+    }
+
+
 def test_tables():
     output = nosql_to_sql({"people": [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]})
     assert output == [{"table_name": "people", "data": [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]}]

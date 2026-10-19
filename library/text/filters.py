@@ -4,6 +4,7 @@ import sys
 
 from library import usage
 from library.utils import arggroups, argparse_utils
+import pathlib
 
 
 def _parser(usage_text: str) -> argparse.ArgumentParser:
@@ -110,8 +111,7 @@ def clean() -> None:
     if args.input_path == "-":
         text = sys.stdin.read()
     else:
-        with open(args.input_path, encoding="utf-8") as fd:
-            text = fd.read()
+        text = pathlib.Path(args.input_path).read_text(encoding="utf-8")
     result = clean_text(text, args.strip_chars, args.min_blank_lines)
     if result:
         print(result)

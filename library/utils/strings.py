@@ -540,22 +540,24 @@ def relative_datetime(seconds) -> str:
         return ""
 
     now = datetime.now(tz=tz.utc).astimezone()
-    days_diff = (dt.date() - now.date()).days
-    if abs(days_diff) < 45:
+    calendar_days_diff = (dt.date() - now.date()).days
+    if abs(calendar_days_diff) < 45:
         # Today
         if now.date() == dt.date():
             return dt.strftime("today, %H:%M")
         elif now < dt:
             # Tomorrow
-            if days_diff == 1:
+            if calendar_days_diff == 1:
                 return dt.strftime("tomorrow, %H:%M")
             # In a few days
+            days_diff = round((dt - now).total_seconds() / timedelta(days=1).total_seconds())
             return dt.strftime(f"in {days_diff} days, %H:%M")
         else:
             # Yesterday
-            if days_diff == -1:
+            if calendar_days_diff == -1:
                 return dt.strftime("yesterday, %H:%M")
             # A few days ago
+            days_diff = round((now - dt).total_seconds() / timedelta(days=1).total_seconds())
             return dt.strftime(f"{abs(days_diff)} days ago, %H:%M")
 
     return dt.strftime("%Y-%m-%d %H:%M")

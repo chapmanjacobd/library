@@ -316,8 +316,7 @@ def test_glob_match_all():
 
 
 def test_relative_datetime_in_future_remainder():
-    # 4.2: "in N days" is off-by-one for future times with a remainder because
-    # timedelta floors toward negative infinity.
+    # Calendar-day differences can overstate elapsed days when the target crosses midnight.
     from datetime import datetime, timedelta
 
     now = datetime.now(tz=tz.UTC).astimezone()

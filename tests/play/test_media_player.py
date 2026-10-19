@@ -228,6 +228,17 @@ def test_mpv_jsonipc_terminates_mpv():
     mock_mpv.return_value.terminate.assert_called_once_with(join=None)
 
 
+def test_mpv_jsonipc_waits_for_playback_to_finish():
+    args = NoneSpace(mpv_socket="/tmp/socket", volume=None, auto_seek=False)
+    m = {"player": ["mpv"], "path": "test.mp4"}
+
+    with mock.patch("python_mpv_jsonipc.MPV") as mock_mpv:
+        media_player.mpv_jsonipc(args, m)
+
+    mock_mpv.return_value.wait_for_property.assert_called_once_with("idle-active")
+    mock_mpv.return_value.terminate.assert_called_once_with(join=None)
+
+
 @mock.patch("library.play.media_player.MediaPrefetcher")
 @mock.patch("library.play.media_player.play")
 def test_play_list(mock_play, mock_prefetcher):
@@ -252,9 +263,7 @@ def test_play_list(mock_play, mock_prefetcher):
 
 
 def test_bare_multiple_playback_enables_multiple_player():
-    # C2: bare -m (--multiple-playback) sets multiple_playback to
-    # consts.DEFAULT_MULTIPLE_PLAYBACK (-1) but play_list gates on > 1,
-    # so bare -m silently falls back to single-player.
+    # Bare -m uses DEFAULT_MULTIPLE_PLAYBACK; the template chooses the available displays.
     args = NoneSpace(
         multiple_playback=consts.DEFAULT_MULTIPLE_PLAYBACK,
         mpv_socket="/tmp/socket",

@@ -103,12 +103,12 @@ class MrSuperDialogue:
         self.root.destroy()
 
     def move_window(self, window_width=None, window_height=None, x=None, y=None) -> None:
-        s_width = window_width or self.root.winfo_screenwidth()
-        s_height = window_height or self.root.winfo_screenheight()
+        s_width = window_width if window_width is not None else self.root.winfo_screenwidth()
+        s_height = window_height if window_height is not None else self.root.winfo_screenheight()
 
         # window_width, window_height = 380, 150  # override
-        x_coordinate = x or 0
-        y_coordinate = y or 0
+        x_coordinate = 0 if x is None else x
+        y_coordinate = 0 if y is None else y
         self.root.geometry(f"{s_width}x{s_height}+{x_coordinate}+{y_coordinate}")
         self.root.update_idletasks()
 
@@ -121,24 +121,11 @@ class MrSuperDialogue:
         #     },
         # )
 
-        # TODO: Get the screen which contains the Tk Frame
-        # current_screen = self.get_monitor_from_coord(self.winfo_x(), self.winfo_y())
-        # current_screen.name
-
-        x_coordinate = x_coordinate + int((s_width / 2) - (s_width / 2))
-        y_coordinate = y_coordinate + int((s_height / 2) - (s_height / 2))
-        self.root.geometry(f"{s_width}x{s_height}+{x_coordinate}+{y_coordinate}")
         self.root.wm_attributes("-alpha", 1)
 
     @staticmethod
     def _get_coord_offset_from_monitor(screeninfo_monitor) -> tuple[int, int]:
-        # TODO: assuming screeninfo returns monitors in the same order that Tk is expecting it should
-        # be possible to figure out where the monitor sits in the framebuffer then add up the preceding
-        # monitors to find the pixel offset within the framebuffer for the window to show up in
-        # that monitor but I have some doubts about whether this will work at all as well as
-        # the portability of this solution. I cycle through five different monitors throughout
-        # the day but I never use more than one simultaneously so I will stop over-optimizing here:
-        raise NotImplementedError
+        return int(screeninfo_monitor.x), int(screeninfo_monitor.y)
 
     @staticmethod
     def get_monitor_from_coord(coord_x, coord_y):  # noqa: ANN205

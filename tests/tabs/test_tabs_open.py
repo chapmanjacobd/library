@@ -1,6 +1,7 @@
 from unittest import mock
 
-import pandas, pytest  # noqa: pandas needs to be imported before freezegun because 'FakeDatetime' is dynamically allocated
+import pandas  # noqa: F401  # imported before freezegun because FakeDatetime is dynamically allocated
+import pytest
 from freezegun import freeze_time
 
 from library.__main__ import library as lb

@@ -6,6 +6,9 @@ from library._version import __version__
 from library.utils import argparse_utils
 from library.utils.log_utils import log
 
+from library.command_registry import COMMANDS
+
+
 progs = {
     "Media collection subcommands": {
         "database add filesystem": "Add local media",
@@ -185,6 +188,35 @@ progs = {
 }
 
 
+def _build_cli_metadata():
+    modules = {record.module: list(record.aliases) for record in COMMANDS}
+    path_records = [record for record in COMMANDS if record.path is not None]
+
+    paths = {record.path for record in path_records}
+    nested_commands = {}
+    for record in path_records:
+        parts = record.path.split()
+        current = nested_commands
+        for part in parts[:-1]:
+            current = current.setdefault(part, {})
+
+        leaf = parts[-1]
+        has_children = any(other.startswith(f"{record.path} ") for other in paths)
+        if has_children:
+            current.setdefault(leaf, {})["_target"] = record.target
+        else:
+            current[leaf] = record.target
+
+    return modules, nested_commands
+
+
+modules, NESTED_COMMANDS = _build_cli_metadata()
+NESTED_ONLY_MODULES = {
+    "library.filesystem.filesystem.filesystem",
+    "library.captions.search.search",
+}
+
+
 def usage() -> str:
     grouped_commands = _command_catalog()
 
@@ -203,327 +235,6 @@ def print_help(parser) -> None:
     print(usage())
     print(parser.epilog)
 
-
-modules = {
-    "library.database.add.computers_add.computers_add": ["computer-add", "pc-add", "ssh-add"],
-    "library.database.add.fs_add.fs_add": ["filesystem-add", "x", "extract"],
-    "library.database.add.fs_add.fs_update": ["filesystem-update", "xu"],
-    "library.database.add.gallery_add.gallery_add": ["gdl-add", "ga"],
-    "library.database.add.gallery_add.gallery_update": ["gdl-update", "gu"],
-    "library.database.add.hn_add.hacker_news_add": ["hn-add"],
-    "library.database.add.getty_add.getty_add": [],
-    "library.database.add.links_add.links_add": ["links-db"],
-    "library.database.add.links_add.links_update": [],
-    "library.database.add.places_import.places_import": [],
-    "library.database.add.nicotine_import.nicotine_import": [],
-    "library.database.add.reddit_add.reddit_add": ["ra"],
-    "library.database.add.reddit_add.reddit_update": ["ru"],
-    "library.database.add.row_add.row_add": ["add_row"],
-    "library.database.add.site_add.site_add": ["sa", "sql-site", "site-sql"],
-    "library.database.add.substack.substack": [],
-    "library.database.add.tables_add.tables_add": ["table-add"],
-    "library.database.add.tabs_add.tabs_add": [],
-    "library.database.add.tabs_add.tabs_shuffle": [],
-    "library.database.add.tildes.tildes": [],
-    "library.database.add.torrents_add.torrents_add": ["torrent-add"],
-    "library.database.add.tube_add.tube_add": ["ta", "dladd", "da"],
-    "library.database.add.tube_add.tube_update": ["dlupdate", "tu"],
-    "library.database.add.web_add.web_add": ["web-dir-add"],
-    "library.database.add.web_add.web_update": ["web-dir-update"],
-    "library.database.manage.dedupe_db.dedupe_db": ["dedupe-dbs"],
-    "library.database.manage.dedupe_media.dedupe_media": [],
-    "library.database.manage.merge_online_local.merge_online_local": [],
-    "library.database.manage.mpv_watchlater.mpv_watchlater": [],
-    "library.database.manage.pushshift.pushshift_extract": ["pushshift"],
-    "library.database.manage.reddit_selftext.reddit_selftext": [],
-    "library.file.christen.christen": [],
-    "library.file.sample_compare.sample_compare": ["cmp"],
-    "library.file.sample_hash.sample_hash": ["hash", "hash-file"],
-    "library.file.similar_files.similar_files": [],
-    "library.file.media_compare.media_hash": [],
-    "library.file.media_compare.media_compare": [],
-    "library.folder.move_list.move_list": ["mv-list"],
-    "library.folder.merge_mv.merge_mv": ["mv"],
-    "library.folder.merge_mv.merge_cp": ["cp"],
-    "library.folder.merge_mv.rel_mv": ["relmv"],
-    "library.folder.merge_mv.rel_cp": ["relcp"],
-    "library.folder.mergerfs_cp.mergerfs_cp": ["cp-mergerfs", "mcp"],
-    "library.folder.scatter.scatter": [],
-    "library.folder.similar_folders.similar_folders": [],
-    "library.folder.mount_stats.disk_free": ["df", "free"],
-    "library.folder.mount_stats.mount_stats": ["mu", "mount-usage"],
-    "library.folder.big_dirs.big_dirs": ["large-folders"],
-    "library.filesystem.filesystem.filesystem": ["files-info"],
-    "library.filesystem.disk_usage.disk_usage": ["du", "usage"],
-    "library.filesystem.disk_usage.extensions": ["exts"],
-    "library.filesystem.disk_usage.mimetypes": ["types"],
-    "library.filesystem.disk_usage.sizes": ["size"],
-    "library.filesystem.search_db.search_db": ["s", "sdb", "search-dbs"],
-    "library.download.block.block": [],
-    "library.download.download.download": ["dl"],
-    "library.download.download.download_database": [],
-    "library.download.download_status.download_status": ["ds", "dl-status"],
-    "library.database.manage.history.history": ["hi", "log"],
-    "library.database.manage.history_add.history_add": ["add-history"],
-    "library.database.manage.stats.stats": [],
-    "library.database.manage.stats_words.stats_words": [],
-    "library.database.manage.optimize_db.optimize_db": ["optimize"],
-    "library.database.manage.playlists.playlists": ["pl"],
-    "library.download.redownload.redownload": ["re-dl", "re-download"],
-    "library.captions.search.search": ["sc", "search-captions"],
-    "library.file.media_check.media_check": ["check_media"],
-    "library.video.extract.extract_audio": [],
-    "library.video.extract.extract_subtitles": [],
-    "library.video.extract.extract_scenes": [],
-    "library.video.extract.extract_keyframes": [],
-    "library.video.create.images_to_video": [],
-    "library.video.create.video_concat": [],
-    "library.shrink.process_media.process_media": [],
-    "library.shrink.process_ffmpeg.process_ffmpeg": ["process-video", "video-process"],
-    "library.shrink.process_ffmpeg.process_audio": ["audio-process"],
-    "library.shrink.process_image.process_image": ["image-process"],
-    "library.archive.unardel.unardel": ["unarchive", "unar"],
-    "library.shrink.process_text.process_text": ["text-process"],
-    "library.image.images_to_pdf.image_convert": [],
-    "library.document.document_convert.document_convert": [],
-    "library.document.pdf_edit.pdf_edit": [],
-    "library.document.pdf_header.pdf_header": [],
-    "library.torrent.torrents_dump.torrents_dump": ["torrent-dump"],
-    "library.torrent.torrents_start.torrents_start": ["torrent-start"],
-    "library.file.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
-    "library.database.manage.export_text.export_text": [],
-    "library.help.search_help.search_help": ["h", "help"],
-    "library.database.manage.copy_play_counts.copy_play_counts": [],
-    "library.database.manage.merge_dbs.merge_dbs": ["merge-db"],
-    "library.torrent.allocate_torrents.allocate_torrents": [],
-    "library.links.links_open.links_open": ["open-links"],
-    "library.play.play_actions.media": ["open"],
-    "library.play.play_actions.listen": ["lt", "tubelisten", "tl"],
-    "library.play.play_actions.read": ["books"],
-    "library.play.play_actions.view": ["images", "see", "look"],
-    "library.play.play_actions.watch": ["wt", "tubewatch", "tw", "entries"],
-    "library.playback.playback_control.playback_next": ["next"],
-    "library.playback.playback_control.playback_now": ["now"],
-    "library.playback.playback_control.playback_pause": ["pause"],
-    "library.playback.playback_control.playback_ffwd": ["ffwd"],
-    "library.playback.playback_control.playback_rewind": ["rewind"],
-    "library.playback.playback_control.playback_seek": ["seek"],
-    "library.playback.playback_control.playback_stop": ["stop"],
-    "library.tabs.tabs_open.tabs_open": ["tb", "open_tabs"],
-    "library.torrent.torrents_info.torrents_info": ["torrent-info"],
-    "library.torrent.torrents_remaining.torrents_remaining": ["torrent-remaining"],
-    "library.torrent.torrent_match.torrent_match": [],
-    "library.torrent.torrent_audit.torrent_audit": [],
-    "library.table.eda.eda": ["preview"],
-    "library.table.convert.json_to_csv": [],
-    "library.table.convert.csv_to_json": [],
-    "library.table.incremental_diff.incremental_diff": ["diff"],
-    "library.table.columns.columns": [],
-    "library.table.markdown_tables.markdown_tables": [],
-    "library.table.mcda.mcda": ["mcdm", "rank"],
-    "library.table.plot.plot": ["plots", "chart", "graph"],
-    "library.shrink.process_table.process_table": [],
-    "library.text.cluster_sort.cluster_images_sort": ["cluster-images"],
-    "library.text.cluster_sort.cluster_sort": ["cs"],
-    "library.text.filters.border": [],
-    "library.text.filters.clean": [],
-    "library.text.stream_tools.group_lines": [],
-    "library.text.stream_tools.interleave_lines": [],
-    "library.text.markdown.markdown": [],
-    "library.text.regex_sort.regex_sort": ["rs", "resort"],
-    "library.links.extract_links.extract_links": ["links_extract"],
-    "library.links.extract_links.links_download": [],
-    "library.text.extract_text.extract_text": ["text_extract"],
-    "library.text.markdown_links.markdown_links": ["markdown-urls"],
-    "library.text.expand_links.expand_links": ["search-urls", "search-links"],
-    "library.text.nouns.nouns": ["noun"],
-    "library.text.timestamps.dates": ["date"],
-    "library.text.timestamps.times": ["time"],
-    "library.text.timestamps.timestamps": ["timestamp", "datetime"],
-    "library.json.json_keys_rename.json_keys_rename": [],
-    "library.json.transform.remove_nulls": [],
-    "library.text.combinations.combinations": ["combos"],
-    "library.text.convert.text_convert": [],
-}
-
-
-NESTED_COMMANDS = {
-    "play": {
-        "media": "media",
-        "video": "watch",
-        "audio": "listen",
-        "images": "view",
-        "text": "read",
-    },
-    "playback": {
-        "next": "playback-next",
-        "now": "playback-now",
-        "pause": "playback-pause",
-        "seek": "playback-seek",
-        "stop": "playback-stop",
-    },
-    "database": {
-        "add": {
-            "filesystem": "fs-add",
-            "video": "tube-add",
-            "open-directory": "web-add",
-            "gallery": "gallery-add",
-            "tabs": "tabs-add",
-            "links": "links-add",
-            "tables": "tables-add",
-            "reddit": "reddit-add",
-            "getty": "getty-add",
-            "computers": "computers-add",
-            "torrents": "torrents-add",
-            "row": "row-add",
-            "site": "site-add",
-            "substack": "substack",
-            "tildes": "tildes",
-            "hackernews": "hacker-news-add",
-        },
-        "update": {
-            "filesystem": "fs-update",
-            "video": "tube-update",
-            "open-directory": "web-update",
-            "gallery": "gallery-update",
-            "links": "links-update",
-            "reddit": "reddit-update",
-        },
-        "import": {
-            "nicotine": "nicotine-import",
-            "places": "places-import",
-            "pushshift": "pushshift-extract",
-            "mpv-watchlater": "mpv-watchlater",
-        },
-        "enrich": {"reddit-selftext": "reddit-selftext"},
-        "merge": {"_target": "merge-dbs", "online-local": "merge-online-local"},
-        "copy": {"play-counts": "copy-play-counts"},
-        "dedupe": {"_target": "dedupe-db", "media": "dedupe-media"},
-        "export": {"html": "export-text"},
-        "search": "search-db",
-        "optimize": "optimize-db",
-        "download": {"_target": "download-database", "status": "download-status", "block": "block"},
-        "history": {"_target": "history", "add": "history-add"},
-        "playlists": "playlists",
-        "stats": {"_target": "stats", "words": "stats-words"},
-        "redownload": "redownload",
-    },
-    "shrink": {
-        "media": "process-media",
-        "video": "process-ffmpeg",
-        "audio": "process-audio",
-        "image": "process-image",
-        "text": "process-text",
-        "table": "process-table",
-    },
-    "video": {
-        "create": {
-            "slideshow": "images-to-video",
-        },
-        "concat": "video-concat",
-        "extract": {
-            "audio": "extract-audio",
-            "subtitles": "extract-subtitles",
-            "scenes": "extract-scenes",
-            "keyframes": "extract-keyframes",
-        }
-    },
-    "image": {"convert": "image-convert", "sort": {"cluster": "cluster-images"}},
-    "captions": "search",
-    "download": "download",
-    "torrent": {
-        "allocate": "allocate-torrents",
-        "info": "torrents-info",
-        "start": "torrents-start",
-        "remaining": "torrents-remaining",
-        "dump": "torrents-dump",
-        "match": "torrent-match",
-        "audit": "torrent-audit",
-    },
-    "links": {
-        "open": "links-open",
-        "extract": "extract-links",
-        "download": "links-download",
-    },
-    "tabs": {
-        "shuffle": "tabs-shuffle",
-        "open": "tabs-open",
-    },
-    "table": {
-        "analyze": "eda",
-        "convert": {
-            "csv": "json-to-csv",
-            "json": "csv-to-json",
-        },
-        "markdown": "markdown-tables",
-        "columns": "columns",
-        "plot": "plot",
-        "rank": "mcda",
-        "diff": "incremental-diff",
-    },
-    "filesystem": {
-        "list": "filesystem",
-        "usage": {
-            "_target": "disk-usage",
-            "extensions": "extensions",
-            "mimetypes": "mimetypes",
-            "sizes": "sizes",
-        },
-        "mounts": {
-            "stats": "mount-stats",
-            "free": "disk-free",
-        },
-    },
-    "file": {
-        "hash": "sample-hash",
-        "compare": "sample-compare",
-        "similar": "similar-files",
-        "media-hash": "media-hash",
-        "media-compare": "media-compare",
-        "normalize": "christen",
-        "check": "media-check",
-        "dedupe": {"czkawka": "czkawka-dedupe"},
-    },
-    "folder": {
-        "similar": "similar-folders",
-        "copy": {"mergerfs": "mergerfs-cp"},
-        "scatter": "scatter",
-        "large": "big-dirs",
-        "move": {"list": "mv-list"},
-        "merge": {
-            "move": "merge-mv",
-            "copy": "merge-cp",
-            "relative-move": "relmv",
-            "relative-copy": "relcp",
-        },
-    },
-    "document": {"convert": "document-convert", "pdf": {"header": "pdf-header"}, "adjust": {"pdf": "pdf-edit"}},
-    "json": {
-        "rename-keys": "json-keys-rename",
-        "remove-nulls": "remove-nulls",
-    },
-    "archive": {"extract": "unardel"},
-    "help": {"search": "search-help"},
-    "text": {
-        "border": "border",
-        "clean": "clean",
-        "group": "group-lines",
-        "interleave": "interleave-lines",
-        "markdown": {
-            "_target": "markdown",
-            "links": "markdown-links",
-        },
-        "convert": "text-convert",
-        "extract": "extract-text",
-        "sort": {"regex": "regex-sort", "cluster": "cluster-sort"},
-        "expand": {"links": "expand-links"},
-        "nouns": "nouns",
-        "dates": "dates",
-        "times": "times",
-        "timestamps": "timestamps",
-        "combinations": "combinations",
-    },
-}
 
 NESTED_GROUP_ALIASES = {
     "db": "database",
@@ -1055,13 +766,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     # These flat names collide with a nested resource group and are handled by the
     # nested router; registering them again would create unreachable parsers.
-    nested_only_modules = {
-        "library.filesystem.filesystem.filesystem",  # `filesystem list`
-        "library.captions.search.search",  # `captions`
-    }
-
     for module, aliases in modules.items():
-        if module in nested_only_modules:
+        if module in NESTED_ONLY_MODULES:
             continue
         add_parser(subparsers, module, aliases)
 

@@ -149,7 +149,8 @@ def soup_tree(o) -> dict | str | None:
         if isinstance(val, dict):
             tag_result.update(val)
         else:
-            raise
+            message = f"Expected parsed contents for <{o.name}> to be a dictionary, got {type(val).__name__}"
+            raise TypeError(message)
         return tag_result
 
     elif isinstance(o, (element.ResultSet, list)):
@@ -170,7 +171,7 @@ def soup_tree(o) -> dict | str | None:
             if key_name in transformed:
                 if isinstance(transformed[key_name], list):
                     if isinstance(val, list):
-                        transformed[key_name].expand(val)
+                        transformed[key_name].extend(val)
                     elif isinstance(val, (dict, str)):
                         transformed[key_name].append(val)
 
@@ -194,6 +195,15 @@ def soup_tree(o) -> dict | str | None:
     elif isinstance(
         o,
         (
+            element.Stylesheet,
+            element.Script,
+        ),
+    ):
+        return None
+
+    elif isinstance(
+        o,
+        (
             element.NavigableString,
             element.Comment,
             element.CData,
@@ -208,15 +218,6 @@ def soup_tree(o) -> dict | str | None:
         if text:
             return text
         return None
-
-    elif isinstance(
-        o,
-        (
-            element.Stylesheet,
-            element.Script,
-        ),
-    ):
-        pass
 
     raise NotImplementedError
 

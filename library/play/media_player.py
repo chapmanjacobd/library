@@ -660,8 +660,7 @@ def mpv_jsonipc(args, m):
             except (BrokenPipeError, MPVError, ConnectionResetError):
                 log.debug("BrokenPipeError ignored")
         else:
-            raise NotImplementedError
-            # x_mpv.wait_for_property('idle-active')
+            x_mpv.wait_for_property("idle-active")
 
         if SIGINT_EXIT.is_set():
             log.error("Player exited with code 4")

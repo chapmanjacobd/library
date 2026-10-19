@@ -106,6 +106,15 @@ def test_load_or_install_modules(mock_check_call, mock_import_module):
     assert mock_import_module.call_count == 2
 
 
+@patch("importlib.import_module", side_effect=ImportError("module unavailable"))
+@patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "pip"))
+def test_load_or_install_modules_reports_failure(mock_check_call, _mock_import_module):
+    with pytest.raises(ImportError, match="None of the python packages"):
+        processes.load_or_install_modules([["missing_module"]])
+
+    mock_check_call.assert_called_once()
+
+
 def test_pclose_works_with_stdin_pipe():
     # 4.1: Pclose passes the builtin `input` function to communicate(), raising
     # TypeError whenever the process has stdin=PIPE.

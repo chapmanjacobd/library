@@ -280,11 +280,12 @@ def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
 def load_or_install_modules(module_list):
     for modules in module_list:
         loaded = False
+        last_error = None
         for module_name in modules:
             try:
                 importlib.import_module(module_name)
-            except ImportError:
-                pass
+            except ImportError as exc:
+                last_error = exc
             else:
                 loaded = True
                 break
@@ -293,19 +294,20 @@ def load_or_install_modules(module_list):
             for module_name in modules:
                 try:
                     subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
-                except subprocess.CalledProcessError:
-                    pass
+                except subprocess.CalledProcessError as exc:
+                    last_error = exc
                 else:
                     try:
                         importlib.import_module(module_name)
-                    except ImportError:
-                        pass
+                    except ImportError as exc:
+                        last_error = exc
                     else:
                         loaded = True
                         break
 
         if not loaded:
-            print(f"None of the python packages {modules} could be imported or installed")
+            message = f"None of the python packages {modules} could be imported or installed"
+            raise ImportError(message) from last_error
 
 
 class UnplayableFile(RuntimeError):
