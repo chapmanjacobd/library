@@ -27,7 +27,7 @@ def test_live_skip():
         ]
     )
 
-    args = connect_db_args(dl_db)
+    connect_db_args(dl_db)
 
     video_path = os.path.join(STORAGE_PREFIX, "W5ZLFBZkE34.mkv")
     assert not os.path.exists(video_path), "Video file exists"
@@ -49,7 +49,7 @@ def test_live():
         ]
     )
 
-    args = connect_db_args(dl_db)
+    connect_db_args(dl_db)
 
     video_path = os.path.join(STORAGE_PREFIX, "W5ZLFBZkE34.mkv")
     assert os.path.exists(video_path), "Video file does not exist"

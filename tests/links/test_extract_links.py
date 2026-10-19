@@ -61,7 +61,7 @@ def test_links_download_image_safe_loads_gallery_lazily(crawl_server, monkeypatc
 
     loaded = {"n": 0}
 
-    def fake_load(args):
+    def fake_load(_args):
         loaded["n"] += 1
         gallery_backend.is_supported.configured = True
 
@@ -70,7 +70,7 @@ def test_links_download_image_safe_loads_gallery_lazily(crawl_server, monkeypatc
     monkeypatch.setattr(gallery_backend, "is_supported", lambda url: url.endswith(".png"))
 
     downloaded = []
-    monkeypatch.setattr(gallery_backend, "download", lambda args, m: downloaded.append(m["path"]))
+    monkeypatch.setattr(gallery_backend, "download", lambda _args, m: downloaded.append(m["path"]))
 
     lb(["links-download", "--image", "--safe", "-R", crawl_server, "--path-exclude", "*/tag/*"])
 

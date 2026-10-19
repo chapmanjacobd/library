@@ -1,15 +1,17 @@
 import errno, mimetypes, os
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from functools import wraps
 from io import StringIO
 from pathlib import Path
+from typing import NamedTuple
 
 import urllib3
 
 from library.utils import consts, processes, web
 from library.utils.log_utils import log
+
+MIN_DETECTION_COHERENCE = 0.8
 
 
 def is_file_open(path):
@@ -50,7 +52,7 @@ def get_file_encodings(path):
 
             if len(sample_bytes) >= MAX_BYTES_TO_ANALYZE:
                 break
-            if detection_result and detection_result[0].coherence > 0.8:
+            if detection_result and detection_result[0].coherence > MIN_DETECTION_COHERENCE:
                 break
     else:
         with open(path, "rb") as f:
@@ -143,7 +145,7 @@ def detect_mimetype(path):
                     info = puremagic.magic_file(path)
                 except OSError as excinfo:
                     if excinfo.errno == errno.ENXIO:
-                        raise puremagic.PureError("No such device or address")
+                        raise puremagic.PureError("No such device or address") from excinfo
                     else:
                         raise
             log.debug(info)
@@ -196,7 +198,12 @@ def retry_with_different_encodings(func):
     return wrapper
 
 
-NDF = namedtuple("NamedDataFrame", ["df_name", "df"])
+class NamedDataFrame(NamedTuple):
+    df_name: str | None
+    df: object
+
+
+NDF = NamedDataFrame
 
 
 def json_source(path: str):
@@ -367,8 +374,9 @@ def read_file_to_dataframes(
     elif mimetype in ("parq", "parquet", "application/parquet"):
         df = pd.read_parquet(path)
         dfs.append(NDF(None, df))
-    elif mimetype in ("pkl", "pickle", "application/octet-stream"):
-        df = pd.read_pickle(path)
+    elif mimetype in ("pkl", "pickle"):
+        # Pickle is executable by design; only opt in when the caller identifies this format.
+        df = pd.read_pickle(path)  # noqa: S301
         dfs.append(NDF(None, df))
     elif mimetype in (
         "html",

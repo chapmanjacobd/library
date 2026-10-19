@@ -170,7 +170,7 @@ def check_shrink(args, m) -> list:
             except (TimeoutError, subprocess.TimeoutExpired):
                 log.error(f"FFProbe timed out. {m['path']}")
                 m["duration"] = None
-            except processes.UnplayableFile:
+            except processes.UnplayableFileError:
                 m["duration"] = None
                 if args.delete_unplayable:
                     log.warning("Deleting unplayable (ffprobe): %s", m["path"])
@@ -238,7 +238,7 @@ def check_shrink(args, m) -> list:
             except (TimeoutError, subprocess.TimeoutExpired):
                 log.error(f"FFProbe timed out. {m['path']}")
                 m["duration"] = None
-            except processes.UnplayableFile:
+            except processes.UnplayableFileError:
                 m["duration"] = None
                 if args.delete_unplayable:
                     log.warning("Deleting unplayable (ffprobe): %s", m["path"])
@@ -496,7 +496,7 @@ def process_media() -> None:
                         new_path = process_text.process_path(args, m["path"])
                     else:
                         raise NotImplementedError
-                except (subprocess.CalledProcessError, processes.UnplayableFile):
+                except (subprocess.CalledProcessError, processes.UnplayableFileError):
                     new_path = None
 
                 if new_path is None:
@@ -510,7 +510,7 @@ def process_media() -> None:
                         except (TimeoutError, subprocess.TimeoutExpired):
                             log.error(f"FFProbe timed out. {output_path}")
                             continue
-                        except processes.UnplayableFile:
+                        except processes.UnplayableFileError:
                             if args.delete_unplayable:
                                 log.warning("Deleting unplayable (ffprobe): %s", output_path)
                                 Path(output_path).unlink(missing_ok=True)
@@ -559,7 +559,7 @@ def process_media() -> None:
                         except (TimeoutError, subprocess.TimeoutExpired):
                             log.error(f"FFProbe timed out. {new_path}")
                             continue
-                        except processes.UnplayableFile:
+                        except processes.UnplayableFileError:
                             if args.delete_unplayable:
                                 log.warning("Deleting unplayable (ffprobe): %s", new_path)
                                 Path(new_path).unlink(missing_ok=True)

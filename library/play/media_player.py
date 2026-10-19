@@ -180,7 +180,7 @@ def transcode(args, path) -> str:
         video_settings = ["-c:v", "copy"]
 
     print("Transcoding", temp_video)
-    r = processes.cmd_interactive(
+    processes.cmd_interactive(
         "ffmpeg",
         "-nostdin",
         "-hide_banner",
@@ -495,7 +495,7 @@ class MediaPrefetcher:
             if self.args.delete_unplayable:
                 try:
                     processes.FFProbe(m["path"])
-                except processes.UnplayableFile:
+                except processes.UnplayableFileError:
                     media_path.unlink(missing_ok=True)
 
             if not media_path.exists():
@@ -572,7 +572,7 @@ def single_player(args, m):
     return r
 
 
-def _create_window_player(args, window_geometry, m):
+def _create_window_player(_args, window_geometry, m):
     print(m["path"])
     m["player"].extend(window_geometry)
     return {

@@ -13,6 +13,15 @@ from library.data import wordbank
 from library.utils import consts, iterables, nums
 from library.utils.log_utils import log
 
+MIN_ENCLOSING_QUOTE_LENGTH = 2
+MIN_ELLIPSIS_AVAILABLE_WIDTH = 4
+TIME_COMPONENTS = 3
+GENERIC_TITLE_MAX_LENGTH = 12
+SECONDS_PER_MINUTE = 60
+SINGLE_UNIT_THRESHOLD = 1.1
+HOURS_PER_DAY = 24
+RELATIVE_DATE_RANGE_DAYS = 45
+
 
 def safe_json_loads(s):
     if isinstance(s, bytes):
@@ -55,7 +64,7 @@ def remove_excessive_linebreaks(text):
 
 @repeat_until_same
 def strip_enclosing_quotes(s):
-    if s is None or len(s) < 2:
+    if s is None or len(s) < MIN_ENCLOSING_QUOTE_LENGTH:
         return s
 
     for q in ['"', "'", "＇", '"', "‛", "‟", "＂", "‚", "〞", "〝", "〟", "„", "⹂", "❟", "❜", "❛", "❝", "❞"]:
@@ -338,7 +347,7 @@ def shorten_middle(text, max_width, len_fn=None):
         return ellipsis
 
     available = max_width - ellipsis_width
-    if available < 4:
+    if available < MIN_ELLIPSIS_AVAILABLE_WIDTH:
         left_width = available
         right_width = 0
     else:
@@ -370,7 +379,7 @@ def shorten_middle(text, max_width, len_fn=None):
 
 def from_timestamp_seconds(s: str):
     parts = s.split(":")
-    while len(parts) < 3:
+    while len(parts) < TIME_COMPONENTS:
         parts.insert(0, "00")
 
     hours, minutes, seconds = parts
@@ -386,7 +395,7 @@ def is_timecode_like(text):
 
 def is_generic_title(title):
     return (
-        (len(title) <= 12 and (title.startswith(("Chapter", "Scene"))))
+        (len(title) <= GENERIC_TITLE_MAX_LENGTH and (title.startswith(("Chapter", "Scene"))))
         or "Untitled Chapter" in title
         or is_timecode_like(title)
         or title.isdigit()
@@ -506,23 +515,23 @@ def duration_short(seconds, format_str="%0.1f") -> str:
         return ""
 
     try:
-        if seconds < 60:
+        if seconds < SECONDS_PER_MINUTE:
             return f"{int(seconds)} seconds"
 
-        minutes = seconds / 60
-        if minutes < 1.1:
+        minutes = seconds / SECONDS_PER_MINUTE
+        if minutes < SINGLE_UNIT_THRESHOLD:
             return "1 minute"
-        elif minutes < 60:
+        elif minutes < SECONDS_PER_MINUTE:
             return f"{format_str % minutes} minutes"
 
-        hours = minutes / 60
-        if hours < 1.1:
+        hours = minutes / SECONDS_PER_MINUTE
+        if hours < SINGLE_UNIT_THRESHOLD:
             return "1 hour"
-        elif hours < 24:
+        elif hours < HOURS_PER_DAY:
             return f"{format_str % hours} hours"
 
-        days = hours / 24
-        if days < 1.1:
+        days = hours / HOURS_PER_DAY
+        if days < SINGLE_UNIT_THRESHOLD:
             return "1 day"
         return f"{format_str % days} days"
     except OverflowError:
@@ -541,7 +550,7 @@ def relative_datetime(seconds) -> str:
 
     now = datetime.now(tz=tz.utc).astimezone()
     calendar_days_diff = (dt.date() - now.date()).days
-    if abs(calendar_days_diff) < 45:
+    if abs(calendar_days_diff) < RELATIVE_DATE_RANGE_DAYS:
         # Today
         if now.date() == dt.date():
             return dt.strftime("today, %H:%M")
@@ -568,7 +577,7 @@ def timezone(s):
 
     try:
         return zoneinfo.ZoneInfo(s)
-    except zoneinfo.ZoneInfoNotFoundError:
+    except zoneinfo.ZoneInfoNotFoundError as excinfo:
         for zone in sorted(zoneinfo.available_timezones()):
             print(zone)
 
@@ -576,7 +585,7 @@ def timezone(s):
             f"ZoneInfoNotFoundError: No time zone found with key {s}. Try one of the above! (on Windows you might need to pip install tzdata)",
             file=sys.stderr,
         )
-        raise SystemExit(3)
+        raise SystemExit(3) from excinfo
 
 
 def _glob_normalize(value, case_sensitive):

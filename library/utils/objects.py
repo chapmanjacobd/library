@@ -149,7 +149,7 @@ def dict_filter_keys(kwargs, keys) -> dict | None:
 
 
 def dumbcopy(d):
-    return {i: j.copy() if type(j) == dict else j for i, j in d.items()}
+    return {i: j.copy() if isinstance(j, dict) else j for i, j in d.items()}
 
 
 def filter_namespace(args, config_opts) -> dict | None:
@@ -236,6 +236,8 @@ class Reverser:
 
     def __eq__(self, other):
         return other.obj == self.obj
+
+    __hash__ = None
 
     def __repr__(self):
         return f"Reverse({self.obj})"

@@ -78,17 +78,13 @@ def cluster_by_size(args, media):
 def filter_group_by_size(args, group):
     media = group["grouped_paths"]
 
-    output = []
     m0 = media[0]
-    for m in media[1:]:
-        if is_same_size_group(args, m0, m):
-            output.append(m)
+    output = [m for m in media[1:] if is_same_size_group(args, m0, m)]
 
     if output:
         group["grouped_paths"] = [m0, *output]
         return group
-    else:
-        return None
+    return None
 
 
 def filter_groups_by_size(args, groups):

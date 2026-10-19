@@ -363,7 +363,6 @@ def test_filter_time_modified(temp_file_tree):
 
     # Create source files
     src1 = temp_file_tree({"old.txt": "old", "new.txt": "new"})
-    src1_inodes = read_relative_file_tree_dict(src1)
 
     # Set old.txt to have an old mtime (10 days ago)
     old_path = Path(src1) / "old.txt"
@@ -387,7 +386,6 @@ def test_filter_time_before(temp_file_tree):
 
     # Create source files
     src1 = temp_file_tree({"old.txt": "old", "new.txt": "new"})
-    src1_inodes = read_relative_file_tree_dict(src1)
 
     # Set new.txt to have a recent mtime (1 day ago)
     new_path = Path(src1) / "new.txt"

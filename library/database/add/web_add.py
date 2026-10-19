@@ -30,8 +30,11 @@ from library.utils import (
     strings,
     web,
 )
+
 from library.utils.consts import DBType
 from library.utils.log_utils import log
+
+PLAYLIST_DELAY_THRESHOLD = 3
 
 HTML_SIZE_RE = re.compile(
     r"(?<![\w.])(?P<size>\d+(?:\.\d+)?\s*(?:bytes?|[kmgtpe](?:i?b)?|b))\s*$",
@@ -349,8 +352,7 @@ def web_update(args=None) -> None:
         web.load_selenium(args)
 
     try:
-        playlist_count = 0
-        for playlist in web_playlists:
+        for playlist_count, playlist in enumerate(web_playlists):
             extractor_config = json.loads(playlist.get("extractor_config") or "{}")
             args_env = arg_utils.override_config(args, extractor_config)
 
@@ -362,9 +364,8 @@ def web_update(args=None) -> None:
             else:
                 db_playlists.update_less_frequently(args, playlist["path"], extractor_config)
 
-            if playlist_count > 3:
+            if playlist_count > PLAYLIST_DELAY_THRESHOLD:
                 time.sleep(random.uniform(0.05, 2))
-            playlist_count += 1
 
     finally:
         if selenium_needed:

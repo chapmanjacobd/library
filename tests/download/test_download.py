@@ -243,7 +243,7 @@ def test_safe_without_link_extraction_filters_rows(temp_db, monkeypatch):
     monkeypatch.setattr(download_mod.tube_backend, "is_supported", lambda url: url.endswith("clip"))
     monkeypatch.setattr(download_mod.gallery_backend, "gallery_dl_available", lambda: True)
     monkeypatch.setattr(download_mod.gallery_backend, "load_module_level_gallery_dl", lambda _args: None)
-    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda url: False)
+    monkeypatch.setattr(download_mod.gallery_backend, "is_supported", lambda _url: False)
 
     routed = {"tube": [], "builtin": []}
     monkeypatch.setattr(download_mod.tube_backend, "download", lambda _args, m: routed["tube"].append(m["path"]))

@@ -2,7 +2,7 @@ import os, select, shlex, socketserver, subprocess, threading
 from contextlib import suppress
 from pathlib import Path
 
-from library.utils import consts, remote_processes
+from library.utils import consts
 from library.utils.log_utils import log
 
 
@@ -41,9 +41,9 @@ def cmd(
         with ssh.open_sftp() as sftp:
             sftp = ssh.open_sftp()
 
-            tempdir = remote_processes.ssh_tempdir(ssh) or "."
+            tempdir = ssh_tempdir(ssh) or "."
             library_dir = os.path.join(tempdir, "library_cmd_files")
-            r = remote_processes.cmd(ssh, "mkdir", "-p", library_dir)
+            r = cmd(ssh, "mkdir", "-p", library_dir)
 
             for file in local_files:
                 remote_temp_file = os.path.join(library_dir, Path(file).name)
@@ -89,12 +89,12 @@ def cmd(
 
 
 def ssh_tempdir(ssh):
-    r = remote_processes.cmd(ssh, "sh", "-c", "echo $XDG_RUNTIME_DIR")
+    r = cmd(ssh, "sh", "-c", "echo $XDG_RUNTIME_DIR")
     tempdir = r.stdout.strip()
     if tempdir:
         return tempdir
 
-    r = remote_processes.cmd(ssh, "python3", "-c", "import tempfile; print(tempfile.gettempdir())")
+    r = cmd(ssh, "python3", "-c", "import tempfile; print(tempfile.gettempdir())")
     tempdir = r.stdout.strip()
     if tempdir:
         return tempdir
@@ -156,7 +156,7 @@ class SSHForwarder:
     def __enter__(self):
         transport = self.ssh_client.get_transport()
         if not transport:
-            raise Exception("SSH transport is not available")
+            raise ConnectionError("SSH transport is not available")
 
         class SubHandler(PortForwardHandler):
             chain_host = "localhost"

@@ -17,6 +17,8 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+MIN_FOLDERS_TO_COMPARE = 2
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.similar_folders)
@@ -78,7 +80,7 @@ def map_and_name(media, clusters):
 
 
 def cluster_folders(args, media):
-    if len(media) < 2:
+    if len(media) < MIN_FOLDERS_TO_COMPARE:
         processes.exit_error("Too few folders to compare")
 
     if args.estimated_duplicates:
@@ -147,17 +149,13 @@ def cluster_by_numbers(args, media):
 def filter_group_by_numbers(args, group):
     media = group["grouped_paths"]
 
-    output = []
     m0 = media[0]
-    for m in media[1:]:
-        if is_same_group(args, m0, m):
-            output.append(m)
+    output = [m for m in media[1:] if is_same_group(args, m0, m)]
 
     if output:
         group["grouped_paths"] = [m0, *output]
         return group
-    else:
-        return None
+    return None
 
 
 def filter_groups_by_numbers(args, groups):

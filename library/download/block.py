@@ -7,6 +7,9 @@ from library.play import media_printer, post_actions
 from library.utils import arggroups, argparse_utils, consts, db_utils, devices, iterables, shell_utils, strings
 from library.utils.log_utils import log
 
+MAX_PREVIEW_LENGTH = 80
+MIN_PLAYLIST_PATH_PARTS = 2
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.block)
@@ -177,10 +180,9 @@ def block(args=None) -> None:
             add_to_blocklist(args, [p])
 
         playlist_ids = db_playlists.get_ids(args, playlist_paths)
-        if not args.simulate:
-            if playlist_ids:
-                with args.db.conn:
-                    args.db.conn.execute(
+        if not args.simulate and playlist_ids:
+            with args.db.conn:
+                args.db.conn.execute(
                         f"""UPDATE playlists
                         SET time_deleted={consts.APPLICATION_START}
                         WHERE id IN ("""
@@ -263,8 +265,8 @@ def block(args=None) -> None:
                     msg = ""
                     for key in data:
                         preview = str(data[key]).replace("\n", " ")
-                        if len(preview) > 80:
-                            preview = preview[:77] + "..."
+                        if len(preview) > MAX_PREVIEW_LENGTH:
+                            preview = preview[: MAX_PREVIEW_LENGTH - 3] + "..."
                         msg += f"  {key}: {preview}\n"
                     log.warning(msg)
                 else:
@@ -278,7 +280,7 @@ def block(args=None) -> None:
                         )
 
         if not matching_media:
-            if len(p) < 2:
+            if len(p) < MIN_PLAYLIST_PATH_PARTS:
                 unmatched_playlists.append(p)
                 continue
             log.info("Blocking URL resolved by tube metadata: %s", p[1])

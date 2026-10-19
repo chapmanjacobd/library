@@ -226,11 +226,15 @@ def _download(usage, *, links: bool = False, database_positional: bool = False) 
 
     m_columns = db_utils.columns(args, "media")
 
-    if "limit" in args.defaults and "media" in args.db.table_names() and "webpath" in m_columns:
-        if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (SELECT webpath FROM media) LIMIT 1"):
-            if not args.simulate:
-                with args.db.conn:
-                    args.db.conn.execute(
+    if (
+        "limit" in args.defaults
+        and "media" in args.db.table_names()
+        and "webpath" in m_columns
+        and args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (SELECT webpath FROM media) LIMIT 1")
+        and not args.simulate
+    ):
+        with args.db.conn:
+            args.db.conn.execute(
                         """
                         DELETE from media WHERE path in (
                             SELECT webpath FROM media
@@ -314,8 +318,7 @@ def _download(usage, *, links: bool = False, database_positional: bool = False) 
                         link_iter = extract_links.crawl(args, [original_path])
                     else:
                         link_iter = get_inner_urls(args, original_path)
-                    for link_dict in link_iter:
-                        link_paths.append(link_dict["link"])
+                    link_paths.extend(link_dict["link"] for link_dict in link_iter)
                 except requests.HTTPError as excinfo:
                     log.warning(
                         "HTTPError %s. Recording download attempt: %s", excinfo.response.status_code, original_path

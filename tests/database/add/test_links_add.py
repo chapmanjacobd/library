@@ -47,7 +47,7 @@ def test_links_add_webcache(temp_db, monkeypatch):
         def __init__(self, source=None):
             assert source == "ia"
 
-        def iter(self, query, limit=None, filter=None):
+        def iter(self, query, limit=None, **_kwargs):  # matches the CDX iterator protocol
             assert query == "example.com/docs/*"
             yield {"url": "https://example.com/docs/a.html", "timestamp": "20200101000000", "mime": "text/html"}
 

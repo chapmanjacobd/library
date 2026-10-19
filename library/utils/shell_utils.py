@@ -34,7 +34,7 @@ def rename_move_file(src, dst, simulate=False):
     else:
         try:
             return shutil.move(src, dst)
-        except PermissionError as excinfo:  # errno.EACCES, errno.EPERM
+        except PermissionError:  # errno.EACCES, errno.EPERM
             log.warning("PermissionError. %s", dst)
             return None
         except OSError as excinfo:
@@ -256,13 +256,10 @@ def gen_d(args, default_exts=None):
 
 
 def file_temp_copy(src) -> str:
-    fo_dest = tempfile.NamedTemporaryFile(delete=False)
-    with open(src, "r+b") as fo_src:
-        shutil.copyfileobj(fo_src, fo_dest.file)
-    fo_dest.seek(0)
-    fname = fo_dest.name
-    fo_dest.close()
-    return fname
+    with tempfile.NamedTemporaryFile(delete=False) as fo_dest:
+        with open(src, "r+b") as fo_src:
+            shutil.copyfileobj(fo_src, fo_dest)
+        return fo_dest.name
 
 
 def copy_file(source_file, destination_file, simulate=False):

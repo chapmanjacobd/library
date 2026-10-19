@@ -137,10 +137,9 @@ def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowe
 
         if os.path.isdir(source):
             folder_dest = source_destination
-            if not args.relative_to:
-                if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
-                    folder_dest = os.path.join(folder_dest, path_utils.basename(source))
-                    log.debug("folder parent %s", folder_dest)
+            if not args.relative_to and (args.parent or (args.bsd and not source.endswith(os.sep))):  # use BSD behavior
+                folder_dest = os.path.join(folder_dest, path_utils.basename(source))
+                log.debug("folder parent %s", folder_dest)
 
             # if no conflict, use shortcut
             if all(

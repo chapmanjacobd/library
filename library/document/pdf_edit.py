@@ -6,6 +6,9 @@ from pathlib import Path
 from library import usage
 from library.utils import arggroups, argparse_utils, devices, shell_utils
 
+DEFAULT_IMAGE_ADJUSTMENT = 100
+DEFAULT_POSTERIZE_BITS = 8
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.pdf_edit)
@@ -32,16 +35,18 @@ def parse_args():
         help="Preserve image tone in Photoshop-like style autocontrast",
     )
 
-    parser.add_argument("--brightness", "-b", type=int, default=100)
-    parser.add_argument("--contrast", "-c", type=int, default=100)
-    parser.add_argument("--color", "--saturation", "-C", type=int, default=100)
-    parser.add_argument("--sharpness", "-s", type=int, default=100)
+    parser.add_argument("--brightness", "-b", type=int, default=DEFAULT_IMAGE_ADJUSTMENT)
+    parser.add_argument("--contrast", "-c", type=int, default=DEFAULT_IMAGE_ADJUSTMENT)
+    parser.add_argument("--color", "--saturation", "-C", type=int, default=DEFAULT_IMAGE_ADJUSTMENT)
+    parser.add_argument("--sharpness", "-s", type=int, default=DEFAULT_IMAGE_ADJUSTMENT)
 
     parser.add_argument("--flip", action="store_true")
     parser.add_argument("--grayscale", action="store_true")
     parser.add_argument("--invert", action="store_true")
     parser.add_argument("--mirror", action="store_true")
-    parser.add_argument("--posterize", type=int, default=8, help="Reduce the number of bits for each color channel")
+    parser.add_argument(
+        "--posterize", type=int, default=DEFAULT_POSTERIZE_BITS, help="Reduce the number of bits for each color channel"
+    )
 
     parser.add_argument("--ocr", action=argparse.BooleanOptionalAction, default=True)
 
@@ -73,13 +78,13 @@ def process_path(args, input_path):
             if not args.autotone:
                 params.append("nT")
 
-        if args.contrast != 100:
+        if args.contrast != DEFAULT_IMAGE_ADJUSTMENT:
             params.append(f"c{args.contrast}")
-        if args.brightness != 100:
+        if args.brightness != DEFAULT_IMAGE_ADJUSTMENT:
             params.append(f"b{args.brightness}")
-        if args.color != 100:
+        if args.color != DEFAULT_IMAGE_ADJUSTMENT:
             params.append(f"C{args.color}")
-        if args.sharpness != 100:
+        if args.sharpness != DEFAULT_IMAGE_ADJUSTMENT:
             params.append(f"s{args.sharpness}")
 
         for method in ["flip", "grayscale", "invert", "mirror"]:
@@ -87,7 +92,7 @@ def process_path(args, input_path):
             if val:
                 params.append(method)
 
-        if args.posterize < 8:
+        if args.posterize < DEFAULT_POSTERIZE_BITS:
             params.append(f"p{args.posterize}")
 
         suffix = "." + ".".join(params) + ".pdf"
@@ -113,11 +118,11 @@ def process_path(args, input_path):
 
         for method in ["Brightness", "Contrast", "Color", "Sharpness"]:
             val = getattr(args, method.lower())
-            if val != 100:
+            if val != DEFAULT_IMAGE_ADJUSTMENT:
                 enhancer = getattr(ImageEnhance, method)(img)
-                img = enhancer.enhance(val / 100)
+                img = enhancer.enhance(val / DEFAULT_IMAGE_ADJUSTMENT)
 
-        if args.posterize < 8:
+        if args.posterize < DEFAULT_POSTERIZE_BITS:
             img = ImageOps.posterize(img, args.posterize)
 
         for method in ["flip", "grayscale", "invert", "mirror"]:

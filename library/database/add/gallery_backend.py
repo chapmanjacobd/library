@@ -27,7 +27,8 @@ def load_module_level_gallery_dl(args=None) -> ModuleType:
 
         gallery_dl.config.load()
 
-        gallery_dl.config.set(("extractor",), "parent-directory", False)
+        parent_directory_enabled = False
+        gallery_dl.config.set(("extractor",), "parent-directory", parent_directory_enabled)
         gallery_dl.config.set(
             ("extractor",),
             "directory",
@@ -46,7 +47,8 @@ def load_module_level_gallery_dl(args=None) -> ModuleType:
         gallery_dl.config.set(("extractor",), "browser", "firefox")
 
         if consts.PYTEST_RUNNING:
-            gallery_dl.config.set(("extractor",), "download", False)
+            download_enabled = False
+            gallery_dl.config.set(("extractor",), "download", download_enabled)
 
         is_supported.extractors = gallery_dl.extractor.extractors()
 
@@ -239,7 +241,8 @@ def get_playlist_metadata(args, playlist_path):
 
         if not info:
             log.error("No info returned from image extractor %s", extractor_key)
-            raise
+            message = f"No info returned from image extractor {extractor_key}"
+            raise RuntimeError(message)
 
         assert webpath
         info["extractor_key"] = extractor_key
@@ -271,8 +274,9 @@ def get_playlist_metadata(args, playlist_path):
     if added_media_count == 0:
         from rich import inspect
 
-        job = gallery_dl.job.DataJob(playlist_path, file=open(os.devnull, "w"), ensure_ascii=False)
-        job.run()
+        with open(os.devnull, "w") as output:
+            job = gallery_dl.job.DataJob(playlist_path, file=output, ensure_ascii=False)
+            job.run()
         inspect(job.data)
         raise RuntimeError("No data found")
 

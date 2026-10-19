@@ -250,7 +250,7 @@ def test_time_filtering_skips_missing_files(tmp_path):
         defaults=["sizes"],
         type=[],
         no_type=[],
-        time_created=lambda x: True,
+        time_created=lambda _x: True,
         to_json=False,
         sort=[],
         limit=None,

@@ -4,6 +4,8 @@ from timeit import default_timer
 from IPython.core import ultratb
 from IPython.terminal import debugger
 
+MAX_VERBOSE_LOG_LEVEL = 3
+
 
 def check_stdio():
     try:
@@ -38,7 +40,7 @@ def argparse_log() -> logging.Logger:
 
     log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
 
-    if args.verbose > 3 or args.verbose == 0:
+    if args.verbose > MAX_VERBOSE_LOG_LEVEL or args.verbose == 0:
         logging.root.handlers = []  # clear any existing handlers
         logging.basicConfig(
             level=clamp_index(log_levels, args.verbose),

@@ -96,7 +96,9 @@ YDM  09/08/07
         else:
             date = parse(
                 date_str,
-                default=datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0),
+                default=datetime.datetime.now(tz=datetime.timezone.utc)
+                .astimezone()
+                .replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None),
                 fuzzy=True,
                 dayfirst=day_first,
                 yearfirst=year_first,

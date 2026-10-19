@@ -8,6 +8,8 @@ from library.utils import arggroups, argparse_utils, consts
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+MIN_COMPARE_PATHS = 2
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.sample_compare)
@@ -52,7 +54,7 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
             existing_paths.append(path)
         except FileNotFoundError:
             log.error("File not found %s", path)
-    if len(existing_paths) < 2:
+    if len(existing_paths) < MIN_COMPARE_PATHS:
         raise ValueError("Not enough paths. Include 2 or more paths to compare")
 
     sizes = [stat_res.st_size for stat_res in path_stats.values()]

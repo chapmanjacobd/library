@@ -18,7 +18,10 @@ from library.utils import (
     strings,
     web,
 )
+
 from library.utils.log_utils import log
+
+SRCSET_PARTS = 2
 
 
 def _base_parser(usage):
@@ -128,7 +131,7 @@ def get_highest_res(srcset):
         return None
     try:
         parts = [s.strip().split() for s in srcset.split(",")]
-        clean_parts = [p for p in parts if len(p) == 2]
+        clean_parts = [p for p in parts if len(p) == SRCSET_PARTS]
         if not clean_parts:
             return srcset.strip().split()[0] if srcset else None
 
@@ -148,7 +151,7 @@ def parse_inner_urls(args, base_url, markup):
 
     stop_texts = getattr(args, "stop_text", None) or []
     for stop_text in stop_texts:
-        if soup.find(string=lambda s: stop_text in s):
+        if soup.find(string=lambda s, stop_text=stop_text: stop_text in s):
             return None
 
     if base_url.startswith("//"):

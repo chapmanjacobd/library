@@ -1,10 +1,11 @@
 from types import SimpleNamespace
+from typing import ClassVar
 
 from library.database.manage import copy_play_counts
 
 
 class FakeMediaTable:
-    columns_dict = {}
+    columns_dict: ClassVar = {}
 
 
 class FakeSourceDB:

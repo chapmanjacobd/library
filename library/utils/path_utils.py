@@ -173,7 +173,7 @@ def parent(s):
 
 
 def basename(path):
-    """A basename() variant which first strips the trailing slash, if present.
+    """Return a basename after stripping a trailing slash, if present.
     Thus we always get the last component of the path, even for directories.
 
     e.g.

@@ -23,16 +23,10 @@ def get_table_name(args):
     if args.search_table in args.db.table_names():
         return args.search_table
 
-    valid_tables = []
-    for s in args.db.table_names():
-        if "_fts_" in s or s.endswith("_fts") or "sqlite_stat" in s:
-            continue
-        valid_tables.append(s)
-
-    matching_tables = []
-    for s in valid_tables:
-        if s.startswith(args.search_table):
-            matching_tables.append(s)
+    valid_tables = [
+        s for s in args.db.table_names() if "_fts_" not in s and not s.endswith("_fts") and "sqlite_stat" not in s
+    ]
+    matching_tables = [s for s in valid_tables if s.startswith(args.search_table)]
 
     if len(matching_tables) == 1:
         return matching_tables[0]

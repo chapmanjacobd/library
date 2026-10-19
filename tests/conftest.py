@@ -30,7 +30,7 @@ def safe_name(val):
     )
 
 
-def pytest_make_parametrize_id(config, val, argname):
+def pytest_make_parametrize_id(config, val, argname):  # noqa: ARG001 - required by pytest's hook specification
     if isinstance(val, (list, tuple)):
         val = ".".join(safe_name(v) for v in val if safe_name(v) != argname)
     else:
@@ -49,7 +49,7 @@ def original_datadir(request) -> Path:
 
 
 @pytest.fixture
-def assert_unchanged(data_regression, request):
+def assert_unchanged(data_regression):
     def assert_unchanged(captured, basename=None):
         data_regression.check(captured, basename=basename or "data")
 

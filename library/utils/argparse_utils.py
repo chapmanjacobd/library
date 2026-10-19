@@ -6,6 +6,8 @@ from library.utils.iterables import flatten
 from library.utils.strings import format_two_columns, load_string
 
 STDIN_DASH = ["-"]
+MAX_SLICE_PARTS = 3
+MIN_SLICE_PARTS = 2
 
 
 def read_stdin(prog=None):
@@ -28,7 +30,7 @@ def open_text_input(parser: argparse.ArgumentParser, path: str):
 
 
 class ArgparseList(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, _parser, namespace, values, _option_string=None):
         items = getattr(namespace, self.dest, None) or []
 
         if isinstance(values, str):
@@ -40,13 +42,13 @@ class ArgparseList(argparse.Action):
 
 
 class ArgparseSlice(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, _parser, namespace, values, _option_string=None):
         if not isinstance(values, str):
             raise TypeError
 
         if ":" in values:
             parts = values.split(":")
-            if len(parts) > 3:
+            if len(parts) > MAX_SLICE_PARTS:
                 raise ValueError
 
             start = ""
@@ -54,9 +56,9 @@ class ArgparseSlice(argparse.Action):
             step = ""
             if len(parts) >= 1:
                 start = parts[0]
-            if len(parts) >= 2:
+            if len(parts) >= MIN_SLICE_PARTS:
                 stop = parts[1]
-            if len(parts) == 3:
+            if len(parts) == MAX_SLICE_PARTS:
                 step = parts[2]
 
             slice_obj = slice(int(start) if start else None, int(stop) if stop else None, int(step) if step else None)
@@ -67,7 +69,7 @@ class ArgparseSlice(argparse.Action):
 
 
 class ArgparseDict(argparse.Action):
-    def __call__(self, parser, args, values, option_string=None):
+    def __call__(self, _parser, args, values, _option_string=None):
         try:
             d = {}
             k_eq_v = list(values.split(" "))
@@ -90,7 +92,7 @@ class ArgparseDict(argparse.Action):
 
 
 class ArgparseArgsOrStdin(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, _option_string=None):
         if values == STDIN_DASH:
             lines = read_stdin(parser.prog)
         else:
@@ -99,7 +101,7 @@ class ArgparseArgsOrStdin(argparse.Action):
 
 
 class ArgparseArgsOrStdinGen(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values, _option_string=None):
         if values == STDIN_DASH:
             print(f"{parser.prog}: Reading from stdin...", file=sys.stderr)
             lines = sys.stdin

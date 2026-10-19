@@ -74,12 +74,12 @@ def select_grouped_info(args, html_content):
         all_target_elements.extend(soup.select(selector))
 
     grouped_by_parent = {}
-    for element in all_target_elements:
-        parent = element.parent
+    for target_element in all_target_elements:
+        parent = target_element.parent
         if parent:
-            grouped_by_parent.setdefault(parent, []).append(element)
+            grouped_by_parent.setdefault(parent, []).append(target_element)
 
-    for parent, elements in grouped_by_parent.items():
+    for elements in grouped_by_parent.values():
         texts = [e.get_text(strip=True) for e in elements]
         yield args.separator.join(texts)
 

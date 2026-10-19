@@ -18,6 +18,9 @@ from library.utils import (
     strings,
 )
 
+MIN_PATH_PARTS = 2
+MAX_DATA_SUBSET_SIZE = 2
+
 
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.disk_usage)
@@ -88,7 +91,7 @@ def count_folders(parents):
     subdirectory_count = defaultdict(int)
     for parent in parents:
         parts = parent.rstrip(os.sep).split(os.sep)  # TODO handle URLs on Windows
-        while len(parts) >= 2:
+        while len(parts) >= MIN_PATH_PARTS:
             parts.pop()
             parent = os.sep.join(parts)
             subdirectory_count[parent] += 1
@@ -125,7 +128,7 @@ def get_subset(args) -> list[dict]:
 
         # add folder
         if args.parents:
-            while len(p) >= 2:  # recursive folder statistics
+            while len(p) >= MIN_PATH_PARTS:  # recursive folder statistics
                 p.pop()  # dirname
 
                 if not check_depth(args, len(p)):
@@ -138,7 +141,7 @@ def get_subset(args) -> list[dict]:
                 d[parent]["size"] += m.get("size") or 0
                 d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
-        elif p and len(p) >= 2 and check_depth(args, len(p)):
+        elif p and len(p) >= MIN_PATH_PARTS and check_depth(args, len(p)):
             p.pop()  # dirname
             if p != [""]:
                 parent = os.sep.join(p)
@@ -218,9 +221,7 @@ def get_subset_group_by_size(args) -> list[dict]:
             unit_multiplier**4,
         ]
         bin_edges = [0.0]
-        for unit in units:
-            for m_mult in multipliers:
-                bin_edges.append(float(m_mult * unit))
+        bin_edges.extend(float(m_mult * unit) for unit in units for m_mult in multipliers)
         bin_edges.append(float("inf"))
 
         file_size = m.get("size") or 0
@@ -263,11 +264,11 @@ def load_subset(args):
         args.subset = get_subset_group_by_extensions(args)
     elif args.group_by_mimetypes:
         args.subset = get_subset_group_by_mimetypes(args)
-    elif len(args.data) <= 2:
+    elif len(args.data) <= MAX_DATA_SUBSET_SIZE:
         args.subset = args.data
     elif not args.depth:
         tries = 50
-        while len(args.subset) < 2:
+        while len(args.subset) < MAX_DATA_SUBSET_SIZE:
             args.min_depth += 1
             args.subset = get_subset(args)
             args.subset = filter_criteria(args, args.subset)  # check within loop to avoid "no media"

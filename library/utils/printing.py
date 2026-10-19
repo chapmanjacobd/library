@@ -9,6 +9,8 @@ from wcwidth import wcswidth
 from library.utils import consts, path_utils
 from library.utils.strings import duration, duration_short, file_size, relative_datetime, shorten_middle
 
+MIN_WIDE_COLUMN_WIDTH = 14
+
 
 def print_overwrite(*text, **kwargs):
     if "file" not in kwargs:
@@ -268,9 +270,9 @@ def distribute_excess_width(max_col_widths, sep_char=4):
     wide_cols = {
         k: width
         for k, width in max_col_widths.items()
-        if width > 14 and k not in ("duration", "size", *consts.EPOCH_COLUMNS)
+        if width > MIN_WIDE_COLUMN_WIDTH and k not in ("duration", "size", *consts.EPOCH_COLUMNS)
     }
-    excess_width = 14 + existing_width - consts.TERMINAL_SIZE.columns
+    excess_width = MIN_WIDE_COLUMN_WIDTH + existing_width - consts.TERMINAL_SIZE.columns
 
     if excess_width <= 0:
         return {}

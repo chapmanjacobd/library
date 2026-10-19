@@ -230,4 +230,4 @@ def calculate_segments(file_size, chunk_size, gap=0.1):
             gap = math.ceil(file_size * gap)
         start = end + gap
 
-    return segments + [end_segment_start]  # always scan the end
+    return [*segments, end_segment_start]  # always scan the end

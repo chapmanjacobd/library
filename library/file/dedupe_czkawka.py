@@ -19,6 +19,8 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+MIN_CZKAWKA_GROUPS = 2
+
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 
@@ -95,7 +97,7 @@ def parse_czkawka_line(line):
 def extract_group_data(group_content):
     paths_and_sizes = []
     groups = group_content.split("\n")
-    if len(groups) < 2:
+    if len(groups) < MIN_CZKAWKA_GROUPS:
         return None
     for match in groups:
         if match == "":

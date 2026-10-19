@@ -150,7 +150,7 @@ def munge_av_tags(args, m) -> dict:
         elif excinfo.errno == errno.EIO:  # IO Error
             raise
         raise
-    except processes.UnplayableFile as excinfo:
+    except processes.UnplayableFileError as excinfo:
         log.error(f"Failed reading header. {path}")
         log.debug(excinfo)
         if (

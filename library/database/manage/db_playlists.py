@@ -326,11 +326,8 @@ def update_more_frequently(args, playlist_path, extractor_config=None) -> None:
                 [playlist_path, config],
             )
     except sqlite3.OperationalError:
-        try:
-            with args.db.conn:
-                args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
-        except Exception:
-            raise
+        with args.db.conn:
+            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
 
 
 def update_less_frequently(args, playlist_path, extractor_config=None) -> None:
@@ -359,11 +356,8 @@ def update_less_frequently(args, playlist_path, extractor_config=None) -> None:
                 [playlist_path, config],
             )
     except sqlite3.OperationalError:
-        try:
-            with args.db.conn:
-                args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
-        except Exception:
-            raise
+        with args.db.conn:
+            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
 
 
 def get_all(args, cols="path, extractor_config", sql_filters=None, order_by="random()") -> list[dict]:

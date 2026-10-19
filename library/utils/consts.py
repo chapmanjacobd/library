@@ -106,6 +106,7 @@ IS_MAC = sys.platform == "darwin"
 IS_WINDOWS = os.name == "nt" or sys.platform in ("win32", "cygwin", "msys")
 NOT_WINDOWS = os.name == "posix"
 REQUESTS_TIMEOUT = (8, 45)
+MOBILE_TERMINAL_WIDTH = 80
 
 
 def get_terminal_size():
@@ -113,13 +114,13 @@ def get_terminal_size():
 
 
 TERMINAL_SIZE = get_terminal_size()
-MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
+MOBILE_TERMINAL = TERMINAL_SIZE.columns < MOBILE_TERMINAL_WIDTH
 
 
 def _on_winch(_signal, _frame):
     global TERMINAL_SIZE, MOBILE_TERMINAL
     TERMINAL_SIZE = get_terminal_size()
-    MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
+    MOBILE_TERMINAL = TERMINAL_SIZE.columns < MOBILE_TERMINAL_WIDTH
 
 
 if hasattr(signal, "SIGWINCH"):

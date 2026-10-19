@@ -8,6 +8,8 @@ from library import usage
 from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects, shell_utils, strings, web
 from library.utils.log_utils import log
 
+HTTP_SUCCESS_CLASS = 2
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.site_add)
@@ -121,16 +123,16 @@ def nosql_to_sql(dict_or_arr, table_name=None, foreign_keys=False, state=None, p
                     record[f"{parent_ref[0]}_id"] = parent_ref[1]
             tables.append({"table_name": table_name, "data": arr_})
 
-        for table_name, data in new_records.items():
+        for new_table_name, data in new_records.items():
             log.debug("array of dicts: %s", arr_)
-            tables.append({"table_name": table_name, "data": data})
+            tables.append({"table_name": new_table_name, "data": data})
 
     elif isinstance(dict_or_arr, dict):
         dict_ = dict_or_arr
         tables.extend(extract_tables(dict_, table_name, foreign_keys, state, parent_ref))
 
     else:
-        raise ValueError("Expected dict, list of dicts, or list of scalar values")
+        raise TypeError("Expected dict, list of dicts, or list of scalar values")
 
     return tables
 
@@ -252,7 +254,9 @@ def attach_interceptors(args):
 
         log.debug("%s\t%s\t%s", request.url, response.headers["Content-Type"], response.status_code)
 
-        if not (response and response.status_code // 100 == 2 and "Content-Type" in response.headers):  # HTTP 2xx
+        if not (
+            response and response.status_code // 100 == HTTP_SUCCESS_CLASS and "Content-Type" in response.headers
+        ):  # HTTP 2xx
             return
 
         if response.headers["Content-Type"].startswith(("application/json",)):
@@ -294,7 +298,7 @@ def attach_interceptors(args):
             log.info("%s\t%s\t%s", request.url, response.headers["Content-Type"], response.status_code)
 
         if len(tables) > 0:
-            if args.verbose > 2:
+            if args.verbose > consts.LOG_DEBUG:
                 breakpoint()
 
             tables = db_utils.add_missing_table_names(args, tables)

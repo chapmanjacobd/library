@@ -2,7 +2,11 @@ from library import usage
 from library.utils import arggroups, argparse_utils, file_utils, nums, web
 from library.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from library.utils.log_utils import log
+
 from library.utils.printing import print_df, print_series
+
+SAMPLE_ROW_LIMIT = 6
+MIN_GROUP_SIZE = 15
 
 
 def parse_args():
@@ -67,7 +71,7 @@ def print_info(args, dft):
     print()
 
     print("### Sample of rows")
-    if len(df) > 6:
+    if len(df) > SAMPLE_ROW_LIMIT:
         print_df(pd.concat([df.head(3), df.tail(3)]))
     else:
         print_df(df.head(6))
@@ -96,7 +100,7 @@ def print_info(args, dft):
         diff_dtypes = pd.DataFrame(diff_dtypes, columns=["column", "original_dtype", "converted_dtype"])
         print_df(diff_dtypes.set_index("column"))
 
-    if len(df) > 15:
+    if len(df) > MIN_GROUP_SIZE:
         numeric_columns = df.select_dtypes("number").columns.to_list()
         if numeric_columns:
             print("### Numerical columns")
@@ -130,7 +134,7 @@ def print_info(args, dft):
 
                     if args.groupby:
                         groups = df.groupby(col).size()
-                        groups = groups[groups >= 15]
+                        groups = groups[groups >= MIN_GROUP_SIZE]
                         if len(groups) > 0:
                             print(f"#### group by {col}")
                             print_df(df[df[col].isin(groups.index)].groupby(col).describe())
@@ -163,12 +167,12 @@ def print_info(args, dft):
     print()
 
     if nan_col_sums.sum():
-        no_nas = df.columns[df.notnull().all()]
+        no_nas = df.columns[df.notna().all()]
         if len(no_nas) > 0:
             print(f"#### {len(no_nas)} columns with no missing values")
             print_series(no_nas)
 
-        all_nas = df.columns[df.isnull().all()]
+        all_nas = df.columns[df.isna().all()]
         if len(all_nas) > 0:
             print(f"#### {len(all_nas)} columns with all missing values")
             print_series(all_nas)

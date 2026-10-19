@@ -175,8 +175,8 @@ def optimize(args) -> None:
         search_columns = table_config.get("search_columns") or []
 
         fts_columns = [c for c in search_columns if c in table_columns]
-        int_columns = [k for k, v in table_columns.items() if v == int and k not in search_columns + ignore_columns]
-        str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
+        int_columns = [k for k, v in table_columns.items() if v is int and k not in search_columns + ignore_columns]
+        str_columns = [k for k, v in table_columns.items() if v is str and k not in search_columns + ignore_columns]
         if "path" in table_columns:
             str_columns = list({*str_columns, "path"})
 

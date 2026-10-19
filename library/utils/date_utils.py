@@ -5,6 +5,8 @@ import dateutil.parser
 
 from library.utils import consts, iterables, nums
 
+MIN_UNIX_TIMESTAMP = 30_000_000
+
 
 def is_tz_aware(dt: datetime.datetime) -> bool:
     return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
@@ -14,7 +16,7 @@ def maybe_tz_now(maybe_tz_dt: datetime.datetime):
     if is_tz_aware(maybe_tz_dt):
         now = datetime.datetime.now(tz=tz.utc).astimezone()
     else:
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(tz=tz.utc).astimezone().replace(tzinfo=None)
     return now
 
 
@@ -71,7 +73,7 @@ def tube_date(v):
         v.pop("updated", None),
     )
     if upload_date:
-        if isinstance(upload_date, int) and upload_date > 30000000:
+        if isinstance(upload_date, int) and upload_date > MIN_UNIX_TIMESTAMP:
             return upload_date
 
         if isinstance(upload_date, datetime.datetime):

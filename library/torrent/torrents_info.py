@@ -24,6 +24,10 @@ from library.utils import (
 from library.utils.log_utils import log
 from library.utils.path_utils import fqdn_from_url, tld_from_url
 
+MIN_TRANSFER_SPEED = 500
+MAX_ETA_SECONDS = 8_640_000
+MIN_ALLOCATED_BLOCKS = 12
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_info)
@@ -208,7 +212,10 @@ def filter_torrents_by_activity(args, torrents):
             t
             for t in torrents
             if args.now
-            is ((not t.state_enum.is_complete and t.dlspeed > 500) or (t.state_enum.is_complete and t.upspeed > 500))
+            is (
+                (not t.state_enum.is_complete and t.dlspeed > MIN_TRANSFER_SPEED)
+                or (t.state_enum.is_complete and t.upspeed > MIN_TRANSFER_SPEED)
+            )
         ]
     if args.fast is not None:
         torrents = [
@@ -259,11 +266,11 @@ def filter_torrents_by_criteria(args, torrents):
         torrents = [
             t
             for t in torrents
-            if (not t.state_enum.is_complete and t.eta and t.eta < 8640000 and args.time_remaining(t.eta))
+            if (not t.state_enum.is_complete and t.eta and t.eta < MAX_ETA_SECONDS and args.time_remaining(t.eta))
             or (
                 t.state_enum.is_complete
                 and t.upspeed
-                and t.upspeed > 500
+                and t.upspeed > MIN_TRANSFER_SPEED
                 and args.time_remaining(t.total_size / t.upspeed)
             )
         ]
@@ -469,12 +476,12 @@ def print_torrents_by_tracker(args, torrents):
 
 def agg_torrents_state(args, state, state_torrents):
     remaining = sum(t.amount_left for t in state_torrents)
-    etas = [t.eta for t in state_torrents if t.eta < 8640000]
+    etas = [t.eta for t in state_torrents if t.eta < MAX_ETA_SECONDS]
     if not etas:
         etas = [
             t.total_size / t.upspeed
             for t in state_torrents
-            if t.state_enum.is_complete and t.upspeed and t.upspeed > 500
+            if t.state_enum.is_complete and t.upspeed and t.upspeed > MIN_TRANSFER_SPEED
         ]
     dl_speed = sum(t.dlspeed for t in state_torrents)
     up_speed = sum(t.upspeed for t in state_torrents)
@@ -535,7 +542,7 @@ def torrent_paths_on_different_drives(t):
     return path_utils.mountpoint(t.download_path) != path_utils.mountpoint(t.save_path)
 
 
-def reset_torrent_progress(args, qbt_client, torrent):
+def reset_torrent_progress(_args, qbt_client, torrent):
     originally_stopped = bool(torrent.state_enum.is_stopped)
     qbt_client.torrents_stop(torrent_hashes=[torrent.hash])
 
@@ -634,7 +641,7 @@ def torrents_info():
     elif args.sort == "time_remaining":
         torrents = sorted(
             torrents,
-            key=lambda t: (not t.state_enum.is_complete and t.eta and t.eta < 8640000, t.eta),
+            key=lambda t: (not t.state_enum.is_complete and t.eta and t.eta < MAX_ETA_SECONDS, t.eta),
             reverse=reverse_sort,
         )
     elif args.sort == "time_unseeded":
@@ -683,7 +690,7 @@ def torrents_info():
             torrents,
             key=lambda t: (
                 not t.state_enum.is_complete,
-                t.eta if t.eta < 8640000 else 0,
+                t.eta if t.eta < MAX_ETA_SECONDS else 0,
                 t.time_active * t.last_activity,
             ),
         )
@@ -871,7 +878,7 @@ def torrents_info():
                         "session": strings.file_size(t.downloaded_session),
                         "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                         "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
-                        "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
+                        "eta": strings.duration_short(t.eta) if t.eta < MAX_ETA_SECONDS else None,
                     }
                 if t.state_enum.is_complete:
                     d |= {
@@ -880,7 +887,9 @@ def torrents_info():
                         "uploaded": strings.file_size(t.uploaded),
                         "speed": strings.file_size(t.upspeed) + "/s" if t.upspeed else None,
                         "eta": (
-                            strings.duration_short(t.total_size / t.upspeed) if t.upspeed and t.upspeed > 500 else None
+                            strings.duration_short(t.total_size / t.upspeed)
+                            if t.upspeed and t.upspeed > MIN_TRANSFER_SPEED
+                            else None
                         ),
                     }
 
@@ -961,7 +970,7 @@ def torrents_info():
                     if file_path.exists() and not file_path.is_dir():
                         if file.progress == 0.0:
                             stat = file_path.stat()
-                            if stat.st_blocks and stat.st_blocks > 12:
+                            if stat.st_blocks and stat.st_blocks > MIN_ALLOCATED_BLOCKS:
                                 log.error(
                                     "Skipping the rest of torrent because invalid state likely. Recheck first. %s",
                                     t.name,

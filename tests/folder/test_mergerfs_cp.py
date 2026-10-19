@@ -147,7 +147,6 @@ def test_folder_conflict_replace(temp_file_tree):
     target = temp_file_tree({"file1": {"file1": "4"}})
 
     src1_inodes = read_relative_file_tree_dict(src1, inodes=False)
-    dest_inodes = read_relative_file_tree_dict(target, inodes=False)
     lb(["mergerfs-cp", src1 + os.sep, target])
 
     assert read_relative_file_tree_dict(src1, inodes=False) == src1_inodes

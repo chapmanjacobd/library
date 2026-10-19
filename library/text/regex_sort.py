@@ -39,7 +39,7 @@ def line_splitter(regexs: list[re.Pattern], l: str) -> list[str]:
     return words
 
 
-def word_sorter(args, NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stats: Counter, l: list[str]):
+def word_sorter(args, ns_opts, word_sorts: list[consts.WordSortOpt], corpus_stats: Counter, l: list[str]):
     if "lastindex" in word_sorts or "-lastindex" in word_sorts:
         rl = list(reversed(l))
 
@@ -71,13 +71,13 @@ def word_sorter(args, NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stat
             elif s in ("alpha", "python"):
                 val = word
             elif s in ("natural", "natsort"):
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.DEFAULT)(word)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(word)
             elif s in ("path", "nspath"):
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.PATH)(word)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.PATH)(word)
             elif s in ("locale", "human"):
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.LOCALE)(word)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(word)
             elif s == "signed":
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.REAL)(word)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.REAL)(word)
             elif s == "os":
                 val = natsort.os_sort_keygen()(word)
             else:
@@ -107,7 +107,7 @@ def word_sorter(args, NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stat
 
 def line_sorter(
     args,
-    NS_OPTS,
+    ns_opts,
     line_sorts: list[consts.LineSortOpt],
     corpus_stats: Counter,
     original_lines: list[str],
@@ -163,13 +163,13 @@ def line_sorter(
             elif s in ("alpha", "python"):
                 val = words
             elif s in ("natural", "natsort"):
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.DEFAULT)(words)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(words)
             elif s in ("path", "nspath"):
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.PATH)(words)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.PATH)(words)
             elif s in ("locale", "human"):
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.LOCALE)(words)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(words)
             elif s == "signed":
-                val = natsort.natsort_keygen(alg=NS_OPTS | ns.REAL)(words)
+                val = natsort.natsort_keygen(alg=ns_opts | ns.REAL)(words)
             elif s == "os":
                 val = natsort.os_sort_keygen()(words)
             else:
@@ -253,9 +253,9 @@ def text_processor(args, lines):
     else:
         stop_words = set(args.stop_words)
 
-    NS_OPTS = ns.NUMAFTER | ns.NOEXP | ns.NANLAST
+    ns_opts = ns.NUMAFTER | ns.NOEXP | ns.NANLAST
     if args.compat:
-        NS_OPTS = NS_OPTS | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
+        ns_opts = ns_opts | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
 
     corpus = []
     for l in lines:
@@ -296,10 +296,10 @@ def text_processor(args, lines):
     log.info(f"              {avg_dup_count_per_word=:.2f} {avg_dup_count_per_line=:.2f}")
     log.info(f"              {avg_unique_count_per_word=:.2f} {avg_unique_count_per_line=:.2f}")
 
-    corpus = [word_sorter(args, NS_OPTS, args.word_sorts, corpus_stats, l) for l in corpus]
+    corpus = [word_sorter(args, ns_opts, args.word_sorts, corpus_stats, l) for l in corpus]
 
     # get original lines but sorted
-    lines = line_sorter(args, NS_OPTS, args.line_sorts, corpus_stats, lines, corpus)
+    lines = line_sorter(args, ns_opts, args.line_sorts, corpus_stats, lines, corpus)
     return lines
 
 

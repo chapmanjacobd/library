@@ -43,7 +43,9 @@ def computer_info():
                 }
         else:  # macOS, Windows
             boot_time = psutil.boot_time()
-            up_time = datetime.datetime.now() - datetime.datetime.fromtimestamp(boot_time)
+            up_time = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.datetime.fromtimestamp(
+                boot_time, tz=datetime.timezone.utc
+            )
             return {
                 "up_time": int(up_time.total_seconds()),
             }

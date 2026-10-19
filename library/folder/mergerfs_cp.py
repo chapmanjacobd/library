@@ -121,7 +121,7 @@ def mergerfs_cp_file(args, merger_fs_src, destination):
         print(f"Could not find srcmount of {merger_fs_src}")
 
 
-def cp_args(args):
+def cp_args(_args):
     cmd_args = ["cp"]
     cmd_args.append("--no-clobber")
 

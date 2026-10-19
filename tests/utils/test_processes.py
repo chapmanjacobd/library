@@ -108,7 +108,9 @@ def test_load_or_install_modules(mock_check_call, mock_import_module):
 
 @patch("importlib.import_module", side_effect=ImportError("module unavailable"))
 @patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "pip"))
-def test_load_or_install_modules_reports_failure(mock_check_call, _mock_import_module):
+def test_load_or_install_modules_reports_failure(
+    mock_check_call, _mock_import_module  # noqa: PT019 - patch injects a mock, not a fixture
+):  # noqa: PT019 - patch injects a mock, not a fixture
     with pytest.raises(ImportError, match="None of the python packages"):
         processes.load_or_install_modules([["missing_module"]])
 

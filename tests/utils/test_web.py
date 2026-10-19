@@ -1,5 +1,6 @@
 import pathlib
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -278,9 +279,9 @@ def test_retry_fails_fast_on_name_resolution_error(monkeypatch):
 
 class _ShortStreamResponse:
     status_code = 200
-    headers = {"Content-Type": "text/plain", "Content-Length": "100"}
+    headers: ClassVar = {"Content-Type": "text/plain", "Content-Length": "100"}
 
-    def iter_content(self, chunk_size=1):
+    def iter_content(self, chunk_size=1):  # noqa: ARG002 - mirrors requests' iter_content signature
         yield b"short"  # 5 bytes, less than the advertised Content-Length
 
     def close(self):
@@ -651,9 +652,9 @@ def test_selenium_get_page_skips_injection_with_native_profile(monkeypatch):
     cookie_jar.get_cookies_for_url.return_value = [cookie]
 
     monkeypatch.setattr("library.utils.web.cookie_jar", cookie_jar)
-    monkeypatch.setattr("library.utils.web.load_cookie_jar", lambda a: None)
-    monkeypatch.setattr("library.utils.web.path_utils.fqdn_from_url", lambda u: "https://example.com")
-    monkeypatch.setattr("library.utils.web.re_trigger_input", lambda d: None)
+    monkeypatch.setattr("library.utils.web.load_cookie_jar", lambda _a: None)
+    monkeypatch.setattr("library.utils.web.path_utils.fqdn_from_url", lambda _u: "https://example.com")
+    monkeypatch.setattr("library.utils.web.re_trigger_input", lambda _d: None)
 
     selenium_get_page(args, url)
 
@@ -677,9 +678,9 @@ def test_selenium_get_page_injects_cookies_without_native_profile(monkeypatch):
     cookie_jar.get_cookies_for_url.return_value = [cookie]
 
     monkeypatch.setattr("library.utils.web.cookie_jar", cookie_jar)
-    monkeypatch.setattr("library.utils.web.load_cookie_jar", lambda a: None)
-    monkeypatch.setattr("library.utils.web.path_utils.fqdn_from_url", lambda u: "https://example.com")
-    monkeypatch.setattr("library.utils.web.re_trigger_input", lambda d: None)
+    monkeypatch.setattr("library.utils.web.load_cookie_jar", lambda _a: None)
+    monkeypatch.setattr("library.utils.web.path_utils.fqdn_from_url", lambda _u: "https://example.com")
+    monkeypatch.setattr("library.utils.web.re_trigger_input", lambda _d: None)
 
     selenium_get_page(args, url)
 
@@ -755,7 +756,7 @@ def test_fake_title():
     assert web.fake_title(url) == expected
 
 
-def mock_requests_session_head(url, timeout=None):
+def mock_requests_session_head(url, timeout=None):  # noqa: ARG001 - mirrors requests' head signature
     mock_response = Mock()
     if url.endswith(".html"):
         mock_response.headers = {"Content-Type": "text/html"}

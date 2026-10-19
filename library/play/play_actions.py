@@ -399,13 +399,13 @@ def process_playqueue(args) -> None:
                 if len(folder) == 1:
                     continue
 
-                for key in media_keyed:
+                for key, media_item in media_keyed.items():
                     if key in media_set:
                         continue
 
                     if os.sep not in key.replace(folder, "") and key.startswith(folder):
                         media_set.add(key)
-                        media.append(media_keyed[key])
+                        media.append(media_item)
             log.debug("double for loop compare_block_strings: %s", t.elapsed())
 
     if getattr(args, "exists", False):

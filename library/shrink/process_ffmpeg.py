@@ -10,6 +10,18 @@ from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 from library.utils.web import WebPath
 
+MAX_SUPPORTED_FPS = 240
+SBS_ASPECT_RATIO_MIN = 1.9
+SBS_ASPECT_RATIO_MAX = 2.1
+SBS_MIN_WIDTH = 4_500
+OU_ASPECT_RATIO_MIN = 0.9
+OU_ASPECT_RATIO_MAX = 1.1
+OU_MIN_HEIGHT = 2_600
+HIGH_AUDIO_BITRATE = 256_000
+HIGH_AUDIO_SAMPLE_RATE = 44_100
+MEDIUM_AUDIO_SAMPLE_RATE = 22_050
+MAX_DURATION_DIFFERENCE = 5.0
+
 
 def parse_args(defaults_override=None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.process_ffmpeg)
@@ -102,7 +114,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
 
     try:
         probe = processes.FFProbe(path)
-    except processes.UnplayableFile:
+    except processes.UnplayableFileError:
         if args.delete_unplayable:
             log.warning("Deleting unplayable (ffprobe): %s", path)
             path.unlink(missing_ok=True)
@@ -198,8 +210,8 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
             )
 
             video_filters = []
-            if probe.fps and probe.fps > 240:
-                log.info("fps>240 is not supported by AV1 and it seems suspect. Ignoring metadata %s", path)
+            if probe.fps and probe.fps > MAX_SUPPORTED_FPS:
+                log.info("fps>%s is not supported by AV1 and it seems suspect. Ignoring metadata %s", MAX_SUPPORTED_FPS, path)
                 frames = nums.safe_int(
                     processes.cmd(
                         "ffprobe",
@@ -232,9 +244,9 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
                 stereo_mode = "sbs"
             elif stereo_tag in {"top_bottom", "over_under", "tb", "ou"}:
                 stereo_mode = "ou"
-            elif 1.9 <= aspect_ratio <= 2.1 and width >= 4500:  # fallback to aspect ratio
+            elif SBS_ASPECT_RATIO_MIN <= aspect_ratio <= SBS_ASPECT_RATIO_MAX and width >= SBS_MIN_WIDTH:  # fallback to aspect ratio
                 stereo_mode = "sbs"
-            elif 0.9 <= aspect_ratio <= 1.1 and height >= 2600:
+            elif OU_ASPECT_RATIO_MIN <= aspect_ratio <= OU_ASPECT_RATIO_MAX and height >= OU_MIN_HEIGHT:
                 stereo_mode = "ou"
 
             if stereo_mode == "sbs":
@@ -300,14 +312,14 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
             else:
                 ff_opts.extend(["-ac", "2"])
 
-            if bitrate >= 256000:
+            if bitrate >= HIGH_AUDIO_BITRATE:
                 ff_opts.extend(["-b:a", "128k"])
             else:
                 ff_opts.extend(["-b:a", "64k", "-frame_duration", "40", "-apply_phase_inv", "0"])
 
-            if source_rate >= 44100:
+            if source_rate >= HIGH_AUDIO_SAMPLE_RATE:
                 opus_rate = 48000
-            elif source_rate >= 22050:
+            elif source_rate >= MEDIUM_AUDIO_SAMPLE_RATE:
                 opus_rate = 24000
             else:
                 opus_rate = 16000
@@ -492,7 +504,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
         except (TimeoutError, subprocess.TimeoutExpired):
             log.error("FFProbe timed out. %s", output_paths)
             transcode_invalid = True
-        except processes.UnplayableFile:
+        except processes.UnplayableFileError:
             transcode_invalid = True
         else:
             if any(not transcode_probe.streams for transcode_probe in transcode_probes):
@@ -503,7 +515,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
                 pass  # if the original file is broken but the transcode is somewhat valid, don't compare duration
             elif path_utils.ext(path).lower() in consts.SKIP_MEDIA_CHECK:
                 pass  # duration metadata for these source formats is usually incorrect
-            elif nums.percentage_difference(probe.duration, sum(p.duration for p in transcode_probes)) > 5.0:
+            elif nums.percentage_difference(probe.duration, sum(p.duration for p in transcode_probes)) > MAX_DURATION_DIFFERENCE:
                 transcode_invalid = True
     if transcode_invalid:
         delete_original = False

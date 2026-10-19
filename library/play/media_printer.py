@@ -10,6 +10,9 @@ from library.utils import arggroups, consts, db_utils, iterables, nums, printing
 from library.utils.consts import SC
 from library.utils.log_utils import log
 
+MAX_LOCAL_RESULTS = 50
+MAX_MISSING_LOCAL_PATHS = 2
+
 
 def filter_deleted(media):
     http_list = []
@@ -22,7 +25,7 @@ def filter_deleted(media):
             http_list.append(m)
             continue
 
-        if len(local_list) == 50 and len(nonexistent_local_paths) <= 2:
+        if len(local_list) == MAX_LOCAL_RESULTS and len(nonexistent_local_paths) <= MAX_MISSING_LOCAL_PATHS:
             return local_list + http_list + media[i:], nonexistent_local_paths
 
         if os.path.exists(path):

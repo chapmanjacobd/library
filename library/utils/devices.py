@@ -54,8 +54,11 @@ def clear_input() -> None:
             clear_input.getch()
 
 
-class InteractivePrompt(Exception):
+class InteractivePromptError(Exception):
     pass
+
+
+InteractivePrompt = InteractivePromptError
 
 
 def confirm(*args, **kwargs) -> bool:

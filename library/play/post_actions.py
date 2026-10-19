@@ -5,6 +5,11 @@ from library.database.manage import db_history, db_media
 from library.utils import devices, iterables, processes, shell_utils
 from library.utils.log_utils import log
 
+TRASH_DETACH_PATH_LIMIT = 30
+MAX_PLAYER_EXIT_CODE = 4
+UNPLAYABLE_EXIT_CODE = 2
+CONFIRM_EXIT_CODE = 4
+
 try:
     import tkinter  # noqa
 
@@ -50,7 +55,7 @@ def delete_media(args, paths) -> int:
         if getattr(args, "prefix", False):
             devices.unlink(args, p)
         else:
-            shell_utils.trash(args, p, detach=len(paths) < 30)
+            shell_utils.trash(args, p, detach=len(paths) < TRASH_DETACH_PATH_LIMIT)
 
     if not getattr(args, "simulate", False) and hasattr(args, "db") and args.db:
         return db_media.mark_media_deleted(args, paths)
@@ -148,14 +153,14 @@ def post_act(
     player_exit_code_cmd = f"cmd{player_exit_code}"
     external_cmd = getattr(args, player_exit_code_cmd, None)
 
-    if player_exit_code <= 4:
+    if player_exit_code <= MAX_PLAYER_EXIT_CODE:
         if player_exit_code == 0:
             pass
         elif player_exit_code in (1, 2, 3) and args.ignore_errors:
             pass
-        elif player_exit_code == 2 and args.delete_unplayable:  # https://mpv.io/manual/master/#exit-codes
+        elif player_exit_code == UNPLAYABLE_EXIT_CODE and args.delete_unplayable:  # https://mpv.io/manual/master/#exit-codes
             delete_media(args, [media_file])
-        elif player_exit_code == 4 and args.exit_code_confirm:
+        elif player_exit_code == CONFIRM_EXIT_CODE and args.exit_code_confirm:
             log.debug("exit_code_confirm and exit_code 4")
         else:
             processes.player_exit(player_process)

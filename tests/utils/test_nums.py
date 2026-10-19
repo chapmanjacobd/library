@@ -40,7 +40,7 @@ def test_human_to_bytes(human, b):
     ],
 )
 def test_human_to_bits(human, b):
-    assert nums.human_to_bytes(human, False) == b
+    assert nums.human_to_bytes(human, binary=False) == b
 
 
 def test_human_to_seconds():

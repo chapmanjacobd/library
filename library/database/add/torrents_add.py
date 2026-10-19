@@ -9,6 +9,8 @@ from library.utils.log_utils import log
 from library.utils.path_utils import tld_from_url
 from library.utils.shell_utils import trash
 
+MIN_PATHS_FOR_METADATA_ETA = 2
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_add)
@@ -179,7 +181,11 @@ def torrents_add():
                 known_hashes.add(torrent_info["info_hash"])
 
                 percent = (idx + 1) / num_paths * 100
-                eta = printing.eta(idx + 1, num_paths, start_time=start_time) if num_paths > 2 else ""
+                eta = (
+                    printing.eta(idx + 1, num_paths, start_time=start_time)
+                    if num_paths > MIN_PATHS_FOR_METADATA_ETA
+                    else ""
+                )
                 printing.print_overwrite(
                     f"[{torrent_info['path']}] Extracting metadata {idx + 1} of {num_paths} ({percent:3.1f}%) {eta}",
                     flush=True,

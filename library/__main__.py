@@ -8,6 +8,9 @@ from library.utils.log_utils import log
 
 from library.command_registry import COMMANDS
 
+MIN_CANONICAL_PATH_PARTS = 3
+MIN_NESTED_ARGV_LENGTH = 2
+
 
 progs = {
     "Media collection subcommands": {
@@ -372,7 +375,7 @@ def _nested_target(path: list[str]) -> tuple[str, int] | None:
 
     # Also accept compact spellings such as `db fs update` for `database update filesystem`
     # (the resource and the operation swapped), regardless of which group alias was used.
-    if len(canonical_path) >= 3:
+    if len(canonical_path) >= MIN_CANONICAL_PATH_PARTS:
         return _nested_target_canonical(
             [canonical_path[0], canonical_path[2], canonical_path[1], *canonical_path[3:]]
         )
@@ -475,9 +478,13 @@ def _canonical_target_paths() -> dict[str, str]:
         target = _nested_target(path.split())
         if target is not None:
             target_paths.setdefault(target[0], path)
-    for target, path in PREFERRED_NESTED_PATHS.items():
-        if _nested_target(path.split()) == (target, len(path.split())):
-            target_paths[target] = path
+    target_paths.update(
+        {
+            target: path
+            for target, path in PREFERRED_NESTED_PATHS.items()
+            if _nested_target(path.split()) == (target, len(path.split()))
+        }
+    )
     return target_paths
 
 
@@ -498,9 +505,11 @@ def _command_catalog() -> list[tuple[str, list[tuple[str, str]]]]:
                 else None
             )
             if canonical_path not in canonical_paths:
-                raise ValueError(f"Unknown canonical command path in {category}: {path}")
+                message = f"Unknown canonical command path in {category}: {path}"
+                raise ValueError(message)
             if canonical_path in seen:
-                raise ValueError(f"Duplicate canonical command path in {category}: {path}")
+                message = f"Duplicate canonical command path in {category}: {path}"
+                raise ValueError(message)
             seen.add(canonical_path)
             commands.append((canonical_path, description))
         if commands:
@@ -509,7 +518,8 @@ def _command_catalog() -> list[tuple[str, list[tuple[str, str]]]]:
     missing_paths = canonical_paths - seen
     if missing_paths:
         missing = ", ".join(sorted(missing_paths))
-        raise ValueError(f"Canonical command paths are not categorized: {missing}")
+        message = f"Canonical command paths are not categorized: {missing}"
+        raise ValueError(message)
 
     return grouped_commands
 
@@ -688,7 +698,7 @@ def _dispatch(args) -> None:
             if subcommand:
                 sys.argv[0] = f"library {subcommand}"
             sys.argv[1:] = args._nested_args
-        elif len(sys.argv) >= 2:
+        elif len(sys.argv) >= MIN_NESTED_ARGV_LENGTH:
             subcommand = sys.argv[1]
             del sys.argv[1]
             # Present flat aliases using their canonical v4 path in help output too

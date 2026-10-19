@@ -19,6 +19,8 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+MIN_COVER_COMMENT_LENGTH = 15
+
 
 def parse_args(usage, command=None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
@@ -134,7 +136,7 @@ def reformat_ffprobe(path):
         seen.add(value)
 
     comment = metadata.pop("comment", None) or ""
-    if len(comment) < 15 and "cover" in comment.lower():
+    if len(comment) < MIN_COVER_COMMENT_LENGTH and "cover" in comment.lower():
         comment = ""
     description = iterables.safe_unpack(
         metadata.pop("description", None),

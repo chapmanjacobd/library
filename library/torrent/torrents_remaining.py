@@ -10,6 +10,8 @@ from library.torrent import torrents_info
 from library.utils import arggroups, argparse_utils, consts, iterables, path_utils, printing, strings
 from library.utils.log_utils import log
 
+MAX_ETA_SECONDS = 8_640_000
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_remaining)
@@ -69,7 +71,7 @@ def torrents_remaining():
     for mountpoint, mountpoint_torrents in torrents_by_mountpoint.items():
         used = sum(t.total_size - t.amount_left for t in mountpoint_torrents)
         remaining = sum(t.amount_left for t in mountpoint_torrents)
-        etas = [t.eta for t in mountpoint_torrents if t.eta < 8640000]
+        etas = [t.eta for t in mountpoint_torrents if t.eta < MAX_ETA_SECONDS]
         wasted = sum(t.properties.total_wasted for t in mountpoint_torrents)
         dl_speed = sum(t.dlspeed for t in mountpoint_torrents if not t.state_enum.is_complete)
         dl_time = [t.downloading_time for t in mountpoint_torrents if t.state_enum.is_complete]

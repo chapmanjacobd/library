@@ -1,6 +1,7 @@
 import argparse, datetime, functools, http.cookiejar, json, os, pathlib, random, re, shutil, socket, sys, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from shutil import which
 from urllib.parse import parse_qs, parse_qsl, quote, urldefrag, urlencode, urljoin, urlparse, urlunparse
@@ -12,7 +13,7 @@ from idna import encode as puny_encode
 
 from library.data.http_errors import (
     HTTPStatus,
-    HTTPTooManyRequests,
+    HTTPTooManyRequestsError,
     RecoverableError,
     UnrecoverableError,
     raise_for_status,
@@ -26,6 +27,10 @@ warnings.filterwarnings("ignore", category=bs4.XMLParsedAsHTMLWarning)
 HTML_MIME_TYPES = ("text/html", "text/xhtml", "application/xhtml+xml")
 XML_MIME_TYPES = ("text/xml", "application/xml")
 INTERNET_ARCHIVE_NO_RETRIES = -1
+HTTP_NOT_FOUND = 404
+HTTP_PARTIAL_CONTENT = 206
+SMALL_DOWNLOAD_LIMIT = 5 * 1024 * 1024
+MIN_DETAILS_PATH_PARTS = 3
 
 session = None
 cookie_jar = None
@@ -150,8 +155,10 @@ def load_cookie_jar(args):
     return cookie_jar
 
 
-def requests_session(args=argparse.Namespace()):
-    global session, cookie_jar
+def requests_session(args=None):
+    global session
+    if args is None:
+        args = argparse.Namespace()
     load_cookie_jar(args)
 
     from yt_dlp.utils.networking import std_headers
@@ -238,7 +245,7 @@ class PartialContent:
                 session.get(self.url, stream=True) as r,
             ):
                 code = r.status_code
-                if code == 404:
+                if code == HTTP_NOT_FOUND:
                     log.warning("404 Not Found: %s", self.url)
                     return None
                 else:
@@ -704,7 +711,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
                     log.warning(f"Skipped download. File with same size already exists: {output_path}")
                     post_download(args)
                     return output_path
-                elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
+                elif local_size < SMALL_DOWNLOAD_LIMIT:  # TODO: check if first few kilobytes match what already exists locally...
                     p.unlink()
                 else:
                     log.warning(
@@ -713,7 +720,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
                     headers = {"Range": f"bytes={local_size}-"}
                     r.close()  # close previous session before opening a new one
                     r = session.get(url, headers=headers, stream=True)
-                    if r.status_code != 206:  # HTTP Partial Content
+                    if r.status_code != HTTP_PARTIAL_CONTENT:  # HTTP Partial Content
                         p.unlink()
                         r.close()  # close previous session before opening a new one
                         r = session.get(url, stream=True)
@@ -735,7 +742,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
                     raise RuntimeError(msg)
         except Exception as excinfo:
             r.close()
-            if isinstance(excinfo, HTTPTooManyRequests):
+            if isinstance(excinfo, HTTPTooManyRequestsError):
                 raise
             if isinstance(excinfo, OSError) and excinfo.errno in consts.EnvironmentErrors:
                 raise
@@ -800,7 +807,7 @@ def internet_archive_identifier(url: str) -> str | None:
         return None
 
     path_parts = parsed_url.path.split("/")
-    if len(path_parts) < 3 or path_parts[1].lower() != "details" or not path_parts[2]:
+    if len(path_parts) < MIN_DETAILS_PATH_PARTS or path_parts[1].lower() != "details" or not path_parts[2]:
         return None
 
     return urllib.parse.unquote(path_parts[2])
@@ -1046,7 +1053,6 @@ def re_trigger_input(driver):
 
 
 def selenium_get_page(args, url):
-    global cookie_jar
     load_cookie_jar(args)
 
     using_native_profile = bool(getattr(args, "user_data_dir", None))
@@ -1433,9 +1439,7 @@ class WebStatResult:
         self.st_atime = consts.now()
         self.st_mtime = (
             nums.safe_int(
-                datetime.datetime.strptime(
-                    response.headers.get("Last-Modified"), "%a, %d %b %Y %H:%M:%S %Z"
-                ).timestamp()
+                parsedate_to_datetime(response.headers.get("Last-Modified")).timestamp()
                 if response.headers.get("Last-Modified")
                 else None
             )

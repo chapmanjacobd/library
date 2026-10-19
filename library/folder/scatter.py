@@ -17,6 +17,9 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+MAX_REBINNED_TABLE_ROWS = 10
+MIN_TARGET_PATHS = 2
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.scatter)
@@ -356,7 +359,7 @@ def scatter() -> None:
         tbl = []
         for existing_path, new_path in rebinned:
             tbl.append({"existing_path": existing_path, "new_path": new_path})
-            if len(tbl) > 10:
+            if len(tbl) > MAX_REBINNED_TABLE_ROWS:
                 break
         tbl = printing.col_resize_percent(tbl, "existing_path", width=20)
         tbl = printing.col_resize_percent(tbl, "new_path", width=20)
@@ -375,7 +378,7 @@ def scatter() -> None:
         args.targets = args.relative_paths
         disk_stats = get_rel_stats(args.targets, files)
 
-    if len(disk_stats) < 2:
+    if len(disk_stats) < MIN_TARGET_PATHS:
         log.error(
             "\nThis tool does not make sense to use for only one path."
             " Define more paths or use the -m flag to define mountpoints which share the same subfolder (eg. mergerfs)",

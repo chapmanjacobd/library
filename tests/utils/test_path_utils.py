@@ -58,7 +58,7 @@ def test_clean_path():
 
 
 @mock.patch("library.utils.consts.random_string", return_value="abcdef")
-def test_random_filename(_mock_random_string):
+def test_random_filename(_mock_random_string):  # noqa: PT019 - patch injects a mock, not a fixture
     assert path_utils.random_filename("testfile.txt") == utils.p("testfile.abcdef.txt")
     assert path_utils.random_filename("/3_seconds_ago../Mike.webm") == utils.p("/3_seconds_ago../Mike.abcdef.webm")
     assert path_utils.random_filename("/test") == utils.p("/test.abcdef")

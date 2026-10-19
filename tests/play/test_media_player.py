@@ -143,7 +143,7 @@ class TestFs(unittest.TestCase):
         assert out is not None
 
     @mock.patch("library.play.media_player.single_player", return_value=SimpleNamespace(returncode=0))
-    def test_undelete(self, _play_mocked):
+    def test_undelete(self, _play_mocked):  # noqa: PT019 - patch injects a mock, not a fixture
         temp_dir = tempfile.TemporaryDirectory()
 
         t_db = str(Path(temp_dir.name, "test.db"))

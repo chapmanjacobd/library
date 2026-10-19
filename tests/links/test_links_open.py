@@ -22,7 +22,7 @@ def test_links_open(mock_souffle):
 
 @mock.patch("library.links.links_open.make_souffle")
 @mock.patch("library.links.links_open.play")
-def test_links_open_brackets(mock_play, mock_souffle, temp_db):
+def test_links_open_brackets(_mock_play, mock_souffle, temp_db):  # noqa: PT019 - patch injects a mock, not a fixture
     db_path = temp_db()
     url = "https://example.com/test?page[]=107"
     encoded_url = "https://example.com/test?page%5B%5D=107"

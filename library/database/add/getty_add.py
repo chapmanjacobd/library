@@ -62,7 +62,8 @@ def activity_stream_extract(args, json_data):
             elif type_ == "Update":
                 continue  # TODO: implement in-band Update mechanism
             elif type_ != "Create":
-                raise
+                message = f"Unsupported activity stream type: {type_}"
+                raise ValueError(message)
 
             obj_info = {
                 "path": obj.get("id"),
@@ -74,7 +75,7 @@ def activity_stream_extract(args, json_data):
                 print("item", item)
 
     else:
-        raise
+        raise ValueError("Activity stream page has no orderedItems")
 
     return data
 
@@ -98,7 +99,7 @@ def update_activity_stream(args):
             break
 
 
-def objects_extract(args, j):
+def objects_extract(_args, j):
     assert j["type"] == "HumanMadeObject"
 
     known_keys = set(

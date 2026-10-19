@@ -23,7 +23,6 @@ def parse_args() -> argparse.Namespace:
 
 def copy_play_count(args, source_db) -> None:
     s_db = db_utils.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
-    m_columns = s_db["media"].columns_dict
 
     copy_counts = list(
         s_db.query(

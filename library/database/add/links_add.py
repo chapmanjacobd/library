@@ -20,6 +20,9 @@ from library.utils import (
 )
 from library.utils.log_utils import log
 
+PAGE_DELAY_THRESHOLD = 3
+PLAYLIST_DELAY_THRESHOLD = 3
+
 
 def parse_args(action, **kwargs):
     parser = argparse_utils.ArgumentParser(**kwargs)
@@ -275,7 +278,7 @@ def extractor(args, playlist_path):
             break
 
         page_count += 1
-        if page_count > 3:
+        if page_count > PAGE_DELAY_THRESHOLD:
             time.sleep(random.uniform(0.3, 4.55))
 
         if (page_limit == 1 and args.page_start is None) or (page_value == (args.page_start or 0) == 0):
@@ -314,12 +317,16 @@ def extractor(args, playlist_path):
                 printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
             print(file=sys.stderr)
 
-            if not args.recursive and not (args.backfill_pages or args.fixed_pages):
-                if (args.stop_known and len(page_known) > args.stop_known) or (
-                    args.stop_new and args.stop_new >= len(page_new)
-                ):
-                    end_of_playlist = True
-                    break
+            if (
+                not args.recursive
+                and not (args.backfill_pages or args.fixed_pages)
+                and (
+                    (args.stop_known and len(page_known) > args.stop_known)
+                    or (args.stop_new and args.stop_new >= len(page_new))
+                )
+            ):
+                end_of_playlist = True
+                break
         except requests.HTTPError as excinfo:
             log.error(excinfo)
 
@@ -396,14 +403,12 @@ def links_add() -> None:
         if args.selenium:
             web.load_selenium(args)
         try:
-            playlist_count = 0
-            for playlist_path in shell_utils.gen_paths(args):
+            for playlist_count, playlist_path in enumerate(shell_utils.gen_paths(args)):
                 args.playlists_id = add_playlist(args, playlist_path)
                 extractor(args, playlist_path)
 
-                if playlist_count > 3:
+                if playlist_count > PLAYLIST_DELAY_THRESHOLD:
                     time.sleep(random.uniform(0.05, 2))
-                playlist_count += 1
 
         finally:
             if args.selenium:
@@ -427,8 +432,7 @@ def links_update() -> None:
         web.load_selenium(args)
 
     try:
-        playlist_count = 0
-        for playlist in link_playlists:
+        for playlist_count, playlist in enumerate(link_playlists):
             extractor_config = json.loads(playlist.get("extractor_config") or "{}")
             args_env = arg_utils.override_config(args, extractor_config)
 
@@ -439,9 +443,8 @@ def links_update() -> None:
             else:
                 db_playlists.update_less_frequently(args, playlist["path"], extractor_config)
 
-            if playlist_count > 3:
+            if playlist_count > PLAYLIST_DELAY_THRESHOLD:
                 time.sleep(random.uniform(0.05, 2))
-            playlist_count += 1
 
     finally:
         if selenium_needed:

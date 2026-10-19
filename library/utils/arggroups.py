@@ -1721,13 +1721,13 @@ _MEDIA_TYPE_FLAGS = {
 
 @functools.lru_cache(maxsize=1)
 def text_profile_available() -> bool:
-    """The `text` profile needs `textract` (pip install textract-py3)."""
+    """Check whether the `text` profile dependencies are available."""
     return importlib.util.find_spec("textract") is not None
 
 
 @functools.lru_cache(maxsize=1)
 def image_profile_available() -> bool:
-    """The `image` profile needs PyExifTool (pip install PyExifTool) and the `exiftool` binary."""
+    """Check whether the `image` profile dependencies are available."""
     return importlib.util.find_spec("exiftool") is not None and which("exiftool") is not None
 
 
@@ -1737,7 +1737,7 @@ def default_profile(command, fallback=None):
 
 
 def text_extensions(args) -> set:
-    """The extensions the `text` profile extracts from, including OCR/speech sources.
+    """Return extensions the `text` profile extracts from, including OCR/speech sources.
 
     Shared by the metadata extractor and the process-pool router so they cannot disagree.
     """

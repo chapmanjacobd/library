@@ -8,6 +8,8 @@ from library.utils import consts, db_utils, file_utils, iterables, processes
 from library.utils.log_utils import log
 from library.utils.objects import Reverser
 
+SORT_COLUMN_WITH_DIRECTION_PARTS = 2
+
 
 def sort_like_sql(order_bys: str):
     order_bys_list = [s.strip() for s in order_bys.split(",")]
@@ -233,8 +235,7 @@ def construct_search_bindings(include, exclude, columns, exact=False, flexible_s
         if include_sql_parts:
             sql.append("AND (" + " OR ".join(include_sql_parts) + ")")
     else:
-        for part in include_sql_parts:
-            sql.append("AND " + part)
+        sql.extend("AND " + part for part in include_sql_parts)
 
     excl = ":" + param_key + "exclude{0}"
     excludes = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in columns]) + ")"
@@ -390,7 +391,9 @@ def sort_items_by_criteria(args, items):
             reverse = parts[-1].lower() == "desc"
             key = normalize_key(parts[0])
 
-            if len(parts) == 1 or (len(parts) == 2 and parts[1].lower() in ("asc", "desc")):
+            if len(parts) == 1 or (
+                len(parts) == SORT_COLUMN_WITH_DIRECTION_PARTS and parts[1].lower() in ("asc", "desc")
+            ):
                 # simple column
                 if key.lower() == "random()":
                     value = random()

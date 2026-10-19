@@ -35,7 +35,7 @@ def rename_duplicate_columns(df):
 
     cols = pandas.Series(df.columns)
     for dup in cols[cols.duplicated()].unique():
-        cols[cols[cols == dup].index.values.tolist()] = [
+        cols[cols[cols == dup].index.to_numpy().tolist()] = [
             dup + "_" + str(i) if i != 0 else dup for i in range(sum(cols == dup))
         ]
     df.columns = cols
@@ -55,6 +55,8 @@ def available_name(df, column_name):
 
 def rank_dataframe(original_df, column_weights=None):
     """
+    Rank a DataFrame using weighted column directions.
+
     ranked_df = rank_dataframe(
         df,
         column_weights={

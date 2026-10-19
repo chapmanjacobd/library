@@ -20,6 +20,8 @@ from library.utils.consts import DBType, DLStatus, VideoArchiveError
 from library.utils.log_utils import Timer, log
 from library.utils.processes import FFProbe
 
+MAX_CORRUPTION_SCORE = 7
+
 yt_dlp = None
 yt_archive = set()
 
@@ -521,7 +523,6 @@ def download(args, m) -> bool:
 
     download_archive = Path(args.download_archive or "~/.local/share/yt_archive.txt").expanduser().resolve()
     if download_archive.exists() and not consts.PYTEST_RUNNING:
-        global yt_archive
         # ydl_opts["cookiesfrombrowser"] = ("firefox",)
         if len(yt_archive) == 0:
             with yt_dlp.utils.locked_file(str(download_archive), "r", encoding="utf-8") as archive_file:
@@ -616,7 +617,7 @@ def download(args, m) -> bool:
                 info["corruption"] = int(corruption * 100)
             except (RuntimeError, CalledProcessError, TimeoutError, subprocess.TimeoutExpired):
                 info["corruption"] = 50
-            if info["corruption"] > 7:
+            if info["corruption"] > MAX_CORRUPTION_SCORE:
                 media_check_failed = True
 
     if not (info and local_path and Path(local_path).exists()) or media_check_failed:

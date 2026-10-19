@@ -1,0 +1,1 @@
+"""Shrink tests."""

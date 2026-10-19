@@ -5,6 +5,8 @@ from pathlib import Path
 from library import usage
 from library.utils import arggroups, argparse_utils, consts, devices, iterables, printing, sqlgroups, strings
 
+MIN_PARENT_PATH_PARTS = 3
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.mv_list)
@@ -32,7 +34,7 @@ def group_by_folder(args, media) -> list[dict]:
             continue
 
         p = m["path"].split(os.sep)
-        while len(p) >= 3:
+        while len(p) >= MIN_PARENT_PATH_PARTS:
             p.pop()
             parent = os.sep.join(p) + os.sep
 

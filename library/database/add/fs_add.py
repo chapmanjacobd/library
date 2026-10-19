@@ -22,6 +22,10 @@ from library.utils import (
 from library.utils.consts import SC, DBType
 from library.utils.log_utils import log
 
+MIN_FILES_FOR_FTS = 2_000
+CHUNK_ETA_START_INDEX = 2
+MAX_FILES_BEFORE_OPTIMIZE = 100_000
+
 
 def parse_args(action, usage):
     parser = argparse_utils.ArgumentParser(usage=usage)
@@ -265,7 +269,7 @@ def scan_path(args, path_str: str) -> int:
         print(f"[{path}] Adding {len(new_files)} new media")
         # log.debug(new_files)
 
-        if len(new_files) > 2000 and not args.db["media"].detect_fts():
+        if len(new_files) > MIN_FILES_FOR_FTS and not args.db["media"].detect_fts():
             args.playlist_path = path
             m = extract_metadata(args, new_files.pop())
             while m is None:
@@ -301,7 +305,7 @@ def scan_path(args, path_str: str) -> int:
         try:
             for idx, chunk_paths in enumerate(files_chunked):
                 percent = (idx + 1) / chunks_count * 100
-                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if idx > 2 else ""
+                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if idx > CHUNK_ETA_START_INDEX else ""
                 printing.print_overwrite(
                     f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
                 )
@@ -321,15 +325,21 @@ def scan_path(args, path_str: str) -> int:
                 if thread_paths:
                     if thread_pool is None:
                         thread_pool = ThreadPoolExecutor(n_jobs)
-                    for p, m in zip(thread_paths, thread_pool.map(partial(extract_metadata, mp_args), thread_paths)):
-                        results[p] = m
+                    results.update(
+                        dict(zip(thread_paths, thread_pool.map(partial(extract_metadata, mp_args), thread_paths), strict=False))
+                    )
                 if process_paths:
                     if process_pool is None:
                         process_pool = ProcessPoolExecutor(n_jobs)
-                    for p, m in zip(
-                        process_paths, process_pool.map(partial(extract_metadata, mp_args), process_paths)
-                    ):
-                        results[p] = m
+                    results.update(
+                        dict(
+                            zip(
+                                process_paths,
+                                process_pool.map(partial(extract_metadata, mp_args), process_paths),
+                                strict=False,
+                            )
+                        )
+                    )
 
                 extract_chunk(args, iterables.conform([results.get(p) for p in chunk_paths]))
             print()
@@ -349,7 +359,7 @@ def extractor(args, paths) -> None:
 
     log.info("Imported %s paths", new_files)
 
-    if not args.db["media"].detect_fts() or new_files > 100000:
+    if not args.db["media"].detect_fts() or new_files > MAX_FILES_BEFORE_OPTIMIZE:
         db_utils.optimize(args)
 
 

@@ -19,8 +19,10 @@ from library.utils import (
 )
 from library.utils.log_utils import Timer, log
 
+MIN_CLUSTER_SIZE = 3
 
-def _parse_args(image: bool) -> argparse.Namespace:
+
+def _parse_args(*, image: bool) -> argparse.Namespace:
     usage_text = usage.cluster_images_sort if image else usage.cluster_sort
     parser = argparse_utils.ArgumentParser(usage=usage_text)
 
@@ -62,9 +64,9 @@ def map_and_name(paths, clusters):
     grouped_strings = map_cluster_to_paths(paths, clusters)
 
     result = []
-    for paths in grouped_strings.values():
-        paths = sorted(paths)
-        metadata = {"common_path": path_utils.common_path_full(paths), "grouped_paths": paths}
+    for grouped_paths in grouped_strings.values():
+        grouped_paths = sorted(grouped_paths)
+        metadata = {"common_path": path_utils.common_path_full(grouped_paths), "grouped_paths": grouped_paths}
         result.append(metadata)
     return result
 
@@ -152,7 +154,7 @@ def find_clusters(args, sentence_strings):
 
 
 def cluster_paths(args, paths):
-    if len(paths) < 3:
+    if len(paths) < MIN_CLUSTER_SIZE:
         return map_and_name(paths, range(len(paths)))
 
     sentence_strings = (strings.path_to_sentence(s) for s in paths)
@@ -170,7 +172,7 @@ def print_groups(groups):
 
 
 def sort_dicts(args, media):
-    if len(media) < 3:
+    if len(media) < MIN_CLUSTER_SIZE:
         return media
 
     search_columns = {
@@ -334,9 +336,9 @@ def filter_near_duplicates(groups: list[dict]) -> list[dict]:
                 continue
 
             is_duplicate = False
-            for prev in temp_groups.keys():
+            for prev, similar_paths in temp_groups.items():
                 if difflib.SequenceMatcher(None, curr, prev).ratio() > consts.DEFAULT_DIFFLIB_RATIO:
-                    temp_groups[prev].append(curr)
+                    similar_paths.append(curr)
                     is_duplicate = True
                     break
             if not is_duplicate:
@@ -350,7 +352,7 @@ def filter_near_duplicates(groups: list[dict]) -> list[dict]:
     return regrouped_data
 
 
-def _cluster_sort(args: argparse.Namespace, image: bool) -> None:
+def _cluster_sort(args: argparse.Namespace, *, image: bool) -> None:
     lines = args.input_path.readlines()
     args.input_path.close()
 

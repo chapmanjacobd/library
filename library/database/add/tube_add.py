@@ -8,6 +8,8 @@ from library.utils import arggroups, argparse_utils, consts, db_utils, shell_uti
 from library.utils.consts import DBType, SC
 from library.utils.log_utils import log
 
+MAX_PATHS_WITHOUT_FORCE = 9
+
 
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage)
@@ -67,7 +69,7 @@ def tube_add(args=None) -> None:
     else:
         paths = list(paths)
         known_playlists = set()
-        if not args.force and len(paths) > 9:
+        if not args.force and len(paths) > MAX_PATHS_WITHOUT_FORCE:
             known_playlists = db_media.get_paths(args)
 
         for path in paths:

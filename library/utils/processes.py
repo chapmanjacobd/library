@@ -8,6 +8,11 @@ from library.utils import consts, iterables, nums, path_utils, shell_utils, stri
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj
 
+FFPROBE_INTERRUPTED = -2
+FFPROBE_MISSING_LIBRARY = 127
+FFPROBE_TOO_MANY_FILES = -6
+FZF_CANCELLED = 130
+
 
 def exit_nicely(_signal, _frame) -> NoReturn:
     log.warning("\nExiting... (Ctrl+C)")
@@ -310,7 +315,7 @@ def load_or_install_modules(module_list):
             raise ImportError(message) from last_error
 
 
-class UnplayableFile(RuntimeError):
+class UnplayableFileError(RuntimeError):
     pass
 
 
@@ -350,14 +355,14 @@ class FFProbe:
         out, err = p.communicate(timeout=120)  # 2 mins
         if p.returncode != 0:
             log.info("ffprobe %s out %s error %s", p.returncode, out, err)
-            if p.returncode == -2:
+            if p.returncode == FFPROBE_INTERRUPTED:
                 raise KeyboardInterrupt
-            elif p.returncode == 127:  # Cannot open shared object file
+            elif p.returncode == FFPROBE_MISSING_LIBRARY:  # Cannot open shared object file
                 raise RuntimeError
-            elif p.returncode == -6:  # Too many open files
+            elif p.returncode == FFPROBE_TOO_MANY_FILES:  # Too many open files
                 raise OSError
             else:
-                raise UnplayableFile(out, err)
+                raise UnplayableFileError(out, err)
         d = strings.safe_json_loads(out.decode("utf-8"))
 
         self.path = path
@@ -679,7 +684,7 @@ def fzf_select(items, multi=True):
     try:
         result = subprocess.run(fzf_command, input=input_text, text=True, capture_output=True, check=True)
     except subprocess.CalledProcessError as excinfo:
-        if excinfo.returncode == 130:  # no selection
+        if excinfo.returncode == FZF_CANCELLED:  # no selection
             return []
         raise
 

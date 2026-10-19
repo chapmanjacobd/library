@@ -7,6 +7,8 @@ from library.utils import arggroups, argparse_utils, consts, nums, path_utils, p
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+MAX_DURATION_DIFFERENCE = 0.1
+
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.media_check)
@@ -137,7 +139,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
     except ZeroDivisionError:
         corruption = 0.5
 
-    if difference > 0.1:
+    if difference > MAX_DURATION_DIFFERENCE:
         log.info(
             f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s): {path}",
         )
@@ -145,7 +147,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
     return corruption
 
 
-def corruption_threshold_exceeded(threshold: bool | float, corruption, duration):
+def corruption_threshold_exceeded(*, threshold: bool | float, corruption, duration):
     if threshold:
         if threshold is True:
             threshold = 0.069
@@ -160,6 +162,7 @@ def corruption_threshold_exceeded(threshold: bool | float, corruption, duration)
 
 def calculate_corruption(
     path,
+    *,
     chunk_size=1,
     gap=0.1,
     full_scan=False,
@@ -183,7 +186,7 @@ def calculate_corruption(
             scan_duration=chunk_size,
             audio_scan=audio_scan,
         )
-        if corruption_threshold_exceeded(full_scan_if_corrupt, corruption, duration):
+        if corruption_threshold_exceeded(threshold=full_scan_if_corrupt, corruption=corruption, duration=duration):
             corruption = decode_full_scan(path, audio_scan=audio_scan, threads=threads)
     return corruption
 
@@ -219,7 +222,7 @@ def media_check() -> None:
             else:
                 duration = processes.FFProbe(path).duration
 
-                if corruption_threshold_exceeded(args.delete_corrupt, corruption, duration):
+                if corruption_threshold_exceeded(threshold=args.delete_corrupt, corruption=corruption, duration=duration):
                     threshold_str = (
                         strings.percent(args.delete_corrupt)
                         if 0 < args.delete_corrupt < 1

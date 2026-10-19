@@ -11,8 +11,8 @@ class MrSuperDialogue:
 
         self.action = None
 
-        def raise_error(_self, *_args):
-            raise  # pylint: disable=misplaced-bare-raise
+        def raise_error(_self, _exc_type, exc_value, traceback):
+            raise exc_value.with_traceback(traceback)
 
         Tk.report_callback_exception = raise_error
 
