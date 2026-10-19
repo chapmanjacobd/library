@@ -5,7 +5,6 @@ authors = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: End Users/Desktop",
-  "License :: OSI Approved :: BSD License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.12",
@@ -46,7 +45,8 @@ dependencies = [
 description = "xk media library"
 keywords = ["media", "library", "archive", "database", "ffmpeg", "yt-dlp", "mpv", "filesystem", "torrent"]
 version = "4.0.0"
-license = {file = "LICENSE"}
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 name = "library"
 readme = ".github/README.md"
 requires-python = ">=3.12"
