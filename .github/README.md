@@ -131,7 +131,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.0; 122 subcommands)
+    library (v4.0.0; 137 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
@@ -230,6 +230,8 @@ flat commands are now only reachable through a group (for example
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database stats                  │ Show some event statistics (created, deleted, watched, etc) │
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+    │ database stats words            │ Aggregate media size by words in paths                      │
+    ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database copy play-counts       │ Copy play history                                           │
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database dedupe media           │ Dedupe similar media                                        │
@@ -272,6 +274,10 @@ flat commands are now only reachable through a group (for example
     │ file compare               │ Compare files using sample-hash and other shortcuts                 │
     ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
     │ file similar               │ Find similar files based on filename and size                       │
+    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ file media-hash            │ Hash decoded audio/video streams with ffmpeg                        │
+    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ file media-compare         │ Compare decoded audio/video streams                                 │
     ╰────────────────────────────┴─────────────────────────────────────────────────────────────────────╯
 
     Filesystem inspection subcommands:
@@ -327,32 +333,54 @@ flat commands are now only reachable through a group (for example
     │ video extract keyframes │ Extract keyframes as video, images, or slow-motion video  │
     ╰─────────────────────────┴───────────────────────────────────────────────────────────╯
 
+    Video creation subcommands:
+    ╭────────────────────────┬─────────────────────────────────────────────────╮
+    │ video create slideshow │ Create a slideshow video, optionally with audio │
+    ├────────────────────────┼─────────────────────────────────────────────────┤
+    │ video concat           │ Concatenate videos with stream copying          │
+    ╰────────────────────────┴─────────────────────────────────────────────────╯
+
     Text processing subcommands:
-    ╭─────────────────────┬─────────────────────────────────────────────────╮
-    │ text convert        │ Convert Markdown and text-like documents to PDF │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text sort regex     │ Sort text by regex split and corpus comparison  │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text sort cluster   │ Sort text by similarity                         │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text extract        │ Extract human text from lists of web links      │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text markdown links │ Extract titles from lists of web links          │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text expand links   │ Expand search urls with query text              │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text combinations   │ Enumerate possible combinations                 │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text nouns          │ Unstructured text -> compound nouns (stdin)     │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text timestamps     │ Unstructured text -> timestamps                 │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text dates          │ Unstructured text -> dates                      │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ text times          │ Unstructured text -> times                      │
-    ├─────────────────────┼─────────────────────────────────────────────────┤
-    │ json rename-keys    │ Rename JSON keys by substring match             │
-    ╰─────────────────────┴─────────────────────────────────────────────────╯
+    ╭─────────────────────┬───────────────────────────────────────────────────╮
+    │ text border         │ Put text inside a simple border                   │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text clean          │ Clean pasted text and preserve Markdown structure │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text group          │ Group input lines by a regular expression         │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text interleave     │ Interleave lines from multiple inputs             │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text markdown       │ Convert simple HTML documents to Markdown         │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text convert        │ Convert Markdown and text-like documents to PDF   │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text sort regex     │ Sort text by regex split and corpus comparison    │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text sort cluster   │ Sort text by similarity                           │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text extract        │ Extract human text from lists of web links        │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text markdown links │ Extract titles from lists of web links            │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text expand links   │ Expand search urls with query text                │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text combinations   │ Enumerate possible combinations                   │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text nouns          │ Unstructured text -> compound nouns (stdin)       │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text timestamps     │ Unstructured text -> timestamps                   │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text dates          │ Unstructured text -> dates                        │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ text times          │ Unstructured text -> times                        │
+    ├─────────────────────┼───────────────────────────────────────────────────┤
+    │ json rename-keys    │ Rename JSON keys by substring match               │
+    ╰─────────────────────┴───────────────────────────────────────────────────╯
+
+    JSON processing subcommands:
+    ╭───────────────────┬──────────────────────────────────────────╮
+    │ json remove-nulls │ Remove null values recursively from JSON │
+    ╰───────────────────┴──────────────────────────────────────────╯
 
     Image processing subcommands:
     ╭────────────────────┬─────────────────────────────────────────────╮
@@ -377,19 +405,23 @@ flat commands are now only reachable through a group (for example
     ╰────────────────────────────────┴────────────────────────────────────────────────────╯
 
     Table analysis subcommands:
-    ╭────────────────┬──────────────────────────────────────────────────────╮
-    │ table analyze  │ Exploratory Data Analysis on table-like files        │
-    ├────────────────┼──────────────────────────────────────────────────────┤
-    │ table rank     │ Multi-criteria Ranking for Decision Support          │
-    ├────────────────┼──────────────────────────────────────────────────────┤
-    │ table plot     │ Plot table-like files. A CLI interface to matplotlib │
-    ├────────────────┼──────────────────────────────────────────────────────┤
-    │ table markdown │ Print markdown tables from table-like files          │
-    ├────────────────┼──────────────────────────────────────────────────────┤
-    │ table columns  │ Print columns of table-like files                    │
-    ├────────────────┼──────────────────────────────────────────────────────┤
-    │ table diff     │ Diff large table-like files in chunks                │
-    ╰────────────────┴──────────────────────────────────────────────────────╯
+    ╭────────────────────┬──────────────────────────────────────────────────────╮
+    │ table convert csv  │ Convert JSON data to CSV                             │
+    ├────────────────────┼──────────────────────────────────────────────────────┤
+    │ table convert json │ Convert CSV data to JSON                             │
+    ├────────────────────┼──────────────────────────────────────────────────────┤
+    │ table analyze      │ Exploratory Data Analysis on table-like files        │
+    ├────────────────────┼──────────────────────────────────────────────────────┤
+    │ table rank         │ Multi-criteria Ranking for Decision Support          │
+    ├────────────────────┼──────────────────────────────────────────────────────┤
+    │ table plot         │ Plot table-like files. A CLI interface to matplotlib │
+    ├────────────────────┼──────────────────────────────────────────────────────┤
+    │ table markdown     │ Print markdown tables from table-like files          │
+    ├────────────────────┼──────────────────────────────────────────────────────┤
+    │ table columns      │ Print columns of table-like files                    │
+    ├────────────────────┼──────────────────────────────────────────────────────┤
+    │ table diff         │ Diff large table-like files in chunks                │
+    ╰────────────────────┴──────────────────────────────────────────────────────╯
 
     Torrent subcommands:
     ╭────────────────────────┬───────────────────────────────────────────────────────╮
@@ -406,6 +438,10 @@ flat commands are now only reachable through a group (for example
     │ torrent remaining      │ Overview of torrents by mountpoint (qBittorrent-nox)  │
     ├────────────────────────┼───────────────────────────────────────────────────────┤
     │ torrent dump           │ Print torrent file info                               │
+    ├────────────────────────┼───────────────────────────────────────────────────────┤
+    │ torrent match          │ Match files on disk against torrent piece hashes      │
+    ├────────────────────────┼───────────────────────────────────────────────────────┤
+    │ torrent audit          │ Find qBittorrent duplicate and orphan files           │
     ╰────────────────────────┴───────────────────────────────────────────────────────╯
 
     Database updating subcommands:
@@ -2223,6 +2259,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### database stats words
+
+<details><summary>Aggregate media size by words in paths</summary>
+
+    $ library database stats words -h
+    usage: library database stats words DATABASE [TABLE]
+
+    Aggregate media size and count by words found in path names.
+
+        library database stats words video.db
+        library database stats words video.db media
+
+
+</details>
+
 ###### database copy play-counts
 
 <details><summary>Copy play history</summary>
@@ -2885,6 +2936,31 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     How I use it
         library file similar --filter-names --filter-durations --estimated-duplicates 3 .
+
+
+</details>
+
+###### file media-hash
+
+<details><summary>Hash decoded audio/video streams with ffmpeg</summary>
+
+    $ library file media-hash -h
+    usage: library file media-hash PATH ...
+
+    Hash decoded audio/video streams with ffmpeg's framemd5 muxer.
+
+
+</details>
+
+###### file media-compare
+
+<details><summary>Compare decoded audio/video streams</summary>
+
+    $ library file media-compare -h
+    usage: library file media-compare PATH PATH [PATH ...]
+
+    Compare decoded audio/video streams. Exit with status 1 when any media
+    differs.
 
 
 </details>
@@ -3552,7 +3628,131 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
+### Video creation subcommands
+
+###### video create slideshow
+
+<details><summary>Create a slideshow video, optionally with audio</summary>
+
+    $ library video create slideshow -h
+    usage: library video create slideshow [IMAGE ...] [--audio AUDIO] [--audio-duration | --loop-images | --hold-last-image | --loop-audio] [--picture-time SECONDS] [--crossfade-time SECONDS] [--output OUTPUT.mp4]
+
+    Create an H.264 slideshow from images, preserving natural sort order:
+
+        library video create slideshow ./photos/ --output slideshow.mp4
+        library video create slideshow --picture-time 4 --crossfade-time 0.5 *.jpg
+
+    Add one or more audio tracks and choose how the image and audio durations interact.
+    Repeat --audio to concatenate tracks, or pass a directory to include its audio files
+    in natural sort order:
+
+        library video create slideshow --audio music.m4a --audio-duration ./photos/
+        library video create slideshow --audio intro.m4a --audio main.m4a ./photos/
+        library video create slideshow --audio ./music/ ./photos/
+        library video create slideshow --audio music.m4a --loop-images --picture-time 5 ./photos/
+        library video create slideshow --audio music.m4a --hold-last-image --picture-time 5 ./photos/
+        library video create slideshow --audio music.m4a --loop-audio --picture-time 5 ./photos/
+
+    Audio can be filtered, images can be shuffled deterministically, and the output fit
+    or motion effect can be selected:
+
+        library video create slideshow --audio music.m4a --audio-fade-in 2 --audio-fade-out 3 --audio-volume 0.8 ./photos/
+        library video create slideshow --shuffle --seed 42 --fit crop --motion ken-burns ./photos/
+
+    With no images, the audio track gets a black background:
+
+        library video create slideshow song.m4a
+        library video create slideshow --audio song.m4a --width 1920 --height 1080
+
+
+</details>
+
+###### video concat
+
+<details><summary>Concatenate videos with stream copying</summary>
+
+    $ library video concat -h
+    usage: library video concat OUTPUT INPUT ...
+
+    Concatenate media files with FFmpeg stream copying. Inputs should have compatible
+    streams and codecs:
+
+        library video concat joined.mp4 part-01.mp4 part-02.mp4
+
+
+</details>
+
 ### Text processing subcommands
+
+###### text border
+
+<details><summary>Put text inside a simple border</summary>
+
+    $ library text border -h
+    usage: library text border [TEXT ...] [--char CHARACTER] [--padding N]
+
+    Print text inside a simple border. With no TEXT, read from stdin:
+
+        library text border "Important note"
+        printf 'Piped text' | library text border
+
+
+</details>
+
+###### text clean
+
+<details><summary>Clean pasted text and preserve Markdown structure</summary>
+
+    $ library text clean -h
+    usage: library text clean [INPUT_FILE] [--strip-chars CHARACTERS] [--min-blank-lines N]
+
+    Clean pasted text by removing separator characters, joining wrapped lines,
+    and preserving Markdown list items:
+
+        xclip -o | library text clean
+        library text clean notes.txt --min-blank-lines 2
+
+
+</details>
+
+###### text group
+
+<details><summary>Group input lines by a regular expression</summary>
+
+    $ library text group -h
+    usage: library text group PATTERN [PATH ...]
+
+    Group input lines by a regular-expression match. Capture groups are joined
+    to form the group key; unmatched lines are placed in a separate group.
+
+
+</details>
+
+###### text interleave
+
+<details><summary>Interleave lines from multiple inputs</summary>
+
+    $ library text interleave -h
+    usage: library text interleave [PATH ...]
+
+    Interleave lines from multiple files. With no paths, read one stream from stdin.
+    Missing lines from shorter inputs are omitted.
+
+
+</details>
+
+###### text markdown
+
+<details><summary>Convert simple HTML documents to Markdown</summary>
+
+    $ library text markdown -h
+    usage: library text markdown [PATH ...]
+
+    Convert simple HTML documents to readable Markdown. Read stdin when no
+    paths are given.
+
+
+</details>
 
 ###### text convert
 
@@ -3806,6 +4006,21 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
+### JSON processing subcommands
+
+###### json remove-nulls
+
+<details><summary>Remove null values recursively from JSON</summary>
+
+    $ library json remove-nulls -h
+    usage: library json remove-nulls [PATH] [--indent N]
+
+    Remove null values recursively from JSON objects and arrays.
+    --indent is only supported for a single JSON document, not JSONL input.
+
+
+</details>
+
 ### Image processing subcommands
 
 ###### image convert
@@ -3954,6 +4169,37 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 </details>
 
 ### Table analysis subcommands
+
+###### table convert csv
+
+<details><summary>Convert JSON data to CSV</summary>
+
+    $ library table convert csv -h
+    usage: library table convert csv [JSON_FILE] [FIELD ...] [--keep-only]
+
+    Convert a JSON list, JSONL stream, or dictionary of lists to CSV:
+
+        cat records.json | library table convert csv
+        library table convert csv records.json id name
+        library table convert csv --keep-only id name < records.json
+
+
+</details>
+
+###### table convert json
+
+<details><summary>Convert CSV data to JSON</summary>
+
+    $ library table convert json -h
+    usage: library table convert json [CSV_FILE] [--header] [--column-names NAME,...]
+
+    Convert CSV input to a JSON list:
+
+        library table convert json --header records.csv
+        library table convert json --column-names id,name < records.csv
+
+
+</details>
 
 ###### table analyze
 
@@ -4350,6 +4596,41 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Aggregate torrent metadata by tracker domain:
 
         library torrent dump --trackers PATH ...
+
+
+</details>
+
+###### torrent match
+
+<details><summary>Match files on disk against torrent piece hashes</summary>
+
+    $ library torrent match -h
+    usage: library torrent match TORRENT_DIRECTORY SEARCH_DIRECTORY ...
+
+    Match files on disk against torrent piece hashes. Files are indexed by size
+    first, then checked against pieces that are wholly contained in each torrent
+    file. Partial boundary pieces are reported as unchecked.
+
+        library torrent match ~/.local/data/qbittorrent/queue/ /mnt/d/library/
+
+    Use --min-pieces to require more than one matching piece.
+
+
+</details>
+
+###### torrent audit
+
+<details><summary>Find qBittorrent duplicate and orphan files</summary>
+
+    $ library torrent audit -h
+    usage: library torrent audit [--exclude PATH ...]
+
+    Audit qBittorrent's referenced files against the filesystem. Report files
+    referenced by multiple torrents and files under torrent roots that are not
+    referenced by any torrent.
+
+        library torrent audit
+        library torrent audit --exclude /mnt/archive
 
 
 </details>

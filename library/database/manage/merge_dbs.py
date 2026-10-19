@@ -87,10 +87,18 @@ def merge_db(args, source_db) -> None:
 
         data = s_db[table].rows_where(where=" AND ".join(args.where) if args.where else None)
         data = ({k: v for k, v in d.items() if k in selected_columns} for d in data)
+        last_row = None
+
+        def tracked_rows(rows=data):
+            nonlocal last_row
+            for row in rows:
+                last_row = row
+                yield row
+
         with args.db.conn:
             try:
                 args.db[table].insert_all(
-                    data,
+                    tracked_rows(),
                     alter=True,
                     ignore=args.ignore,
                     replace=not args.ignore,
@@ -100,7 +108,7 @@ def merge_db(args, source_db) -> None:
             except sqlite3.IntegrityError as err:
                 log.error("Bulk insert failed for table %s: %s", table, err.sqlite_errorname)
 
-                d = next(data)
+                d = last_row
                 if d:
                     expected_types = {
                         col.name: col.type.upper() if col.type else "UNKNOWN" for col in args.db[table].columns

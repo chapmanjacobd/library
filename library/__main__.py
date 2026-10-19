@@ -58,6 +58,7 @@ progs = {
         "database history": "Show and manage playback history",
         "database history add": "Add history from paths",
         "database stats": "Show some event statistics (created, deleted, watched, etc)",
+        "database stats words": "Aggregate media size by words in paths",
         "database copy play-counts": "Copy play history",
         "database dedupe media": "Dedupe similar media",
         "file dedupe czkawka": "Process czkawka diff output",
@@ -80,6 +81,8 @@ progs = {
         "file hash": "Calculate a hash based on small file segments",
         "file compare": "Compare files using sample-hash and other shortcuts",
         "file similar": "Find similar files based on filename and size",
+        "file media-hash": "Hash decoded audio/video streams with ffmpeg",
+        "file media-compare": "Compare decoded audio/video streams",
     },
     "Filesystem inspection subcommands": {
         "filesystem list": "Find files by mimetype and size",
@@ -109,7 +112,16 @@ progs = {
         "video extract scenes": "Extract scene changes as video, images, or contact sheets",
         "video extract keyframes": "Extract keyframes as video, images, or slow-motion video",
     },
+    "Video creation subcommands": {
+        "video create slideshow": "Create a slideshow video, optionally with audio",
+        "video concat": "Concatenate videos with stream copying",
+    },
     "Text processing subcommands": {
+        "text border": "Put text inside a simple border",
+        "text clean": "Clean pasted text and preserve Markdown structure",
+        "text group": "Group input lines by a regular expression",
+        "text interleave": "Interleave lines from multiple inputs",
+        "text markdown": "Convert simple HTML documents to Markdown",
         "text convert": "Convert Markdown and text-like documents to PDF",
         "text sort regex": "Sort text by regex split and corpus comparison",
         "text sort cluster": "Sort text by similarity",
@@ -122,6 +134,9 @@ progs = {
         "text dates": "Unstructured text -> dates",
         "text times": "Unstructured text -> times",
         "json rename-keys": "Rename JSON keys by substring match",
+    },
+    "JSON processing subcommands": {
+        "json remove-nulls": "Remove null values recursively from JSON",
     },
     "Image processing subcommands": {
         "image convert": "Convert images and comic archives into PDFs",
@@ -136,6 +151,8 @@ progs = {
         "database import places": "Import places of interest (POIs)",
     },
     "Table analysis subcommands": {
+        "table convert csv": "Convert JSON data to CSV",
+        "table convert json": "Convert CSV data to JSON",
         "table analyze": "Exploratory Data Analysis on table-like files",
         "table rank": "Multi-criteria Ranking for Decision Support",
         "table plot": "Plot table-like files. A CLI interface to matplotlib",
@@ -151,6 +168,8 @@ progs = {
         "torrent start": "Start torrents (qBittorrent-nox)",
         "torrent remaining": "Overview of torrents by mountpoint (qBittorrent-nox)",
         "torrent dump": "Print torrent file info",
+        "torrent match": "Match files on disk against torrent piece hashes",
+        "torrent audit": "Find qBittorrent duplicate and orphan files",
     },
     "Database updating subcommands": {
         "database update filesystem": "Update local media",
@@ -221,6 +240,8 @@ modules = {
     "library.file.sample_compare.sample_compare": ["cmp"],
     "library.file.sample_hash.sample_hash": ["hash", "hash-file"],
     "library.file.similar_files.similar_files": [],
+    "library.file.media_compare.media_hash": [],
+    "library.file.media_compare.media_compare": [],
     "library.folder.move_list.move_list": ["mv-list"],
     "library.folder.merge_mv.merge_mv": ["mv"],
     "library.folder.merge_mv.merge_cp": ["cp"],
@@ -245,6 +266,7 @@ modules = {
     "library.database.manage.history.history": ["hi", "log"],
     "library.database.manage.history_add.history_add": ["add-history"],
     "library.database.manage.stats.stats": [],
+    "library.database.manage.stats_words.stats_words": [],
     "library.database.manage.optimize_db.optimize_db": ["optimize"],
     "library.database.manage.playlists.playlists": ["pl"],
     "library.download.redownload.redownload": ["re-dl", "re-download"],
@@ -254,6 +276,8 @@ modules = {
     "library.video.extract.extract_subtitles": [],
     "library.video.extract.extract_scenes": [],
     "library.video.extract.extract_keyframes": [],
+    "library.video.create.images_to_video": [],
+    "library.video.create.video_concat": [],
     "library.shrink.process_media.process_media": [],
     "library.shrink.process_ffmpeg.process_ffmpeg": ["process-video", "video-process"],
     "library.shrink.process_ffmpeg.process_audio": ["audio-process"],
@@ -288,7 +312,11 @@ modules = {
     "library.tabs.tabs_open.tabs_open": ["tb", "open_tabs"],
     "library.torrent.torrents_info.torrents_info": ["torrent-info"],
     "library.torrent.torrents_remaining.torrents_remaining": ["torrent-remaining"],
+    "library.torrent.torrent_match.torrent_match": [],
+    "library.torrent.torrent_audit.torrent_audit": [],
     "library.table.eda.eda": ["preview"],
+    "library.table.convert.json_to_csv": [],
+    "library.table.convert.csv_to_json": [],
     "library.table.incremental_diff.incremental_diff": ["diff"],
     "library.table.columns.columns": [],
     "library.table.markdown_tables.markdown_tables": [],
@@ -297,6 +325,11 @@ modules = {
     "library.shrink.process_table.process_table": [],
     "library.text.cluster_sort.cluster_images_sort": ["cluster-images"],
     "library.text.cluster_sort.cluster_sort": ["cs"],
+    "library.text.filters.border": [],
+    "library.text.filters.clean": [],
+    "library.text.stream_tools.group_lines": [],
+    "library.text.stream_tools.interleave_lines": [],
+    "library.text.markdown.markdown": [],
     "library.text.regex_sort.regex_sort": ["rs", "resort"],
     "library.links.extract_links.extract_links": ["links_extract"],
     "library.links.extract_links.links_download": [],
@@ -308,6 +341,7 @@ modules = {
     "library.text.timestamps.times": ["time"],
     "library.text.timestamps.timestamps": ["timestamp", "datetime"],
     "library.json.json_keys_rename.json_keys_rename": [],
+    "library.json.transform.remove_nulls": [],
     "library.text.combinations.combinations": ["combos"],
     "library.text.convert.text_convert": [],
 }
@@ -371,7 +405,7 @@ NESTED_COMMANDS = {
         "download": {"_target": "download-database", "status": "download-status", "block": "block"},
         "history": {"_target": "history", "add": "history-add"},
         "playlists": "playlists",
-        "stats": "stats",
+        "stats": {"_target": "stats", "words": "stats-words"},
         "redownload": "redownload",
     },
     "shrink": {
@@ -383,6 +417,10 @@ NESTED_COMMANDS = {
         "table": "process-table",
     },
     "video": {
+        "create": {
+            "slideshow": "images-to-video",
+        },
+        "concat": "video-concat",
         "extract": {
             "audio": "extract-audio",
             "subtitles": "extract-subtitles",
@@ -399,6 +437,8 @@ NESTED_COMMANDS = {
         "start": "torrents-start",
         "remaining": "torrents-remaining",
         "dump": "torrents-dump",
+        "match": "torrent-match",
+        "audit": "torrent-audit",
     },
     "links": {
         "open": "links-open",
@@ -411,6 +451,10 @@ NESTED_COMMANDS = {
     },
     "table": {
         "analyze": "eda",
+        "convert": {
+            "csv": "json-to-csv",
+            "json": "csv-to-json",
+        },
         "markdown": "markdown-tables",
         "columns": "columns",
         "plot": "plot",
@@ -434,6 +478,8 @@ NESTED_COMMANDS = {
         "hash": "sample-hash",
         "compare": "sample-compare",
         "similar": "similar-files",
+        "media-hash": "media-hash",
+        "media-compare": "media-compare",
         "normalize": "christen",
         "check": "media-check",
         "dedupe": {"czkawka": "czkawka-dedupe"},
@@ -452,14 +498,24 @@ NESTED_COMMANDS = {
         },
     },
     "document": {"convert": "document-convert", "pdf": {"header": "pdf-header"}, "adjust": {"pdf": "pdf-edit"}},
-    "json": {"rename-keys": "json-keys-rename"},
+    "json": {
+        "rename-keys": "json-keys-rename",
+        "remove-nulls": "remove-nulls",
+    },
     "archive": {"extract": "unardel"},
     "help": {"search": "search-help"},
     "text": {
+        "border": "border",
+        "clean": "clean",
+        "group": "group-lines",
+        "interleave": "interleave-lines",
+        "markdown": {
+            "_target": "markdown",
+            "links": "markdown-links",
+        },
         "convert": "text-convert",
         "extract": "extract-text",
         "sort": {"regex": "regex-sort", "cluster": "cluster-sort"},
-        "markdown": {"links": "markdown-links"},
         "expand": {"links": "expand-links"},
         "nouns": "nouns",
         "dates": "dates",
@@ -482,6 +538,10 @@ NESTED_COMMAND_ALIASES = {
     "ls": "list",
     "explore": "analyze",
     "web": "open-directory",
+}
+
+NESTED_PATH_ALIASES = {
+    ("video", "create", "images"): ("video", "create", "slideshow"),
 }
 
 for _group in NESTED_COMMANDS:
@@ -577,15 +637,25 @@ def _nested_target_canonical(path: list[str]) -> tuple[str, int] | None:
     return None
 
 
+def _canonical_nested_path(path: list[str]) -> tuple[str, ...]:
+    if not path:
+        return ()
+    canonical_path = (
+        NESTED_GROUP_ALIASES.get(path[0], path[0]),
+        *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]],
+    )
+    for alias, target in NESTED_PATH_ALIASES.items():
+        if canonical_path[: len(alias)] == alias:
+            return (*target, *canonical_path[len(alias) :])
+    return canonical_path
+
+
 def _nested_target(path: list[str]) -> tuple[str, int] | None:
     if not path:
         return None
 
-    canonical_path = [
-        NESTED_GROUP_ALIASES.get(path[0], path[0]),
-        *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]],
-    ]
-    target = _nested_target_canonical(canonical_path)
+    canonical_path = _canonical_nested_path(path)
+    target = _nested_target_canonical(list(canonical_path))
     if target is not None:
         return target
 
@@ -619,13 +689,13 @@ def _invalid_nested_path(group: str, path: list[str]) -> list[str] | None:
     if not isinstance(command_tree, dict) or not path:
         return None
 
-    canonical_path = [group, *[NESTED_COMMAND_ALIASES.get(part, part) for part in path[1:]]]
+    canonical_path = _canonical_nested_path([group, *path[1:]])
     current = command_tree
     for index, part in enumerate(canonical_path[1:], start=1):
         if part in {"-h", "--help"}:
             return None
         if not isinstance(current, dict) or part not in current:
-            return canonical_path[: index + 1]
+            return list(canonical_path[: index + 1])
         current = current[part]
         if isinstance(current, str):
             return None
@@ -641,10 +711,10 @@ def _nested_tree_node(path: list[str]) -> tuple[tuple[str, ...], object] | None:
     if command_tree is None:
         return None
 
+    canonical_path = _canonical_nested_path([group, *path[1:]])
     current = command_tree
     prefix = []
-    for part in path[1:]:
-        part = NESTED_COMMAND_ALIASES.get(part, part)
+    for part in canonical_path[1:]:
         if not isinstance(current, dict) or part not in current:
             return None
         current = current[part]
@@ -852,6 +922,8 @@ def command_usage(command: str) -> str:
             "playback_pause": "pause",
             "pushshift_extract": "pushshift",
             "czkawka_dedupe": "dedupe_czkawka",
+            "border": "text_border",
+            "clean": "text_clean",
         }
         usage_value = getattr(usage_mod, usage_aliases.get(function_name, function_name), "")
 

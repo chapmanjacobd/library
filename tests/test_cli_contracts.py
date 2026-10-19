@@ -621,6 +621,19 @@ def test_torrent_allocation_is_nested_under_torrent():
     assert _nested_target(["database", "allocate", "torrents"]) is None
 
 
+def test_database_stats_words_is_nested_under_stats():
+    assert _nested_target(["database", "stats", "words"]) == ("stats-words", 3)
+
+
+def test_video_audio_creation_is_not_a_command():
+    assert _nested_target(["video", "create", "audio"]) is None
+
+
+def test_torrent_match_and_audit_are_nested_under_torrent():
+    assert _nested_target(["torrent", "match"]) == ("torrent-match", 2)
+    assert _nested_target(["torrent", "audit"]) == ("torrent-audit", 2)
+
+
 def test_json_key_renaming_is_nested_under_json():
     assert _nested_target(["json", "rename-keys"]) == ("json-keys-rename", 2)
     assert _nested_target(["text", "rename-keys", "json"]) is None

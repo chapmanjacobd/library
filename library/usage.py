@@ -121,6 +121,14 @@ stats = """library database stats DATABASE TIME_COLUMN
         14 media
 """
 
+stats_words = """library database stats words DATABASE [TABLE]
+
+    Aggregate media size and count by words found in path names.
+
+        library database stats words video.db
+        library database stats words video.db media
+"""
+
 download = r"""library download [PATH ...] [--db DATABASE] [--prefix /mnt/d/] [--media-type {auto,video,audio,image,text,filesystem}] [--safe]
 
     Download the given URLs. Files are saved to <prefix>/<extractor>/. The default prefix is
@@ -2096,6 +2104,78 @@ process_table = """library shrink table PATH ... [--output-path OUTPUT.parquet]
         library shrink table data.csv
         library shrink table workbook.xlsx --join-tables --compression zstd
 """
+
+images_to_video = """library video create slideshow [IMAGE ...] [--audio AUDIO] [--audio-duration | --loop-images | --hold-last-image | --loop-audio] [--picture-time SECONDS] [--crossfade-time SECONDS] [--output OUTPUT.mp4]
+
+    Create an H.264 slideshow from images, preserving natural sort order:
+
+        library video create slideshow ./photos/ --output slideshow.mp4
+        library video create slideshow --picture-time 4 --crossfade-time 0.5 *.jpg
+
+    Add one or more audio tracks and choose how the image and audio durations interact.
+    Repeat --audio to concatenate tracks, or pass a directory to include its audio files
+    in natural sort order:
+
+        library video create slideshow --audio music.m4a --audio-duration ./photos/
+        library video create slideshow --audio intro.m4a --audio main.m4a ./photos/
+        library video create slideshow --audio ./music/ ./photos/
+        library video create slideshow --audio music.m4a --loop-images --picture-time 5 ./photos/
+        library video create slideshow --audio music.m4a --hold-last-image --picture-time 5 ./photos/
+        library video create slideshow --audio music.m4a --loop-audio --picture-time 5 ./photos/
+
+    Audio can be filtered, images can be shuffled deterministically, and the output fit
+    or motion effect can be selected:
+
+        library video create slideshow --audio music.m4a --audio-fade-in 2 --audio-fade-out 3 --audio-volume 0.8 ./photos/
+        library video create slideshow --shuffle --seed 42 --fit crop --motion ken-burns ./photos/
+
+    With no images, the audio track gets a black background:
+
+        library video create slideshow song.m4a
+        library video create slideshow --audio song.m4a --width 1920 --height 1080
+"""
+
+video_concat = """library video concat OUTPUT INPUT ...
+
+    Concatenate media files with FFmpeg stream copying. Inputs should have compatible
+    streams and codecs:
+
+        library video concat joined.mp4 part-01.mp4 part-02.mp4
+"""
+
+json_to_csv = """library table convert csv [JSON_FILE] [FIELD ...] [--keep-only]
+
+    Convert a JSON list, JSONL stream, or dictionary of lists to CSV:
+
+        cat records.json | library table convert csv
+        library table convert csv records.json id name
+        library table convert csv --keep-only id name < records.json
+"""
+
+csv_to_json = """library table convert json [CSV_FILE] [--header] [--column-names NAME,...]
+
+    Convert CSV input to a JSON list:
+
+        library table convert json --header records.csv
+        library table convert json --column-names id,name < records.csv
+"""
+
+text_border = """library text border [TEXT ...] [--char CHARACTER] [--padding N]
+
+    Print text inside a simple border. With no TEXT, read from stdin:
+
+        library text border "Important note"
+        printf 'Piped text' | library text border
+"""
+
+text_clean = """library text clean [INPUT_FILE] [--strip-chars CHARACTERS] [--min-blank-lines N]
+
+    Clean pasted text by removing separator characters, joining wrapped lines,
+    and preserving Markdown list items:
+
+        xclip -o | library text clean
+        library text clean notes.txt --min-blank-lines 2
+"""
 computers_add = """library database add computers DATABASE HOSTNAME ...
 
     Create a SQLite database of SSH-able computers and their disks (nodes are playlists, node disks are media)
@@ -2141,6 +2221,27 @@ torrents_dump = """library torrent dump [--trackers] PATH ...
     Aggregate torrent metadata by tracker domain:
 
         library torrent dump --trackers PATH ...
+"""
+
+torrent_match = """library torrent match TORRENT_DIRECTORY SEARCH_DIRECTORY ...
+
+    Match files on disk against torrent piece hashes. Files are indexed by size
+    first, then checked against pieces that are wholly contained in each torrent
+    file. Partial boundary pieces are reported as unchecked.
+
+        library torrent match ~/.local/data/qbittorrent/queue/ /mnt/d/library/
+
+    Use --min-pieces to require more than one matching piece.
+"""
+
+torrent_audit = """library torrent audit [--exclude PATH ...]
+
+    Audit qBittorrent's referenced files against the filesystem. Report files
+    referenced by multiple torrents and files under torrent roots that are not
+    referenced by any torrent.
+
+        library torrent audit
+        library torrent audit --exclude /mnt/archive
 """
 
 torrents_info = """library torrent info
