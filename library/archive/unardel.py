@@ -83,17 +83,14 @@ def replace_media_paths(media, path_updates):
                 (index, update)
                 for index, update in enumerate(path_updates)
                 if index not in applied_updates
-                and (
-                    path == os.fspath(update["path"])
-                    or path.startswith(os.fspath(update["path"]).rstrip(os.sep) + os.sep)
-                )
+                and _is_path_prefix(path, os.fspath(update["path"]))
             ]
             if not matches:
                 break
 
             index, match = max(matches, key=lambda pair: len(os.fspath(pair[1]["path"])))
             update_path = os.fspath(match["path"])
-            new_path = os.fspath(match["new_path"]) + path[len(update_path) :]
+            new_path = os.fspath(match["new_path"]) + path[len(update_path.rstrip("/\\")) :]
             if new_path in seen_paths:
                 break
             applied_updates.add(index)
@@ -101,6 +98,15 @@ def replace_media_paths(media, path_updates):
             seen_paths.add(path)
         updated_media.append({**item, "path": path} if path != item["path"] else item)
     return updated_media
+
+
+def _is_path_prefix(path: str, prefix: str) -> bool:
+    prefix = prefix.rstrip("/\\")
+    if not prefix:
+        return path.startswith(("/", "\\"))
+    if path == prefix:
+        return True
+    return len(path) > len(prefix) and path.startswith(prefix) and path[len(prefix)] in "/\\"
 
 
 def _extracted_media(output_paths, existing_paths, path_updates):

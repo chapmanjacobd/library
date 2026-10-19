@@ -33,10 +33,11 @@ def group_by_folder(args, media) -> list[dict]:
         if m["path"].startswith("http"):
             continue
 
-        p = m["path"].split(os.sep)
+        path_separator = os.sep if os.sep in m["path"] or not os.altsep else os.altsep
+        p = m["path"].split(path_separator)
         while len(p) >= MIN_PARENT_PATH_PARTS:
             p.pop()
-            parent = os.sep.join(p) + os.sep
+            parent = path_separator.join(p) + path_separator
 
             if d.get(parent):
                 d[parent]["size"] += m["size"]

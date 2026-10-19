@@ -7,6 +7,10 @@ from library.__main__ import library as lb
 from library.video import create
 
 
+def concat_path(path):
+    return str(path.resolve()).replace("\\", "\\\\").replace("'", "'\\''")
+
+
 def fake_ffmpeg(monkeypatch):
     commands = []
 
@@ -194,7 +198,7 @@ def test_images_to_video_holds_last_image_until_audio_ends(monkeypatch, tmp_path
 
     assert len(commands) == 1
     assert list_contents[0].count("file ") == 8
-    assert list_contents[0].count(str(second)) == 7
+    assert list_contents[0].count(concat_path(second)) == 7
 
 
 def test_images_to_video_loops_audio_and_applies_audio_options(monkeypatch, tmp_path):
@@ -274,7 +278,7 @@ def test_images_to_video_shuffles_with_seed_and_applies_stretch(monkeypatch, tmp
     assert "scale=1280:720,format=yuv420p" in commands[0][commands[0].index("-vf") + 1]
     shuffled = natsorted(paths)
     random.Random(42).shuffle(shuffled)
-    assert list_contents[0].splitlines()[0].endswith(f"{shuffled[0]}'")
+    assert list_contents[0].splitlines()[0].endswith(f"{concat_path(shuffled[0])}'")
 
 
 def test_images_to_video_builds_ken_burns_motion(monkeypatch, tmp_path):
