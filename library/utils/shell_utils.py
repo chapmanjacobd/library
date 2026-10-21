@@ -103,10 +103,12 @@ def rglob(
     exclude: Iterable[str] | None = None,
     include: Iterable[str] | None = None,
     quiet=False,
+    exclude_dirs: Iterable[str] | None = None,
 ) -> tuple[set[str], set[str], set[str]]:
     base_dir_print = str(base_dir).encode("utf-8", errors="replace").decode("utf-8")
     if extensions is not None:
         extensions = tuple(f".{ext.lstrip('.')}" for ext in extensions)
+    exclude_dir_patterns = [*(exclude or ()), *(exclude_dirs or ())]
 
     files = set()
     filtered_files = set()
@@ -117,7 +119,9 @@ def rglob(
         current_dir = stack.pop()
         for entry in scandir_entries(current_dir):
             if entry.is_dir(follow_symlinks=False):
-                if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                if exclude_dir_patterns and any(
+                    entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude_dir_patterns
+                ):
                     filtered_folders.add(entry.path)
                     continue
                 if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
@@ -160,9 +164,11 @@ def rglob_gen(
     extensions: Iterable[str] | None = None,
     exclude: Iterable[str] | None = None,
     include: Iterable[str] | None = None,
+    exclude_dirs: Iterable[str] | None = None,
 ):
     if extensions is not None:
         extensions = tuple(f".{ext.lstrip('.')}" for ext in extensions)
+    exclude_dir_patterns = [*(exclude or ()), *(exclude_dirs or ())]
 
     folders = set()
     stack = [base_dir]
@@ -170,7 +176,9 @@ def rglob_gen(
         current_dir = stack.pop()
         for entry in scandir_entries(current_dir):
             if entry.is_dir(follow_symlinks=False):
-                if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                if exclude_dir_patterns and any(
+                    entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude_dir_patterns
+                ):
                     continue
                 if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
                     continue
@@ -222,7 +230,12 @@ def gen_paths(args, default_exts=None):
                     yield path
                 else:
                     if is_dir:
-                        yield from rglob(path, args.ext or default_exts, getattr(args, "exclude", None))[0]
+                        yield from rglob(
+                            path,
+                            args.ext or default_exts,
+                            getattr(args, "exclude", None),
+                            exclude_dirs=getattr(args, "exclude_dirs", None),
+                        )[0]
                     else:
                         yield path
 
@@ -249,7 +262,12 @@ def gen_d(args, default_exts=None):
                     yield {"path": path}
                 else:
                     if is_dir:
-                        for sp in rglob(str(path), args.ext or default_exts, getattr(args, "exclude", None))[0]:
+                        for sp in rglob(
+                            str(path),
+                            args.ext or default_exts,
+                            getattr(args, "exclude", None),
+                            exclude_dirs=getattr(args, "exclude_dirs", None),
+                        )[0]:
                             yield {"path": sp}
                     else:
                         yield {"path": path}

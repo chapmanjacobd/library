@@ -13,6 +13,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")
     parser.add_argument(
+        "--mojibake",
+        action="store_true",
+        help="Fix incorrectly decoded Unicode in file and folder names",
+    )
+    parser.add_argument(
         "--dedupe-parts",
         "--dedupe",
         action="store_true",
@@ -38,6 +43,7 @@ def rename_path(args, base, b) -> None:
         case_insensitive=args.case_insensitive,
         lowercase_folders=args.lowercase_folders,
         dedupe_parts=args.dedupe_parts,
+        fix_mojibake=args.mojibake,
     )
 
     if b != fixed.encode():

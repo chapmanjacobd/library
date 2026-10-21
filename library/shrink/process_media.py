@@ -128,21 +128,52 @@ def collect_media(args) -> list[dict]:
     )
 
     if args.database:
-        db_history.create(args)
-
-        if not args.ext:
-            or_conditions = [f"m.path like '%.{ext}'" for ext in default_exts]
-            args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
-
-        try:
-            media = list(args.db.query(*sqlgroups.media_sql(args)))
-        except sqlite3.OperationalError:
-            media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
+        media = collect_database_media(args, default_exts)
     else:
         media = shell_utils.gen_d(args, default_exts)
 
         media = filter_engine.filter_items_by_criteria(args, media)
         media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
+    return media
+
+
+def collect_database_media(args, default_exts) -> list[dict]:
+    db_history.create(args)
+
+    if not args.ext:
+        or_conditions = [f"m.path like '%.{ext}'" for ext in default_exts]
+        args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
+
+    fetch_all_for_processed = args.processed is not None
+    requested_limit = args.limit
+    requested_offset = args.offset
+    media = filter_engine.query_db_for_filters(
+        args,
+        lambda query_args: (
+            sqlgroups.media_sql(query_args)
+            if query_args.database
+            else sqlgroups.fs_sql(query_args, query_args.limit)
+        ),
+        fetch_all=fetch_all_for_processed,
+    )
+    try:
+        media = list(args.db.query(*media))
+    except sqlite3.OperationalError:
+        media = list(
+            args.db.query(
+                *filter_engine.query_db_for_filters(
+                    args,
+                    lambda query_args: sqlgroups.fs_sql(query_args, query_args.limit),
+                    fetch_all=fetch_all_for_processed,
+                )
+            )
+        )
+    media = filter_engine.filter_processed(args, media)
+    if fetch_all_for_processed:
+        if requested_offset:
+            media = media[requested_offset:]
+        if requested_limit:
+            media = media[:requested_limit]
     return media
 
 

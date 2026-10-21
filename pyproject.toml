@@ -66,6 +66,7 @@ deluxe = [
   "geopandas",
   "img2pdf",
   "internetarchive",
+  "numpy",
   "ocrmypdf",
   "openpyxl",
   "paramiko",

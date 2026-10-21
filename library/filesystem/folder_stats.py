@@ -199,6 +199,7 @@ def can_use(args) -> bool:
             "group_by_size",
             "include",
             "exclude",
+            "exclude_dirs",
             "where",
             "offset",
             "only_deleted",

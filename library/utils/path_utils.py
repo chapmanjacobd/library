@@ -44,10 +44,14 @@ def deduplicate_path_parts(parts):
 
 
 def clean_path(
-    b, max_name_len=255, dot_space=False, case_insensitive=False, lowercase_folders=False, dedupe_parts=False
+    b,
+    max_name_len=255,
+    dot_space=False,
+    case_insensitive=False,
+    lowercase_folders=False,
+    dedupe_parts=False,
+    fix_mojibake=False,
 ) -> str:
-    import ftfy
-
     p = b.decode("utf-8", "backslashreplace")
     path = Path(p)
     ext = path.suffix
@@ -64,14 +68,15 @@ def clean_path(
     stem = strings.clean_string(path.stem)
     # log.debug("cleaned %s %s", parent, stem)
 
-    parent = [ftfy.fix_text(s, explain=False) for s in parent]
-    stem = ftfy.fix_text(stem, explain=False)
-    # log.debug("ftfy %s %s", parent, stem)
+    if fix_mojibake:
+        import ftfy
 
-    # clean any downcasted chars
-    parent = [strings.clean_string(part) for part in path.parent.parts]
-    stem = strings.clean_string(path.stem)
-    # log.debug("cleaned %s %s", parent, stem)
+        parent = [ftfy.fix_text(part, explain=False) for part in parent]
+        stem = ftfy.fix_text(stem, explain=False)
+
+        parent = [strings.clean_string(part) for part in path.parent.parts]
+        stem = strings.clean_string(path.stem)
+        # log.debug("cleaned %s %s", parent, stem)
 
     parent = [strings.remove_prefixes(part, [" ", "-"]) for part in parent]
     # log.debug("parent_prefixes %s %s", parent, stem)

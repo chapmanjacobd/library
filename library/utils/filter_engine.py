@@ -4,6 +4,7 @@ from pathlib import Path
 from random import random
 from typing import Any
 
+from library.file import processed
 from library.utils import consts, db_utils, file_utils, iterables, processes
 from library.utils.log_utils import log
 from library.utils.objects import Reverser
@@ -57,6 +58,10 @@ def media_select_sql(args, m_columns):
         if "duration" in args.select:
             args.select.remove("duration")
         args.select += ["cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"]
+    if getattr(args, "processed", None) is not None:
+        args.select += [
+            c for c in ("video_count", "video_codecs", "audio_count", "audio_codecs") if c in m_columns and c not in args.select
+        ]
 
     if not args.select:
         processes.exit_error("No columns to query. No table in sqlite file?")
@@ -373,6 +378,27 @@ def filter_mimetype(args, files):
     return files
 
 
+def filter_processed(args, items: list[dict]) -> list[dict]:
+    processed_filter = getattr(args, "processed", None)
+    if processed_filter is None:
+        return items
+    return [item for item in items if processed.is_processed(item) == processed_filter]
+
+
+def query_db_for_filters(args, db_sql_func: Any, *, fetch_all: bool):
+    requested_limit = getattr(args, "limit", None)
+    requested_offset = getattr(args, "offset", None)
+    if fetch_all:
+        args.limit = None
+        args.offset = None
+    try:
+        return db_sql_func(args)
+    finally:
+        if fetch_all:
+            args.limit = requested_limit
+            args.offset = requested_offset
+
+
 def sort_items_by_criteria(args, items):
     def normalize_key(key: str) -> str:
         """Remove table prefixes like m.path -> path."""
@@ -427,6 +453,7 @@ def filter_items_by_criteria(args, items):
             items = file_utils.get_files_stats(items)
 
     items = filter_mimetype(args, items)
+    items = filter_processed(args, items)
 
     if getattr(args, "time_created", []):
         items = [d if "time_created" in d else file_utils.get_file_stats(d) for d in items]
@@ -469,9 +496,14 @@ class FilterEngine:
         if self.args.database:
             if db_sql_func is None:
                 raise ValueError("db_sql_func is required when using database")
-            query, bindings = db_sql_func(self.args)
+
+            fetch_all_for_processed = getattr(self.args, "processed", None) is not None
+            requested_limit = getattr(self.args, "limit", None)
+            requested_offset = getattr(self.args, "offset", None)
+            query, bindings = query_db_for_filters(self.args, db_sql_func, fetch_all=fetch_all_for_processed)
             items = list(self.args.db.query(query, bindings))
             items = filter_mimetype(self.args, items)
+            items = filter_processed(self.args, items)
 
             if not items and getattr(self.args, "include", None) and self.args.db["media"].detect_fts():
                 flat_include = [i for inc in self.args.include for i in (inc if isinstance(inc, list) else [inc])]
@@ -488,9 +520,17 @@ class FilterEngine:
                     ).fetchone()[0]
                     if like_count > 0:
                         db_utils.rebuild_fts(self.args.db)
-                        query, bindings = db_sql_func(self.args)
+                        query, bindings = query_db_for_filters(
+                            self.args, db_sql_func, fetch_all=fetch_all_for_processed
+                        )
                         items = list(self.args.db.query(query, bindings))
                         items = filter_mimetype(self.args, items)
+                        items = filter_processed(self.args, items)
+            if fetch_all_for_processed:
+                if requested_offset:
+                    items = items[requested_offset:]
+                if requested_limit:
+                    items = items[:requested_limit]
         else:
             if fs_gen_func is None:
                 raise ValueError("fs_gen_func is required when not using database")

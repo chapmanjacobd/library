@@ -1,4 +1,4 @@
-import argparse, shlex, tempfile
+import argparse, shlex, shutil, tempfile
 from pathlib import Path
 
 from library.utils import arggroups, argparse_utils, consts, devices, processes, shell_utils
@@ -36,7 +36,7 @@ USAGE = {
         library video extract scenes --images video.mp4
         library video extract scenes --contact-sheet video.mp4
 """,
-    "extract_keyframes": """library video extract keyframes PATH ... [--mode {video,images,slow}]
+    "extract_keyframes": """library video extract keyframes PATH ... [--mode {video,images,slow}] [--sort-similarity]
 
     Keep only keyframes in a stream-copy output:
 
@@ -46,6 +46,10 @@ USAGE = {
 
         library video extract keyframes --images video.mp4
         library video extract keyframes --slow video.mp4
+
+    Sort keyframes by visual similarity before creating a video:
+
+        library video extract keyframes --sort-similarity video.mp4
 """,
 }
 
@@ -170,7 +174,9 @@ def _video_probe(path: Path):
 
 def parse_audio_args() -> argparse.Namespace:
     parser = _base_parser(USAGE["extract_audio"])
-    parser.add_argument("--all-audio", action="store_true", help="Extract every audio stream instead of the default one")
+    parser.add_argument(
+        "--all-audio", action="store_true", help="Extract every audio stream instead of the default one"
+    )
     parser.add_argument(
         "--delete",
         "--delete-original",
@@ -350,7 +356,39 @@ def parse_keyframes_args() -> argparse.Namespace:
     mode.add_argument("--images", dest="mode", action="store_const", const="images")
     mode.add_argument("--slow", dest="mode", action="store_const", const="slow")
     parser.add_argument("--slow-factor", type=float, default=8, help="Slow-motion factor (default: 8)")
-    return _parse(parser)
+    parser.add_argument(
+        "--sort-similarity",
+        "--similarity-sort",
+        "--visual-similarity",
+        "--sort",
+        dest="sort_similarity",
+        action="store_true",
+        help="Sort keyframes by visual similarity before creating the output video",
+    )
+    parser.add_argument(
+        "--sort-neighbors",
+        "--n-neighbors",
+        dest="sort_neighbors",
+        type=int,
+        default=200,
+        help="Number of nearest neighbors considered by visual similarity sorting (default: 200)",
+    )
+    parser.add_argument(
+        "--sort-trees",
+        "--tree-count",
+        dest="sort_trees",
+        type=int,
+        default=30,
+        help="Number of Annoy trees used by visual similarity sorting (default: 30)",
+    )
+    args = _parse(parser)
+    if args.sort_neighbors < 1:
+        parser.error("--sort-neighbors must be at least 1")
+    if args.sort_trees < 1:
+        parser.error("--sort-trees must be at least 1")
+    if args.sort_similarity and args.mode != "video":
+        parser.error("--sort-similarity is only supported with video keyframe output")
+    return args
 
 
 def _keyframe_base_command(source: Path) -> list[str]:
@@ -410,6 +448,97 @@ def _slow_keyframe_commands(source: Path, destination: str, slow_factor: float, 
     return [first_command, second_command]
 
 
+def _load_similarity_tools():
+    try:
+        import numpy as np
+        from annoy import AnnoyIndex
+        from PIL import Image
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "Visual-similarity sorting requires the optional numpy, annoy, and Pillow dependencies"
+        ) from exc
+    return np, AnnoyIndex, Image
+
+
+def _frame_vector(path: Path, np, image_library):
+    with image_library.open(path) as image:
+        image = image.resize((64, 64)).convert("L")
+        return np.array(image).flatten().astype("float32") / 255.0
+
+
+def similarity_order(vectors, annoy_index, n_neighbors: int, tree_count: int) -> list[int]:
+    if not vectors:
+        return []
+
+    index = annoy_index(len(vectors[0]), "angular")
+    for item, vector in enumerate(vectors):
+        index.add_item(item, vector)
+    index.build(tree_count)
+
+    current = 0
+    order = [current]
+    visited = {current}
+    while len(order) < len(vectors):
+        neighbors = index.get_nns_by_item(current, min(n_neighbors, len(vectors)), include_distances=True)[0]
+        next_item = next((item for item in neighbors if item not in visited), None)
+        if next_item is None:
+            next_item = next(item for item in range(len(vectors)) if item not in visited)
+        order.append(next_item)
+        visited.add(next_item)
+        current = next_item
+    return order
+
+
+def _sorted_keyframe_video_command(frame_pattern: str, destination: str) -> list[str]:
+    return [
+        "ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "warning",
+        "-y",
+        "-framerate",
+        "3",
+        "-i",
+        frame_pattern,
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-crf",
+        "20",
+        destination,
+    ]
+
+
+def _sort_keyframes_by_similarity(args, source: Path, destination: str) -> None:
+    destination_path = Path(destination)
+    if args.simulate:
+        frame_pattern = str(destination_path.parent / f".{destination_path.stem}.keyframe.%05d.png")
+        _run(_keyframe_image_command(source, frame_pattern), args)
+        _run(_sorted_keyframe_video_command(frame_pattern, destination), args)
+        return
+
+    np, annoy_index, image_library = _load_similarity_tools()
+    with tempfile.TemporaryDirectory(prefix=".library-keyframes-", dir=str(destination_path.parent)) as temp_dir:
+        temp_path = Path(temp_dir)
+        frame_pattern = str(temp_path / "frame_%05d.png")
+        _run(_keyframe_image_command(source, frame_pattern), args)
+        frame_paths = sorted(temp_path.glob("frame_*.png"))
+        if not frame_paths:
+            message = f"FFmpeg produced no keyframes for {source}"
+            raise RuntimeError(message)
+
+        vectors = [_frame_vector(path, np, image_library) for path in frame_paths]
+        order = similarity_order(vectors, annoy_index, args.sort_neighbors, args.sort_trees)
+        sorted_pattern = temp_path / "sorted_frame_%05d.png"
+        for output_index, frame_index in enumerate(order):
+            output_path = temp_path / f"sorted_frame_{output_index:05d}.png"
+            shutil.copyfile(frame_paths[frame_index], output_path)
+
+        _run(_sorted_keyframe_video_command(str(sorted_pattern), destination), args)
+
+
 def _run_slow_keyframes(args, source: Path, destination: str) -> None:
     if args.simulate:
         for command in _slow_keyframe_commands(source, destination, args.slow_factor, "KEYFRAMES.mkv"):
@@ -436,18 +565,22 @@ def extract_keyframes() -> None:
         default_names = {
             "images": f"{source.stem}.%05d.jpg",
             "slow": f"{source.stem}.keys.mkv",
-            "video": f"{source.stem}.quickkeys.mkv",
+            "video": f"{source.stem}.{'sortedkeys.mp4' if args.sort_similarity else 'quickkeys.mkv'}",
         }
         default_name = default_names[args.mode]
 
         destination = _destination(args, source, default_name, len(paths))
         if args.mode == "images" and "%" not in destination.name:
             destination = destination.with_name(f"{destination.stem}.%05d{destination.suffix}")
+        if args.sort_similarity and "%" in destination.name:
+            raise ValueError("--sort-similarity requires a single output path")
         destination_str = _prepare_destination(args, destination)
         if destination_str is None:
             continue
 
-        if args.mode == "images":
+        if args.sort_similarity:
+            _sort_keyframes_by_similarity(args, source, destination_str)
+        elif args.mode == "images":
             _run(_keyframe_image_command(source, destination_str), args)
         elif args.mode == "video":
             _run(_keyframe_video_command(source, destination_str), args)

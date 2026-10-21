@@ -107,3 +107,52 @@ def test_extract_keyframes_modes(fake_media, command, expected):
     lb(["video", "extract", "keyframes", *command, str(source)])
 
     assert any(expected in " ".join(map(str, item)) for item in commands)
+
+
+def test_extract_keyframes_similarity_sort_reuses_output_verification(fake_media, monkeypatch):
+    source, _commands = fake_media
+    destination = source.with_name("sorted.mp4")
+    calls = []
+
+    def fake_sort(args, path, output):
+        calls.append((args.sort_similarity, path, output))
+        Path(output).write_bytes(b"sorted")
+
+    monkeypatch.setattr(extract, "_sort_keyframes_by_similarity", fake_sort)
+
+    lb(["video", "extract", "keyframes", "--sort-similarity", str(source), "--output", str(destination)])
+
+    assert calls == [(True, source, str(destination))]
+    assert destination.read_bytes() == b"sorted"
+
+
+def test_extract_keyframes_similarity_sort_simulation_does_not_need_optional_dependencies(fake_media, capsys):
+    source, _commands = fake_media
+
+    lb(["video", "extract", "keyframes", "--sort-similarity", "--simulate", str(source)])
+
+    output = capsys.readouterr().out
+    assert "ffmpeg" in output
+    assert "sortedkeys.mp4" in output
+
+
+def test_similarity_order_follows_mocked_annoy_neighbors():
+    class FakeAnnoyIndex:
+        def __init__(self, _dimensions, _metric):
+            self.items = []
+
+        def add_item(self, item, _vector):
+            self.items.append(item)
+
+        def build(self, trees):
+            assert trees == 3
+
+        def get_nns_by_item(self, item, _count, include_distances):
+            assert include_distances
+            return {
+                0: ([0, 2, 1], []),
+                2: ([2, 1, 0], []),
+                1: ([1, 0, 2], []),
+            }[item]
+
+    assert extract.similarity_order(["a", "b", "c"], FakeAnnoyIndex, 2, 3) == [0, 2, 1]

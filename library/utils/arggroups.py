@@ -278,6 +278,15 @@ def database_paths_post(args, *, legacy_database=False):
         args.paths = argparse_utils.read_stdin(getattr(args, "prog", None))
 
 
+def add_processed_filter(parent_parser):
+    parent_parser.add_argument(
+        "--processed",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Filter media by processed status (AV1 video, Opus audio, AVIF, SRT, or VTT)",
+    )
+
+
 def sql_fs(parent_parser):
     parse_fs = parent_parser.add_argument_group("FileSystemDB SQL")
     parse_fs.add_argument(
@@ -3260,6 +3269,7 @@ def qBittorrent_torrents_post(args):
 
 
 def files(parent_parser, no_db=False):
+    add_processed_filter(parent_parser)
     parse_fs = parent_parser.add_argument_group("Files")
     # parse_fs.add_argument("--errored", action=argparse.BooleanOptionalAction, help="Include files with read errors")
     # parse_fs.add_argument(

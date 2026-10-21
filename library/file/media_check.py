@@ -1,8 +1,10 @@
+import argparse
 import fractions, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from shutil import which
 
 from library import usage
+from library.file import io_check
 from library.utils import arggroups, argparse_utils, consts, nums, path_utils, printing, processes, shell_utils, strings
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
@@ -11,6 +13,12 @@ MAX_DURATION_DIFFERENCE = 0.1
 
 
 def parse_args():
+    mode_parser = argparse.ArgumentParser(add_help=False)
+    io_check.add_filesystem_arg(mode_parser)
+    mode_args, _unknown = mode_parser.parse_known_args()
+    if mode_args.filesystem:
+        return io_check.parse_args()
+
     parser = argparse_utils.ArgumentParser(usage=usage.media_check)
     arggroups.capability_delete(parser)
     arggroups.media_check(parser)
@@ -193,6 +201,9 @@ def calculate_corruption(
 
 def media_check() -> None:
     args = parse_args()
+    if getattr(args, "filesystem", False):
+        return io_check.io_check(args)
+
     paths = list(gen_paths(args))
 
     with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else args.threads) as pool:

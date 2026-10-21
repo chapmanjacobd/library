@@ -303,3 +303,20 @@ def test_rglob_warns_and_skips_eio(caplog):
     assert files == {"/base/root.txt", "/base/good_dir/nested.txt"}
     assert folders == {"/base/good_dir", "/base/bad_dir"}
     assert "Skipping folder /base/bad_dir" in caplog.text
+
+
+def test_rglob_excludes_directories_only(tmp_path):
+    excluded = tmp_path / "excluded"
+    excluded.mkdir()
+    (excluded / "nested.txt").write_text("excluded")
+    (tmp_path / "excluded.txt").write_text("included")
+    included = tmp_path / "included"
+    included.mkdir()
+    (included / "excluded.txt").write_text("included")
+
+    files, filtered_files, folders = shell_utils.rglob(tmp_path, exclude_dirs=["excluded"], quiet=True)
+
+    assert files == {str(tmp_path / "excluded.txt"), str(included / "excluded.txt")}
+    assert not filtered_files
+    assert folders == {str(included)}
+    assert str(excluded) not in folders

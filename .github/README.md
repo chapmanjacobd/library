@@ -131,7 +131,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.1; 137 subcommands)
+    library (v4.0.1; 144 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
@@ -232,6 +232,10 @@ flat commands are now only reachable through a group (for example
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database stats words            │ Aggregate media size by words in paths                      │
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+    │ database stats schema           │ Show SQLite table, column, index, and storage statistics    │
+    ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+    │ database tail                   │ Watch a SQLite database for newly appended rows             │
+    ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database copy play-counts       │ Copy play history                                           │
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database dedupe media           │ Dedupe similar media                                        │
@@ -242,64 +246,72 @@ flat commands are now only reachable through a group (for example
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database enrich reddit-selftext │ Copy selftext links to media table                          │
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+    │ database enrich imdb            │ Enrich media metadata from cached IMDb datasets             │
+    ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database export html            │ Export HTML files from SQLite databases                     │
     ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
     │ database optimize               │ Re-optimize database                                        │
     ╰─────────────────────────────────┴─────────────────────────────────────────────────────────────╯
 
     File and folder subcommands:
-    ╭────────────────────────────┬─────────────────────────────────────────────────────────────────────╮
-    │ folder merge move          │ Move files and merge folders in BSD/rsync style, rename if possible │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder merge copy          │ Copy files and merge folders                                        │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder merge relative-move │ Move files while preserving relative paths                          │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder merge relative-copy │ Copy files while preserving relative paths                          │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder copy mergerfs       │ cp files with reflink on mergerfs                                   │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder move list           │ Find specific folders to move to different disks                    │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder large               │ Show large folders                                                  │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder scatter             │ Scatter files between folders or disks                              │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ folder similar             │ Find similar folders based on folder name, size, and count          │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ file normalize             │ Clean file paths                                                    │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ file hash                  │ Calculate a hash based on small file segments                       │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ file compare               │ Compare files using sample-hash and other shortcuts                 │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ file similar               │ Find similar files based on filename and size                       │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ file media-hash            │ Hash decoded audio/video streams with ffmpeg                        │
-    ├────────────────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ file media-compare         │ Compare decoded audio/video streams                                 │
-    ╰────────────────────────────┴─────────────────────────────────────────────────────────────────────╯
+    ╭────────────────────────────┬──────────────────────────────────────────────────────────────────────────╮
+    │ folder merge move          │ Move files and merge folders in BSD/rsync style, rename if possible      │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder merge copy          │ Copy files and merge folders                                             │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder merge relative-move │ Move files while preserving relative paths                               │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder merge relative-copy │ Copy files while preserving relative paths                               │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder copy mergerfs       │ cp files with reflink on mergerfs                                        │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder move list           │ Find specific folders to move to different disks                         │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder large               │ Show large folders                                                       │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder scatter             │ Scatter files between folders or disks                                   │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder similar             │ Find similar folders based on folder name, size, and count               │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ folder organize            │ Organize folders by their dominant file type                             │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ file normalize             │ Clean file paths                                                         │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ file hash                  │ Calculate a hash based on small file segments                            │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ file compare               │ Compare files using sample-hash and other shortcuts                      │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ file similar               │ Find similar files based on filename, size, duration, or sampled content │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ file case-conflicts        │ Find and optionally merge case-folded path conflicts                     │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ file media-hash            │ Hash decoded audio/video streams with ffmpeg                             │
+    ├────────────────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ file media-compare         │ Compare decoded audio/video streams                                      │
+    ╰────────────────────────────┴──────────────────────────────────────────────────────────────────────────╯
 
     Filesystem inspection subcommands:
-    ╭─────────────────────────────┬───────────────────────────────────────────╮
-    │ filesystem list             │ Find files by mimetype and size           │
-    ├─────────────────────────────┼───────────────────────────────────────────┤
-    │ filesystem usage            │ Show disk usage                           │
-    ├─────────────────────────────┼───────────────────────────────────────────┤
-    │ filesystem usage extensions │ Show disk usage grouped by file extension │
-    ├─────────────────────────────┼───────────────────────────────────────────┤
-    │ filesystem usage mimetypes  │ Show disk usage grouped by MIME type      │
-    ├─────────────────────────────┼───────────────────────────────────────────┤
-    │ filesystem usage sizes      │ Show disk usage grouped by file size      │
-    ├─────────────────────────────┼───────────────────────────────────────────┤
-    │ filesystem mounts stats     │ Show some relative mount stats            │
-    ├─────────────────────────────┼───────────────────────────────────────────┤
-    │ filesystem mounts free      │ Show system-wide disk usage               │
-    ╰─────────────────────────────┴───────────────────────────────────────────╯
+    ╭─────────────────────────────┬─────────────────────────────────────────────────╮
+    │ filesystem list             │ Find files by mimetype and size                 │
+    ├─────────────────────────────┼─────────────────────────────────────────────────┤
+    │ filesystem usage            │ Show disk usage                                 │
+    ├─────────────────────────────┼─────────────────────────────────────────────────┤
+    │ filesystem usage extensions │ Show disk usage grouped by file extension       │
+    ├─────────────────────────────┼─────────────────────────────────────────────────┤
+    │ filesystem usage mimetypes  │ Show disk usage grouped by MIME type            │
+    ├─────────────────────────────┼─────────────────────────────────────────────────┤
+    │ filesystem usage sizes      │ Show disk usage grouped by file size            │
+    ├─────────────────────────────┼─────────────────────────────────────────────────┤
+    │ filesystem usage modified   │ Show a modification-time histogram and outliers │
+    ├─────────────────────────────┼─────────────────────────────────────────────────┤
+    │ filesystem mounts stats     │ Show some relative mount stats                  │
+    ├─────────────────────────────┼─────────────────────────────────────────────────┤
+    │ filesystem mounts free      │ Show system-wide disk usage                     │
+    ╰─────────────────────────────┴─────────────────────────────────────────────────╯
 
     Media processing subcommands:
     ╭─────────────────────┬───────────────────────────────────────────────────────────────────────────╮
-    │ file check          │ Check video and audio files for corruption via ffmpeg                     │
+    │ file check          │ Check media via ffmpeg or raw filesystem I/O with --filesystem            │
     ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ shrink media        │ Estimate and execute potential disk space savings                         │
     ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
@@ -323,15 +335,17 @@ flat commands are now only reachable through a group (for example
     ╰─────────────────────┴───────────────────────────────────────────────────────────────────────────╯
 
     Video extraction subcommands:
-    ╭─────────────────────────┬───────────────────────────────────────────────────────────╮
-    │ video extract audio     │ Extract audio streams without re-encoding                 │
-    ├─────────────────────────┼───────────────────────────────────────────────────────────┤
-    │ video extract subtitles │ Extract embedded subtitle streams                         │
-    ├─────────────────────────┼───────────────────────────────────────────────────────────┤
-    │ video extract scenes    │ Extract scene changes as video, images, or contact sheets │
-    ├─────────────────────────┼───────────────────────────────────────────────────────────┤
-    │ video extract keyframes │ Extract keyframes as video, images, or slow-motion video  │
-    ╰─────────────────────────┴───────────────────────────────────────────────────────────╯
+    ╭─────────────────────────┬───────────────────────────────────────────────────────────────────────────╮
+    │ video extract audio     │ Extract audio streams without re-encoding                                 │
+    ├─────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ video extract subtitles │ Extract embedded subtitle streams                                         │
+    ├─────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ video extract scenes    │ Extract scene changes as video, images, or contact sheets                 │
+    ├─────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ video extract keyframes │ Extract keyframes as video, images, slow-motion, or visually sorted video │
+    ├─────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ video detect            │ Detect video properties                                                   │
+    ╰─────────────────────────┴───────────────────────────────────────────────────────────────────────────╯
 
     Video creation subcommands:
     ╭────────────────────────┬─────────────────────────────────────────────────╮
@@ -2274,6 +2288,36 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### database stats schema
+
+<details><summary>Show SQLite table, column, index, and storage statistics</summary>
+
+    $ library database stats schema -h
+    usage: library database stats schema DATABASE [--kind {table,column,index}]
+
+    Report SQLite table, column, index, and storage statistics without writing.
+
+        library database stats schema video.db
+        library database stats schema video.db --kind table
+
+
+</details>
+
+###### database tail
+
+<details><summary>Watch a SQLite database for newly appended rows</summary>
+
+    $ library database tail -h
+    usage: library database tail DATABASE
+
+    Poll a database and print rows appended after the command starts.
+
+        library database tail video.db
+        library database tail video.db --interval 5 --table media
+
+
+</details>
+
 ###### database copy play-counts
 
 <details><summary>Copy play history</summary>
@@ -2354,6 +2398,22 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     usage: library database enrich reddit-selftext DATABASE
 
     Extract URLs from reddit selftext from the reddit_posts table to the media table
+
+
+</details>
+
+###### database enrich imdb
+
+<details><summary>Enrich media metadata from cached IMDb datasets</summary>
+
+    $ library database enrich imdb -h
+    usage: library database enrich imdb DATABASE
+
+    Enrich media rows using a cached local copy of the IMDb datasets.
+
+        library database enrich imdb video.db
+        library database enrich imdb video.db --dry-run
+        library database enrich imdb video.db --refresh --rebuild-index
 
 
 </details>
@@ -2859,6 +2919,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### folder organize
+
+<details><summary>Organize folders by their dominant file type</summary>
+
+    $ library folder organize -h
+    usage: library folder organize [--depth N] [--move DIRECTORY] PATH ...
+    Classify folders by their file extensions and merge them into category folders.
+
+    library folder organize ~/Downloads --simulate
+    library folder organize ~/Downloads --depth 1 --move ~/Media
+
+
+</details>
+
 ###### file normalize
 
 <details><summary>Clean file paths</summary>
@@ -2879,6 +2953,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     You can optionally replace all the spaces in your filenames with dots
 
         library file normalize --dot-space
+
+    Use --mojibake to fix incorrectly decoded Unicode in names
+
+        library file normalize --mojibake --run ~/messy/
 
 
 </details>
@@ -2913,7 +2991,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### file similar
 
-<details><summary>Find similar files based on filename and size</summary>
+<details><summary>Find similar files based on filename, size, duration, or sampled content</summary>
 
     $ library file similar -h
     usage: library file similar (--filter-names | --filter-sizes | --filter-durations) PATH ...
@@ -2936,6 +3014,22 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     How I use it
         library file similar --filter-names --filter-durations --estimated-duplicates 3 .
+
+
+</details>
+
+###### file case-conflicts
+
+<details><summary>Find and optionally merge case-folded path conflicts</summary>
+
+    $ library file case-conflicts -h
+    usage: library file case-conflicts [DIRECTORY | --db DATABASE] ...
+
+    Find files and directories that collide under case-folding.
+
+        library file case-conflicts /mnt/media/
+        library file case-conflicts --db video.db
+        library file case-conflicts --apply /mnt/media/
 
 
 </details>
@@ -2986,7 +3080,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Show disk usage</summary>
 
     $ library filesystem usage -h
-    usage: library filesystem usage [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+    usage: library filesystem usage [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [--exclude-dir DIRECTORY ...]
 
     To aggregate to high level folders use --parents and --depth
 
@@ -2999,6 +3093,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         /mnt/d7/             16.4TiB  2539139     306036
         /mnt/                16.4TiB  2539139     306036
         /                    16.4TiB  2539139     306036
+
+    Exclude directories and their contents while recursively scanning paths
+
+        library filesystem usage /mnt/media/ --exclude-dir .git __pycache__
 
     Only include files smaller than 1kib
 
@@ -3047,7 +3145,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Show disk usage grouped by file extension</summary>
 
     $ library filesystem usage extensions -h
-    usage: library filesystem usage extensions [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+    usage: library filesystem usage extensions [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [--exclude-dir DIRECTORY ...]
 
     To aggregate to high level folders use --parents and --depth
 
@@ -3060,6 +3158,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         /mnt/d7/             16.4TiB  2539139     306036
         /mnt/                16.4TiB  2539139     306036
         /                    16.4TiB  2539139     306036
+
+    Exclude directories and their contents while recursively scanning paths
+
+        library filesystem usage /mnt/media/ --exclude-dir .git __pycache__
 
     Only include files smaller than 1kib
 
@@ -3108,7 +3210,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Show disk usage grouped by MIME type</summary>
 
     $ library filesystem usage mimetypes -h
-    usage: library filesystem usage mimetypes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+    usage: library filesystem usage mimetypes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [--exclude-dir DIRECTORY ...]
 
     To aggregate to high level folders use --parents and --depth
 
@@ -3121,6 +3223,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         /mnt/d7/             16.4TiB  2539139     306036
         /mnt/                16.4TiB  2539139     306036
         /                    16.4TiB  2539139     306036
+
+    Exclude directories and their contents while recursively scanning paths
+
+        library filesystem usage /mnt/media/ --exclude-dir .git __pycache__
 
     Only include files smaller than 1kib
 
@@ -3169,7 +3275,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Show disk usage grouped by file size</summary>
 
     $ library filesystem usage sizes -h
-    usage: library filesystem usage sizes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+    usage: library filesystem usage sizes [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [--exclude-dir DIRECTORY ...]
 
     To aggregate to high level folders use --parents and --depth
 
@@ -3182,6 +3288,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         /mnt/d7/             16.4TiB  2539139     306036
         /mnt/                16.4TiB  2539139     306036
         /                    16.4TiB  2539139     306036
+
+    Exclude directories and their contents while recursively scanning paths
+
+        library filesystem usage /mnt/media/ --exclude-dir .git __pycache__
 
     Only include files smaller than 1kib
 
@@ -3221,6 +3331,24 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         mkv     49.2 GiB      159
         mp4     86.7 GiB      613
         4 file extensions
+
+
+</details>
+
+###### filesystem usage modified
+
+<details><summary>Show a modification-time histogram and outliers</summary>
+
+    $ library filesystem usage modified -h
+    usage: library filesystem usage modified PATH ... [--exclude-dir DIRECTORY ...]
+
+    Show a histogram of file modification times and optional outliers.
+
+    Exclude directories and their contents while recursively scanning paths.
+
+        library filesystem usage modified /mnt/media/
+        library filesystem usage modified /mnt/media/ --exclude-dir .git __pycache__
+        library filesystem usage modified --outliers /mnt/media/
 
 
 </details>
@@ -3278,14 +3406,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### file check
 
-<details><summary>Check video and audio files for corruption via ffmpeg</summary>
+<details><summary>Check media via ffmpeg or raw filesystem I/O with --filesystem</summary>
 
     $ library file check -h
-    usage: library file check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
+    usage: library file check [--filesystem | --io | --fs] [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
 
-    Defaults to decode 0.5 second per 10% of each file
+    By default, decode 0.5 second per 10% of each file
 
         library file check ./video.mp4
+
+    Read files from the underlying filesystem and report raw I/O errors with
+    --filesystem (aliases: --io, --fs). This is distinct from the default
+    media check, which decodes media with FFmpeg.
+
+        library file check --filesystem /mnt/media/
+        library file check --fs --delete-files /mnt/media/
 
     Decode all the frames of each file to evaluate how corrupt it is
     (scantime is very slow; about 150 seconds for an hour-long file)
@@ -3611,10 +3746,10 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 ###### video extract keyframes
 
-<details><summary>Extract keyframes as video, images, or slow-motion video</summary>
+<details><summary>Extract keyframes as video, images, slow-motion, or visually sorted video</summary>
 
     $ library video extract keyframes -h
-    usage: library video extract keyframes PATH ... [--mode {video,images,slow}]
+    usage: library video extract keyframes PATH ... [--mode {video,images,slow}] [--sort-similarity]
 
     Keep only keyframes in a stream-copy output:
 
@@ -3624,6 +3759,25 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library video extract keyframes --images video.mp4
         library video extract keyframes --slow video.mp4
+
+    Sort keyframes by visual similarity before creating a video:
+
+        library video extract keyframes --sort-similarity video.mp4
+
+
+</details>
+
+###### video detect
+
+<details><summary>Detect video properties</summary>
+
+    $ library video detect -h
+    usage: library video detect [DETECTION] PATH ...
+    Detect freeze frames, blank frames, and video metadata.
+
+    library video detect --still-image ~/Videos --samples 5 --threshold 1
+    library video detect --freeze-frame 10s ~/Videos
+    library video detect --no-black --fps=-20 --resolution=+1920x+1080 ~/Videos
 
 
 </details>

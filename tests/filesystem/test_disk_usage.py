@@ -39,6 +39,29 @@ def test_disk_usage_min_depth(capsys):
     assert depth_3 in paths
 
 
+def test_disk_usage_exclude_dirs_parses(monkeypatch, tmp_path):
+    monkeypatch.setattr("sys.argv", ["du", str(tmp_path), "--exclude-dir", "cache", "build"])
+
+    args = disk_usage.parse_args()
+
+    assert args.exclude_dirs == ["cache", "build"]
+
+
+def test_disk_usage_excludes_directories_recursively(tmp_path, capsys):
+    excluded = tmp_path / "excluded"
+    excluded.mkdir()
+    (excluded / "nested.txt").write_text("excluded")
+    (tmp_path / "excluded.txt").write_text("included")
+    included = tmp_path / "included"
+    included.mkdir()
+    (included / "excluded.txt").write_text("included")
+
+    lb(["du", str(tmp_path), "--exclude-dir", "excluded", "--files-only", "--to-json"])
+
+    paths = {json.loads(line)["path"] for line in capsys.readouterr().out.strip().splitlines()}
+    assert paths == {str(tmp_path / "excluded.txt"), str(included / "excluded.txt")}
+
+
 def test_folder_stats_refreshes_after_media_change(temp_db):
     args = connect_db_args(temp_db())
     args.db.execute(

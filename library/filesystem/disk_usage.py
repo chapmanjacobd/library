@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+from fnmatch import fnmatch
 
 from library import usage
 from library.filesystem import folder_stats
@@ -32,6 +33,15 @@ def parse_args(defaults_override=None):
     parser.add_argument("--folders-only", "-td", action="store_true", help="Only print folders")
     parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
     parser.add_argument("--min-depth", type=int, metavar="DEPTH", help="Minimum folder depth")
+    parser.add_argument(
+        "--exclude-dir",
+        "--exclude-dirs",
+        dest="exclude_dirs",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="Exclude matching directories and their contents while scanning recursively",
+    )
 
     parser.add_argument("--group-by-extensions", action="store_true", help="Print statistics about file extensions")
     parser.add_argument(
@@ -291,6 +301,8 @@ def load_subset(args):
 def get_data(args) -> list[dict]:
     if args.database:
         media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
+        if args.exclude_dirs:
+            media = [m for m in media if not is_in_excluded_dir(m["path"], args.exclude_dirs)]
     else:
         if any([args.group_by_size, args.group_by_extensions, args.group_by_mimetypes]):
             args.paths = [os.path.realpath(s) for s in args.paths]
@@ -305,6 +317,18 @@ def get_data(args) -> list[dict]:
     if not media:
         processes.no_media_found()
     return media
+
+
+def is_in_excluded_dir(path, exclude_dirs) -> bool:
+    parent = os.path.dirname(path)
+    while parent:
+        if any(os.path.basename(parent) == pattern or fnmatch(parent, pattern) for pattern in exclude_dirs):
+            return True
+        next_parent = os.path.dirname(parent)
+        if next_parent == parent:
+            break
+        parent = next_parent
+    return False
 
 
 def disk_usage(defaults_override=None):

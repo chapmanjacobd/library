@@ -93,3 +93,10 @@ def test_case_insensitive_with_emojis():
     result = clean_path(b, case_insensitive=True)
     assert "😀 Folder 😎" in result
     assert result.endswith("file.txt")
+
+
+def test_mojibake_fix_is_opt_in():
+    b = "/docs/cafÃ©.txt".encode()
+
+    assert clean_path(b) == "/docs/cafÃ©.txt"
+    assert clean_path(b, fix_mojibake=True) == "/docs/café.txt"

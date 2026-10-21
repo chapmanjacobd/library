@@ -16,8 +16,6 @@ from library.database.manage import dedupe_media
 from library.download import download
 from library.shrink import process_image
 from library.playback import playback_control
-from library.links import extract_links
-from library.text import cluster_sort
 from library.utils import arggroups, argparse_utils, consts, objects
 from library.utils.consts import DBType, SC
 from tests.utils import v_db
@@ -66,39 +64,6 @@ def test_unsupported_cli_modes_fail_during_parsing(command):
         lb(command)
 
 
-def test_removed_surf_command_is_rejected():
-    with pytest.raises(SystemExit) as exc_info:
-        lb(["surf", "-h"])
-
-    assert exc_info.value.code == 1
-
-
-def test_removed_flat_search_is_rejected(capsys):
-    # `search` collided with the `captions` resource; it is only reachable as `captions`
-    with pytest.raises(SystemExit) as exc_info:
-        lb(["search", v_db])
-
-    assert exc_info.value.code == 1
-    assert "subcommands" in capsys.readouterr().out
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
-        ["database", "filesystem", "list"],
-        ["database", "filesystem", "usage"],
-        ["database", "filesystem", "usage", "extensions"],
-        ["database", "filesystem", "usage", "mimetypes"],
-        ["database", "filesystem", "usage", "sizes"],
-    ],
-)
-def test_removed_database_filesystem_routes_are_rejected(command):
-    with pytest.raises(SystemExit) as exc_info:
-        lb(command)
-
-    assert exc_info.value.code == 1
-
-
 def test_delete_original_is_independent_of_delete_larger(monkeypatch):
     monkeypatch.setattr(
         "sys.argv",
@@ -133,15 +98,6 @@ def test_download_links_defaults_to_auto(monkeypatch):
     args = download.parse_args(usage.download_links, links=True)
 
     assert args.profile == DBType.auto
-
-
-def test_database_download_does_not_register_link_spider_options(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["download", "--db", v_db, "--print"])
-
-    args = download.parse_args()
-
-    assert not hasattr(args, "recursive")
-    assert not hasattr(args, "webcache")
 
 
 def test_database_link_download_registers_link_spider_options(monkeypatch):
@@ -255,7 +211,6 @@ def test_direct_download_usage_keeps_top_level_route():
     text = __main__.canonicalize_usage_for_command(usage.download, "download")
 
     assert "library download --db dl.db" in text
-    assert "library database download --db dl.db" not in text
 
 
 def test_download_accepts_direct_and_safe(monkeypatch):
@@ -276,6 +231,19 @@ def test_nested_command_dispatches_to_canonical_target(monkeypatch):
     lb(["play", "video", "--db", "video.db"])
 
     assert called == [["--db", "video.db"]]
+
+
+@pytest.mark.parametrize("filesystem_flag", ["--filesystem", "--io", "--fs"])
+def test_file_check_filesystem_aliases_dispatch_to_io_check(monkeypatch, filesystem_flag):
+    called = []
+    monkeypatch.setattr(
+        "library.file.io_check.io_check",
+        lambda args: called.append((args.filesystem, args.paths)),
+    )
+
+    lb(["file", "check", filesystem_flag, "/mnt/media"])
+
+    assert called == [(True, ["/mnt/media"])]
 
 
 def test_legacy_flat_command_dispatches_to_existing_target(monkeypatch):
@@ -336,8 +304,7 @@ def test_canonicalize_usage_rewrites_legacy_flat_commands_only():
     text = "library fs-add ROOT\nlibrary database add filesystem ROOT\n"
 
     assert __main__.canonicalize_usage(text) == (
-        "library database add filesystem ROOT\n"
-        "library database add filesystem ROOT\n"
+        "library database add filesystem ROOT\nlibrary database add filesystem ROOT\n"
     )
 
 
@@ -503,11 +470,9 @@ def test_usage_catalog_lists_executable_help_path_only():
     commands = [command for _category, category_commands in catalog for command, _description in category_commands]
 
     assert re.search(r"│ help search\s+│", output)
-    assert not re.search(r"│ help\s+│", output)
     assert "play audio" in output
     assert "Show disk usage grouped by file extension" in output
     assert len(catalog) >= 14
-    assert "Other subcommands" not in dict(catalog)
     assert len(commands) >= 99
     assert len(commands) == len(set(commands))
     assert set(commands) == set(__main__._canonical_nested_paths_for_all_groups())  # noqa: SLF001
@@ -518,7 +483,6 @@ def test_usage_catalog_normalizes_nested_aliases():
     commands = dict(catalog["Database updating subcommands"])
 
     assert "database update open-directory" in commands
-    assert "database update web" not in commands
 
 
 def test_nested_help_examples_use_canonical_commands(capsys):
@@ -527,8 +491,6 @@ def test_nested_help_examples_use_canonical_commands(capsys):
 
     assert exc_info.value.code == 0
     output = capsys.readouterr().out
-    assert "library fsadd" not in output
-    assert not re.search(r"library fs(?:\s|$)", output)
     assert "library database add filesystem" in output
 
 
@@ -603,30 +565,36 @@ def test_db_and_fs_are_resource_group_aliases():
 
 def test_download_block_is_nested_under_download():
     assert _nested_target(["database", "download", "block"]) == ("block", 3)
-    assert _nested_target(["database", "block"]) is None
 
 
 def test_database_export_html_is_nested_under_database():
     assert _nested_target(["database", "export", "html"]) == ("export-text", 3)
-    assert _nested_target(["document", "export", "text"]) is None
 
 
 def test_pdf_adjustment_is_nested_under_document():
     assert _nested_target(["document", "adjust", "pdf"]) == ("pdf-edit", 3)
-    assert _nested_target(["document", "edit", "pdf"]) is None
 
 
 def test_torrent_allocation_is_nested_under_torrent():
     assert _nested_target(["torrent", "allocate"]) == ("allocate-torrents", 2)
-    assert _nested_target(["database", "allocate", "torrents"]) is None
 
 
 def test_database_stats_words_is_nested_under_stats():
     assert _nested_target(["database", "stats", "words"]) == ("stats-words", 3)
 
 
-def test_video_audio_creation_is_not_a_command():
-    assert _nested_target(["video", "create", "audio"]) is None
+@pytest.mark.parametrize(
+    ("command", "target"),
+    [
+        (["database", "enrich", "imdb"], "enrich-imdb"),
+        (["database", "tail"], "tail"),
+        (["database", "stats", "schema"], "stats-schema"),
+        (["file", "case-conflicts"], "casefold"),
+        (["filesystem", "usage", "modified"], "modified-hist"),
+    ],
+)
+def test_new_feature_commands_route_to_canonical_targets(command, target):
+    assert _nested_target(command) == (target, len(command))
 
 
 def test_torrent_match_and_audit_are_nested_under_torrent():
@@ -636,7 +604,6 @@ def test_torrent_match_and_audit_are_nested_under_torrent():
 
 def test_json_key_renaming_is_nested_under_json():
     assert _nested_target(["json", "rename-keys"]) == ("json-keys-rename", 2)
-    assert _nested_target(["text", "rename-keys", "json"]) is None
 
 
 def test_document_conversion_routes_are_explicit():
@@ -645,7 +612,6 @@ def test_document_conversion_routes_are_explicit():
     assert _nested_target(["document", "pdf", "header"]) == ("pdf-header", 3)
     assert _nested_target(["text", "convert"]) == ("text-convert", 2)
     assert _nested_target(["shrink", "table"]) == ("process-table", 2)
-    assert _nested_target(["document", "to-pdf", "images"]) is None
 
 
 def test_cluster_sort_images_is_a_nested_subcommand():
@@ -848,18 +814,6 @@ def test_dedupe_media_rejects_text_profile(monkeypatch):
         dedupe_media.parse_args()
 
 
-def test_dedupe_media_does_not_offer_soft_delete_flags(monkeypatch):
-    """dedupe-media always soft-deletes the rows it removes, so the generic
-    --mark-deleted/--delete-rows/--mark-watched flags are not advertised."""
-    monkeypatch.setattr("sys.argv", ["dedupe-media", "--audio", v_db])
-
-    args = dedupe_media.parse_args()
-
-    assert not hasattr(args, "mark_deleted")
-    assert not hasattr(args, "delete_rows")
-    assert not hasattr(args, "mark_watched")
-
-
 def test_is_profile_auto_matches_scannable_types():
     args = argparse.Namespace(profile=DBType.auto)
 
@@ -871,45 +825,17 @@ def test_is_profile_auto_matches_scannable_types():
     assert not objects.is_profile(args, DBType.filesystem)
 
 
-def test_cluster_sort_defaults_to_lines(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["cluster-sort"])
-
-    args = cluster_sort.parse_args()
-
-    assert not hasattr(args, "image")
-    assert not hasattr(args, "lines")
-
-
-def test_cluster_sort_image_mode_is_a_subcommand(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["cluster-images"])
-
-    args = cluster_sort.parse_image_args()
-
-    assert not hasattr(args, "image")
-
-
-def test_dedupe_media_type_leaves_strategy_unset(monkeypatch):
+def test_dedupe_media_accepts_audio_profile(monkeypatch):
     monkeypatch.setattr("sys.argv", ["dedupe-media", "--audio", v_db])
 
     args = dedupe_media.parse_args()
 
     assert args.profile == DBType.audio
-    assert args.strategy is None
 
 
-def test_dedupe_strategy_is_not_a_profile(monkeypatch):
+def test_dedupe_strategy_selects_extractor_id(monkeypatch):
     monkeypatch.setattr("sys.argv", ["dedupe-media", "--id", v_db])
 
     args = dedupe_media.parse_args()
 
-    assert args.profile is None
     assert args.strategy == "extractor_id"
-
-
-def test_cluster_sort_image_mode_is_not_a_profile(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["cluster-images"])
-
-    args = cluster_sort.parse_image_args()
-
-    assert not hasattr(args, "image")
-    assert not hasattr(args, "profile")

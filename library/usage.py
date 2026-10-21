@@ -711,7 +711,7 @@ big_dirs = """library folder large [PATH ...] [--db DATABASE] [--limit (4000)] [
     library folder large ./video/ -u 'mcda median_size,-deleted'
 """
 
-disk_usage = """library filesystem usage [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH]
+disk_usage = """library filesystem usage [--db DATABASE] [PATH / SUBSTRING SEARCH] [--sort-groups-by (priority) | path | size | count] [--depth DEPTH] [--exclude-dir DIRECTORY ...]
 
     To aggregate to high level folders use --parents and --depth
 
@@ -724,6 +724,10 @@ disk_usage = """library filesystem usage [--db DATABASE] [PATH / SUBSTRING SEARC
         /mnt/d7/             16.4TiB  2539139     306036
         /mnt/                16.4TiB  2539139     306036
         /                    16.4TiB  2539139     306036
+
+    Exclude directories and their contents while recursively scanning paths
+
+        library filesystem usage /mnt/media/ --exclude-dir .git __pycache__
 
     Only include files smaller than 1kib
 
@@ -788,7 +792,28 @@ christen = """library file normalize [--run]
     You can optionally replace all the spaces in your filenames with dots
 
         library file normalize --dot-space
+
+    Use --mojibake to fix incorrectly decoded Unicode in names
+
+        library file normalize --mojibake --run ~/messy/
 """
+
+organize_folders = """library folder organize [--depth N] [--move DIRECTORY] PATH ...
+    Classify folders by their file extensions and merge them into category folders.
+
+    library folder organize ~/Downloads --simulate
+    library folder organize ~/Downloads --depth 1 --move ~/Media
+"""
+organize = organize_folders
+
+video_detect = """library video detect [DETECTION] PATH ...
+    Detect freeze frames, blank frames, and video metadata.
+
+    library video detect --still-image ~/Videos --samples 5 --threshold 1
+    library video detect --freeze-frame 10s ~/Videos
+    library video detect --no-black --fps=-20 --resolution=+1920x+1080 ~/Videos
+"""
+detect = video_detect
 
 cluster_sort = """library text sort cluster [input_path | stdin] [output_path | stdout]
 
@@ -1658,11 +1683,18 @@ sample_compare = """library file compare [--same-file-threads 1] [--chunk-size B
     Convenience subcommand to compare multiple files using sample-hash
 """
 
-media_check = """library file check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
+media_check = """library file check [--filesystem | --io | --fs] [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
 
-    Defaults to decode 0.5 second per 10% of each file
+    By default, decode 0.5 second per 10% of each file
 
         library file check ./video.mp4
+
+    Read files from the underlying filesystem and report raw I/O errors with
+    --filesystem (aliases: --io, --fs). This is distinct from the default
+    media check, which decodes media with FFmpeg.
+
+        library file check --filesystem /mnt/media/
+        library file check --fs --delete-files /mnt/media/
 
     Decode all the frames of each file to evaluate how corrupt it is
     (scantime is very slow; about 150 seconds for an hour-long file)
@@ -2350,3 +2382,63 @@ getty_add = """library database add getty DATABASE
 search_help = """library help search [subcommand] QUERY ...
 
     Search library functionality and help text"""
+
+imdb_enrich = """library database enrich imdb DATABASE
+
+    Enrich media rows using a cached local copy of the IMDb datasets.
+
+        library database enrich imdb video.db
+        library database enrich imdb video.db --dry-run
+        library database enrich imdb video.db --refresh --rebuild-index
+"""
+
+io_check = """library file check --filesystem PATH ...
+
+    Read files from the underlying filesystem and report raw I/O errors.
+    Aliases for `--filesystem` are `--io` and `--fs`.
+
+        library file check --filesystem /mnt/media/
+        library file check --filesystem --delete-files /mnt/media/
+"""
+
+case_conflicts = """library file case-conflicts [DIRECTORY | --db DATABASE] ...
+
+    Find files and directories that collide under case-folding.
+
+        library file case-conflicts /mnt/media/
+        library file case-conflicts --db video.db
+        library file case-conflicts --apply /mnt/media/
+"""
+
+modified_hist = """library filesystem usage modified PATH ... [--exclude-dir DIRECTORY ...]
+
+    Show a histogram of file modification times and optional outliers.
+
+    Exclude directories and their contents while recursively scanning paths.
+
+        library filesystem usage modified /mnt/media/
+        library filesystem usage modified /mnt/media/ --exclude-dir .git __pycache__
+        library filesystem usage modified --outliers /mnt/media/
+"""
+
+database_tail = """library database tail DATABASE
+
+    Poll a database and print rows appended after the command starts.
+
+        library database tail video.db
+        library database tail video.db --interval 5 --table media
+"""
+
+schema_stats = """library database stats schema DATABASE [--kind {table,column,index}]
+
+    Report SQLite table, column, index, and storage statistics without writing.
+
+        library database stats schema video.db
+        library database stats schema video.db --kind table
+"""
+
+# Module-function aliases used by the command registry.
+enrich_imdb = imdb_enrich
+tail = database_tail
+stats_schema = schema_stats
+casefold = case_conflicts

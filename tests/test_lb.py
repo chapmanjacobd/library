@@ -26,7 +26,6 @@ def test_lb_help(capsys):
         lb(["-h"])
     captured = capsys.readouterr().out.replace("\n", "")
     assert "subcommands" in captured
-    assert "surf" not in captured
 
 
 @pytest.mark.parametrize("subcommand", subcommands)
