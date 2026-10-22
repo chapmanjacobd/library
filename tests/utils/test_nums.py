@@ -59,6 +59,8 @@ def test_human_to_seconds():
     assert nums.human_to_seconds("3.5months") == 9072000
     assert nums.human_to_seconds("3.5 years") == 110376000
     assert nums.human_to_seconds("3.5y") == 110376000
+    assert nums.human_to_seconds("800ms") == 0.8
+    assert nums.human_to_seconds("0.8s") == 0.8
 
 
 def test_human_to_seconds_invalid():

@@ -807,11 +807,11 @@ organize_folders = """library folder organize [--depth N] [--move DIRECTORY] PAT
 organize = organize_folders
 
 video_detect = """library video detect [DETECTION] PATH ...
-    Detect freeze frames, blank frames, and video metadata.
+    Detect black/blank/freeze frames and video metadata.
 
     library video detect --still-image ~/Videos --samples 5 --threshold 1
     library video detect --freeze-frame 10s ~/Videos
-    library video detect --no-black --fps=-20 --resolution=+1920x+1080 ~/Videos
+    library video detect --black --no-blank --fps=-20 --resolution=+1920x+1080 ~/Videos
 """
 detect = video_detect
 

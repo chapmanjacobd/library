@@ -136,6 +136,8 @@ def human_to_seconds(input_str):
         return None
 
     time_units = {
+        "ms": 0.001,
+        "millisecond": 0.001,
         "s": 1,
         "sec": 1,
         "second": 1,
@@ -169,7 +171,7 @@ def human_to_seconds(input_str):
 
     if unit:
         unit = unit[0]
-        if unit != "s":
+        if unit not in {"s", "ms"}:
             unit = unit.rstrip("s")
     else:
         unit = "m"
@@ -178,7 +180,8 @@ def human_to_seconds(input_str):
         msg = f"Unknown time unit {unit!r} in duration: {input_str!r}"
         raise ValueError(msg)
 
-    return int(float(value) * time_units[unit])
+    seconds = float(value) * time_units[unit]
+    return int(seconds) if seconds.is_integer() else seconds
 
 
 def linear_interpolation(x, data_points, clip=True) -> float:

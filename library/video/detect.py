@@ -3,15 +3,20 @@ import math
 import re
 import subprocess
 import sys
+from contextlib import closing
 from dataclasses import dataclass
-from itertools import pairwise
 
 from library import usage
 from library.utils import arggroups, argparse_utils, consts, nums, processes, shell_utils
 
 FRAME_WIDTH = 160
 FRAME_HEIGHT = 160
+FRAME_CHANNELS = 3
+FRAME_BYTES = FRAME_WIDTH * FRAME_HEIGHT * FRAME_CHANNELS
 MIN_SAMPLES = 2
+BLACK_MIN_DURATION = 0.8
+BLACK_PIXEL_THRESHOLD = 0.1
+DEFAULT_BLANK_DETECT_DURATION = 0.8
 DEFAULT_STILL_IMAGE_RATIO = 0.95
 MAX_FREEZE_SAMPLE_INTERVALS = 200
 RESOLUTION_COMPONENTS = 2
@@ -150,43 +155,69 @@ def _normalize_freeze_args(argv: list[str]) -> list[str]:
     return normalized
 
 
-def _sample_frame(path: str, timestamp: float):
+def _read_frame(stream):
+    chunks = []
+    bytes_remaining = FRAME_BYTES
+    while bytes_remaining:
+        chunk = stream.read(bytes_remaining)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        bytes_remaining -= len(chunk)
+    return b"".join(chunks)
+
+
+def _iter_sampled_frames(path: str, duration: float, intervals: int):
     import numpy as np
 
-    result = subprocess.run(
-        [
-            "ffmpeg",
-            "-nostdin",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-ss",
-            str(timestamp),
-            "-i",
-            path,
-            "-frames:v",
-            "1",
-            "-vf",
-            f"scale={FRAME_WIDTH}:{FRAME_HEIGHT}",
-            "-f",
-            "rawvideo",
-            "-pix_fmt",
-            "gray",
-            "pipe:1",
-        ],
-        capture_output=True,
-        timeout=30,
-        check=False,
-    )
-    if result.returncode != 0:
-        raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+    if intervals < 1:
+        raise ValueError("intervals must be at least 1")
 
-    frame = np.frombuffer(result.stdout, dtype=np.uint8)
-    expected_size = FRAME_WIDTH * FRAME_HEIGHT
-    if frame.size != expected_size:
-        message = f"ffmpeg returned {frame.size} pixels, expected {expected_size}"
-        raise ValueError(message)
-    return frame
+    command = [
+        "ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        path,
+        "-an",
+        "-vf",
+        f"fps={intervals}/{duration:.9f},scale={FRAME_WIDTH}:{FRAME_HEIGHT},format=rgb24",
+        "-frames:v",
+        str(intervals + 1),
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "rgb24",
+        "pipe:1",
+    ]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    try:
+        for _ in range(intervals + 1):
+            raw_frame = _read_frame(process.stdout)
+            if not raw_frame:
+                break
+            if len(raw_frame) != FRAME_BYTES:
+                message = f"ffmpeg returned {len(raw_frame)} bytes, expected {FRAME_BYTES}"
+                raise ValueError(message)
+            yield np.frombuffer(raw_frame, dtype=np.uint8)
+
+        stderr = process.stderr.read()
+        returncode = process.wait(timeout=30)
+        if returncode != 0:
+            raise subprocess.CalledProcessError(returncode, command, stderr=stderr)
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        process.stdout.close()
+        process.stderr.close()
 
 
 def _get_probe(path: str):
@@ -196,14 +227,17 @@ def _get_probe(path: str):
         return None
 
 
-def _sample_timestamps(duration: float, samples: int) -> list[float]:
-    return [duration * index / (samples + 1) for index in range(1, samples + 1)]
-
-
 def _frame_mse(previous, frame) -> float:
     import numpy as np
 
     return float(np.mean((frame.astype(np.float32) - previous.astype(np.float32)) ** 2))
+
+
+def _is_solid_color(frame) -> bool:
+    import numpy as np
+
+    pixels = frame.reshape(-1, FRAME_CHANNELS)
+    return bool(np.all(pixels == pixels[0]))
 
 
 def _freeze_sample_intervals(ratio: float, samples: int) -> int:
@@ -249,20 +283,93 @@ def _has_freeze_ratio(path: str, video_duration: float, ratio: float, samples: i
     previous_timestamp = None
     freeze_start = None
     try:
-        for timestamp in timestamps:
-            frame = _sample_frame(path, timestamp)
-            if previous is not None and _frame_mse(previous, frame) <= threshold:
-                if freeze_start is None:
-                    freeze_start = previous_timestamp
-                if timestamp - freeze_start >= required_duration:
-                    return True
-            else:
-                freeze_start = None
-            previous = frame
-            previous_timestamp = timestamp
-    except (OSError, TimeoutError, subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError):
+        with closing(_iter_sampled_frames(path, video_duration, intervals)) as frames:
+            for timestamp in timestamps:
+                try:
+                    frame = next(frames)
+                except StopIteration:
+                    return False
+                if previous is not None and _frame_mse(previous, frame) <= threshold:
+                    if freeze_start is None:
+                        freeze_start = previous_timestamp
+                    if timestamp - freeze_start >= required_duration:
+                        return True
+                else:
+                    freeze_start = None
+                previous = frame
+                previous_timestamp = timestamp
+    except (OSError, TimeoutError, StopIteration, subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError):
         return False
     return False
+
+
+def _matches_full_frame_filters(  # noqa: PLR0911,PLR0912 - coordinates two streaming predicates
+    path: str,
+    freeze: FreezeSpec | None,
+    *,
+    blank: bool | None,
+    blank_duration: float,
+    samples: int,
+    threshold: float,
+) -> bool:
+    del samples
+    probe = _get_probe(path)
+    if probe is None or not probe.has_video or not probe.duration or probe.duration <= 0:
+        return False
+
+    ratio = freeze.ratio if freeze is not None else None
+    if ratio == 0 and blank is None:
+        return True
+
+    stream = _video_stream(probe)
+    fps = _stream_fps(probe, stream) if stream is not None else None
+    if fps is None or fps <= 0:
+        return False
+    intervals = max(1, math.ceil(probe.duration * fps))
+    frame_duration = probe.duration / intervals
+    freeze_frames = (
+        math.ceil(probe.duration * ratio / frame_duration) + 1
+        if ratio is not None and ratio > 0
+        else 0
+    )
+    blank_frames = math.ceil(blank_duration / frame_duration) + 1
+    freeze_run = 0
+    blank_run = 0
+    previous = None
+    freeze_matches = ratio == 0 or ratio is None
+    blank_matches = blank is not True
+    try:
+        with closing(_iter_sampled_frames(path, probe.duration, intervals)) as frames:
+            for index in range(intervals + 1):
+                try:
+                    frame = next(frames)
+                except StopIteration:
+                    break
+
+                if ratio is not None and ratio > 0:
+                    if index and _frame_mse(previous, frame) <= threshold:
+                        freeze_run += 1
+                    else:
+                        freeze_run = 1
+                    if freeze_run >= freeze_frames:
+                        freeze_matches = True
+
+                if blank is not None:
+                    if _is_solid_color(frame):
+                        blank_run += 1
+                    else:
+                        blank_run = 0
+                    if blank_run >= blank_frames:
+                        if blank is False:
+                            return False
+                        blank_matches = True
+
+                if freeze_matches and blank_matches and blank is not False:
+                    return True
+                previous = frame
+    except (OSError, StopIteration, TimeoutError, subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError):
+        return False
+    return freeze_matches and blank_matches
 
 
 def _has_freeze_duration(path: str, duration: float, threshold: float) -> bool:
@@ -295,25 +402,54 @@ def _has_freeze_duration(path: str, duration: float, threshold: float) -> bool:
     )
 
 
-def has_blank_frame(path: str, *, samples: int = 5) -> bool:
-    """Return whether sampled frames contain a single luma value."""
+def has_blank_frame(path: str, *, samples: int = 5, min_duration: float = DEFAULT_BLANK_DETECT_DURATION) -> bool:
+    """Return whether one RGB color spans at least ``min_duration``."""
     if samples < MIN_SAMPLES:
         raise ValueError("samples must be at least 2")
+    if min_duration <= 0:
+        raise ValueError("min_duration must be greater than zero")
+    return _matches_full_frame_filters(
+        path,
+        None,
+        blank=True,
+        blank_duration=min_duration,
+        samples=samples,
+        threshold=0,
+    )
+
+
+def has_black_frame(path: str, *, min_duration: float = BLACK_MIN_DURATION) -> bool:
+    """Return whether FFmpeg detects a black interval lasting at least ``min_duration``."""
+    if min_duration <= 0:
+        message = "min_duration must be greater than zero"
+        raise ValueError(message)
 
     probe = _get_probe(path)
     if probe is None or not probe.has_video or not probe.duration or probe.duration <= 0:
         return False
 
-    import numpy as np
-
+    command = [
+        "ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "info",
+        "-i",
+        path,
+        "-vf",
+        f"blackdetect=d={min_duration:.9f}:pix_th={BLACK_PIXEL_THRESHOLD}",
+        "-an",
+        "-f",
+        "null",
+        "-",
+    ]
     try:
-        for timestamp in _sample_timestamps(probe.duration, samples):
-            frame = _sample_frame(path, timestamp)
-            if np.ptp(frame) <= 1:
-                return True
-    except (OSError, TimeoutError, subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError):
+        result = subprocess.run(command, capture_output=True, text=True, timeout=300, check=False)
+    except (OSError, TimeoutError, subprocess.TimeoutExpired):
         return False
-    return False
+    if result.returncode != 0:
+        return False
+    return "black_duration:" in (result.stderr or "")
 
 
 def is_still_image(path: str, *, samples: int = 5, threshold: float = 1.0) -> bool:
@@ -327,13 +463,19 @@ def is_still_image(path: str, *, samples: int = 5, threshold: float = 1.0) -> bo
     if probe is None or not probe.has_video or not probe.duration or probe.duration <= 0:
         return False
 
-    timestamps = _sample_timestamps(probe.duration, samples)
     try:
-        frames = [_sample_frame(path, timestamp) for timestamp in timestamps]
+        with closing(_iter_sampled_frames(path, probe.duration, samples + 1)) as frames:
+            next(frames)
+            previous = next(frames)
+            for _ in range(samples - 1):
+                frame = next(frames)
+                if _frame_mse(previous, frame) > threshold:
+                    return False
+                previous = frame
     except (OSError, TimeoutError, subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError):
         return False
 
-    return all(_frame_mse(previous, frame) <= threshold for previous, frame in pairwise(frames))
+    return True
 
 
 def _video_stream(probe):
@@ -422,22 +564,45 @@ def parse_args() -> argparse.Namespace:
         metavar="PERCENT|DURATION",
         help="Find a freeze frame lasting this fraction or duration (default: 95%%)",
     )
-    blank_mode = parser.add_mutually_exclusive_group()
-    blank_mode.add_argument(
+    black_mode = parser.add_mutually_exclusive_group()
+    black_mode.add_argument(
         "--black",
-        "--blank",
         dest="black",
         action="store_true",
-        help="Find videos containing a sampled single-color frame",
+        help="Find videos containing at least 800ms of black-ish video (FFmpeg blackdetect)",
     )
-    blank_mode.add_argument(
+    black_mode.add_argument(
         "--no-black",
-        "--no-blank",
         dest="black",
         action="store_false",
-        help="Find videos without sampled single-color frames",
+        help="Find videos without at least 800ms of black-ish video",
     )
-    parser.set_defaults(black=None)
+    parser.add_argument(
+        "--black-detect-duration",
+        default="800ms",
+        metavar="DURATION",
+        help="Minimum blackdetect interval (default: 800ms)",
+    )
+    blank_mode = parser.add_mutually_exclusive_group()
+    blank_mode.add_argument(
+        "--blank",
+        dest="blank",
+        action="store_true",
+        help="Find videos containing one exact color for the configured duration",
+    )
+    blank_mode.add_argument(
+        "--no-blank",
+        dest="blank",
+        action="store_false",
+        help="Find videos without one exact color lasting the configured duration",
+    )
+    parser.add_argument(
+        "--blank-detect-duration",
+        default="800ms",
+        metavar="DURATION",
+        help="Minimum exact-color interval (default: 800ms)",
+    )
+    parser.set_defaults(black=None, blank=None)
     parser.add_argument("--fps", metavar="RANGE", help="Match frame rate; -N means <=N and +N means >=N")
     parser.add_argument(
         "--resolution",
@@ -455,6 +620,12 @@ def parse_args() -> argparse.Namespace:
     try:
         if args.still_image is not None:
             args.still_image = parse_freeze_spec(args.still_image)
+        for name in ("black_detect_duration", "blank_detect_duration"):
+            duration = nums.human_to_seconds(getattr(args, name))
+            if duration <= 0:
+                message = f"--{name.replace('_', '-')} must be greater than zero"
+                raise ValueError(message)
+            setattr(args, name, duration)
         if args.fps is not None:
             args.fps = _parse_comparison(args.fps)
         if args.resolution is not None:
@@ -470,14 +641,23 @@ def parse_args() -> argparse.Namespace:
 
     if not any(
         value is not None
-        for value in (args.still_image, args.black, args.fps, args.resolution, args.width, args.height, args.aspect_ratio)
+        for value in (
+            args.still_image,
+            args.black,
+            args.blank,
+            args.fps,
+            args.resolution,
+            args.width,
+            args.height,
+            args.aspect_ratio,
+        )
     ):
         parser.error("select at least one detection mode")
     arggroups.args_post(args, parser)
     return args
 
 
-def detect() -> None:
+def detect() -> None:  # noqa: PLR0912 - coordinates independent detector predicates
     args = parse_args()
     if args.samples < MIN_SAMPLES:
         raise ValueError("--samples must be at least 2")
@@ -486,14 +666,45 @@ def detect() -> None:
 
     for media in shell_utils.gen_d(args, consts.VIDEO_EXTENSIONS):
         path = media["path"]
-        if args.still_image is not None and not has_freeze_frame(
+        if args.still_image is not None and args.still_image.duration is not None:
+            if not has_freeze_frame(
+                path,
+                args.still_image,
+                samples=args.samples,
+                threshold=args.threshold,
+            ):
+                continue
+            if args.blank is not None and has_blank_frame(
+                path,
+                samples=args.samples,
+                min_duration=args.blank_detect_duration,
+            ) != args.blank:
+                continue
+        elif args.still_image is not None and args.blank is not None:
+            if not _matches_full_frame_filters(
+                path,
+                args.still_image,
+                blank=args.blank,
+                blank_duration=args.blank_detect_duration,
+                samples=args.samples,
+                threshold=args.threshold,
+            ):
+                continue
+        elif args.still_image is not None:
+            if not has_freeze_frame(
+                path,
+                args.still_image,
+                samples=args.samples,
+                threshold=args.threshold,
+            ):
+                continue
+        elif args.blank is not None and has_blank_frame(
             path,
-            args.still_image,
             samples=args.samples,
-            threshold=args.threshold,
-        ):
+            min_duration=args.blank_detect_duration,
+        ) != args.blank:
             continue
-        if args.black is not None and has_blank_frame(path, samples=args.samples) != args.black:
+        if args.black is not None and has_black_frame(path, min_duration=args.black_detect_duration) != args.black:
             continue
         if not matches_metadata_filters(path, args):
             continue
