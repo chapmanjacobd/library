@@ -46,7 +46,7 @@ dependencies = [
 ]
 description = "xk media library"
 keywords = ["media", "library", "archive", "database", "ffmpeg", "yt-dlp", "mpv", "filesystem", "torrent"]
-version = "4.0.1"
+version = "4.0.2"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 name = "library"
