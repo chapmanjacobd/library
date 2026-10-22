@@ -610,7 +610,7 @@ def test_document_conversion_routes_are_explicit():
     assert _nested_target(["image", "convert"]) == ("image-convert", 2)
     assert _nested_target(["document", "convert"]) == ("document-convert", 2)
     assert _nested_target(["document", "pdf", "header"]) == ("pdf-header", 3)
-    assert _nested_target(["text", "convert"]) == ("text-convert", 2)
+    assert _nested_target(["text", "convert"]) == ("document-convert", 2)
     assert _nested_target(["shrink", "table"]) == ("process-table", 2)
 
 

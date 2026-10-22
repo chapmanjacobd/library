@@ -131,7 +131,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.2; 144 subcommands)
+    library (v4.0.2; 143 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
@@ -310,23 +310,26 @@ flat commands are now only reachable through a group (for example
     ╰─────────────────────────────┴─────────────────────────────────────────────────╯
 
     Media processing subcommands:
+    ╭─────────────────┬──────────────────────────────────────────────────────────────────────────╮
+    │ file check      │ Check media via ffmpeg or raw filesystem I/O with --filesystem           │
+    ├─────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ shrink media    │ Estimate and execute potential disk space savings                        │
+    ├─────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ shrink table    │ Convert table-like files to compressed Parquet                           │
+    ├─────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ shrink video    │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                       │
+    ├─────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ shrink audio    │ Shrink audio to Opus                                                     │
+    ├─────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ shrink image    │ Shrink images to AV1 image format (.avif)                                │
+    ├─────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ shrink text     │ Shrink documents to HTML+AV1 image format (requires Calibre)             │
+    ├─────────────────┼──────────────────────────────────────────────────────────────────────────┤
+    │ archive extract │ Extract from archives and delete all associated multi-part archive files │
+    ╰─────────────────┴──────────────────────────────────────────────────────────────────────────╯
+
+    Document processing subcommands:
     ╭─────────────────────┬───────────────────────────────────────────────────────────────────────────╮
-    │ file check          │ Check media via ffmpeg or raw filesystem I/O with --filesystem            │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink media        │ Estimate and execute potential disk space savings                         │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink table        │ Convert table-like files to compressed Parquet                            │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink video        │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink audio        │ Shrink audio to Opus                                                      │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink image        │ Shrink images to AV1 image format (.avif)                                 │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ shrink text         │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ archive extract     │ Extract from archives and delete all associated multi-part archive files  │
-    ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ document convert    │ Convert images, PDFs, and text-like documents to PDF                      │
     ├─────────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ document adjust pdf │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
@@ -366,8 +369,6 @@ flat commands are now only reachable through a group (for example
     ├─────────────────────┼───────────────────────────────────────────────────┤
     │ text markdown       │ Convert simple HTML documents to Markdown         │
     ├─────────────────────┼───────────────────────────────────────────────────┤
-    │ text convert        │ Convert Markdown and text-like documents to PDF   │
-    ├─────────────────────┼───────────────────────────────────────────────────┤
     │ text sort regex     │ Sort text by regex split and corpus comparison    │
     ├─────────────────────┼───────────────────────────────────────────────────┤
     │ text sort cluster   │ Sort text by similarity                           │
@@ -387,12 +388,12 @@ flat commands are now only reachable through a group (for example
     │ text dates          │ Unstructured text -> dates                        │
     ├─────────────────────┼───────────────────────────────────────────────────┤
     │ text times          │ Unstructured text -> times                        │
-    ├─────────────────────┼───────────────────────────────────────────────────┤
-    │ json rename-keys    │ Rename JSON keys by substring match               │
     ╰─────────────────────┴───────────────────────────────────────────────────╯
 
     JSON processing subcommands:
     ╭───────────────────┬──────────────────────────────────────────╮
+    │ json rename-keys  │ Rename JSON keys by substring match      │
+    ├───────────────────┼──────────────────────────────────────────┤
     │ json remove-nulls │ Remove null values recursively from JSON │
     ╰───────────────────┴──────────────────────────────────────────╯
 
@@ -3634,6 +3635,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
+### Document processing subcommands
+
 ###### document convert
 
 <details><summary>Convert images, PDFs, and text-like documents to PDF</summary>
@@ -3647,6 +3650,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library document convert scan.jpg
         library document convert notes.md
+        library document convert scanned-text.pdf --ocr
         library document convert report.pdf --output-path report-flat.pdf
 
 
@@ -3908,22 +3912,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
-###### text convert
-
-<details><summary>Convert Markdown and text-like documents to PDF</summary>
-
-    $ library text convert -h
-    usage: library text convert PATH ... [--ocr]
-
-    Convert Markdown or text-like files to PDF with Pandoc. OCR is optional and
-    is useful when the conversion pipeline produces a raster-only PDF.
-
-        library text convert notes.md
-        library text convert scanned-text.pdf --ocr
-
-
-</details>
-
 ###### text sort regex
 
 <details><summary>Sort text by regex split and corpus comparison</summary>
@@ -4145,6 +4133,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
+### JSON processing subcommands
+
 ###### json rename-keys
 
 <details><summary>Rename JSON keys by substring match</summary>
@@ -4159,8 +4149,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 
 </details>
-
-### JSON processing subcommands
 
 ###### json remove-nulls
 

@@ -114,6 +114,8 @@ progs = {
         "shrink image": "Shrink images to AV1 image format (.avif)",
         "shrink text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
         "archive extract": "Extract from archives and delete all associated multi-part archive files",
+    },
+    "Document processing subcommands": {
         "document convert": "Convert images, PDFs, and text-like documents to PDF",
         "document adjust pdf": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
         "document pdf header": "Stamp rendered Markdown/text onto PDF pages",
@@ -135,7 +137,6 @@ progs = {
         "text group": "Group input lines by a regular expression",
         "text interleave": "Interleave lines from multiple inputs",
         "text markdown": "Convert simple HTML documents to Markdown",
-        "text convert": "Convert Markdown and text-like documents to PDF",
         "text sort regex": "Sort text by regex split and corpus comparison",
         "text sort cluster": "Sort text by similarity",
         "text extract": "Extract human text from lists of web links",
@@ -146,9 +147,9 @@ progs = {
         "text timestamps": "Unstructured text -> timestamps",
         "text dates": "Unstructured text -> dates",
         "text times": "Unstructured text -> times",
-        "json rename-keys": "Rename JSON keys by substring match",
     },
     "JSON processing subcommands": {
+        "json rename-keys": "Rename JSON keys by substring match",
         "json remove-nulls": "Remove null values recursively from JSON",
     },
     "Image processing subcommands": {
@@ -263,6 +264,7 @@ NESTED_COMMAND_ALIASES = {
 
 NESTED_PATH_ALIASES = {
     ("video", "create", "images"): ("video", "create", "slideshow"),
+    ("text", "convert"): ("document", "convert"),
 }
 
 for _group in NESTED_COMMANDS:

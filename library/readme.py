@@ -178,17 +178,17 @@ flat commands are now only reachable through a group (for example
 ### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/mealtime.tw.db
-    library play video mealtime.tw.db --random --duration 30m
+    library play video --random --duration 30m mealtime.tw.db
 
 ### Listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/music.tl.db
-    library play audio music.tl.db -ct "House speakers" --random
+    library play audio -ct "House speakers" --random music.tl.db
 
 ### Hook into HackerNews
 
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
-    library play video hackernews_only_direct.tw.db --random --ignore-errors
+    library play video --random --ignore-errors hackernews_only_direct.tw.db
 
 ### Organize via separate databases
 
@@ -199,8 +199,8 @@ flat commands are now only reachable through a group (for example
     library database merge --pk path -t playlists,media audiobooks.db podcasts.db both.db
 
     # or split
-    library database merge --pk path -t playlists,media both.db audiobooks.db -w 'path like "%/audiobooks/%"'
-    library database merge --pk path -t playlists,media both.db podcasts.db -w 'path like "%/podcasts%"'
+    library database merge --pk path -t playlists,media -w 'path like "%/audiobooks/%"' both.db audiobooks.db
+    library database merge --pk path -t playlists,media -w 'path like "%/podcasts%"' both.db podcasts.db
 
 ## Guides
 
@@ -275,7 +275,7 @@ Or with `systemd`:
 
 You can also invoke tabs manually:
 
-    library tabs open tabs.db -L 1  # open one tab
+    library tabs open -L 1 tabs.db  # open one tab
 
 Incremental surfing. 📈🏄 totally rad!
 

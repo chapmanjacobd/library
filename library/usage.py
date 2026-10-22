@@ -86,21 +86,21 @@ stats = """library database stats DATABASE TIME_COLUMN
 
     View watched stats
 
-        library database stats video.db --completed --no-hide-deleted
+        library database stats --completed --no-hide-deleted video.db
 
     View download stats
 
-        library database stats video.db time_downloaded --frequency daily
+        library database stats --frequency daily video.db time_downloaded
 
         See also: library database stats video.db time_downloaded -f daily --hide-deleted
 
     View deleted stats
 
-        library database stats video.db time_deleted --deleted
+        library database stats --deleted video.db time_deleted
 
     View time_modified stats
 
-        library database stats web_add.image.db time_modified -f year
+        library database stats -f year web_add.image.db time_modified
         Time_Modified media:
         year      total_size    avg_size    count
         ------  ------------  ----------  -------
@@ -381,7 +381,7 @@ tildes = """library database add tildes DATABASE USER
 
     Without cookies you are limited to the first page. You can use cookies like this
         https://github.com/rotemdan/ExportCookies
-        library database add tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
+        library database add tildes --cookies ~/Downloads/cookies-tildes-net.txt tildes.net.db xk3
 """
 
 substack = """library database add substack DATABASE PATH ...
@@ -437,7 +437,7 @@ search = """library captions DATABASE QUERY
 
     Search and open file
 
-        library captions fts.db 'two words' --open
+        library captions --open fts.db 'two words'
 """
 
 history_add = """library database history add DATABASE PATH ...
@@ -462,22 +462,22 @@ history = """library database history [--frequency daily weekly (monthly) yearly
 
     Show only completed history
 
-        library database history web_add.image.db --completed
+        library database history --completed web_add.image.db
 
     Show only in-progress history
 
-        library database history web_add.image.db --in-progress
+        library database history --in-progress web_add.image.db
 
     Delete history
 
         Delete two hours of history
-        library database history web_add.image.db --played-within '2 hours' -L inf --delete-rows
+        library database history --played-within '2 hours' -L inf --delete-rows web_add.image.db
 
         Delete all history
-        library database history web_add.image.db -L inf --delete-rows
+        library database history -L inf --delete-rows web_add.image.db
 
         Delete history for exact paths
-            library database history ~/mc/links.db --delete-rows https://example.com/article
+            library database history --delete-rows ~/mc/links.db https://example.com/article
             cb | library database history ~/mc/links.db --delete-rows -
 
         See also: library database stats -h
@@ -522,7 +522,7 @@ download_status = """library database download status DATABASE
 
     Simulate --safe flag
 
-        library database download status video.db --safe
+        library database download status --safe video.db
 """
 
 tabs_open = """library tabs open DATABASE
@@ -653,11 +653,11 @@ tube_update = """library database update video [--audio | --video] DATABASE
         By default tubeupdate will quickly add media.
         You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
 
-        library database update video educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+        library database update video --extra educational.db https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 
     Remove duplicate playlists
 
-        library database dedupe video.db playlists --bk extractor_playlist_id
+        library database dedupe --bk extractor_playlist_id video.db playlists
 """
 
 gallery_add = """library database add gallery DATABASE URL ...
@@ -938,7 +938,7 @@ dedupe_db = """library database dedupe DATABASE TABLE --bk BUSINESS_KEYS [--pk P
 
     Dedupe-DB will help remove duplicate rows based on non-primary-key business keys
 
-        library database dedupe ./video.db media --bk path
+        library database dedupe --bk path ./video.db media
 
     By default all non-primary and non-business key columns will be upserted unless --only-columns is provided
     If --primary-keys is not provided table metadata primary keys will be used
@@ -1132,7 +1132,7 @@ merge_mv = """library folder merge move SOURCE ... DEST [--simulate] [--ext EXT]
 
         Move smallest files first
 
-        library filesystem list /src/dir/ -u size -pf | library folder merge move - /dest/dir/ --relative-to=/src/dir/ --dry-run
+        library filesystem list -u size -pf /src/dir/ | library folder merge move --relative-to=/src/dir/ --dry-run - /dest/dir/
 
         Move fresh music to your phone every Sunday
 
@@ -1171,7 +1171,7 @@ scatter = """library folder scatter [--limit LIMIT] [--policy POLICY] [--sort SO
 
     Reduce number of files per folder (creates more folders)
 
-        library folder scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+        library folder scatter --max-files-per-folder 16000 scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
 
     Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
@@ -1224,7 +1224,7 @@ scatter = """library folder scatter [--limit LIMIT] [--policy POLICY] [--sort SO
 
     Multi-device re-bin: balance device inodes for specific subfolder
 
-        library folder scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
+        library folder scatter -m /mnt/d1:/mnt/d2 --group count --sort 'size desc' fs.db subfolder
 
     Multi-device re-bin: only consider the most recent 100 files
 
@@ -1232,7 +1232,7 @@ scatter = """library folder scatter [--limit LIMIT] [--policy POLICY] [--sort SO
 
     Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
 
-        library folder scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
+        library folder scatter -m /mnt/d1:/mnt/d3:/mnt/d4 fs.db /mnt/d2
 
     This tool is intended for local use. If transferring many small files across the network something like
     [fpart](https://github.com/martymac/fpart) or [fpsync](https://www.fpart.org/fpsync/) will be better.
@@ -1728,11 +1728,11 @@ media_check = """library file check [--filesystem | --io | --fs] [--chunk-size S
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach
 
         library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
-        library file check (library filesystem list --db tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+        library file check --full-scan --delete-corrupt 25% (library filesystem list --db tmp.db -w 'corruption>15' -pf)
 
     The above can now be done in one command via `--full-scan-if-corrupt`
 
-        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
+        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% --full-scan-if-corrupt 15% --delete-corrupt 25% tmp.db ./video/ ./folders/
 
     Corruption stats
 
@@ -1768,9 +1768,9 @@ web_add = """library database add open-directory [--auto | --filesystem | --vide
     text metadata using one or more profiles.
 
         library database add open-directory open_dir.db http://1.1.1.1/  # simple spider
-        library database add open-directory open_dir.db --filesystem http://1.1.1.1/
-        library database add open-directory open_dir.db --video http://1.1.1.1/
-        library database add open-directory open_dir.db --filesystem --video http://1.1.1.1/
+        library database add open-directory --filesystem open_dir.db http://1.1.1.1/
+        library database add open-directory --video open_dir.db http://1.1.1.1/
+        library database add open-directory --filesystem --video open_dir.db http://1.1.1.1/
 
     Re-scan using a different profile
 
@@ -2096,6 +2096,7 @@ document_convert = """library document convert PATH ... [--ocr] [--open]
 
         library document convert scan.jpg
         library document convert notes.md
+        library document convert scanned-text.pdf --ocr
         library document convert report.pdf --output-path report-flat.pdf
 """
 
@@ -2112,21 +2113,12 @@ pdf_edit = """library document adjust pdf PATH ...
         library document adjust pdf -b 105 -c 120 -C 80 -s 110 scan001.pdf
 """
 
-pdf_header = """library document pdf header HEADER_TEXT INPUT.pdf [--output-path OUTPUT.pdf]
+pdf_header = """library document pdf header [--output-path OUTPUT.pdf] HEADER_TEXT INPUT.pdf
 
     Render HEADER_TEXT with Pandoc and stamp it onto every page of INPUT.pdf with pdftk.
 
         library document pdf header "Draft - October 2026" input.pdf
         library document pdf header "Confidential" input.pdf -o stamped.pdf
-"""
-
-text_convert = """library text convert PATH ... [--ocr]
-
-    Convert Markdown or text-like files to PDF with Pandoc. OCR is optional and
-    is useful when the conversion pipeline produces a raster-only PDF.
-
-        library text convert notes.md
-        library text convert scanned-text.pdf --ocr
 """
 
 process_table = """library shrink table PATH ... [--output-path OUTPUT.parquet]
@@ -2137,7 +2129,7 @@ process_table = """library shrink table PATH ... [--output-path OUTPUT.parquet]
         library shrink table workbook.xlsx --join-tables --compression zstd
 """
 
-images_to_video = """library video create slideshow [IMAGE ...] [--audio AUDIO] [--audio-duration | --loop-images | --hold-last-image | --loop-audio] [--picture-time SECONDS] [--crossfade-time SECONDS] [--output OUTPUT.mp4]
+images_to_video = """library video create slideshow [--audio AUDIO] [--audio-duration | --loop-images | --hold-last-image | --loop-audio] [--picture-time SECONDS] [--crossfade-time SECONDS] [--output OUTPUT.mp4] [IMAGE ...]
 
     Create an H.264 slideshow from images, preserving natural sort order:
 
