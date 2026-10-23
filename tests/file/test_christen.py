@@ -100,3 +100,9 @@ def test_mojibake_fix_is_opt_in():
 
     assert clean_path(b) == "/docs/cafÃ©.txt"
     assert clean_path(b, fix_mojibake=True) == "/docs/café.txt"
+
+
+def test_mojibake_fix_recleans_corrected_text():
+    b = "/docs/fooï¼\x8fbar.txt".encode()
+
+    assert clean_path(b, fix_mojibake=True) == "/docs/foo bar.txt"

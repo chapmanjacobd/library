@@ -487,17 +487,17 @@ flat commands are now only reachable through a group (for example
 ### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/mealtime.tw.db
-    library play video mealtime.tw.db --random --duration 30m
+    library play video --random --duration 30m mealtime.tw.db
 
 ### Listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/music.tl.db
-    library play audio music.tl.db -ct "House speakers" --random
+    library play audio -ct "House speakers" --random music.tl.db
 
 ### Hook into HackerNews
 
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
-    library play video hackernews_only_direct.tw.db --random --ignore-errors
+    library play video --random --ignore-errors hackernews_only_direct.tw.db
 
 ### Organize via separate databases
 
@@ -508,8 +508,8 @@ flat commands are now only reachable through a group (for example
     library database merge --pk path -t playlists,media audiobooks.db podcasts.db both.db
 
     # or split
-    library database merge --pk path -t playlists,media both.db audiobooks.db -w 'path like "%/audiobooks/%"'
-    library database merge --pk path -t playlists,media both.db podcasts.db -w 'path like "%/podcasts%"'
+    library database merge --pk path -t playlists,media -w 'path like "%/audiobooks/%"' both.db audiobooks.db
+    library database merge --pk path -t playlists,media -w 'path like "%/podcasts%"' both.db podcasts.db
 
 ## Guides
 
@@ -584,7 +584,7 @@ Or with `systemd`:
 
 You can also invoke tabs manually:
 
-    library tabs open tabs.db -L 1  # open one tab
+    library tabs open -L 1 tabs.db  # open one tab
 
 Incremental surfing. 📈🏄 totally rad!
 
@@ -836,9 +836,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     text metadata using one or more profiles.
 
         library database add open-directory open_dir.db http://1.1.1.1/  # simple spider
-        library database add open-directory open_dir.db --filesystem http://1.1.1.1/
-        library database add open-directory open_dir.db --video http://1.1.1.1/
-        library database add open-directory open_dir.db --filesystem --video http://1.1.1.1/
+        library database add open-directory --filesystem open_dir.db http://1.1.1.1/
+        library database add open-directory --video open_dir.db http://1.1.1.1/
+        library database add open-directory --filesystem --video open_dir.db http://1.1.1.1/
 
     Re-scan using a different profile
 
@@ -960,7 +960,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Without cookies you are limited to the first page. You can use cookies like this
         https://github.com/rotemdan/ExportCookies
-        library database add tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
+        library database add tildes --cookies ~/Downloads/cookies-tildes-net.txt tildes.net.db xk3
 
 
 </details>
@@ -1969,7 +1969,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Simulate --safe flag
 
-        library database download status video.db --safe
+        library database download status --safe video.db
 
 
 </details>
@@ -2095,7 +2095,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Dedupe-DB will help remove duplicate rows based on non-primary-key business keys
 
-        library database dedupe ./video.db media --bk path
+        library database dedupe --bk path ./video.db media
 
     By default all non-primary and non-business key columns will be upserted unless --only-columns is provided
     If --primary-keys is not provided table metadata primary keys will be used
@@ -2128,7 +2128,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Search and open file
 
-        library captions fts.db 'two words' --open
+        library captions --open fts.db 'two words'
 
 
 </details>
@@ -2187,22 +2187,22 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Show only completed history
 
-        library database history web_add.image.db --completed
+        library database history --completed web_add.image.db
 
     Show only in-progress history
 
-        library database history web_add.image.db --in-progress
+        library database history --in-progress web_add.image.db
 
     Delete history
 
         Delete two hours of history
-        library database history web_add.image.db --played-within '2 hours' -L inf --delete-rows
+        library database history --played-within '2 hours' -L inf --delete-rows web_add.image.db
 
         Delete all history
-        library database history web_add.image.db -L inf --delete-rows
+        library database history -L inf --delete-rows web_add.image.db
 
         Delete history for exact paths
-            library database history ~/mc/links.db --delete-rows https://example.com/article
+            library database history --delete-rows ~/mc/links.db https://example.com/article
             cb | library database history ~/mc/links.db --delete-rows -
 
         See also: library database stats -h
@@ -2237,21 +2237,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     View watched stats
 
-        library database stats video.db --completed --no-hide-deleted
+        library database stats --completed --no-hide-deleted video.db
 
     View download stats
 
-        library database stats video.db time_downloaded --frequency daily
+        library database stats --frequency daily video.db time_downloaded
 
         See also: library database stats video.db time_downloaded -f daily --hide-deleted
 
     View deleted stats
 
-        library database stats video.db time_deleted --deleted
+        library database stats --deleted video.db time_deleted
 
     View time_modified stats
 
-        library database stats web_add.image.db time_modified -f year
+        library database stats -f year web_add.image.db time_modified
         Time_Modified media:
         year      total_size    avg_size    count
         ------  ------------  ----------  -------
@@ -2486,7 +2486,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         Move smallest files first
 
-        library filesystem list /src/dir/ -u size -pf | library folder merge move - /dest/dir/ --relative-to=/src/dir/ --dry-run
+        library filesystem list -u size -pf /src/dir/ | library folder merge move --relative-to=/src/dir/ --dry-run - /dest/dir/
 
         Move fresh music to your phone every Sunday
 
@@ -2540,7 +2540,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         Move smallest files first
 
-        library filesystem list /src/dir/ -u size -pf | library folder merge move - /dest/dir/ --relative-to=/src/dir/ --dry-run
+        library filesystem list -u size -pf /src/dir/ | library folder merge move --relative-to=/src/dir/ --dry-run - /dest/dir/
 
         Move fresh music to your phone every Sunday
 
@@ -2594,7 +2594,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         Move smallest files first
 
-        library filesystem list /src/dir/ -u size -pf | library folder merge move - /dest/dir/ --relative-to=/src/dir/ --dry-run
+        library filesystem list -u size -pf /src/dir/ | library folder merge move --relative-to=/src/dir/ --dry-run - /dest/dir/
 
         Move fresh music to your phone every Sunday
 
@@ -2648,7 +2648,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         Move smallest files first
 
-        library filesystem list /src/dir/ -u size -pf | library folder merge move - /dest/dir/ --relative-to=/src/dir/ --dry-run
+        library filesystem list -u size -pf /src/dir/ | library folder merge move --relative-to=/src/dir/ --dry-run - /dest/dir/
 
         Move fresh music to your phone every Sunday
 
@@ -2803,7 +2803,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Reduce number of files per folder (creates more folders)
 
-        library folder scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+        library folder scatter --max-files-per-folder 16000 scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
 
     Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
@@ -2856,7 +2856,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Multi-device re-bin: balance device inodes for specific subfolder
 
-        library folder scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
+        library folder scatter -m /mnt/d1:/mnt/d2 --group count --sort 'size desc' fs.db subfolder
 
     Multi-device re-bin: only consider the most recent 100 files
 
@@ -2864,7 +2864,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
 
-        library folder scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
+        library folder scatter -m /mnt/d1:/mnt/d3:/mnt/d4 fs.db /mnt/d2
 
     This tool is intended for local use. If transferring many small files across the network something like
     [fpart](https://github.com/martymac/fpart) or [fpsync](https://www.fpart.org/fpsync/) will be better.
@@ -3455,11 +3455,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach
 
         library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
-        library file check (library filesystem list --db tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+        library file check --full-scan --delete-corrupt 25% (library filesystem list --db tmp.db -w 'corruption>15' -pf)
 
     The above can now be done in one command via `--full-scan-if-corrupt`
 
-        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
+        library database add filesystem --delete-unplayable --check-corrupt --chunk-size 5% --full-scan-if-corrupt 15% --delete-corrupt 25% tmp.db ./video/ ./folders/
 
     Corruption stats
 
@@ -3681,7 +3681,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Stamp rendered Markdown/text onto PDF pages</summary>
 
     $ library document pdf header -h
-    usage: library document pdf header HEADER_TEXT INPUT.pdf [--output-path OUTPUT.pdf]
+    usage: library document pdf header [--output-path OUTPUT.pdf] HEADER_TEXT INPUT.pdf
 
     Render HEADER_TEXT with Pandoc and stamp it onto every page of INPUT.pdf with pdftk.
 
@@ -3793,7 +3793,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Create a slideshow video, optionally with audio</summary>
 
     $ library video create slideshow -h
-    usage: library video create slideshow [IMAGE ...] [--audio AUDIO] [--audio-duration | --loop-images | --hold-last-image | --loop-audio] [--picture-time SECONDS] [--crossfade-time SECONDS] [--output OUTPUT.mp4]
+    usage: library video create slideshow [--audio AUDIO] [--audio-duration | --loop-images | --hold-last-image | --loop-audio] [--picture-time SECONDS] [--crossfade-time SECONDS] [--output OUTPUT.mp4] [IMAGE ...]
 
     Create an H.264 slideshow from images, preserving natural sort order:
 
@@ -4809,11 +4809,11 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         By default tubeupdate will quickly add media.
         You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
 
-        library database update video educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+        library database update video --extra educational.db https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 
     Remove duplicate playlists
 
-        library database dedupe video.db playlists --bk extractor_playlist_id
+        library database dedupe --bk extractor_playlist_id video.db playlists
 
 
 </details>

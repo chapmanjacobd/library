@@ -73,9 +73,8 @@ def clean_path(
 
         parent = [ftfy.fix_text(part, explain=False) for part in parent]
         stem = ftfy.fix_text(stem, explain=False)
-
-        parent = [strings.clean_string(part) for part in path.parent.parts]
-        stem = strings.clean_string(path.stem)
+        parent = [strings.clean_string(part) for part in parent]
+        stem = strings.clean_string(stem)
         # log.debug("cleaned %s %s", parent, stem)
 
     parent = [strings.remove_prefixes(part, [" ", "-"]) for part in parent]

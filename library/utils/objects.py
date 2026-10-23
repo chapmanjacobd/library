@@ -50,6 +50,7 @@ def gen_is_empty(generator):
 
 def gen_len(gen, max_length=100):
     items = []
+    count = 0
     for count, item in enumerate(gen, start=1):
         items.append(item)
         if count >= max_length:
