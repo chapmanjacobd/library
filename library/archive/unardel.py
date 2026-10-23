@@ -140,10 +140,8 @@ def _extracted_media(output_paths, existing_paths, path_updates):
     return media
 
 
-def unardel() -> None:
-    args = parse_args()
+def _get_media(args):
     media = collect_media(args)
-
     mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k != "db"})
     with concurrent.futures.ThreadPoolExecutor() as executor:  # for lsar
         futures = {executor.submit(check_shrink, mp_args, m) for m in media}
@@ -158,7 +156,10 @@ def unardel() -> None:
 
     if not media:
         processes.no_media_found()
+    return media
 
+
+def _print_summary(media):
     summary = {}
     for m in media:
         media_key = m["ext"]
@@ -190,64 +191,75 @@ def unardel() -> None:
     print("Compressed size:", strings.file_size(compressed_size))
     print("Extracted size:", strings.file_size(extracted_size))
 
+
+def _extract_archives(args, media):
+    if not (args.no_confirm or devices.confirm("Proceed?")):
+        return [], []
+
     uncompressed_archives = set()
+    path_updates = []
+    extracted_outputs = []
+    for m in media:
+        archive_path = m.get("archive_path")
+        if not (m.get("compressed_size") and os.path.exists(archive_path) and archive_path not in uncompressed_archives):
+            continue
+
+        uncompressed_archives.add(archive_path)
+        if args.simulate:
+            log.info("Unarchiving %s", archive_path)
+        else:
+            output_path, updates = processes.extract_nested_archives(archive_path, single_file_flatten=True)
+            extracted_outputs.append((output_path, archive_path))
+            path_updates.extend(updates)
+    return extracted_outputs, path_updates
+
+
+def _prepare_extracted_media(media, extracted_outputs, path_updates):
+    original_media_paths = {m["path"] for m in media}
+    media = replace_media_paths(media, path_updates)
+    existing_paths = {m["path"] for m in media} | original_media_paths
+    media.extend(_extracted_media(extracted_outputs, existing_paths, path_updates))
+    media = [
+        m
+        for m in media
+        if not (m.get("compressed_size") and processes.is_archive_path(m["path"]))
+    ]
+    return iterables.list_dict_unique(media, ["path"])
+
+
+def _process_media(args, media):
     new_free_space = 0
-    if args.no_confirm or devices.confirm("Proceed?"):
-        path_updates = []
-        extracted_outputs = []
-        for m in media:
-            if (
-                m.get("compressed_size")
-                and os.path.exists(m["archive_path"])
-                and m["archive_path"] not in uncompressed_archives
-            ):
-                uncompressed_archives.add(m["archive_path"])
+    for m in media:
+        log.info(
+            "%s freed. Processing %s (%s)",
+            strings.file_size(new_free_space),
+            m["path"],
+            strings.file_size(m["size"]),
+        )
 
-                if args.simulate:
-                    log.info("Unarchiving %s", m["archive_path"])
-                else:
-                    output_path, updates = processes.extract_nested_archives(
-                        m["archive_path"],
-                        single_file_flatten=True,
-                    )
-                    extracted_outputs.append((output_path, m["archive_path"]))
-                    path_updates.extend(updates)
+        if not os.path.exists(m["path"]):
+            log.error("[%s]: FileNotFoundError", m["path"])
+            m["time_deleted"] = consts.APPLICATION_START
 
-        original_media_paths = {m["path"] for m in media}
-        media = replace_media_paths(media, path_updates)
-        existing_paths = {m["path"] for m in media} | original_media_paths
-        media.extend(_extracted_media(extracted_outputs, existing_paths, path_updates))
-        media = [
-            m
-            for m in media
-            if not (
-                m.get("compressed_size")
-                and processes.is_archive_path(m["path"])
-            )
-        ]
-        media = iterables.list_dict_unique(media, ["path"])
+        if args.move and not m.get("time_deleted"):
+            dest = path_utils.relative_from_mountpoint(m["path"], args.move)
+            if args.simulate:
+                shell_utils.rename_move_file(m["path"], dest, simulate=True)
+            else:
+                shell_utils.rename_move_file(m["path"], dest)
+        elif args.move_broken and m.get("time_deleted") and os.path.exists(m["path"]):
+            dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
+            if args.simulate:
+                shell_utils.rename_move_file(m["path"], dest, simulate=True)
+            else:
+                shell_utils.rename_move_file(m["path"], dest)
 
-        for m in media:
-            log.info(
-                "%s freed. Processing %s (%s)",
-                strings.file_size(new_free_space),
-                m["path"],
-                strings.file_size(m["size"]),
-            )
 
-            if not os.path.exists(m["path"]):
-                log.error("[%s]: FileNotFoundError", m["path"])
-                m["time_deleted"] = consts.APPLICATION_START
+def unardel() -> None:
+    args = parse_args()
+    media = _get_media(args)
+    _print_summary(media)
 
-            if args.move and not m.get("time_deleted"):
-                dest = path_utils.relative_from_mountpoint(m["path"], args.move)
-                if args.simulate:
-                    shell_utils.rename_move_file(m["path"], dest, simulate=True)
-                else:
-                    shell_utils.rename_move_file(m["path"], dest)
-            elif args.move_broken and m.get("time_deleted") and os.path.exists(m["path"]):
-                dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
-                if args.simulate:
-                    shell_utils.rename_move_file(m["path"], dest, simulate=True)
-                else:
-                    shell_utils.rename_move_file(m["path"], dest)
+    extracted_outputs, path_updates = _extract_archives(args, media)
+    media = _prepare_extracted_media(media, extracted_outputs, path_updates)
+    _process_media(args, media)

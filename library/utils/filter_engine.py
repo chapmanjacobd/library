@@ -17,14 +17,15 @@ def sort_like_sql(order_bys: str):
 
     def get_key(d):
         key = []
-        for order in order_bys_list:
-            if order.endswith(" desc"):
-                order = order[:-5]
+        for raw_order in order_bys_list:
+            if raw_order.endswith(" desc"):
+                order = raw_order[:-5]
                 reverse = True
-            elif order.startswith("-"):
-                order = order.lstrip("-")
+            elif raw_order.startswith("-"):
+                order = raw_order.lstrip("-")
                 reverse = True
             else:
+                order = raw_order
                 reverse = False
 
             if "/" in order:
@@ -307,7 +308,7 @@ def eval_sql_expr(key: str, op: str, val: str, item: dict) -> bool:
         # SQLite LIKE -> translate %/_ to regex
         regex = "^" + re.escape(val).replace("%", ".*").replace("_", ".") + "$"
         return bool(re.match(regex, str(col_val or ""), flags=re.IGNORECASE))
-    elif op == "IS" and val.upper() == "NULL":
+    if op == "IS" and val.upper() == "NULL":
         return col_val is None
 
     if col_val is None:
@@ -322,21 +323,21 @@ def eval_sql_expr(key: str, op: str, val: str, item: dict) -> bool:
         with suppress(ValueError):
             target_val = float(val)
 
-    if op in ("=", "=="):
-        return col_val == target_val
-    elif op in ("!=", "<>"):
-        return col_val != target_val
-    elif op == ">":
-        return col_val > target_val
-    elif op == "<":
-        return col_val < target_val
-    elif op == ">=":
-        return col_val >= target_val
-    elif op == "<=":
-        return col_val <= target_val
-    else:
+    comparisons = {
+        "=": lambda: col_val == target_val,
+        "==": lambda: col_val == target_val,
+        "!=": lambda: col_val != target_val,
+        "<>": lambda: col_val != target_val,
+        ">": lambda: col_val > target_val,
+        "<": lambda: col_val < target_val,
+        ">=": lambda: col_val >= target_val,
+        "<=": lambda: col_val <= target_val,
+    }
+    try:
+        return comparisons[op]()
+    except KeyError as error:
         msg = f"Unsupported operator: {op}"
-        raise ValueError(msg)
+        raise ValueError(msg) from error
 
 
 def is_mime_match(types: list[str], mime_type: str) -> bool:
@@ -608,7 +609,7 @@ def parse_human_to_lambda(human_to_x, sizes: list[str]):
 def compare_block_strings(value: str, media_value: str) -> bool:
     if value is None and media_value is None:
         return True
-    elif value is None or media_value is None:
+    if value is None or media_value is None:
         return False
 
     value = value.lower()
@@ -622,15 +623,13 @@ def compare_block_strings(value: str, media_value: str) -> bool:
     if inner_wild:
         regex_pattern = ".*".join(re.escape(s) for s in value.split("%"))
         return bool(re.match(regex_pattern, media_value))
-    elif not ends_with_wild and not starts_with_wild:
-        return media_value.startswith(value)
-    elif ends_with_wild and not starts_with_wild:
-        return media_value.startswith(value.rstrip("%"))
-    elif starts_with_wild and not ends_with_wild:
-        return media_value.endswith(value.lstrip("%"))
-    elif starts_with_wild and ends_with_wild:
-        return inner_value in media_value
-    raise ValueError("Unreachable?")
+    matchers = {
+        (False, False): lambda: media_value.startswith(value),
+        (False, True): lambda: media_value.startswith(value.rstrip("%")),
+        (True, False): lambda: media_value.endswith(value.lstrip("%")),
+        (True, True): lambda: inner_value in media_value,
+    }
+    return matchers[(starts_with_wild, ends_with_wild)]()
 
 
 def is_blocked_dict_like_sql(m: dict, blocklist: list[dict]) -> bool:

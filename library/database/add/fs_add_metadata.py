@@ -39,7 +39,7 @@ munge_book_tags_slow = processes.with_timeout(350)(munge_book_tags)
 munge_book_tags_fast = processes.with_timeout(70)(munge_book_tags)
 
 
-def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[str, str | int | None]] | None:
+def _get_file_metadata(path):
     try:
         path.encode()
     except UnicodeEncodeError:
@@ -50,11 +50,11 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[s
         stat = os.stat(path, follow_symlinks=False)
     except FileNotFoundError:
         return None
-    except OSError as e:
-        errmsg = str(e)
+    except OSError as excinfo:
+        errmsg = str(excinfo)
         if path not in errmsg:
             errmsg = f"{path} {errmsg}"
-        log.error("%s: %s", type(e).__name__, errmsg)
+        log.error("%s: %s", type(excinfo).__name__, errmsg)
         return None
     except Exception as excinfo:
         log.error(f"%s {path}", excinfo)
@@ -65,7 +65,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[s
     except TimeoutError:
         mimetype = None
 
-    m = {
+    return {
         "path": path,
         "size": stat.st_size,
         "type": mimetype,
@@ -74,6 +74,102 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[s
         "time_downloaded": consts.APPLICATION_START,
         "time_deleted": 0,
     }
+
+
+def _extract_av_metadata(mp_args, m, ext, is_scan_all_files):
+    is_audio_scan = objects.is_profile(mp_args, DBType.audio) and (
+        ext in consts.AUDIO_ONLY_EXTENSIONS or is_scan_all_files
+    )
+    is_video_scan = objects.is_profile(mp_args, DBType.video) and (
+        ext in consts.VIDEO_EXTENSIONS or is_scan_all_files
+    )
+    if is_audio_scan or is_video_scan:
+        m = av.munge_av_tags(mp_args, m)
+    return m
+
+
+def _extract_text_metadata(mp_args, m, path, ext, is_scan_all_files):
+    if not (
+        objects.is_profile(mp_args, DBType.text)
+        and (ext in arggroups.text_extensions(mp_args) or is_scan_all_files)
+    ):
+        return m
+    if not arggroups.text_profile_available():
+        log.debug("textract is not installed; skipping text extraction for %s", path)
+        return m
+    try:
+        start = timer()
+        if any([mp_args.ocr, mp_args.speech_recognition]):
+            m |= munge_book_tags_slow(path)
+        else:
+            m |= munge_book_tags_fast(path)
+    except (mp_TimeoutError, TimeoutError):
+        log.warning(f"Timed out trying to read file. {path}")
+    else:
+        log.debug(f"{timer() - start} {path}")
+    return m
+
+
+def _apply_file_operations(mp_args, m, path):
+    if getattr(mp_args, "hash", False) and m["type"] != "directory" and m["size"] > 0:
+        m["hash"] = sample_hash.sample_hash_file(path)
+    if getattr(mp_args, "copy", False) and not file_utils.is_file_open(path):
+        path = m["path"] = shell_utils.copy(mp_args, path, str(mp_args.copy))
+    if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
+        m["path"] = shell_utils.rel_move(mp_args, path, str(mp_args.move))
+    return m
+
+
+def _process_media(mp_args, m, path):
+    if not getattr(mp_args, "process", False):
+        return m
+
+    process_ext = Path(path).suffix.lstrip(".").lower()
+    handlers = [
+        (
+            objects.is_profile(mp_args, DBType.audio)
+            and process_ext in consts.AUDIO_ONLY_EXTENSIONS
+            and Path(path).suffix not in [".opus", ".mka"],
+            lambda: process_ffmpeg.process_path(
+                mp_args,
+                path,
+                split_longer_than=2160 if mp_args.split_longer_than is None and "audiobook" in path.lower() else None,
+            ),
+        ),
+        (
+            objects.is_profile(mp_args, DBType.video)
+            and process_ext in consts.VIDEO_EXTENSIONS
+            and Path(path).suffix != ".av1.mkv",
+            lambda: process_ffmpeg.process_path(mp_args, path),
+        ),
+        (
+            objects.is_profile(mp_args, DBType.image)
+            and process_ext in consts.IMAGE_EXTENSIONS
+            and Path(path).suffix not in [".avif", ".avifs"],
+            lambda: process_image.process_path(mp_args, path),
+        ),
+    ]
+    for should_process, process in handlers:
+        if should_process:
+            result = process()
+            if result is None:
+                return None
+            if isinstance(result, list):
+                processed_args = argparse.Namespace(**(vars(mp_args) | {"process": False}))
+                return [
+                    metadata
+                    for output_path in result
+                    if (metadata := extract_metadata(processed_args, output_path))
+                ]
+            m["path"] = str(result)
+            break
+    return m
+
+
+def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[str, str | int | None]] | None:
+    m = _get_file_metadata(path)
+    if m is None:
+        return None
 
     ext = path.rsplit(".", 1)[-1].lower()
     is_scan_all_files = getattr(mp_args, "scan_all_files", False)
@@ -84,87 +180,14 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | list[dict[s
     if m["size"] == 0 or not Path(path).exists():
         return m
 
-    is_audio_scan = objects.is_profile(mp_args, DBType.audio) and (
-        ext in consts.AUDIO_ONLY_EXTENSIONS or is_scan_all_files
-    )
-    is_video_scan = objects.is_profile(mp_args, DBType.video) and (
-        ext in consts.VIDEO_EXTENSIONS or is_scan_all_files
-    )
-    if is_audio_scan or is_video_scan:
-        m = av.munge_av_tags(mp_args, m)
+    m = _extract_av_metadata(mp_args, m, ext, is_scan_all_files)
 
     if not Path(path).exists():  # av.munge_av_tags might delete if unplayable or corruption exceeds threshold
         return m
 
-    text_exts = arggroups.text_extensions(mp_args)
-    if objects.is_profile(mp_args, DBType.text) and (ext in text_exts or is_scan_all_files):
-        if not arggroups.text_profile_available():
-            log.debug("textract is not installed; skipping text extraction for %s", path)
-        else:
-            try:
-                start = timer()
-                if any([mp_args.ocr, mp_args.speech_recognition]):
-                    m |= munge_book_tags_slow(path)
-                else:
-                    m |= munge_book_tags_fast(path)
-            except (mp_TimeoutError, TimeoutError):
-                log.warning(f"Timed out trying to read file. {path}")
-            else:
-                log.debug(f"{timer() - start} {path}")
-
-    if getattr(mp_args, "hash", False) and m["type"] != "directory" and m["size"] > 0:
-        m["hash"] = sample_hash.sample_hash_file(path)
-
-    if getattr(mp_args, "copy", False) and not file_utils.is_file_open(path):
-        path = m["path"] = shell_utils.copy(mp_args, path, str(mp_args.copy))
-
-    if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
-        path = m["path"] = shell_utils.rel_move(mp_args, path, str(mp_args.move))
-
-    if getattr(mp_args, "process", False):
-        # Dispatch on the file extension, not the selected profile: `auto` enables every
-        # media type, so a profile-based `if/elif` would route images (and audio) to the
-        # first matching branch. The profile still gates which types are processed.
-        process_ext = Path(path).suffix.lstrip(".").lower()
-        if (
-            objects.is_profile(mp_args, DBType.audio)
-            and process_ext in consts.AUDIO_ONLY_EXTENSIONS
-            and Path(path).suffix not in [".opus", ".mka"]
-        ):
-            result = process_ffmpeg.process_path(
-                mp_args,
-                path,
-                split_longer_than=2160 if mp_args.split_longer_than is None and "audiobook" in path.lower() else None,
-            )
-            if result is None:
-                return None
-            if isinstance(result, list):
-                processed_args = argparse.Namespace(**(vars(mp_args) | {"process": False}))
-                return [m for output_path in result if (m := extract_metadata(processed_args, output_path))]
-            path = m["path"] = str(result)
-        elif (
-            objects.is_profile(mp_args, DBType.video)
-            and process_ext in consts.VIDEO_EXTENSIONS
-            and Path(path).suffix != ".av1.mkv"
-        ):
-            result = process_ffmpeg.process_path(mp_args, path)
-            if result is None:
-                return None
-            if isinstance(result, list):
-                processed_args = argparse.Namespace(**(vars(mp_args) | {"process": False}))
-                return [m for output_path in result if (m := extract_metadata(processed_args, output_path))]
-            path = m["path"] = str(result)
-        elif (
-            objects.is_profile(mp_args, DBType.image)
-            and process_ext in consts.IMAGE_EXTENSIONS
-            and Path(path).suffix not in [".avif", ".avifs"]
-        ):
-            result = process_image.process_path(mp_args, path)
-            if result is None:
-                return None
-            path = m["path"] = str(result)
-
-    return m
+    m = _extract_text_metadata(mp_args, m, path, ext, is_scan_all_files)
+    m = _apply_file_operations(mp_args, m, path)
+    return _process_media(mp_args, m, m["path"])
 
 
 def munge_image_tags(m: dict, e: dict) -> dict:
@@ -283,14 +306,15 @@ def extract_image_metadata_chunk(metadata: list[dict]) -> list[dict]:
         return metadata
 
     exif_enriched = []
-    for m, e in zip(metadata, exif, strict=True):
-        assert m["path"] == e.pop("SourceFile")
+    for metadata_entry, exif_entry in zip(metadata, exif, strict=True):
+        assert metadata_entry["path"] == exif_entry.pop("SourceFile")
 
+        enriched_entry = metadata_entry
         try:
-            m = munge_image_tags(m, e)
+            enriched_entry = munge_image_tags(metadata_entry, exif_entry)
         except Exception as excinfo:
-            log.error("[%s]: %s", m["path"], excinfo)
+            log.error("[%s]: %s", metadata_entry["path"], excinfo)
             # continue ?
-        exif_enriched.append(m)
+        exif_enriched.append(enriched_entry)
 
     return exif_enriched

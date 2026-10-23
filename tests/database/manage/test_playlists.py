@@ -33,8 +33,8 @@ def test_playlist_identity_includes_extractor_config():
     db_playlists.create(args)
     db_utils.optimize(args)
 
-    first_id = db_playlists._add(args, {"path": "same-path", "extractor_config": {"source": "first"}})
-    second_id = db_playlists._add(args, {"path": "same-path", "extractor_config": {"source": "second"}})
+    first_id = db_playlists.add_entry(args, {"path": "same-path", "extractor_config": {"source": "first"}})
+    second_id = db_playlists.add_entry(args, {"path": "same-path", "extractor_config": {"source": "second"}})
 
     assert first_id != second_id
     assert db_playlists.get_id(args, "same-path", {"source": "first"}) == first_id

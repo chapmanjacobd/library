@@ -516,26 +516,25 @@ def duration_short(seconds, format_str="%0.1f") -> str:
 
     try:
         if seconds < SECONDS_PER_MINUTE:
-            return f"{int(seconds)} seconds"
-
-        minutes = seconds / SECONDS_PER_MINUTE
-        if minutes < SINGLE_UNIT_THRESHOLD:
-            return "1 minute"
-        elif minutes < SECONDS_PER_MINUTE:
-            return f"{format_str % minutes} minutes"
-
-        hours = minutes / SECONDS_PER_MINUTE
-        if hours < SINGLE_UNIT_THRESHOLD:
-            return "1 hour"
-        elif hours < HOURS_PER_DAY:
-            return f"{format_str % hours} hours"
-
-        days = hours / HOURS_PER_DAY
-        if days < SINGLE_UNIT_THRESHOLD:
-            return "1 day"
-        return f"{format_str % days} days"
+            result = f"{int(seconds)} seconds"
+        else:
+            minutes = seconds / SECONDS_PER_MINUTE
+            if minutes < SINGLE_UNIT_THRESHOLD:
+                result = "1 minute"
+            elif minutes < SECONDS_PER_MINUTE:
+                result = f"{format_str % minutes} minutes"
+            else:
+                hours = minutes / SECONDS_PER_MINUTE
+                if hours < SINGLE_UNIT_THRESHOLD:
+                    result = "1 hour"
+                elif hours < HOURS_PER_DAY:
+                    result = f"{format_str % hours} hours"
+                else:
+                    days = hours / HOURS_PER_DAY
+                    result = "1 day" if days < SINGLE_UNIT_THRESHOLD else f"{format_str % days} days"
     except OverflowError:
         return ""
+    return result
 
 
 def relative_datetime(seconds) -> str:
@@ -551,25 +550,22 @@ def relative_datetime(seconds) -> str:
     now = datetime.now(tz=tz.utc).astimezone()
     calendar_days_diff = (dt.date() - now.date()).days
     if abs(calendar_days_diff) < RELATIVE_DATE_RANGE_DAYS:
-        # Today
         if now.date() == dt.date():
-            return dt.strftime("today, %H:%M")
+            result = dt.strftime("today, %H:%M")
         elif now < dt:
-            # Tomorrow
             if calendar_days_diff == 1:
-                return dt.strftime("tomorrow, %H:%M")
-            # In a few days
-            days_diff = round((dt - now).total_seconds() / timedelta(days=1).total_seconds())
-            return dt.strftime(f"in {days_diff} days, %H:%M")
+                result = dt.strftime("tomorrow, %H:%M")
+            else:
+                days_diff = round((dt - now).total_seconds() / timedelta(days=1).total_seconds())
+                result = dt.strftime(f"in {days_diff} days, %H:%M")
+        elif calendar_days_diff == -1:
+            result = dt.strftime("yesterday, %H:%M")
         else:
-            # Yesterday
-            if calendar_days_diff == -1:
-                return dt.strftime("yesterday, %H:%M")
-            # A few days ago
             days_diff = round((now - dt).total_seconds() / timedelta(days=1).total_seconds())
-            return dt.strftime(f"{abs(days_diff)} days ago, %H:%M")
-
-    return dt.strftime("%Y-%m-%d %H:%M")
+            result = dt.strftime(f"{abs(days_diff)} days ago, %H:%M")
+    else:
+        result = dt.strftime("%Y-%m-%d %H:%M")
+    return result
 
 
 def timezone(s):

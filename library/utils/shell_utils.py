@@ -27,6 +27,31 @@ def unlink_partial_dst(src, dst):
         os.unlink(dst)
 
 
+def _handle_rename_os_error(src, dst, excinfo, simulate):
+    if excinfo.errno == errno.ENOENT:
+        parent = os.path.dirname(dst)
+        if not parent or not os.path.exists(src):
+            log.error("FileNotFoundError. %s", src)
+            return None
+        os.makedirs(parent, exist_ok=True)
+        return rename_move_file(src, dst, simulate)
+
+    unlink_partial_dst(src, dst)
+    if excinfo.errno == errno.ENOSPC:
+        log.error("No space left on device. %s", dst)
+        raise excinfo
+
+    error_messages = {
+        errno.EIO: ("Input/output error.", src),
+        errno.EDQUOT: ("Disk quota exceeded.", dst),
+        errno.EFBIG: ("File too large.", dst),
+        errno.ENOMEM: ("Cannot allocate memory.", src),
+    }
+    message, path = error_messages.get(excinfo.errno, (describe_os_error(excinfo), src))
+    log.error("%s %s", message, path)
+    return None
+
+
 def rename_move_file(src, dst, simulate=False):
     if simulate:
         print("mv", src, dst)
@@ -38,31 +63,7 @@ def rename_move_file(src, dst, simulate=False):
             log.warning("PermissionError. %s", dst)
             return None
         except OSError as excinfo:
-            if excinfo.errno == errno.ENOENT:  # no parent folder, FileNotFoundError
-                parent = os.path.dirname(dst)
-                if not parent or not os.path.exists(src):
-                    log.error("FileNotFoundError. %s", src)
-                    return None
-                os.makedirs(parent, exist_ok=True)
-                return rename_move_file(src, dst, simulate)
-
-            unlink_partial_dst(src, dst)
-
-            if excinfo.errno == errno.ENOSPC:
-                log.error("No space left on device. %s", dst)
-                raise
-
-            if excinfo.errno == errno.EIO:
-                log.error("Input/output error. %s", src)
-            elif excinfo.errno == errno.EDQUOT:
-                log.error("Disk quota exceeded. %s", dst)
-            elif excinfo.errno == errno.EFBIG:
-                log.error("File too large. %s", dst)
-            elif excinfo.errno == errno.ENOMEM:
-                log.error("Cannot allocate memory. %s", src)
-            else:
-                log.error("%s. %s", describe_os_error(excinfo), src)
-            return None
+            return _handle_rename_os_error(src, dst, excinfo, simulate)
         except KeyboardInterrupt:
             unlink_partial_dst(src, dst)
             raise
@@ -97,6 +98,22 @@ def scandir_entries(current_dir: str | Path):
         raise
 
 
+def _skip_rglob_directory(entry, exclude_dir_patterns, include):
+    if exclude_dir_patterns and any(
+        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude_dir_patterns
+    ):
+        return True
+    return bool(include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include))
+
+
+def _skip_rglob_file(entry, extensions, include, exclude):
+    if extensions and not entry.path.lower().endswith(extensions):
+        return True
+    if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
+        return True
+    return bool(exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude))
+
+
 def rglob(
     base_dir: str | Path,
     extensions: Iterable[str] | None = None,
@@ -119,12 +136,7 @@ def rglob(
         current_dir = stack.pop()
         for entry in scandir_entries(current_dir):
             if entry.is_dir(follow_symlinks=False):
-                if exclude_dir_patterns and any(
-                    entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude_dir_patterns
-                ):
-                    filtered_folders.add(entry.path)
-                    continue
-                if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
+                if _skip_rglob_directory(entry, exclude_dir_patterns, include):
                     filtered_folders.add(entry.path)
                     continue
                 folders.add(entry.path)
@@ -132,13 +144,7 @@ def rglob(
             elif entry.is_symlink():
                 continue
             else:  # file or close enough
-                if extensions and not entry.path.lower().endswith(extensions):
-                    filtered_files.add(entry.path)
-                    continue
-                if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):
-                    filtered_files.add(entry.path)
-                    continue
-                if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                if _skip_rglob_file(entry, extensions, include, exclude):
                     filtered_files.add(entry.path)
                     continue
                 files.add(entry.path)
@@ -207,37 +213,60 @@ def fast_glob(path_dir, limit=100):
     return sorted(files)
 
 
+def _iter_json_paths(paths):
+    for raw_path in paths:
+        json_data = strings.safe_json_loads(raw_path)
+        if isinstance(json_data, list):
+            yield from (json_item["path"] for json_item in json_data)
+        elif isinstance(json_data, dict):
+            yield json_data["path"]
+        else:
+            raise TypeError
+
+
+def _iter_json_data(paths):
+    for raw_path in paths:
+        json_data = strings.safe_json_loads(raw_path)
+        if isinstance(json_data, list):
+            yield from json_data
+        elif isinstance(json_data, dict):
+            yield json_data
+        else:
+            raise TypeError
+
+
+def _iter_path_values(paths, default_exts, args, *, as_dict):
+    for raw_path in paths:
+        if not raw_path.strip():
+            continue
+        try:
+            is_dir = os.path.isdir(raw_path)
+        except OSError:
+            yield {"path": raw_path} if as_dict else raw_path
+            continue
+        if is_dir:
+            found_paths = rglob(
+                str(raw_path),
+                args.ext or default_exts,
+                getattr(args, "exclude", None),
+                exclude_dirs=getattr(args, "exclude_dirs", None),
+            )[0]
+            if as_dict:
+                yield from ({"path": found_path} for found_path in found_paths)
+            else:
+                yield from found_paths
+        else:
+            yield {"path": raw_path} if as_dict else raw_path
+
+
 def gen_paths(args, default_exts=None):
     if args.paths is None:
         processes.exit_error("No paths passed in")
 
     if args.from_json:
-        for path in args.paths:
-            json_data = strings.safe_json_loads(path)
-            if isinstance(json_data, list):
-                for json_item in json_data:
-                    yield json_item["path"]
-            elif isinstance(json_data, dict):
-                yield json_data["path"]
-            else:
-                raise TypeError
+        yield from _iter_json_paths(args.paths)
     else:
-        for path in args.paths:
-            if path.strip():
-                try:
-                    is_dir = os.path.isdir(path)
-                except OSError:
-                    yield path
-                else:
-                    if is_dir:
-                        yield from rglob(
-                            path,
-                            args.ext or default_exts,
-                            getattr(args, "exclude", None),
-                            exclude_dirs=getattr(args, "exclude_dirs", None),
-                        )[0]
-                    else:
-                        yield path
+        yield from _iter_path_values(args.paths, default_exts, args, as_dict=False)
 
 
 def gen_d(args, default_exts=None):
@@ -245,32 +274,9 @@ def gen_d(args, default_exts=None):
         processes.exit_error("No data passed in")
 
     if args.from_json:
-        for path in args.paths:
-            json_data = strings.safe_json_loads(path)
-            if isinstance(json_data, list):
-                yield from json_data
-            elif isinstance(json_data, dict):
-                yield json_data
-            else:
-                raise TypeError
+        yield from _iter_json_data(args.paths)
     else:
-        for path in args.paths:
-            if path.strip():
-                try:
-                    is_dir = os.path.isdir(path)
-                except OSError:
-                    yield {"path": path}
-                else:
-                    if is_dir:
-                        for sp in rglob(
-                            str(path),
-                            args.ext or default_exts,
-                            getattr(args, "exclude", None),
-                            exclude_dirs=getattr(args, "exclude_dirs", None),
-                        )[0]:
-                            yield {"path": sp}
-                    else:
-                        yield {"path": path}
+        yield from _iter_path_values(args.paths, default_exts, args, as_dict=True)
 
 
 def file_temp_copy(src) -> str:

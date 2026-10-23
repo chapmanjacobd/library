@@ -64,11 +64,81 @@ def map_and_name(paths, clusters):
     grouped_strings = map_cluster_to_paths(paths, clusters)
 
     result = []
-    for grouped_paths in grouped_strings.values():
-        grouped_paths = sorted(grouped_paths)
-        metadata = {"common_path": path_utils.common_path_full(grouped_paths), "grouped_paths": grouped_paths}
+    for group_paths in grouped_strings.values():
+        sorted_paths = sorted(group_paths)
+        metadata = {"common_path": path_utils.common_path_full(sorted_paths), "grouped_paths": sorted_paths}
         result.append(metadata)
     return result
+
+
+def _find_wordllama_clusters(args, sentence_strings):
+    try:
+        import numpy as np
+        from wordllama import WordLlama
+    except ModuleNotFoundError:
+        return None
+
+    wl = WordLlama.load(**args.wordllama)
+    try:
+        min_iter = 3 * (args.wordllama["dim"] // 64)
+        clusters, loss = wl.cluster(
+            sentence_strings,
+            k=args.clusters or int(len(sentence_strings) ** 0.5),
+            n_init=min_iter,
+            min_iterations=min_iter,
+            max_iterations=min_iter * 2,
+            tolerance=1e-3,
+            random_state=np.random.RandomState(0) if consts.PYTEST_RUNNING else None,
+        )
+    except AttributeError:  # best_labels.tolist when best_labels is None
+        return None
+
+    log.info("final inertia: %s", loss)
+    return clusters
+
+
+def _find_sklearn_clusters(args, sentence_strings):
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics import pairwise_distances_argmin_min
+
+    if args.stop_words is None:
+        from library.data import wordbank
+
+        stop_words = wordbank.stop_words
+    else:
+        stop_words = set(args.stop_words)
+
+    vectorizer_options = [
+        {"min_df": 2, "strip_accents": "unicode", "stop_words": stop_words},
+        {"strip_accents": "unicode", "stop_words": stop_words},
+        {},
+        {"analyzer": "char_wb"},
+    ]
+    for options in vectorizer_options:
+        try:
+            vectorizer = TfidfVectorizer(**options)  # type: ignore
+            matrix = vectorizer.fit_transform(sentence_strings)
+        except ValueError:
+            continue
+        break
+
+    clusterizer = KMeans(
+        n_clusters=args.clusters or int(matrix.shape[0] ** 0.5),
+        n_init=10,
+        max_iter=8,
+        tol=1e-3,
+        random_state=0 if consts.PYTEST_RUNNING else None,
+    ).fit(matrix)
+    clusters = clusterizer.labels_
+
+    if args.verbose >= consts.LOG_INFO:
+        closest, _ = pairwise_distances_argmin_min(clusterizer.cluster_centers_, matrix, metric="cosine")
+        log.info("\nCluster Centers (Representative Sentences):")
+        for i, idx in enumerate(closest):
+            log.info(f"Cluster {i + 1}: {sentence_strings[idx]}")
+
+    return clusters
 
 
 def find_clusters(args, sentence_strings):
@@ -77,80 +147,10 @@ def find_clusters(args, sentence_strings):
 
     sentence_strings = list(sentence_strings)
 
-    use_sklearn = args.tfidf
-    if not use_sklearn:
-        try:
-            from wordllama import WordLlama
-        except ModuleNotFoundError:
-            use_sklearn = True
-
-    if not use_sklearn:
-        import numpy as np
-        from wordllama import WordLlama
-
-        wl = WordLlama.load(**args.wordllama)
-
-        try:
-            min_iter = 3 * (args.wordllama["dim"] // 64)
-            clusters, loss = wl.cluster(
-                sentence_strings,
-                k=args.clusters or int(len(sentence_strings) ** 0.5),
-                n_init=min_iter,
-                min_iterations=min_iter,
-                max_iterations=min_iter * 2,
-                tolerance=1e-3,
-                random_state=np.random.RandomState(0) if consts.PYTEST_RUNNING else None,
-            )
-        except AttributeError:  # best_labels.tolist when best_labels is None
-            use_sklearn = True
-        else:
-            log.info("final inertia: %s", loss)
-            return clusters
-
-    if use_sklearn:
-        from sklearn.cluster import KMeans
-        from sklearn.feature_extraction.text import TfidfVectorizer
-        from sklearn.metrics import pairwise_distances_argmin_min
-
-        if args.stop_words is None:
-            from library.data import wordbank
-
-            stop_words = wordbank.stop_words
-        else:
-            stop_words = set(args.stop_words)
-
-        try:
-            vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)  # type: ignore
-            X = vectorizer.fit_transform(sentence_strings)
-        except ValueError:
-            try:
-                vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words=stop_words)  # type: ignore
-                X = vectorizer.fit_transform(sentence_strings)
-            except ValueError:
-                try:
-                    vectorizer = TfidfVectorizer()
-                    X = vectorizer.fit_transform(sentence_strings)
-                except ValueError:
-                    vectorizer = TfidfVectorizer(analyzer="char_wb")
-                    X = vectorizer.fit_transform(sentence_strings)
-
-        clusterizer = KMeans(
-            n_clusters=args.clusters or int(X.shape[0] ** 0.5),
-            n_init=10,
-            max_iter=8,
-            tol=1e-3,
-            random_state=0 if consts.PYTEST_RUNNING else None,
-        ).fit(X)
-        clusters = clusterizer.labels_
-
-        if args.verbose >= consts.LOG_INFO:
-            closest, _ = pairwise_distances_argmin_min(clusterizer.cluster_centers_, X, metric="cosine")
-            log.info("\nCluster Centers (Representative Sentences):")
-            for i, idx in enumerate(closest):
-                log.info(f"Cluster {i + 1}: {sentence_strings[idx]}")
-
-        return clusters
-    return None
+    if args.tfidf:
+        return _find_sklearn_clusters(args, sentence_strings)
+    clusters = _find_wordllama_clusters(args, sentence_strings)
+    return clusters if clusters is not None else _find_sklearn_clusters(args, sentence_strings)
 
 
 def cluster_paths(args, paths):
@@ -330,8 +330,8 @@ def filter_near_duplicates(groups: list[dict]) -> list[dict]:
 
     for group in groups:
         temp_groups: dict[str, list[str]] = {}
-        for curr in group["grouped_paths"]:
-            curr = curr.strip()
+        for raw_path in group["grouped_paths"]:
+            curr = raw_path.strip()
             if not curr or curr in ["'", '"']:
                 continue
 
@@ -352,6 +352,55 @@ def filter_near_duplicates(groups: list[dict]) -> list[dict]:
     return regrouped_data
 
 
+def _filter_groups(args, groups):
+    groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_path"])))
+    if args.duplicates is True:
+        groups = filter_near_duplicates(groups)
+
+    if args.unique is False:
+        return [d for d in groups if len(d["grouped_paths"]) > 1]
+    if args.unique is True:
+        return [d for d in groups if len(d["grouped_paths"]) == 1]
+    return groups
+
+
+def _write_grouped_paths(args, groups, *, image):
+    if getattr(args, "print_groups", False):
+        print_groups(groups)
+        return
+
+    if args.move_groups:
+        min_len = len(str(len(groups) + 1))
+        if image:
+            for i, group in enumerate(groups, start=1):
+                paths = [s.rstrip("\n") for s in group["grouped_paths"]]
+                shell_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
+            return
+
+        if args.output_path:
+            output_parent = Path(args.output_path).parent
+            output_name = Path(args.output_path).name
+        elif args.input_path.name == "<stdin>" or Path(args.input_path.name).parent == consts.TEMP_DIR:
+            output_parent = Path.cwd()
+            output_name = "stdin"
+        else:
+            output_parent = Path(args.input_path.name).parent
+            output_name = Path(args.input_path.name).name
+
+        for i, group in enumerate(groups, start=1):
+            output_path = output_parent / (output_name + "_" + str(i).zfill(min_len))
+            with open(output_path, "w") as output_fd:
+                output_fd.writelines(group["grouped_paths"])
+        return
+
+    lines = (p + "\n" for d in groups for p in d["grouped_paths"])
+    if args.output_path:
+        with open(args.output_path, "w") as output_fd:
+            output_fd.writelines(lines)
+    else:
+        printing.pipe_lines(lines)
+
+
 def _cluster_sort(args: argparse.Namespace, *, image: bool) -> None:
     lines = args.input_path.readlines()
     args.input_path.close()
@@ -362,48 +411,8 @@ def _cluster_sort(args: argparse.Namespace, *, image: bool) -> None:
         groups = cluster_images(lines, args.clusters)
     else:
         groups = cluster_paths(args, lines)
-    groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_path"])))
-
-    if args.duplicates is True:
-        groups = filter_near_duplicates(groups)
-
-    if args.unique is False:
-        groups = [d for d in groups if len(d["grouped_paths"]) > 1]
-    elif args.unique is True:
-        groups = [d for d in groups if len(d["grouped_paths"]) == 1]
-
-    if getattr(args, "print_groups", False):
-        print_groups(groups)
-        return
-    elif args.move_groups:
-        min_len = len(str(len(groups) + 1))
-
-        if image:
-            for i, group in enumerate(groups, start=1):
-                paths = [s.rstrip("\n") for s in group["grouped_paths"]]
-                shell_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
-        else:
-            if args.output_path:
-                output_parent = Path(args.output_path).parent
-                output_name = Path(args.output_path).name
-            elif args.input_path.name == "<stdin>" or Path(args.input_path.name).parent == consts.TEMP_DIR:
-                output_parent = Path.cwd()
-                output_name = "stdin"
-            else:
-                output_parent = Path(args.input_path.name).parent
-                output_name = Path(args.input_path.name).name
-
-            for i, group in enumerate(groups, start=1):
-                output_path = output_parent / (output_name + "_" + str(i).zfill(min_len))
-                with open(output_path, "w") as output_fd:
-                    output_fd.writelines(group["grouped_paths"])
-    else:
-        lines = (p + "\n" for d in groups for p in d["grouped_paths"])
-        if args.output_path:
-            with open(args.output_path, "w") as output_fd:
-                output_fd.writelines(lines)
-        else:
-            printing.pipe_lines(lines)
+    groups = _filter_groups(args, groups)
+    _write_grouped_paths(args, groups, image=image)
 
 
 def cluster_sort() -> None:

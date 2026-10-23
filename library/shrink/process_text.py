@@ -7,6 +7,8 @@ from library.utils import arggroups, argparse_utils, consts, devices, path_utils
 from library.utils.log_utils import log
 from library.utils.shell_utils import gen_paths
 
+_EPUB_SIMULATION = object()
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.process_text)
@@ -175,7 +177,7 @@ def convert_to_text_pdf(args, path):
     return path
 
 
-def process_path(args, path) -> str | None:
+def _prepare_text_path(args, path):
     if str(path).startswith("http"):
         if args.simulate:
             log.info("Downloading %s", path)
@@ -184,11 +186,11 @@ def process_path(args, path) -> str | None:
         if path is None:
             log.error("Could not save URL %s", path)
             return None
+    return Path(path).resolve()
 
-    path = Path(path).resolve()
 
+def _process_text_ocr(args, path):
     ext = path_utils.ext(path)
-
     if ext in consts.OCRMYPDF_EXTENSIONS and not args.no_ocr:
         import ocrmypdf
 
@@ -207,6 +209,135 @@ def process_path(args, path) -> str | None:
                     path = convert_to_text_pdf(args, path)
             except pikepdf.PdfError:
                 log.exception("[%s]: could not open as PDF", path)
+    return path
+
+
+def _calibre_command(_args, path, output_path, ext):
+    command = [
+        "ebook-convert",
+        str(path),
+        str(output_path),
+        "--minimum-line-height=105",
+        "--unsmarten-punctuation",
+    ]
+    if ext == "pdf" and get_calibre_version() >= (7, 19, 0):
+        command += ["--pdf-engine", "pdftohtml"]
+    return command
+
+
+def _shrink_book_images(args, output_path):
+    image_paths = shell_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
+    mp_image_args = argparse.Namespace(
+        **{k: v for k, v in args.__dict__.items() if k != "db"} | {"delete_larger": True, "delete_original": False}
+    )
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            image_path: executor.submit(process_image.process_path, mp_image_args, image_path)
+            for image_path in image_paths
+        }
+    return {k: v.result() for k, v in futures.items()}
+
+
+def _package_epub(args, opf_path, epub_path, css_path):
+    epub_command = [
+        "ebook-convert",
+        str(opf_path),
+        str(epub_path),
+        "--no-default-epub-cover",
+        "--epub-inline-toc",
+        "--dont-split-on-page-breaks",
+        "--epub-max-image-size=none",
+        "--output-profile tablet",
+        f"--extra-css={css_path}",
+    ]
+    if args.simulate:
+        print(shlex.join(epub_command))
+        return _EPUB_SIMULATION
+    try:
+        processes.cmd(*epub_command, limit_ram=True, nice=6)
+    except subprocess.CalledProcessError:
+        log.exception("[%s]: Calibre failed to package EPUB", opf_path.parent)
+        epub_path.unlink(missing_ok=True)
+        return str(opf_path)
+    if not epub_path.exists():
+        log.error("Could not create EPUB %s", opf_path)
+        return str(opf_path)
+    return None
+
+
+def _prepare_calibre_output(args, path, output_path):
+    if os.path.isdir(output_path):
+        existing_rename = devices.alt_name(output_path)
+        devices.rename(args, output_path, existing_rename)
+        return path, output_path
+    return devices.clobber(args, path, output_path)
+
+
+def _run_calibre_conversion(args, path, output_path, ext):
+    path = Path(path)
+    output_path = Path(output_path)
+    if not args.simulate:
+        output_path.parent.mkdir(exist_ok=True, parents=True)
+    if path.parent != output_path.parent:
+        log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
+
+    try:
+        original_stats = path.stat()
+    except FileNotFoundError:
+        log.error("File not found: %s", path)
+        return None, None, None
+
+    try:
+        processes.cmd(*_calibre_command(args, path, output_path, ext), limit_ram=True, nice=6)
+    except subprocess.CalledProcessError:
+        log.exception("[%s]: Calibre failed to process book. Skipping...", str(path))
+        if output_path.exists():
+            devices.rmtree(args, output_path)
+        return str(path), None, original_stats
+
+    if not output_path.exists() or path_utils.is_empty_folder(output_path):
+        log.error("Could not transcode %s", path)
+        if output_path.exists():
+            output_path.rmdir()
+        return str(path), None, original_stats
+    return str(path), output_path, original_stats
+
+
+def _repackage_calibre_book(args, path, output_path, original_stats):
+    avif_files = _shrink_book_images(args, output_path)
+    replacements = {"image/jpeg": "image/avif"} | {
+        os.path.basename(old): os.path.basename(new) for old, new in avif_files.items() if new
+    }
+    text_paths = shell_utils.rglob(str(output_path), consts.PLAIN_EXTENSIONS, quiet=True)[0]
+    for text_path in text_paths:
+        update_references(text_path, replacements)
+    if any(avif_files.values()):
+        update_manifest(output_path, avif_files)
+
+    opf_path = output_path / "content.opf"
+    epub_path = output_path.with_suffix(".OEB.epub")
+    epub_path = Path(devices.clobber_new_file(args, str(epub_path)))
+    base_folder = Path(__file__).resolve().parent
+    css_path = str((base_folder / ".." / "assets" / "calibre.css").resolve())
+    package_result = _package_epub(args, opf_path, epub_path, css_path)
+    if package_result is not None:
+        return str(path)
+
+    devices.rmtree(args, output_path)
+    epub_size = os.path.getsize(epub_path)
+    if args.delete_larger and not args.delete_original and epub_size > original_stats.st_size:
+        epub_path.unlink(missing_ok=True)
+        return str(path)
+    if args.delete_larger or args.delete_original:
+        Path(path).unlink()
+    return str(epub_path)
+
+
+def process_path(args, path) -> str | None:
+    path = _prepare_text_path(args, path)
+    if path is None:
+        return None
+    path = _process_text_ocr(args, path)
 
     ext = path_utils.ext(path)
 
@@ -220,149 +351,17 @@ def process_path(args, path) -> str | None:
         output_path = path_utils.clean_path(os.fsencode(output_path))
 
     if args.simulate:
-        command = [
-            "ebook-convert",
-            str(path),
-            str(output_path),
-            "--minimum-line-height=105",
-            "--unsmarten-punctuation",
-        ]
-        if ext == "pdf" and get_calibre_version() >= (7, 19, 0):
-            command += ["--pdf-engine", "pdftohtml"]
+        command = _calibre_command(args, path, output_path, ext)
         print(shlex.join(command))
         return str(path)
 
-    if os.path.isdir(output_path):
-        # we need to make sure the target folder is empty because we possibly call rmtree later
-        existing_rename = devices.alt_name(output_path)
-        devices.rename(args, output_path, existing_rename)
-    else:
-        path, output_path = devices.clobber(args, path, output_path)
-        if path is None:
-            return output_path
-
-    path = Path(path)
-    output_path = Path(output_path)
-
-    if not args.simulate:
-        output_path.parent.mkdir(exist_ok=True, parents=True)
-    if path.parent != output_path.parent:
-        log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
-
-    # TODO: add .doc support with antiword or libre-office https://help.libreoffice.org/latest/en-US/text/shared/guide/convertfilters.html
-
-    command = [
-        "ebook-convert",
-        str(path),
-        str(output_path),
-        "--minimum-line-height=105",
-        "--unsmarten-punctuation",
-        # "--insert-blank-line",
-        # "--add-alt-text-to-img",
-        # '--disable-font-rescaling',
-        # '--enable-heuristics',
-        # '--input-encoding',
-        # '--change-justification left',
-        # '--subset-embedded-fonts',
-        # '--linearize-tables',
-    ]
-
-    if ext == "pdf" and get_calibre_version() >= (7, 19, 0):
-        command += ["--pdf-engine", "pdftohtml"]
-
-    try:
-        original_stats = path.stat()
-    except FileNotFoundError:
-        log.error("File not found: %s", path)
-        return None
-
-    try:
-        processes.cmd(*command, limit_ram=True, nice=6)
-    except subprocess.CalledProcessError:
-        log.exception("[%s]: Calibre failed to process book. Skipping...", str(path))
-        if output_path.exists():
-            devices.rmtree(args, output_path)  # Remove transcode
-        return str(path)
-
-    if not output_path.exists() or path_utils.is_empty_folder(output_path):
-        log.error("Could not transcode %s", path)
-        if output_path.exists():
-            output_path.rmdir()
-        return str(path)
-
-    # shrink images
-    image_paths = shell_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
-
-    mp_image_args = argparse.Namespace(
-        **{k: v for k, v in args.__dict__.items() if k != "db"} | {"delete_larger": True, "delete_original": False}
-    )
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {
-            image_path: executor.submit(process_image.process_path, mp_image_args, image_path)
-            for image_path in image_paths
-        }
-    avif_files = {k: v.result() for k, v in futures.items()}
-
-    replacements = {"image/jpeg": "image/avif"} | {
-        os.path.basename(old): os.path.basename(new) for old, new in avif_files.items() if new
-    }
-    text_paths = shell_utils.rglob(str(output_path), consts.PLAIN_EXTENSIONS, quiet=True)[0]
-    for text_path in text_paths:
-        update_references(text_path, replacements)
-
-    # Update content.opf manifest with converted image references
-    if any(avif_files.values()):
-        update_manifest(output_path, avif_files)
-
-    # Repackage to EPUB using content.opf as input
-    opf_path = output_path / "content.opf"
-    epub_path = output_path.with_suffix(".OEB.epub")
-    epub_path = Path(devices.clobber_new_file(args, str(epub_path)))
-
-    # Use extra-css instead of replacing stylesheet.css
-    base_folder = Path(__file__).resolve().parent
-    css_path = str((base_folder / ".." / "assets" / "calibre.css").resolve())
-
-    epub_command = [
-        "ebook-convert",
-        str(opf_path),
-        str(epub_path),
-        "--no-default-epub-cover",
-        "--epub-inline-toc",
-        "--dont-split-on-page-breaks",
-        "--epub-max-image-size=none",
-        "--output-profile tablet",
-    ]
-
-    epub_command.append(f"--extra-css={css_path}")
-
-    if args.simulate:
-        print(shlex.join(epub_command))
-        return str(path)
-
-    try:
-        processes.cmd(*epub_command, limit_ram=True, nice=6)
-    except subprocess.CalledProcessError:
-        log.exception("[%s]: Calibre failed to package EPUB", path)
-        epub_path.unlink(missing_ok=True)  # Remove transcode
-        return str(path)
-
-    if not epub_path.exists():
-        log.error("Could not create EPUB %s", path)
-        return str(path)
-
-    # Clean up .OEB folder
-    devices.rmtree(args, output_path)
-
-    # compare final output size
-    epub_size = os.path.getsize(epub_path)
-    if args.delete_larger and not args.delete_original and epub_size > original_stats.st_size:
-        epub_path.unlink(missing_ok=True)  # Remove transcode
-        return str(path)
-    elif args.delete_larger or args.delete_original:
-        path.unlink()  # Remove original
-
-    return str(epub_path)
+    path, output_path = _prepare_calibre_output(args, path, output_path)
+    if path is None:
+        return output_path
+    converted_path, converted_output, original_stats = _run_calibre_conversion(args, path, output_path, ext)
+    if original_stats is None or converted_output is None:
+        return converted_path
+    return _repackage_calibre_book(args, converted_path, converted_output, original_stats)
 
 
 def process_text():

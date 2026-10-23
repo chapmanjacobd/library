@@ -18,7 +18,7 @@ def print_overwrite(*text, **kwargs):
     output = kwargs["file"]
 
     text = kwargs.pop("sep", " ").join(map(str, text))
-    max_width = consts.TERMINAL_SIZE.columns - 1
+    max_width = consts.terminal_size().columns - 1
     if len(text) > max_width:
         text = shorten_middle(text, max_width)
 
@@ -47,7 +47,7 @@ class MultilineOverwriteConsole:
         rows = 0
         for line in text.splitlines() or [""]:
             width = max(0, wcswidth(line))
-            rows += max(1, (width // max(1, consts.TERMINAL_SIZE.columns)) + 1)
+            rows += max(1, (width // max(1, consts.terminal_size().columns)) + 1)
         return rows
 
     def print(self, *args, sep=" ", end="\n"):
@@ -132,7 +132,7 @@ def table(tbl, **kwargs) -> None:
 
     longest_line = max(len(s) for s in table_text.splitlines())
     try:
-        if longest_line > consts.TERMINAL_SIZE.columns:
+        if longest_line > consts.terminal_size().columns:
             extended_view(tbl, **kwargs)
         else:
             print(table_text, **kwargs)
@@ -180,7 +180,7 @@ def write_csv(data, file=sys.stdout):
 
 def path_fill(text, percent=None, width=None):
     if percent:
-        width = max(10, int(percent * (consts.TERMINAL_SIZE.columns / 80)))
+        width = max(10, int(percent * (consts.terminal_size().columns / 80)))
     lines = []
     current_line = ""
     for char in str(text):
@@ -272,7 +272,7 @@ def distribute_excess_width(max_col_widths, sep_char=4):
         for k, width in max_col_widths.items()
         if width > MIN_WIDE_COLUMN_WIDTH and k not in ("duration", "size", *consts.EPOCH_COLUMNS)
     }
-    excess_width = MIN_WIDE_COLUMN_WIDTH + existing_width - consts.TERMINAL_SIZE.columns
+    excess_width = MIN_WIDE_COLUMN_WIDTH + existing_width - consts.terminal_size().columns
 
     if excess_width <= 0:
         return {}

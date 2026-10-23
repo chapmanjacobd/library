@@ -23,7 +23,7 @@ def parse_args():
 
 
 def file_markdown(args, path):
-    for df_name, df in file_utils.read_file_to_dataframes(
+    for df_name, input_df in file_utils.read_file_to_dataframes(
         path,
         table_name=args.table_name,
         table_index=args.table_index,
@@ -36,6 +36,7 @@ def file_markdown(args, path):
         transpose=args.transpose,
         skip_headers=args.skip_headers,
     ):
+        df = input_df
         if args.cols:
             df = df[args.cols]
 

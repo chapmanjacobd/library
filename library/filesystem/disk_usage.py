@@ -99,8 +99,8 @@ def format_folder(p):
 
 def count_folders(parents):
     subdirectory_count = defaultdict(int)
-    for parent in parents:
-        parts = parent.rstrip(os.sep).split(os.sep)  # TODO handle URLs on Windows
+    for parent_path in parents:
+        parts = parent_path.rstrip(os.sep).split(os.sep)  # TODO handle URLs on Windows
         while len(parts) >= MIN_PATH_PARTS:
             parts.pop()
             parent = os.sep.join(parts)
@@ -331,20 +331,52 @@ def is_in_excluded_dir(path, exclude_dirs) -> bool:
     return False
 
 
-def disk_usage(defaults_override=None):
-    args = parse_args(defaults_override)
-    args.cwd = None
+def _prepare_subset(args):
     args.subset = folder_stats.get_subset(args)
     if args.subset is None:
         args.data = get_data(args)
         args.subset = []
         load_subset(args)
-    else:
-        args.data = []
-        args.subset = filter_criteria(args, args.subset)
-        if not args.subset:
-            processes.no_media_found()
+        return
 
+    args.data = []
+    args.subset = filter_criteria(args, args.subset)
+    if not args.subset:
+        processes.no_media_found()
+
+
+def _get_units(args, num_folders, num_files):
+    if args.group_by_extensions:
+        return "file extensions"
+    if args.group_by_mimetypes:
+        return "file types"
+    if args.group_by_size:
+        return "file sizes"
+    if args.parents:
+        return None
+    return f"paths at depth {args.min_depth} ({num_folders} folders, {num_files} files)"
+
+
+def _print_summary(args, summary):
+    if args.to_json:
+        return
+    for d in summary:
+        print(d["path"], end=" ")
+        parts = []
+        if d.get("size"):
+            parts.append(f"size={strings.file_size(d['size'])}")
+        if d.get("count"):
+            parts.append(f"count={d['count']}")
+        if d.get("duration"):
+            parts.append(f"duration={strings.duration(d['duration'])}")
+        if parts:
+            print(" ".join(parts))
+
+
+def disk_usage(defaults_override=None):
+    args = parse_args(defaults_override)
+    args.cwd = None
+    _prepare_subset(args)
     files = [d for d in args.subset if not d.get("count")]
     num_folders = sum(1 for d in args.subset if d.get("count"))
     num_files = len(files)
@@ -353,31 +385,8 @@ def disk_usage(defaults_override=None):
     if args.limit and "a" not in arggroups.get_compact_print_args(args):
         args.subset = args.subset[: args.limit]
 
-    if args.group_by_extensions:
-        units = "file extensions"
-    elif args.group_by_mimetypes:
-        units = "file types"
-    elif args.group_by_size:
-        units = "file sizes"
-    elif args.parents:
-        units = None  # folder duplication leads to aggregate inaccuracy
-    else:
-        units = f"paths at depth {args.min_depth} ({num_folders} folders, {num_files} files)"
-
-    media_printer.media_printer(args, args.subset, units=units)
-    if not args.to_json:
-        for d in summary:
-            print(d["path"], end=" ")
-            parts = []
-            if d.get("size"):
-                parts.append(f"size={strings.file_size(d['size'])}")
-            if d.get("count"):
-                parts.append(f"count={d['count']}")
-            if d.get("duration"):
-                parts.append(f"duration={strings.duration(d['duration'])}")
-
-            if parts:
-                print(" ".join(parts))
+    media_printer.media_printer(args, args.subset, units=_get_units(args, num_folders, num_files))
+    _print_summary(args, summary)
 
 
 def extensions():

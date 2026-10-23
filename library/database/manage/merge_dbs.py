@@ -50,86 +50,82 @@ def is_suspicious(v, expected):
     return True
 
 
+def _merge_table(args, source_db, table):
+    skip_columns = args.skip_columns
+    primary_keys = args.primary_keys
+    if args.business_keys:
+        if not primary_keys:
+            primary_keys = list(o.name for o in args.db[table].columns if o.is_pk)
+        skip_columns = [*(args.skip_columns or []), *primary_keys]
+
+    selected_columns = source_db[table].columns_dict
+    if args.only_target_columns:
+        target_columns = args.db[table].columns_dict
+        selected_columns = [column for column in selected_columns if column in target_columns]
+    if skip_columns:
+        selected_columns = [column for column in selected_columns if column not in skip_columns]
+
+    log.info("[%s]: %s", table, selected_columns)
+    kwargs = {}
+    if args.business_keys or primary_keys:
+        source_table_pks = [column for column in (args.business_keys or primary_keys) if column in selected_columns]
+        if source_table_pks:
+            log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
+            kwargs["pk"] = source_table_pks
+
+    data = source_db[table].rows_where(where=" AND ".join(args.where) if args.where else None)
+    data = ({k: v for k, v in row.items() if k in selected_columns} for row in data)
+    last_row = None
+
+    def tracked_rows(rows=data):
+        nonlocal last_row
+        for row in rows:
+            last_row = row
+            yield row
+
+    with args.db.conn:
+        try:
+            args.db[table].insert_all(
+                tracked_rows(),
+                alter=True,
+                ignore=args.ignore,
+                replace=not args.ignore,
+                upsert=args.upsert,
+                **kwargs,
+            )
+        except sqlite3.IntegrityError as err:
+            log.error("Bulk insert failed for table %s: %s", table, err.sqlite_errorname)
+            if last_row:
+                expected_types = {
+                    col.name: col.type.upper() if col.type else "UNKNOWN" for col in args.db[table].columns
+                }
+                rows = []
+                for key, value in last_row.items():
+                    expected = expected_types.get(key, "")
+                    if is_suspicious(value, expected):
+                        rows.append([key, repr(value), type(value).__name__, expected])
+                log.error(
+                    "\n%s\n",
+                    tabulate(
+                        rows,
+                        headers=["column", "value", "py_type", "expected"],
+                        tablefmt="github",
+                    ),
+                )
+            if args.verbose >= consts.LOG_INFO:
+                raise
+
+
 def merge_db(args, source_db) -> None:
     source_db = str(Path(source_db).resolve())
-
     s_db = db_utils.connect(args, conn=sqlite3.connect(source_db))
     assert s_db is not None
     for table in [s for s in s_db.table_names() if "_fts" not in s and not s.startswith("sqlite_")]:
         if args.only_tables and table not in args.only_tables:
             log.info("[%s]: Skipping %s", source_db, table)
             continue
-        else:
-            log.info("[%s]: %s", source_db, table)
-
-        skip_columns = args.skip_columns
-        primary_keys = args.primary_keys
-        if args.business_keys:
-            if not primary_keys:
-                primary_keys = list(o.name for o in args.db[table].columns if o.is_pk)
-
-            skip_columns = [*(args.skip_columns or []), *primary_keys]
-
-        selected_columns = s_db[table].columns_dict
-        if args.only_target_columns:
-            target_columns = args.db[table].columns_dict
-            selected_columns = [s for s in selected_columns if s in target_columns]
-        if skip_columns:
-            selected_columns = [s for s in selected_columns if s not in skip_columns]
-
-        log.info("[%s]: %s", table, selected_columns)
-        kwargs = {}
-        if args.business_keys or primary_keys:
-            source_table_pks = [s for s in (args.business_keys or primary_keys) if s in selected_columns]
-            if source_table_pks:
-                log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
-                kwargs["pk"] = source_table_pks
-
-        data = s_db[table].rows_where(where=" AND ".join(args.where) if args.where else None)
-        data = ({k: v for k, v in d.items() if k in selected_columns} for d in data)
-        last_row = None
-
-        def tracked_rows(rows=data):
-            nonlocal last_row
-            for row in rows:
-                last_row = row
-                yield row
-
-        with args.db.conn:
-            try:
-                args.db[table].insert_all(
-                    tracked_rows(),
-                    alter=True,
-                    ignore=args.ignore,
-                    replace=not args.ignore,
-                    upsert=args.upsert,
-                    **kwargs,
-                )
-            except sqlite3.IntegrityError as err:
-                log.error("Bulk insert failed for table %s: %s", table, err.sqlite_errorname)
-
-                d = last_row
-                if d:
-                    expected_types = {
-                        col.name: col.type.upper() if col.type else "UNKNOWN" for col in args.db[table].columns
-                    }
-
-                    rows = []
-                    for k, v in d.items():
-                        exp = expected_types.get(k, "")
-                        if is_suspicious(v, exp):
-                            rows.append([k, repr(v), type(v).__name__, exp])
-                    log.error(
-                        "\n%s\n",
-                        tabulate(
-                            rows,
-                            headers=["column", "value", "py_type", "expected"],
-                            tablefmt="github",
-                        ),
-                    )
-
-                if args.verbose >= consts.LOG_INFO:
-                    raise
+        log.info("[%s]: %s", source_db, table)
+        _merge_table(args, s_db, table)
 
 
 def merge_dbs() -> None:

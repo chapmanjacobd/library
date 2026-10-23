@@ -48,41 +48,40 @@ def df_column_values(df, column_name) -> dict:
     }
 
 
-def print_info(args, dft):
-    import pandas as pd
-
-    df_name, df = dft
-
-    if df.shape == (0, 0):
-        print(f"Table [{df_name}] empty")
-        return
-
+def _partial_dataset_message(args, df):
     if args.end_row is None:
-        partial_dataset_msg = ""
-    elif args.end_row == DEFAULT_FILE_ROWS_READ_LIMIT:
-        partial_dataset_msg = f"(limited by default --end-row {args.end_row})"
+        return ""
+    if args.end_row == DEFAULT_FILE_ROWS_READ_LIMIT:
+        message = f"(limited by default --end-row {args.end_row})"
     else:
-        partial_dataset_msg = f"(limited by --end-row {args.end_row})"
-    if args.end_row is not None and args.end_row != df.shape[0]:
-        partial_dataset_msg = ""
+        message = f"(limited by --end-row {args.end_row})"
+    return message if args.end_row == df.shape[0] else ""
+
+
+def _print_eda_header(args, df, pd):
+    partial_dataset_msg = _partial_dataset_message(args, df)
     print("### Shape")
     print()
     print(df.shape, partial_dataset_msg)
     print()
-
     print("### Sample of rows")
     if len(df) > SAMPLE_ROW_LIMIT:
         print_df(pd.concat([df.head(3), df.tail(3)]))
     else:
         print_df(df.head(6))
 
-    number_df = df.convert_dtypes().select_dtypes("number")
-    if not number_df.empty:
-        print("### Summary statistics")
-        summary_stats = number_df.describe()
-        summary_stats = pd.concat([summary_stats, number_df.agg(["sum", "skew", "kurt"])])
-        print_df(summary_stats)
 
+def _print_summary_stats(df, pd):
+    number_df = df.convert_dtypes().select_dtypes("number")
+    if number_df.empty:
+        return
+    print("### Summary statistics")
+    summary_stats = number_df.describe()
+    summary_stats = pd.concat([summary_stats, number_df.agg(["sum", "skew", "kurt"])])
+    print_df(summary_stats)
+
+
+def _print_dtype_info(df, pd):
     converted = df.convert_dtypes()
     same_dtypes = []
     diff_dtypes = []
@@ -91,72 +90,78 @@ def print_info(args, dft):
             same_dtypes.append((col, df.dtypes[col]))
         else:
             diff_dtypes.append((col, df.dtypes[col], converted.dtypes[col]))
-    if len(same_dtypes) > 0:
+    if same_dtypes:
         print("### Pandas columns with 'original' dtypes")
         same_dtypes = pd.DataFrame(same_dtypes, columns=["column", "dtype"])
         print_df(same_dtypes.set_index("column"))
-    if len(diff_dtypes) > 0:
+    if diff_dtypes:
         print("### Pandas columns with 'converted' dtypes")
         diff_dtypes = pd.DataFrame(diff_dtypes, columns=["column", "original_dtype", "converted_dtype"])
         print_df(diff_dtypes.set_index("column"))
 
-    if len(df) > MIN_GROUP_SIZE:
-        numeric_columns = df.select_dtypes("number").columns.to_list()
-        if numeric_columns:
-            print("### Numerical columns")
-            print()
-            print("#### Bins")
-            print()
-            for col in numeric_columns:
-                try:
-                    bins = pd.cut(df[col], bins=6)
-                    print_df(bins.value_counts().sort_index())
-                except TypeError:  # putmask: first argument must be an array
-                    log.warning("Could not calculate bins for col %s", col)
 
-        categorical_columns = [s for s in df.columns.to_list() if s not in numeric_columns]
-        if categorical_columns:
-            high_cardinality_cols = set()
-            low_cardinality_cols = set()
+def _print_numeric_info(df, pd):
+    numeric_columns = df.select_dtypes("number").columns.to_list()
+    if not numeric_columns:
+        return
+    print("### Numerical columns")
+    print()
+    print("#### Bins")
+    print()
+    for col in numeric_columns:
+        try:
+            bins = pd.cut(df[col], bins=6)
+            print_df(bins.value_counts().sort_index())
+        except TypeError:
+            log.warning("Could not calculate bins for col %s", col)
 
-            print("### Categorical columns")
-            print()
-            for col in categorical_columns:
-                vc = df[col].value_counts()
-                vc = vc[vc > (len(df) * 0.005)]
-                if len(vc) > 0:
-                    low_cardinality_cols.add(col)
-                    print(f"#### common values of {col} column")
-                    vc = pd.DataFrame({"Count": vc, "Percentage": (vc / len(df)) * 100}).sort_values(
-                        by="Count", ascending=False
-                    )
-                    print_df(vc.head(30))
 
-                    if args.groupby:
-                        groups = df.groupby(col).size()
-                        groups = groups[groups >= MIN_GROUP_SIZE]
-                        if len(groups) > 0:
-                            print(f"#### group by {col}")
-                            print_df(df[df[col].isin(groups.index)].groupby(col).describe())
+def _print_categorical_info(args, df):
+    import pandas as pd
 
-                unique_count = df[col].nunique()
-                if unique_count >= (len(df) * 0.2):
-                    high_cardinality_cols.add(col)
+    numeric_columns = df.select_dtypes("number").columns.to_list()
+    categorical_columns = [s for s in df.columns.to_list() if s not in numeric_columns]
+    if not categorical_columns:
+        return
+    high_cardinality_cols = set()
+    low_cardinality_cols = set()
+    print("### Categorical columns")
+    print()
+    for col in categorical_columns:
+        vc = df[col].value_counts()
+        vc = vc[vc > (len(df) * 0.005)]
+        if len(vc) > 0:
+            low_cardinality_cols.add(col)
+            print(f"#### common values of {col} column")
+            vc = pd.DataFrame({"Count": vc, "Percentage": (vc / len(df)) * 100}).sort_values(
+                by="Count", ascending=False
+            )
+            print_df(vc.head(30))
+            if args.groupby:
+                groups = df.groupby(col).size()
+                groups = groups[groups >= MIN_GROUP_SIZE]
+                if len(groups) > 0:
+                    print(f"#### group by {col}")
+                    print_df(df[df[col].isin(groups.index)].groupby(col).describe())
+        unique_count = df[col].nunique()
+        if unique_count >= (len(df) * 0.2):
+            high_cardinality_cols.add(col)
 
-            med_cardinality_cols = low_cardinality_cols.intersection(high_cardinality_cols)
-            low_cardinality_cols = low_cardinality_cols - med_cardinality_cols
-            high_cardinality_cols = high_cardinality_cols - med_cardinality_cols
+    med_cardinality_cols = low_cardinality_cols.intersection(high_cardinality_cols)
+    low_cardinality_cols -= med_cardinality_cols
+    high_cardinality_cols -= med_cardinality_cols
+    if high_cardinality_cols:
+        print("#### High cardinality (many unique values)")
+        print_series(high_cardinality_cols)
+    if med_cardinality_cols:
+        print("#### Medium cardinality (many unique but also many similar values)")
+        print_series(med_cardinality_cols)
+    if low_cardinality_cols:
+        print("#### Low cardinality (many similar values)")
+        print_series(low_cardinality_cols)
 
-            if high_cardinality_cols:
-                print("#### High cardinality (many unique values)")
-                print_series(high_cardinality_cols)
-            if med_cardinality_cols:
-                print("#### Medium cardinality (many unique but also many similar values)")
-                print_series(med_cardinality_cols)
-            if low_cardinality_cols:
-                print("#### Low cardinality (many similar values)")
-                print_series(low_cardinality_cols)
 
+def _print_missing_info(df, pd):
     print("### Missing values")
     print()
     nan_col_sums = df.isna().sum()
@@ -165,23 +170,36 @@ def print_info(args, dft):
         f"({(nan_col_sums.sum() / (df.shape[0] * df.shape[1])):.1%} dataset values missing)",
     )
     print()
+    if not nan_col_sums.sum():
+        return
+    no_nas = df.columns[df.notna().all()]
+    if len(no_nas) > 0:
+        print(f"#### {len(no_nas)} columns with no missing values")
+        print_series(no_nas)
+    all_nas = df.columns[df.isna().all()]
+    if len(all_nas) > 0:
+        print(f"#### {len(all_nas)} columns with all missing values")
+        print_series(all_nas)
+    print("#### Value stats")
+    column_report = pd.DataFrame(df_column_values(df, col) for col in df.columns).set_index("column")
+    column_report = column_report.sort_values(["empty_string_count", "zero_count", "null_count"])
+    print_df(column_report[["values", "null", "zero", "empty_string"]])
 
-    if nan_col_sums.sum():
-        no_nas = df.columns[df.notna().all()]
-        if len(no_nas) > 0:
-            print(f"#### {len(no_nas)} columns with no missing values")
-            print_series(no_nas)
 
-        all_nas = df.columns[df.isna().all()]
-        if len(all_nas) > 0:
-            print(f"#### {len(all_nas)} columns with all missing values")
-            print_series(all_nas)
+def print_info(args, dft):
+    import pandas as pd
 
-        print("#### Value stats")
-        column_report = pd.DataFrame(df_column_values(df, col) for col in df.columns).set_index("column")
-        column_report = column_report.sort_values(["empty_string_count", "zero_count", "null_count"])
-        print_df(column_report[["values", "null", "zero", "empty_string"]])
-
+    df_name, df = dft
+    if df.shape == (0, 0):
+        print(f"Table [{df_name}] empty")
+        return
+    _print_eda_header(args, df, pd)
+    _print_summary_stats(df, pd)
+    _print_dtype_info(df, pd)
+    if len(df) > MIN_GROUP_SIZE:
+        _print_numeric_info(df, pd)
+        _print_categorical_info(args, df)
+    _print_missing_info(df, pd)
 
 def file_eda(args, path):
     dfs = file_utils.read_file_to_dataframes(

@@ -45,7 +45,7 @@ def full_hash_compare(paths):
     return all(x == hash_results[0] for x in hash_results)
 
 
-def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, skip_full_hash=False):
+def _get_existing_path_stats(paths):
     path_stats = {}
     existing_paths = []
     for path in paths:
@@ -56,22 +56,21 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
             log.error("File not found %s", path)
     if len(existing_paths) < MIN_COMPARE_PATHS:
         raise ValueError("Not enough paths. Include 2 or more paths to compare")
+    return path_stats, existing_paths
 
-    sizes = [stat_res.st_size for stat_res in path_stats.values()]
-    if not all(size == sizes[0] for size in sizes):
-        sorted_paths = sorted(path_stats.items(), key=lambda x: x[1].st_size)
-        paths_str = "\n".join([f"{st.st_size} bytes\t{path}" for path, st in sorted_paths])
-        log.error("File apparent-sizes do not match:\n%s", paths_str)
-        return False
 
-    if not ignore_holes and consts.NOT_WINDOWS:
-        sizes = [stat_res.st_blocks for stat_res in path_stats.values()]
-        if not all(size == sizes[0] for size in sizes):
-            sorted_paths = sorted(path_stats.items(), key=lambda x: x[1].st_blocks)
-            paths_str = "\n".join([f"{st.st_blocks} blocks\t{path}" for path, st in sorted_paths])
-            log.error("File holes do not match:\n%s", paths_str)
-            return False
+def _same_file_stat(path_stats, stat_attr, message, value_suffix):
+    sizes = [getattr(stat_res, stat_attr) for stat_res in path_stats.values()]
+    if all(size == sizes[0] for size in sizes):
+        return True
 
+    sorted_paths = sorted(path_stats.items(), key=lambda x: getattr(x[1], stat_attr))
+    paths_str = "\n".join([f"{getattr(st, stat_attr)} {value_suffix}\t{path}" for path, st in sorted_paths])
+    log.error("File %s do not match:\n%s", message, paths_str)
+    return False
+
+
+def _sample_hashes(existing_paths, threads, gap, chunk_size):
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {
             path: pool.submit(sample_hash.sample_hash_file, path, threads=threads, gap=gap, chunk_size=chunk_size)
@@ -85,7 +84,17 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
             paths_dict[path] = result
     sorted_paths = sorted(paths_dict.items(), key=lambda x: x[1])
     paths_str = "\n".join([f"{file_hash}\t{path}" for path, file_hash in sorted_paths])
+    return paths_dict, paths_str
 
+
+def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, skip_full_hash=False):
+    path_stats, existing_paths = _get_existing_path_stats(paths)
+    if not _same_file_stat(path_stats, "st_size", "apparent-sizes", "bytes"):
+        return False
+    if not ignore_holes and consts.NOT_WINDOWS and not _same_file_stat(path_stats, "st_blocks", "holes", "blocks"):
+        return False
+
+    paths_dict, paths_str = _sample_hashes(existing_paths, threads, gap, chunk_size)
     hashes = list(paths_dict.values())
     is_equal = all(s == hashes[0] for s in hashes)
     if is_equal:

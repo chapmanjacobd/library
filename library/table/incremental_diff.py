@@ -270,7 +270,8 @@ def _iter_stream_chunks(path, kind, batch_size, encoding, start_row):  # noqa: P
             frames = [reader.iloc[start_row:]] if start_row else [reader]
             yield frames[0]
         else:
-            for chunk_index, frame in enumerate(reader):
+            for chunk_index, raw_frame in enumerate(reader):
+                frame = raw_frame
                 if start_row and (chunk_index + 1) * batch_size <= start_row:
                     continue
                 if start_row and chunk_index * batch_size < start_row:
@@ -382,7 +383,8 @@ def _build_id_store(connection, table_name, args, path, mimetype, encoding, sour
 
     columns = []
     row_number = args.start_row or 0
-    for frame in _iter_id_frames(args, path, mimetype, encoding, source_table_name, source_table_index):
+    for raw_frame in _iter_id_frames(args, path, mimetype, encoding, source_table_name, source_table_index):
+        frame = raw_frame
         if not isinstance(frame, pd.DataFrame):
             frame = pd.DataFrame(frame)
         for column in frame.columns:

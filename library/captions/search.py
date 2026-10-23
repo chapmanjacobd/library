@@ -48,12 +48,12 @@ def printer(args, captions) -> None:
 
     if args.print == "p":
         print(f"{len(captions)} captions")
-        for path, path_group in groupby(tbl, key=lambda x: x["path"]):
-            path_group = list(path_group)
+        for path, path_group_iter in groupby(tbl, key=lambda x: x["path"]):
+            path_group = list(path_group_iter)
             title = path_group[0].get("title")
             print(" - ".join(iterables.concat(title, path)))
             for caption in path_group:
-                for line in textwrap.wrap(caption["text"], subsequent_indent=" " * 9, initial_indent=f"{caption['time']} ", width=consts.TERMINAL_SIZE.columns - 2):  # type: ignore
+                for line in textwrap.wrap(caption["text"], subsequent_indent=" " * 9, initial_indent=f"{caption['time']} ", width=consts.terminal_size().columns - 2):  # type: ignore
                     print(line)
             print()
     else:
@@ -65,11 +65,11 @@ def merge_captions(args, captions):
         return caption["time"] + (len(caption["text"]) / 4.2 / 220 * 60)
 
     merged_captions = []
-    for path, group in groupby(
+    for path, group_iter in groupby(
         captions,
         key=lambda x: x["path"],
     ):  # group by only does contiguous items with the same key
-        group = list(group)
+        group = list(group_iter)
         merged_group = {
             **group[0],
             "path": path,

@@ -404,8 +404,8 @@ def _parse_audio_paths(args) -> list[Path]:
         return []
 
     paths = []
-    for path in args.audio:
-        path = Path(path).expanduser()
+    for raw_path in args.audio:
+        path = Path(raw_path).expanduser()
         if path.is_dir():
             paths.extend(Path(p) for p in shell_utils.rglob(path, consts.AUDIO_ONLY_EXTENSIONS, quiet=True)[0])
         else:

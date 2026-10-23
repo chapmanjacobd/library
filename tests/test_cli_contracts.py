@@ -9,7 +9,7 @@ import pytest
 
 from library import __main__
 from library.__main__ import library as lb
-from library.__main__ import _nested_group, _nested_target
+from library.__main__ import _nested_group, nested_target
 from library import usage
 from library.database.add import gallery_add, tube_add
 from library.database.manage import dedupe_media
@@ -327,7 +327,7 @@ def test_version_flag_prints_version(capsys):
 def test_download_without_db_is_direct(monkeypatch):
     called = []
     monkeypatch.setattr(
-        "library.links.extract_links._download_paths",
+        "library.links.extract_links.download_paths",
         lambda _args, _cache: called.append(sys.argv[1:]),
     )
 
@@ -466,7 +466,7 @@ def test_help_search_indexes_nested_only_commands(capsys):
 
 def test_usage_catalog_lists_executable_help_path_only():
     output = __main__.usage()
-    catalog = __main__._command_catalog()  # noqa: SLF001
+    catalog = __main__.command_catalog()
     commands = [command for _category, category_commands in catalog for command, _description in category_commands]
 
     assert re.search(r"│ help search\s+│", output)
@@ -479,7 +479,7 @@ def test_usage_catalog_lists_executable_help_path_only():
 
 
 def test_usage_catalog_normalizes_nested_aliases():
-    catalog = dict(__main__._command_catalog())
+    catalog = dict(__main__.command_catalog())
     commands = dict(catalog["Database updating subcommands"])
 
     assert "database update open-directory" in commands
@@ -508,10 +508,10 @@ def test_generated_readme_matches_committed_documentation():
 def test_generated_readme_documents_every_nested_command():
     readme = Path(".github/README.md").read_text()
 
-    for path in __main__._canonical_nested_paths_for_all_groups():
+    for path in __main__._canonical_nested_paths_for_all_groups():  # noqa: SLF001
         assert f"###### {path}\n" in readme
-        target, _consumed = __main__._nested_target(path.split())
-        canonical_path = __main__._canonical_target_paths().get(target, path)
+        target, _consumed = __main__.nested_target(path.split())
+        canonical_path = __main__.canonical_target_paths().get(target, path)
         assert f"    $ library {path} -h\n    usage: library {canonical_path}" in readme
 
 
@@ -536,9 +536,9 @@ def test_group_aliases_report_unknown_subcommands(capsys):
 
 def test_compact_operation_first_spelling_is_group_agnostic():
     # `db fs update` and `database fs update` should both mean `database update filesystem`
-    assert _nested_target(["db", "fs", "update"]) == ("fs-update", 3)
-    assert _nested_target(["database", "fs", "update"]) == ("fs-update", 3)
-    assert _nested_target(["databases", "fs", "update"]) == ("fs-update", 3)
+    assert nested_target(["db", "fs", "update"]) == ("fs-update", 3)
+    assert nested_target(["database", "fs", "update"]) == ("fs-update", 3)
+    assert nested_target(["databases", "fs", "update"]) == ("fs-update", 3)
 
 
 def test_registering_parsers_does_not_mutate_module_aliases():
@@ -553,34 +553,34 @@ def test_registering_parsers_does_not_mutate_module_aliases():
 def test_db_and_fs_are_resource_group_aliases():
     assert _nested_group(["db"]) == "database"
     assert _nested_group(["fs"]) == "filesystem"
-    assert _nested_target(["db", "add", "filesystem"]) == ("fs-add", 3)
-    assert _nested_target(["fs", "mounts", "stats"]) == ("mount-stats", 3)
-    assert _nested_target(["fs", "mounts", "free"]) == ("disk-free", 3)
+    assert nested_target(["db", "add", "filesystem"]) == ("fs-add", 3)
+    assert nested_target(["fs", "mounts", "stats"]) == ("mount-stats", 3)
+    assert nested_target(["fs", "mounts", "free"]) == ("disk-free", 3)
     # The former operation-first spellings remain accepted as compatibility routes.
-    assert _nested_target(["fs", "stats", "mounts"]) == ("mount-stats", 3)
-    assert _nested_target(["fs", "free", "mounts"]) == ("disk-free", 3)
-    assert _nested_target(["filesystem", "list"]) == ("filesystem", 2)
-    assert _nested_target(["fs", "usage"]) == ("disk-usage", 2)
+    assert nested_target(["fs", "stats", "mounts"]) == ("mount-stats", 3)
+    assert nested_target(["fs", "free", "mounts"]) == ("disk-free", 3)
+    assert nested_target(["filesystem", "list"]) == ("filesystem", 2)
+    assert nested_target(["fs", "usage"]) == ("disk-usage", 2)
 
 
 def test_download_block_is_nested_under_download():
-    assert _nested_target(["database", "download", "block"]) == ("block", 3)
+    assert nested_target(["database", "download", "block"]) == ("block", 3)
 
 
 def test_database_export_html_is_nested_under_database():
-    assert _nested_target(["database", "export", "html"]) == ("export-text", 3)
+    assert nested_target(["database", "export", "html"]) == ("export-text", 3)
 
 
 def test_pdf_adjustment_is_nested_under_document():
-    assert _nested_target(["document", "adjust", "pdf"]) == ("pdf-edit", 3)
+    assert nested_target(["document", "adjust", "pdf"]) == ("pdf-edit", 3)
 
 
 def test_torrent_allocation_is_nested_under_torrent():
-    assert _nested_target(["torrent", "allocate"]) == ("allocate-torrents", 2)
+    assert nested_target(["torrent", "allocate"]) == ("allocate-torrents", 2)
 
 
 def test_database_stats_words_is_nested_under_stats():
-    assert _nested_target(["database", "stats", "words"]) == ("stats-words", 3)
+    assert nested_target(["database", "stats", "words"]) == ("stats-words", 3)
 
 
 @pytest.mark.parametrize(
@@ -594,29 +594,29 @@ def test_database_stats_words_is_nested_under_stats():
     ],
 )
 def test_new_feature_commands_route_to_canonical_targets(command, target):
-    assert _nested_target(command) == (target, len(command))
+    assert nested_target(command) == (target, len(command))
 
 
 def test_torrent_match_and_audit_are_nested_under_torrent():
-    assert _nested_target(["torrent", "match"]) == ("torrent-match", 2)
-    assert _nested_target(["torrent", "audit"]) == ("torrent-audit", 2)
+    assert nested_target(["torrent", "match"]) == ("torrent-match", 2)
+    assert nested_target(["torrent", "audit"]) == ("torrent-audit", 2)
 
 
 def test_json_key_renaming_is_nested_under_json():
-    assert _nested_target(["json", "rename-keys"]) == ("json-keys-rename", 2)
+    assert nested_target(["json", "rename-keys"]) == ("json-keys-rename", 2)
 
 
 def test_document_conversion_routes_are_explicit():
-    assert _nested_target(["image", "convert"]) == ("image-convert", 2)
-    assert _nested_target(["document", "convert"]) == ("document-convert", 2)
-    assert _nested_target(["document", "pdf", "header"]) == ("pdf-header", 3)
-    assert _nested_target(["text", "convert"]) == ("document-convert", 2)
-    assert _nested_target(["shrink", "table"]) == ("process-table", 2)
+    assert nested_target(["image", "convert"]) == ("image-convert", 2)
+    assert nested_target(["document", "convert"]) == ("document-convert", 2)
+    assert nested_target(["document", "pdf", "header"]) == ("pdf-header", 3)
+    assert nested_target(["text", "convert"]) == ("document-convert", 2)
+    assert nested_target(["shrink", "table"]) == ("process-table", 2)
 
 
 def test_cluster_sort_images_is_a_nested_subcommand():
-    assert _nested_target(["text", "sort", "cluster"]) == ("cluster-sort", 3)
-    assert _nested_target(["image", "sort", "cluster"]) == ("cluster-images", 3)
+    assert nested_target(["text", "sort", "cluster"]) == ("cluster-sort", 3)
+    assert nested_target(["image", "sort", "cluster"]) == ("cluster-images", 3)
 
 
 def test_top_level_filesystem_routes_dispatch_to_migrated_commands(monkeypatch):

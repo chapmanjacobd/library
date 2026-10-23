@@ -90,7 +90,7 @@ def test_cluster_paths_returns_groups_for_short_input():
 
 
 def test_image_groups_use_neighbor_identities():
-    groups = cluster_sort._groups_from_neighbors(
+    groups = cluster_sort._groups_from_neighbors(  # noqa: SLF001
         ["first.png", "second.png", "third.png"],
         [[1], [0], [2]],
     )

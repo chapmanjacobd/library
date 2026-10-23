@@ -98,7 +98,7 @@ db_history.create(args)
 
 temp_parser = ArgumentParser(add_help=False)
 arggroups.sql_fs(temp_parser)
-opts = temp_parser._actions
+opts = temp_parser._actions  # noqa: SLF001
 
 
 @pytest.mark.parametrize(

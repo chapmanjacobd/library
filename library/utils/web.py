@@ -32,10 +32,41 @@ HTTP_PARTIAL_CONTENT = 206
 SMALL_DOWNLOAD_LIMIT = 5 * 1024 * 1024
 MIN_DETAILS_PATH_PARTS = 3
 
-session = None
-cookie_jar = None
-internetarchive = None
-cdx_toolkit = None
+
+class _WebState:
+    session = None
+    cookie_jar = None
+    internetarchive = None
+    cdx_toolkit = None
+
+
+class _StateProxy:
+    def __init__(self, state_name):
+        self.state_name = state_name
+
+    def __getattr__(self, name):
+        return getattr(_web_state, self.state_name).__getattribute__(name)
+
+    def __bool__(self):
+        return bool(getattr(_web_state, self.state_name))
+
+
+_web_state = _WebState()
+_SESSION_PROXY = _StateProxy("session")
+_COOKIE_JAR_PROXY = _StateProxy("cookie_jar")
+_INTERNETARCHIVE_PROXY = _StateProxy("internetarchive")
+_CDX_TOOLKIT_PROXY = _StateProxy("cdx_toolkit")
+
+session = _SESSION_PROXY
+cookie_jar = _COOKIE_JAR_PROXY
+internetarchive = _INTERNETARCHIVE_PROXY
+cdx_toolkit = _CDX_TOOLKIT_PROXY
+
+
+def _configured_state(value, proxy, state_name):
+    if value is proxy:
+        return getattr(_web_state, state_name)
+    return value
 
 
 class _Retry(urllib3.util.Retry):
@@ -139,9 +170,9 @@ def parse_cookies_from_browser(input_str):
 
 
 def load_cookie_jar(args):
-    global cookie_jar
+    current_cookie_jar = _configured_state(cookie_jar, _COOKIE_JAR_PROXY, "cookie_jar")
 
-    if cookie_jar is None:
+    if current_cookie_jar is None:
         cookie_file = getattr(args, "cookies", None)
         cookies_from_browser = getattr(args, "cookies_from_browser", None)
 
@@ -150,42 +181,68 @@ def load_cookie_jar(args):
 
             if cookies_from_browser:
                 cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
-            cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
+            current_cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
+            _web_state.cookie_jar = current_cookie_jar
 
-    return cookie_jar
+    return current_cookie_jar
 
 
 def requests_session(args=None):
-    global session
     if args is None:
         args = argparse.Namespace()
-    load_cookie_jar(args)
+    current_session = _configured_state(session, _SESSION_PROXY, "session")
+    current_cookie_jar = load_cookie_jar(args)
 
     from yt_dlp.utils.networking import std_headers
 
-    if session is None:
+    if current_session is None:
         import requests
 
         max_redirects = getattr(args, "http_max_redirects", 4)
 
-        session = requests.Session()
-        session.mount("http://", _get_retry_adapter(args))
-        session.mount("https://", _get_retry_adapter(args))
+        current_session = requests.Session()
+        _web_state.session = current_session
+        current_session.mount("http://", _get_retry_adapter(args))
+        current_session.mount("https://", _get_retry_adapter(args))
 
         std_params = {"headers": std_headers, "timeout": consts.REQUESTS_TIMEOUT, "allow_redirects": max_redirects > 0}
-        session.request = functools.partial(session.request, **std_params)
-        session.get = functools.partial(session.get, **std_params)
+        current_session.request = functools.partial(current_session.request, **std_params)
+        current_session.get = functools.partial(current_session.get, **std_params)
 
         if getattr(args, "allow_insecure", False):
             from urllib3.exceptions import InsecureRequestWarning
 
             requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)  # type: ignore
-            session.verify = False
+            current_session.verify = False
 
-        if cookie_jar:
-            session.cookies = cookie_jar  # type: ignore
+        if current_cookie_jar:
+            current_session.cookies = current_cookie_jar  # type: ignore
 
-    return session
+    return current_session
+
+
+def _handle_response(response, url, skip_404, ignore_errors, ignore_429):
+    code = HTTPStatus(response.status_code)
+    if code.is_informational or code.is_success:
+        return response
+    if code == HTTPStatus.NOT_FOUND:
+        if skip_404:
+            log.warning("404 Not Found: %s", url)
+            return None
+        raise FileNotFoundError
+    if code.is_redirection:
+        response.raise_for_status()
+    elif code.is_client_error:
+        if code == HTTPStatus.TOO_MANY_REQUESTS and ignore_429:
+            return response
+        if code != HTTPStatus.TOO_MANY_REQUESTS and ignore_errors:
+            return response
+        response.raise_for_status()
+    elif code.is_server_error:
+        response.raise_for_status()
+
+    log.info("Something weird is happening probably: %s", url)
+    raise RuntimeError
 
 
 def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwargs):
@@ -202,32 +259,7 @@ def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwarg
     ):
         raise
     else:
-        code = HTTPStatus(response.status_code)
-
-        if code.is_informational or code.is_success:
-            return response
-        elif code == HTTPStatus.NOT_FOUND:
-            if skip_404:
-                log.warning("404 Not Found: %s", url)
-                return None
-            else:
-                raise FileNotFoundError
-        elif code.is_redirection:
-            # requests redirects exceeded
-            response.raise_for_status()
-        elif code.is_client_error:
-            if code == HTTPStatus.TOO_MANY_REQUESTS:
-                if ignore_429:
-                    return response
-            elif ignore_errors:  # ignore all except 429
-                return response
-
-            response.raise_for_status()
-        elif code.is_server_error:
-            response.raise_for_status()
-
-    log.info("Something weird is happening probably: %s", url)
-    raise RuntimeError
+        return _handle_response(response, url, skip_404, ignore_errors, ignore_429)
 
 
 class PartialContent:
@@ -237,12 +269,13 @@ class PartialContent:
         self.temp_file = None
 
     def __enter__(self):
-        assert session is not None
+        current_session = _configured_state(session, _SESSION_PROXY, "session")
+        assert current_session is not None
 
         try:
             with (
                 processes.timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5),
-                session.get(self.url, stream=True) as r,
+                current_session.get(self.url, stream=True) as r,
             ):
                 code = r.status_code
                 if code == HTTP_NOT_FOUND:
@@ -306,34 +339,37 @@ def set_timestamp(headers, path):
         os.utime(path, (atime, mtime))
 
 
+def _firefox_profile_path(profile, browser_dirs):
+    profile_roots = [root for root in browser_dirs() if os.path.isfile(os.path.join(root, "profiles.ini"))]
+    if not profile_roots:
+        return None
+    root = profile_roots[0]
+    if profile:
+        candidate = os.path.join(root, profile)
+        if os.path.isdir(candidate):
+            return candidate
+    default_profile = _firefox_default_profile(root)
+    if default_profile and os.path.isdir(os.path.join(root, default_profile)):
+        return os.path.join(root, default_profile)
+    return root
+
+
+def _chromium_profile_path(browser_name, browser_settings):
+    settings = browser_settings(browser_name)
+    browser_dir = settings["browser_dir"]
+    if not os.path.isdir(browser_dir):
+        return None
+    return browser_dir
+
+
 def get_browser_profile_path(browser_name, profile=None):
     from yt_dlp.cookies import _firefox_browser_dirs, _get_chromium_based_browser_settings
 
     browser_name = browser_name.lower()
-
     if browser_name == "firefox":
-        profile_roots = [root for root in _firefox_browser_dirs() if os.path.isfile(os.path.join(root, "profiles.ini"))]
-        if not profile_roots:
-            return None
-        root = profile_roots[0]
-        if profile:
-            candidate = os.path.join(root, profile)
-            if os.path.isdir(candidate):
-                return candidate
-        default_profile = _firefox_default_profile(root)
-        if default_profile and os.path.isdir(os.path.join(root, default_profile)):
-            return os.path.join(root, default_profile)
-        return root
-
+        return _firefox_profile_path(profile, _firefox_browser_dirs)
     if browser_name in {"chrome", "chromium", "brave", "edge", "opera", "vivaldi", "whale"}:
-        settings = _get_chromium_based_browser_settings(browser_name)
-        browser_dir = settings["browser_dir"]
-        if not os.path.isdir(browser_dir):
-            return None
-        # selenium passes this via --user-data-dir, which expects the data root;
-        # chrome selects its own last-used profile unless told otherwise
-        return browser_dir
-
+        return _chromium_profile_path(browser_name, _get_chromium_based_browser_settings)
     return None
 
 
@@ -424,10 +460,7 @@ def copy_chromium_profile_for_selenium(source_profile, selenium_profile):
             shutil.copy2(item, selenium_profile / item.name)
 
 
-def load_selenium(args, wire=False):
-    if getattr(args, "driver", False):
-        return
-
+def _configure_selenium_profile(args):
     _profile = None
     if not args.user_data_dir and getattr(args, "cookies_from_browser", None):
         from library.utils.web import parse_cookies_from_browser
@@ -446,7 +479,130 @@ def load_selenium(args, wire=False):
                 args.firefox = True
             elif browser_name in {"chrome", "chromium", "brave", "edge", "opera", "vivaldi", "whale"}:
                 args.chrome = True
+    return _profile
 
+
+def _start_selenium_display(args):
+    if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
+        with suppress(Exception):
+            from pyvirtualdisplay.display import Display
+
+            args.driver_display = Display(visible=False, size=(1280, 720))
+            args.driver_display.start()
+            return True
+    return None
+
+
+def _load_firefox_driver(args, webdriver, xvfb):
+    from selenium.webdriver.firefox.options import Options
+    from selenium.webdriver.firefox.service import Service
+
+    service = Service(log_path=tempfile.mktemp(".geckodriver.log"))
+    options = Options()
+    using_real_profile = bool(args.user_data_dir)
+    if using_real_profile:
+        real_profile = Path(args.user_data_dir)
+        selenium_profile = Path(tempfile.mkdtemp(prefix="ff_selenium_")) / "profile"
+        copy_firefox_profile_for_selenium(real_profile, selenium_profile)
+        args.selenium_profile_dir = selenium_profile
+        args.user_data_dir = str(selenium_profile)
+        log.info("Selenium profile: %s (cookies from %s)", selenium_profile, real_profile)
+
+    if args.user_data_dir:
+        options.add_argument("--profile")
+        options.add_argument(args.user_data_dir)
+
+    options.set_preference("media.volume_scale", "0.0")
+    if xvfb is False:
+        options.add_argument("--headless")
+
+    args.driver = webdriver.Firefox(service=service, options=options)
+    if using_real_profile:
+        return
+
+    addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
+    if getattr(args, "auto_pager", False):
+        addons.append(Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve())
+    for addon_path in addons:
+        try:
+            args.driver.install_addon(str(addon_path))
+        except Exception:
+            if args.verbose > 0:
+                log.warning("Could not install firefox addon. Missing file %s", addon_path)
+            else:
+                log.exception("Could not install firefox addon. Missing file %s", addon_path)
+    if getattr(args, "auto_pager", False):
+        time.sleep(60)
+
+
+def _configure_chrome_profile(args, profile):
+    using_real_profile = bool(args.user_data_dir)
+    profile_name = profile or "Default"
+    if using_real_profile:
+        real_profile = Path(args.user_data_dir)
+        real_profile_dir = real_profile / profile_name
+        selenium_profile = Path(tempfile.mkdtemp(prefix="chrome_selenium_"))
+        copy_chromium_profile_for_selenium(real_profile_dir, selenium_profile / profile_name)
+        source_file = real_profile / "Local State"
+        if source_file.exists():
+            shutil.copy2(source_file, selenium_profile / "Local State")
+        args.selenium_profile_dir = selenium_profile
+        args.user_data_dir = str(selenium_profile)
+        log.info("Selenium profile: %s (cookies from %s)", selenium_profile, real_profile_dir)
+    return using_real_profile, profile_name
+
+
+def _install_chrome_addons(args, options):
+    addons = [Path("~/.local/lib/ublock_origin.crx").expanduser().resolve()]
+    if getattr(args, "auto_pager", False):
+        addons.append(Path("~/.local/lib/autopager.crx").expanduser().resolve())
+    for addon_path in addons:
+        try:
+            options.add_extension(str(addon_path))
+        except Exception:
+            if args.verbose > 0:
+                log.warning("Could not install chrome extension. Missing file %s", addon_path)
+            else:
+                log.exception("Could not install chrome extension. Missing file %s", addon_path)
+
+
+def _load_chrome_driver(args, webdriver, xvfb, profile):
+    from selenium.webdriver.chrome.options import Options
+
+    options = Options()
+    using_real_profile, profile_name = _configure_chrome_profile(args, profile)
+
+    if args.user_data_dir:
+        options.add_argument(f"--user-data-dir={args.user_data_dir}")
+        if using_real_profile:
+            options.add_argument(f"--profile-directory={profile_name}")
+        elif profile:
+            options.add_argument(f"--profile-directory={profile}")
+    else:
+        options.add_experimental_option(
+            "prefs",
+            {
+                "credentials_enable_service": False,
+                "profile.password_manager_enabled": False,
+                "profile.default_content_setting_values.notifications": 2,
+            },
+        )
+    options.add_argument("--disable-notifications")
+    options.add_argument("--mute-audio")
+    if xvfb is False:
+        options.add_argument("--headless=new")
+
+    if not using_real_profile:
+        _install_chrome_addons(args, options)
+
+    args.driver = webdriver.Chrome(options=options)
+
+
+def load_selenium(args, wire=False):
+    if getattr(args, "driver", False):
+        return
+
+    profile = _configure_selenium_profile(args)
     if wire:
         import logging
 
@@ -460,113 +616,11 @@ def load_selenium(args, wire=False):
     else:
         from selenium import webdriver
 
-    xvfb = None  # three states
-    if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
-        xvfb = False
-        with suppress(Exception):
-            from pyvirtualdisplay.display import Display
-
-            args.driver_display = Display(visible=False, size=(1280, 720))
-            args.driver_display.start()
-            xvfb = True
-
+    xvfb = _start_selenium_display(args)
     if (which("firefox") or getattr(args, "firefox", False)) and not getattr(args, "chrome", False):
-        from selenium.webdriver.firefox.options import Options
-        from selenium.webdriver.firefox.service import Service
-
-        service = Service(log_path=tempfile.mktemp(".geckodriver.log"))
-        options = Options()
-
-        _using_real_profile = bool(args.user_data_dir)
-        if _using_real_profile:
-            _real_profile = Path(args.user_data_dir)
-            _selenium_profile = Path(tempfile.mkdtemp(prefix="ff_selenium_")) / "profile"
-            copy_firefox_profile_for_selenium(_real_profile, _selenium_profile)
-            args.selenium_profile_dir = _selenium_profile
-            args.user_data_dir = str(_selenium_profile)
-            log.info("Selenium profile: %s (cookies from %s)", _selenium_profile, _real_profile)
-
-        if args.user_data_dir:
-            options.add_argument("--profile")
-            options.add_argument(args.user_data_dir)
-
-        options.set_preference("media.volume_scale", "0.0")
-        if xvfb is False:
-            options.add_argument("--headless")
-
-        args.driver = webdriver.Firefox(service=service, options=options)
-
-        if not _using_real_profile:
-            addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
-            if getattr(args, "auto_pager", False):
-                addons.append(Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve())
-
-            for addon_path in addons:
-                try:
-                    args.driver.install_addon(str(addon_path))
-                except Exception:
-                    if args.verbose > 0:
-                        log.warning("Could not install firefox addon. Missing file %s", addon_path)
-                    else:
-                        log.exception("Could not install firefox addon. Missing file %s", addon_path)
-
-            if getattr(args, "auto_pager", False):
-                time.sleep(60)  # let auto-pager initialize
-
+        _load_firefox_driver(args, webdriver, xvfb)
     else:
-        from selenium.webdriver.chrome.options import Options
-
-        options = Options()
-
-        _using_real_profile = bool(args.user_data_dir)
-        if _using_real_profile:
-            _real_profile = Path(args.user_data_dir)
-            _profile_name = _profile or "Default"
-            _real_profile_dir = _real_profile / _profile_name
-            _selenium_profile = Path(tempfile.mkdtemp(prefix="chrome_selenium_"))
-            copy_chromium_profile_for_selenium(_real_profile_dir, _selenium_profile / _profile_name)
-            for name in ("Local State",):
-                src_file = _real_profile / name
-                if src_file.exists():
-                    shutil.copy2(src_file, _selenium_profile / name)
-            args.selenium_profile_dir = _selenium_profile
-            args.user_data_dir = str(_selenium_profile)
-            log.info("Selenium profile: %s (cookies from %s)", _selenium_profile, _real_profile_dir)
-
-        if args.user_data_dir:
-            options.add_argument(f"--user-data-dir={args.user_data_dir}")
-            if _using_real_profile:
-                options.add_argument(f"--profile-directory={_profile_name}")
-            elif _profile:
-                options.add_argument(f"--profile-directory={_profile}")
-        else:
-            options.add_experimental_option(
-                "prefs",
-                {
-                    "credentials_enable_service": False,
-                    "profile.password_manager_enabled": False,
-                    "profile.default_content_setting_values.notifications": 2,
-                },
-            )
-        options.add_argument("--disable-notifications")
-        options.add_argument("--mute-audio")
-        if xvfb is False:
-            options.add_argument("--headless=new")
-
-        if not _using_real_profile:
-            addons = [Path("~/.local/lib/ublock_origin.crx").expanduser().resolve()]
-            if getattr(args, "auto_pager", False):
-                addons.append(Path("~/.local/lib/autopager.crx").expanduser().resolve())
-            for addon_path in addons:
-                try:
-                    options.add_extension(str(addon_path))
-                except Exception:
-                    if args.verbose > 0:
-                        log.warning("Could not install chrome extension. Missing file %s", addon_path)
-                    else:
-                        log.exception("Could not install chrome extension. Missing file %s", addon_path)
-
-        args.driver = webdriver.Chrome(options=options)
+        _load_chrome_driver(args, webdriver, xvfb, profile)
 
 
 def quit_selenium(args):
@@ -671,11 +725,100 @@ def ensure_download_parent(path: Path) -> None:
     log.warning("Moved existing file %s to %s to create a download directory", legacy_path, parent)
 
 
+def _resume_download(_args, url, path, response, remote_size, current_session):
+    if not path.exists():
+        log.info("Writing %s \n\tto %s", url, path)
+        return response, path, False
+    if not remote_size:
+        path.unlink()
+        return response, path, False
+
+    local_size = path.stat().st_size
+    if local_size == remote_size:
+        log.warning(f"Skipped download. File with same size already exists: {path}")
+        return response, path, True
+    if local_size < SMALL_DOWNLOAD_LIMIT:
+        path.unlink()
+        return response, path, False
+
+    log.warning(
+        f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} "
+        f"({strings.percent(local_size / remote_size)}): {path}"
+    )
+    headers = {"Range": f"bytes={local_size}-"}
+    response.close()
+    response = current_session.get(url, headers=headers, stream=True)
+    if response.status_code != HTTP_PARTIAL_CONTENT:
+        path.unlink()
+        response.close()
+        response = current_session.get(url, stream=True)
+    return response, path, False
+
+
+def _write_download(args, url, path, response, remote_size, retry_num):
+    try:
+        with open(path, "ab") as output_file:
+            for chunk in response.iter_content(chunk_size=args.download_chunk_size):
+                if chunk:
+                    output_file.write(chunk)
+
+        if remote_size and not getattr(args, "ignore_size", False):
+            downloaded_size = os.path.getsize(path)
+            if downloaded_size < remote_size:
+                msg = f"Incomplete download ({strings.percent(downloaded_size / remote_size)}) {path}"
+                raise RuntimeError(msg)
+    except Exception as excinfo:
+        if isinstance(excinfo, HTTPTooManyRequestsError):
+            raise
+        if isinstance(excinfo, OSError) and excinfo.errno in consts.EnvironmentErrors:
+            raise
+        retry_num += 1
+        log.debug("Retry #%s %s", retry_num, url)
+        time.sleep(retry_num)
+        return download_url(args, url, path, retry_num)
+    return path
+
+
+def _download_url_once(args, url, output_path, retry_num):
+    response = None
+    current_session = requests_session()
+    try:
+        response = current_session.get(url, stream=True)
+        code = HTTPStatus(response.status_code)
+        if code.is_client_error or code.is_server_error:
+            log.error(f"Error {response.status_code} {url}")
+            raise_for_status(response.status_code)
+
+        remote_size = nums.safe_int(response.headers.get("Content-Length"))
+        if not output_path:
+            output_path = url_to_local_path(url, response=response, output_prefix=args.prefix)
+        if output_path == ".":
+            log.warning("Skipping directory %s", url)
+            return None
+
+        path = Path(output_path)
+        ensure_download_parent(path)
+        if path.is_dir():
+            output_path = str(path / "index.html")
+            path = Path(output_path)
+
+        response, path, skip_write = _resume_download(args, url, path, response, remote_size, current_session)
+        if skip_write:
+            return str(path)
+        output_path = _write_download(args, url, path, response, remote_size, retry_num)
+        if output_path is None:
+            return None
+        set_timestamp(response.headers, output_path)
+        return str(output_path)
+    finally:
+        if response is not None:
+            response.close()
+
+
 def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
-    global session
-    if session is None:
+    if _configured_state(session, _SESSION_PROXY, "session") is None:
         log.warning("Creating new web.session")
-        session = requests_session()
+        requests_session()
 
     if retry_num > args.http_download_retries:
         msg = f"Max retries exceeded for {url}"
@@ -683,75 +826,9 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
 
     log.debug("Downloading file %s retry %s", url, retry_num)
     try:
-        r = session.get(url, stream=True)
-
-        code = HTTPStatus(r.status_code)
-        if code.is_client_error or code.is_server_error:
-            log.error(f"Error {r.status_code} {url}")
-            raise_for_status(r.status_code)
-
-        remote_size = nums.safe_int(r.headers.get("Content-Length"))
-
-        if not output_path:
-            output_path = url_to_local_path(url, response=r, output_prefix=args.prefix)
-        if output_path == ".":
-            log.warning("Skipping directory %s", url)
+        output_path = _download_url_once(args, url, output_path, retry_num)
+        if output_path is None:
             return None
-
-        p = Path(output_path)
-        ensure_download_parent(p)
-        if p.is_dir():
-            output_path = str(p / "index.html")
-            p = Path(output_path)
-
-        if p.exists():
-            if remote_size:
-                local_size = p.stat().st_size
-                if local_size == remote_size:
-                    log.warning(f"Skipped download. File with same size already exists: {output_path}")
-                    post_download(args)
-                    return output_path
-                elif local_size < SMALL_DOWNLOAD_LIMIT:  # TODO: check if first few kilobytes match what already exists locally...
-                    p.unlink()
-                else:
-                    log.warning(
-                        f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} ({strings.percent(local_size / remote_size)}): {output_path}"
-                    )
-                    headers = {"Range": f"bytes={local_size}-"}
-                    r.close()  # close previous session before opening a new one
-                    r = session.get(url, headers=headers, stream=True)
-                    if r.status_code != HTTP_PARTIAL_CONTENT:  # HTTP Partial Content
-                        p.unlink()
-                        r.close()  # close previous session before opening a new one
-                        r = session.get(url, stream=True)
-            else:
-                p.unlink()
-        else:
-            log.info("Writing %s \n\tto %s", url, output_path)
-
-        try:
-            with open(output_path, "ab") as f:
-                for chunk in r.iter_content(chunk_size=args.download_chunk_size):
-                    if chunk:
-                        f.write(chunk)
-
-            if remote_size and not getattr(args, "ignore_size", False):
-                downloaded_size = os.path.getsize(output_path)
-                if downloaded_size < remote_size:
-                    msg = f"Incomplete download ({strings.percent(downloaded_size / remote_size)}) {output_path}"
-                    raise RuntimeError(msg)
-        except Exception as excinfo:
-            r.close()
-            if isinstance(excinfo, HTTPTooManyRequestsError):
-                raise
-            if isinstance(excinfo, OSError) and excinfo.errno in consts.EnvironmentErrors:
-                raise
-            retry_num += 1
-            log.debug("Retry #%s %s", retry_num, url)
-            time.sleep(retry_num)
-            return download_url(args, url, output_path, retry_num)
-
-        set_timestamp(r.headers, output_path)
     except requests.exceptions.SSLError as excinfo:
         if args.allow_insecure and url.startswith("https://"):
             return download_url(args, url.replace("https://", "http://", 1), output_path, retry_num)
@@ -764,9 +841,6 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
         socket.gaierror,
     ) as excinfo:
         log.error("%s %s", url, excinfo)
-    finally:
-        if "r" in locals():  # prevent UnboundLocalError
-            r.close()
 
     post_download(args)
     if not output_path or not Path(output_path).exists():
@@ -775,9 +849,8 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
 
 
 def load_cdx_toolkit():
-    global cdx_toolkit
-
-    if cdx_toolkit is None:
+    current_cdx_toolkit = _configured_state(cdx_toolkit, _CDX_TOOLKIT_PROXY, "cdx_toolkit")
+    if current_cdx_toolkit is None:
         try:
             import cdx_toolkit as _cdx_toolkit
         except ModuleNotFoundError:
@@ -787,18 +860,19 @@ def load_cdx_toolkit():
             )
             raise
 
-        cdx_toolkit = _cdx_toolkit
-    return cdx_toolkit
+        current_cdx_toolkit = _cdx_toolkit
+        _web_state.cdx_toolkit = current_cdx_toolkit
+    return current_cdx_toolkit
 
 
 def load_internetarchive():
-    global internetarchive
-
-    if internetarchive is None:
+    current_internetarchive = _configured_state(internetarchive, _INTERNETARCHIVE_PROXY, "internetarchive")
+    if current_internetarchive is None:
         import internetarchive as ia
 
-        internetarchive = ia
-    return internetarchive
+        current_internetarchive = ia
+        _web_state.internetarchive = current_internetarchive
+    return current_internetarchive
 
 
 def internet_archive_identifier(url: str) -> str | None:
@@ -811,6 +885,57 @@ def internet_archive_identifier(url: str) -> str | None:
         return None
 
     return urllib.parse.unquote(path_parts[2])
+
+
+def _internet_archive_files(item, identifier):
+    original_files = []
+    private_files = []
+    for archive_file in item.get_files():
+        if archive_file.source != "original":
+            continue
+        if archive_file.name in {f"{identifier}_files.xml", "__ia_thumb.jpg"}:
+            log.info("Skipping Internet Archive generated file %s", archive_file.name)
+            continue
+        if str(getattr(archive_file, "private", "")).lower() == "true":
+            private_files.append(archive_file)
+            log.info("Skipping private Internet Archive file %s", archive_file.name)
+            continue
+        original_files.append(archive_file)
+    return original_files, private_files
+
+
+def _download_internet_archive_files(item, original_files, identifier, destdir, archive_root):
+    errors = []
+    current_file = None
+    for index, archive_file in enumerate(original_files, start=1):
+        current_file = archive_file.name
+        local_path = archive_root / archive_file.name
+        if not local_path.resolve().is_relative_to(archive_root):
+            message = f"Unsafe Internet Archive file path: {archive_file.name}"
+            raise RuntimeError(message)
+
+        remote_size = nums.safe_int(getattr(archive_file, "size", None))
+        if local_path.is_file() and remote_size is not None and local_path.stat().st_size == remote_size:
+            message = (
+                f"Skipping Internet Archive item {identifier} ({index}/{len(original_files)}): "
+                f"{archive_file.name} (same size)"
+            )
+            printing.print_overwrite(message)
+            continue
+
+        printing.print_overwrite(
+            f"Downloading Internet Archive item {identifier} ({index}/{len(original_files)}): {archive_file.name}"
+        )
+        errors.extend(
+            item.download(
+                files=[archive_file.name],
+                source="original",
+                checksum=True,
+                destdir=destdir,
+                retries=INTERNET_ARCHIVE_NO_RETRIES,
+            )
+        )
+    return errors, current_file
 
 
 def download_internet_archive(args, url: str) -> str | None:
@@ -832,32 +957,18 @@ def download_internet_archive(args, url: str) -> str | None:
         metadata = item_metadata.get("metadata", {}) or getattr(item, "metadata", {}) or {}
         access_restricted = _is_internet_archive_flag(metadata.get("access-restricted-item"))
 
-        if _is_internet_archive_flag(item_metadata.get("servers_unavailable")):
-            msg = f"RecoverableError: Internet Archive item servers unavailable: {identifier}"
-            log.warning(msg)
-            raise RecoverableError(msg)
-        if _is_internet_archive_flag(item_metadata.get("nodownload")):
-            msg = f"RecoverableError: Internet Archive item marked nodownload: {identifier}"
-            log.warning(msg)
-            raise RecoverableError(msg)
-        if _is_internet_archive_flag(item_metadata.get("is_dark")):
-            msg = f"UnrecoverableError: Internet Archive item is dark: {identifier}"
-            log.warning(msg)
-            raise UnrecoverableError(msg)
+        unavailable_flags = {
+            "servers_unavailable": (RecoverableError, "RecoverableError: Internet Archive item servers unavailable"),
+            "nodownload": (RecoverableError, "RecoverableError: Internet Archive item marked nodownload"),
+            "is_dark": (UnrecoverableError, "UnrecoverableError: Internet Archive item is dark"),
+        }
+        for flag, (error_type, message_prefix) in unavailable_flags.items():
+            if _is_internet_archive_flag(item_metadata.get(flag)):
+                message = f"{message_prefix}: {identifier}"
+                log.warning(message)
+                raise error_type(message)
 
-        original_files = []
-        private_files = []
-        for archive_file in item.get_files():
-            if archive_file.source != "original":
-                continue
-            if archive_file.name in {f"{identifier}_files.xml", "__ia_thumb.jpg"}:
-                log.info("Skipping Internet Archive generated file %s", archive_file.name)
-                continue
-            if str(getattr(archive_file, "private", "")).lower() == "true":
-                private_files.append(archive_file)
-                log.info("Skipping private Internet Archive file %s", archive_file.name)
-                continue
-            original_files.append(archive_file)
+        original_files, private_files = _internet_archive_files(item, identifier)
 
         if not original_files:
             if private_files:
@@ -868,35 +979,10 @@ def download_internet_archive(args, url: str) -> str | None:
 
         destdir = str(Path(args.prefix).expanduser())
         archive_root = Path(destdir).expanduser().resolve() / identifier
-        errors = []
-        for index, archive_file in enumerate(original_files, start=1):
-            current_file = archive_file.name
-            progress_started = True
-            local_path = archive_root / archive_file.name
-            if not local_path.resolve().is_relative_to(archive_root):
-                msg = f"Unsafe Internet Archive file path: {archive_file.name}"
-                raise RuntimeError(msg)
-
-            remote_size = nums.safe_int(getattr(archive_file, "size", None))
-            if local_path.is_file() and remote_size is not None and local_path.stat().st_size == remote_size:
-                message = (
-                    f"Skipping Internet Archive item {identifier} ({index}/{len(original_files)}): "
-                    f"{archive_file.name} (same size)"
-                )
-                printing.print_overwrite(message)
-                continue
-
-            message = f"Downloading Internet Archive item {identifier} ({index}/{len(original_files)}): {archive_file.name}"
-            printing.print_overwrite(message)
-            file_errors = item.download(
-                files=[archive_file.name],
-                source="original",
-                checksum=True,
-                destdir=destdir,
-                # The IA client treats 0, False, and None as its default retry count.
-                retries=INTERNET_ARCHIVE_NO_RETRIES,
-            )
-            errors.extend(file_errors)
+        progress_started = True
+        errors, current_file = _download_internet_archive_files(
+            item, original_files, identifier, destdir, archive_root
+        )
     except (
         AccountAPIError,
         AuthenticationError,
@@ -990,8 +1076,8 @@ def save_html_table(args, html_file):
 
     dfs = pd.read_html(html_file, extract_links="body", flavor="bs4")
     tables = []
-    for df in dfs:
-        df = pd_utils.columns_snake_case(df)
+    for dataframe in dfs:
+        df = pd_utils.columns_snake_case(dataframe)
 
         # extract URLs into their own columns
         for col in df.columns:
@@ -1053,15 +1139,17 @@ def re_trigger_input(driver):
 
 
 def selenium_get_page(args, url):
-    load_cookie_jar(args)
+    current_cookie_jar = load_cookie_jar(args)
+    if current_cookie_jar is None:
+        current_cookie_jar = _configured_state(cookie_jar, _COOKIE_JAR_PROXY, "cookie_jar")
 
     using_native_profile = bool(getattr(args, "user_data_dir", None))
 
-    if cookie_jar and not using_native_profile:
+    if current_cookie_jar and not using_native_profile:
         if path_utils.fqdn_from_url(url) != path_utils.fqdn_from_url(args.driver.current_url):
             args.driver.get(path_utils.fqdn_from_url(url))
 
-        for cookie in cookie_jar.get_cookies_for_url(url):
+        for cookie in current_cookie_jar.get_cookies_for_url(url):
             cookie_dict = {
                 "name": cookie.name,
                 "value": cookie.value,
@@ -1081,29 +1169,29 @@ def selenium_get_page(args, url):
     if getattr(args, "poke", False):
         re_trigger_input(args.driver)
 
-    if cookie_jar:
+    if current_cookie_jar:
         new_cookies = args.driver.get_cookies()
 
-        for new_cookie in new_cookies:
+        for cookie_data in new_cookies:
             new_cookie = http.cookiejar.Cookie(
                 version=0,
-                name=new_cookie["name"],
-                value=new_cookie["value"],
+                name=cookie_data["name"],
+                value=cookie_data["value"],
                 port=None,
                 port_specified=False,
-                domain=new_cookie["domain"],
-                domain_specified=bool(new_cookie["domain"]),
-                domain_initial_dot=new_cookie["domain"].startswith("."),
-                path=new_cookie["path"],
-                path_specified=bool(new_cookie["path"]),
-                secure=new_cookie["secure"],
-                expires=new_cookie.get("expiry"),
+                domain=cookie_data["domain"],
+                domain_specified=bool(cookie_data["domain"]),
+                domain_initial_dot=cookie_data["domain"].startswith("."),
+                path=cookie_data["path"],
+                path_specified=bool(cookie_data["path"]),
+                secure=cookie_data["secure"],
+                expires=cookie_data.get("expiry"),
                 discard=False,
                 comment=None,
                 comment_url=None,
                 rest={},
             )
-            cookie_jar.set_cookie(new_cookie)
+            current_cookie_jar.set_cookie(new_cookie)
 
 
 def scroll_down(driver):
@@ -1396,10 +1484,10 @@ def fake_title(url):
 
 
 def get_title(args, url):
-    global session
-    if session is None:
+    current_session = _configured_state(session, _SESSION_PROXY, "session")
+    if current_session is None:
         log.warning("Creating new web.session")
-        session = requests_session()
+        current_session = requests_session()
 
     import requests.exceptions
     from bs4 import BeautifulSoup
@@ -1412,7 +1500,7 @@ def get_title(args, url):
             selenium_get_page(args, url)
             html_text = args.driver.page_source
         else:
-            html_text = session.get(url).text
+            html_text = current_session.get(url).text
 
         soup = BeautifulSoup(html_text, "lxml")
         title = soup.title.text.strip() if soup.title else url
@@ -1502,12 +1590,12 @@ class WebPath:
         if self._head:
             return self._head
 
-        global session
-        if session is None:
+        current_session = _configured_state(session, _SESSION_PROXY, "session")
+        if current_session is None:
             log.warning("Creating new web.session")
-            session = requests_session()
+            current_session = requests_session()
 
-        self._head = session.head(str(self), allow_redirects=follow_symlinks)
+        self._head = current_session.head(str(self), allow_redirects=follow_symlinks)
         return self._head
 
     def stat(self, follow_symlinks=True):
@@ -1548,12 +1636,12 @@ class WebPath:
 
 @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
 def stat(url, follow_symlinks=True):
-    global session
-    if session is None:
+    current_session = _configured_state(session, _SESSION_PROXY, "session")
+    if current_session is None:
         log.warning("Creating new web.session")
-        session = requests_session()
+        current_session = requests_session()
 
-    r = session.head(url, allow_redirects=follow_symlinks)
+    r = current_session.head(url, allow_redirects=follow_symlinks)
 
     code = HTTPStatus(r.status_code)
     if code.is_informational or code.is_success or code.is_redirection:

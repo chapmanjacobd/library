@@ -229,7 +229,7 @@ NESTED_ONLY_MODULES = {
 
 
 def usage() -> str:
-    grouped_commands = _command_catalog()
+    grouped_commands = command_catalog()
 
     tables = []
     for category, commands in grouped_commands:
@@ -325,7 +325,7 @@ def _expanded_aliases(module: str, aliases) -> list[str]:
     return [*aliases, *expanded]
 
 
-def _module_alias_targets() -> dict[str, str]:
+def module_alias_targets() -> dict[str, str]:
     targets = {}
     for module, aliases in modules.items():
         target = module.rsplit(".", 1)[1].replace("_", "-")
@@ -373,7 +373,7 @@ def _canonical_nested_path(path: list[str]) -> tuple[str, ...]:
     return canonical_path
 
 
-def _nested_target(path: list[str]) -> tuple[str, int] | None:
+def nested_target(path: list[str]) -> tuple[str, int] | None:
     if not path:
         return None
 
@@ -481,36 +481,36 @@ def _nested_help(
     return "\n".join(lines)
 
 
-def _canonical_target_paths() -> dict[str, str]:
+def canonical_target_paths() -> dict[str, str]:
     target_paths = {}
     for path in _canonical_nested_paths_for_all_groups():
-        target = _nested_target(path.split())
+        target = nested_target(path.split())
         if target is not None:
             target_paths.setdefault(target[0], path)
     target_paths.update(
         {
             target: path
             for target, path in PREFERRED_NESTED_PATHS.items()
-            if _nested_target(path.split()) == (target, len(path.split()))
+            if nested_target(path.split()) == (target, len(path.split()))
         }
     )
     return target_paths
 
 
-def _command_catalog() -> list[tuple[str, list[tuple[str, str]]]]:
+def command_catalog() -> list[tuple[str, list[tuple[str, str]]]]:
     grouped_commands = []
     canonical_paths = set(_canonical_nested_paths_for_all_groups())
-    canonical_target_paths = _canonical_target_paths()
+    target_paths = canonical_target_paths()
     seen = set()
 
     for category, category_progs in progs.items():
         commands = []
         for path, description in category_progs.items():
             path_parts = path.split()
-            nested_target = _nested_target(path_parts)
+            nested_target_info = nested_target(path_parts)
             canonical_path = (
-                canonical_target_paths.get(nested_target[0])
-                if nested_target is not None and nested_target[1] == len(path_parts)
+                target_paths.get(nested_target_info[0])
+                if nested_target_info is not None and nested_target_info[1] == len(path_parts)
                 else None
             )
             if canonical_path not in canonical_paths:
@@ -540,7 +540,7 @@ def _module_canonical_paths() -> dict[str, str]:
     `relmv`) so every legacy spelling of a command can be rewritten to its v4 path.
     """
     paths = {}
-    for target, path in _canonical_target_paths().items():
+    for target, path in canonical_target_paths().items():
         try:
             module_name, function_name = _target_module(target)
         except KeyError:
@@ -551,7 +551,7 @@ def _module_canonical_paths() -> dict[str, str]:
 
 def _legacy_command_paths() -> dict[str, str]:
     canonical_paths = _module_canonical_paths()
-    canonical_target_paths = _canonical_target_paths()
+    target_paths = canonical_target_paths()
     legacy_paths = {}
     for module, aliases in modules.items():
         canonical_path = canonical_paths.get(module)
@@ -566,10 +566,10 @@ def _legacy_command_paths() -> dict[str, str]:
             *_expanded_aliases(module, aliases),
         }
         for legacy_name in legacy_names:
-            nested_target = _nested_target([legacy_name])
+            nested_target_info = nested_target([legacy_name])
             nested_path = (
-                canonical_target_paths.get(nested_target[0])
-                if nested_target is not None and nested_target[1] == 1
+                target_paths.get(nested_target_info[0])
+                if nested_target_info is not None and nested_target_info[1] == 1
                 else None
             )
             legacy_paths.setdefault(legacy_name, nested_path or canonical_path)
@@ -603,14 +603,14 @@ def canonicalize_usage(text: str) -> str:
 
 def _resolve_target(command: str) -> str | None:
     target = command.replace("_", "-")
-    if target in _canonical_target_paths():
+    if target in canonical_target_paths():
         return target
-    aliases = _module_alias_targets()
+    aliases = module_alias_targets()
     return aliases.get(command) or aliases.get(target)
 
 
 def _target_module(target: str) -> tuple[str, str]:
-    target = _module_alias_targets().get(target, target)
+    target = module_alias_targets().get(target, target)
     for module in modules:
         module_name, function_name = module.rsplit(".", 1)
         if function_name.replace("_", "-") == target:
@@ -620,8 +620,8 @@ def _target_module(target: str) -> tuple[str, str]:
 
 def command_usage(command: str) -> str:
     command = command.replace("_", "-")
-    nested_target = _nested_target(command.split())
-    target = nested_target[0] if nested_target else _module_alias_targets().get(command, command)
+    nested_target_info = nested_target(command.split())
+    target = nested_target_info[0] if nested_target_info else module_alias_targets().get(command, command)
     module_name, function_name = _target_module(target)
     module = importlib.import_module(module_name)
 
@@ -666,9 +666,9 @@ def canonicalize_usage_for_command(text: str, command: str) -> str:
         return text
     trailing_newline = text.endswith("\n")
 
-    nested_target = _nested_target(command.split())
-    target = nested_target[0] if nested_target else _resolve_target(command)
-    canonical_command = _canonical_target_paths().get(target, command.replace("_", "-"))
+    nested_target_info = nested_target(command.split())
+    target = nested_target_info[0] if nested_target_info else _resolve_target(command)
+    canonical_command = canonical_target_paths().get(target, command.replace("_", "-"))
 
     lines = text.splitlines()
     known_paths = sorted(_canonical_nested_paths_for_all_groups(), key=len, reverse=True)
@@ -706,12 +706,12 @@ def _dispatch(args) -> None:
         if hasattr(args, "_nested_args"):
             if subcommand:
                 sys.argv[0] = f"library {subcommand}"
-            sys.argv[1:] = args._nested_args
+            sys.argv[1:] = args._nested_args  # noqa: SLF001
         elif len(sys.argv) >= MIN_NESTED_ARGV_LENGTH:
             subcommand = sys.argv[1]
             del sys.argv[1]
             # Present flat aliases using their canonical v4 path in help output too
-            canonical_path = _canonical_target_paths().get(_resolve_target(subcommand) or "")
+            canonical_path = canonical_target_paths().get(_resolve_target(subcommand) or "")
             if canonical_path:
                 sys.argv[0] = f"library {canonical_path}"
         try:
@@ -798,14 +798,18 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 parser = create_subcommands_parser()
 
 
+def _library_with_args(args) -> None:
+    original_argv = sys.argv
+    try:
+        sys.argv = ["lb", *args]
+        return library()
+    finally:
+        sys.argv = original_argv
+
+
 def library(args=None) -> None:
     if args:
-        original_argv = sys.argv
-        try:
-            sys.argv = ["lb", *args]
-            return library()
-        finally:
-            sys.argv = original_argv
+        return _library_with_args(args)
 
     original_argv = sys.argv[1:]
     if original_argv in (["-h"], ["--help"]):
@@ -837,16 +841,16 @@ def library(args=None) -> None:
                 print(_nested_help(nested_group, prefix=prefix))
                 raise SystemExit(0)
 
-    if nested_group and _nested_target(original_argv) is None:
+    if nested_group and nested_target(original_argv) is None:
         invalid_path = _invalid_nested_path(nested_group, original_argv)
         print(_nested_help(nested_group, invalid_path))
         raise SystemExit(1)
 
     if nested_group:
-        target_info = _nested_target(original_argv)
+        target_info = nested_target(original_argv)
         if target_info is not None:
             target, consumed = target_info
-            canonical_path = _canonical_target_paths().get(target)
+            canonical_path = canonical_target_paths().get(target)
             return _dispatch(
                 argparse.Namespace(
                     func=lambda: _invoke_target(target),

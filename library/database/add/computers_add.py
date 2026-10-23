@@ -98,15 +98,15 @@ def computer_add(args, hostnames):
                 log_warning_if_same_free_space(computer_info, disks)
 
                 computer_info["path"] = hostname
-                playlists_id = db_playlists._add(args, objects.dict_filter_bool(computer_info))
+                playlists_id = db_playlists.add_entry(args, objects.dict_filter_bool(computer_info))
 
                 # remove ghost disks
                 with args.db.conn:
                     args.db["media"].delete_where("playlists_id = ?", [playlists_id])
 
                 for disk in disks:
-                    disk = disk | {"playlists_id": playlists_id}
-                    args.db["media"].insert(disk, pk=["playlists_id", "path"], alter=True, replace=True)
+                    disk_with_playlist = disk | {"playlists_id": playlists_id}
+                    args.db["media"].insert(disk_with_playlist, pk=["playlists_id", "path"], alter=True, replace=True)
 
     if not args.db["media"].detect_fts():
         db_utils.optimize(args)

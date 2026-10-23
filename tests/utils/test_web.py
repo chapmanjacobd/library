@@ -713,13 +713,13 @@ def test_chromium_last_used_profile(tmp_path):
         encoding="utf-8",
     )
 
-    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"
+    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"  # noqa: SLF001
 
 
 def test_chromium_profile_falls_back_to_existing_profile(tmp_path):
     (tmp_path / "Profile 1").mkdir()
 
-    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"
+    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"  # noqa: SLF001
 
 
 def test_is_index():

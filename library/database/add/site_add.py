@@ -93,117 +93,106 @@ def extract_tables(dict_, table_name, foreign_keys=False, state=None, parent_ref
     return tables
 
 
+def _list_to_sql(dict_or_arr, table_name, foreign_keys, state, parent_ref):
+    new_records = defaultdict(list)
+    scalar_values = []
+    for value in dict_or_arr:
+        if isinstance(value, dict):
+            sub_tables = extract_tables(value, table_name, foreign_keys, state, parent_ref)
+            for table in sub_tables:
+                new_records[table["table_name"]].extend(table["data"])
+        else:
+            scalar_values.append(value)
+
+    tables = []
+    if scalar_values:
+        log.debug("array of scalar: %s", dict_or_arr)
+        records = [{"v": value} for value in scalar_values]
+        if foreign_keys and table_name is not None:
+            for record in records:
+                record["id"] = _next_record_id(state, table_name)
+        if foreign_keys and parent_ref is not None:
+            for record in records:
+                record[f"{parent_ref[0]}_id"] = parent_ref[1]
+        tables.append({"table_name": table_name, "data": records})
+
+    for new_table_name, data in new_records.items():
+        log.debug("array of dicts: %s", dict_or_arr)
+        tables.append({"table_name": new_table_name, "data": data})
+    return tables
+
+
 def nosql_to_sql(dict_or_arr, table_name=None, foreign_keys=False, state=None, parent_ref=None):
     if state is None:
         state = {"next_ids": defaultdict(int)}
 
-    tables = []
-
     if isinstance(dict_or_arr, list):
-        arr_ = dict_or_arr
-        new_records = defaultdict(list)
-        scalar_values = []
-        for value in arr_:
-            if isinstance(value, dict):
-                dict_ = value
-                sub_tables = extract_tables(dict_, table_name, foreign_keys, state, parent_ref)
-                for t in sub_tables:
-                    new_records[t["table_name"]].extend(t["data"])
-            else:
-                scalar_values.append(value)
+        return _list_to_sql(dict_or_arr, table_name, foreign_keys, state, parent_ref)
+    if isinstance(dict_or_arr, dict):
+        return extract_tables(dict_or_arr, table_name, foreign_keys, state, parent_ref)
+    raise TypeError("Expected dict, list of dicts, or list of scalar values")
 
-        if scalar_values:
-            log.debug("array of scalar: %s", arr_)
-            arr_ = [{"v": v} for v in scalar_values]
-            if foreign_keys and table_name is not None:
-                for record in arr_:
-                    record["id"] = _next_record_id(state, table_name)
-            if foreign_keys and parent_ref is not None:
-                for record in arr_:
-                    record[f"{parent_ref[0]}_id"] = parent_ref[1]
-            tables.append({"table_name": table_name, "data": arr_})
 
-        for new_table_name, data in new_records.items():
-            log.debug("array of dicts: %s", arr_)
-            tables.append({"table_name": new_table_name, "data": data})
+def _merge_soup_value(transformed, key_name, value):
+    if key_name not in transformed:
+        transformed[key_name] = value if isinstance(value, (dict, str)) else []
+        return
 
-    elif isinstance(dict_or_arr, dict):
-        dict_ = dict_or_arr
-        tables.extend(extract_tables(dict_, table_name, foreign_keys, state, parent_ref))
+    existing_value = transformed[key_name]
+    if isinstance(existing_value, list):
+        if isinstance(value, list):
+            existing_value.extend(value)
+        elif isinstance(value, (dict, str)):
+            existing_value.append(value)
+        return
+    if isinstance(existing_value, (dict, str)):
+        transformed[key_name] = [existing_value, value]
+        return
+    raise NotImplementedError
 
-    else:
-        raise TypeError("Expected dict, list of dicts, or list of scalar values")
 
-    return tables
+def _soup_tag(tag):
+    tag_result = {attr: tag.attrs[attr] for attr in ("title", "href", "src", "alt") if attr in tag.attrs}
+    value = soup_tree(tag.contents)
+    if not isinstance(value, dict):
+        message = f"Expected parsed contents for <{tag.name}> to be a dictionary, got {type(value).__name__}"
+        raise TypeError(message)
+    tag_result.update(value)
+    return tag_result
+
+
+def _soup_collection(collection):
+    transformed = {}
+    for element_ in collection:
+        value = soup_tree(element_)
+        if not value:
+            continue
+
+        element_type = type(element_)
+        key_name = str(element_type.__name__)
+        if element_type == element.Tag:
+            key_name = element_.name
+        elif isinstance(value, str):
+            key_name = "text"
+        _merge_soup_value(transformed, key_name, value)
+    return transformed
+
+
+def _soup_text(text):
+    text = strings.un_paragraph(text)
+    return text or None
 
 
 def soup_tree(o) -> dict | str | None:
     if isinstance(o, BeautifulSoup):
         return soup_tree(o.contents)
-    elif isinstance(o, element.Tag):
-        tag_result = {}
-
-        for attr in ("title", "href", "src", "alt"):
-            if attr in o.attrs:
-                tag_result[attr] = o.attrs[attr]
-
-        val = soup_tree(o.contents)
-        if isinstance(val, dict):
-            tag_result.update(val)
-        else:
-            message = f"Expected parsed contents for <{o.name}> to be a dictionary, got {type(val).__name__}"
-            raise TypeError(message)
-        return tag_result
-
-    elif isinstance(o, (element.ResultSet, list)):
-        transformed = {}
-
-        for el in o:
-            val = soup_tree(el)
-            if not val:
-                continue
-
-            el_type = type(el)
-            key_name = str(el_type.__name__)
-            if el_type == element.Tag:
-                key_name = el.name
-            elif isinstance(val, str):
-                key_name = "text"
-
-            if key_name in transformed:
-                if isinstance(transformed[key_name], list):
-                    if isinstance(val, list):
-                        transformed[key_name].extend(val)
-                    elif isinstance(val, (dict, str)):
-                        transformed[key_name].append(val)
-
-                elif isinstance(transformed[key_name], (dict, str)):
-                    existing_value = transformed[key_name]
-                    transformed[key_name] = [existing_value]
-                    transformed[key_name].append(val)
-
-                else:
-                    raise NotImplementedError
-
-            elif isinstance(val, (dict, str)):
-                transformed[key_name] = val
-            elif isinstance(val, list):
-                transformed[key_name] = []
-            else:
-                raise NotImplementedError
-
-        return transformed
-
-    elif isinstance(
-        o,
-        (
-            element.Stylesheet,
-            element.Script,
-        ),
-    ):
+    if isinstance(o, element.Tag):
+        return _soup_tag(o)
+    if isinstance(o, (element.ResultSet, list)):
+        return _soup_collection(o)
+    if isinstance(o, (element.Stylesheet, element.Script)):
         return None
-
-    elif isinstance(
+    if isinstance(
         o,
         (
             element.NavigableString,
@@ -216,10 +205,7 @@ def soup_tree(o) -> dict | str | None:
             element.TemplateString,
         ),
     ):
-        text = strings.un_paragraph(o)
-        if text:
-            return text
-        return None
+        return _soup_text(o)
 
     raise NotImplementedError
 

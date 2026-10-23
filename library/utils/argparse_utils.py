@@ -197,7 +197,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
                     default = opts[0]
                 else:
                     default = opts[1]
-            elif isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
+            elif isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):  # noqa: SLF001
                 pass
             elif action.default == "":
                 pass
@@ -243,7 +243,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
         extra = []
         if default:
             extra.append(f"default: {default}")
-        if not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)) and const:
+        if not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)) and const:  # noqa: SLF001
             extra.append(f"const: {const}")
         extra = "; ".join(extra)
 
@@ -281,7 +281,7 @@ def arggroup_parser(functions):
     temp_parser = ArgumentParser(add_help=False)
     for func in functions:
         func(temp_parser)
-    return {a.dest: a for a in temp_parser._actions}
+    return {a.dest: a for a in temp_parser._actions}  # noqa: SLF001
 
 
 def forward_arggroups(args, *arggroups, **overrides):

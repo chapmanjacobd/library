@@ -118,14 +118,7 @@ def extract_metadata(path):
         raise
 
 
-def torrents_add():
-    args = parse_args()
-
-    db_playlists.create(args)
-    db_media.create(args)
-
-    scanned_set = set(shell_utils.gen_paths(args, default_exts=(".torrent",)))
-
+def _scan_torrent_paths(args, scanned_set):
     known_hashes = set()
     try:
         pl_columns = db_utils.columns(args, "playlists")
@@ -154,6 +147,46 @@ def torrents_add():
             if deleted_count > 0:
                 print("Marked", deleted_count, "orphaned metadata records as deleted")
 
+    return paths, known_hashes
+
+
+def _save_torrent_info(args, torrent_info, known_hashes, idx, num_paths, start_time):
+    if torrent_info["info_hash"] in known_hashes and not args.force:
+        if args.delete_files:
+            log.info("[%s]: known info_hash; Deleting.", torrent_info["path"])
+            trash(args, torrent_info["path"])
+        else:
+            log.info(
+                "[%s]: Skipping known info_hash %s. Use --force to override",
+                torrent_info["path"],
+                torrent_info["info_hash"],
+            )
+        return
+    known_hashes.add(torrent_info["info_hash"])
+
+    percent = (idx + 1) / num_paths * 100
+    eta = printing.eta(idx + 1, num_paths, start_time=start_time) if num_paths > MIN_PATHS_FOR_METADATA_ETA else ""
+    printing.print_overwrite(
+        f"[{torrent_info['path']}] Extracting metadata {idx + 1} of {num_paths} ({percent:3.1f}%) {eta}",
+        flush=True,
+    )
+
+    files = torrent_info.pop("files")
+    log.debug(torrent_info)
+    torrent_info["webpath"] = iterables.safe_unpack(sorted(torrent_info.pop("web_seeds"), key=len, reverse=True))
+    playlists_id = db_playlists.add_entry(args, objects.dict_filter_bool(torrent_info))
+    files = [file | {"playlists_id": playlists_id} for file in files]
+    args.db["media"].insert_all(files, pk=["playlists_id", "path"], alter=True, replace=True)
+
+
+def torrents_add():
+    args = parse_args()
+
+    db_playlists.create(args)
+    db_media.create(args)
+
+    scanned_set = set(shell_utils.gen_paths(args, default_exts=(".torrent",)))
+    paths, known_hashes = _scan_torrent_paths(args, scanned_set)
     num_paths = len(paths)
     start_time = consts.now()
     with concurrent.futures.ThreadPoolExecutor() as ex:
@@ -167,39 +200,7 @@ def torrents_add():
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
-                if torrent_info["info_hash"] in known_hashes and not args.force:
-                    if args.delete_files:
-                        log.info("[%s]: known info_hash; Deleting.", torrent_info["path"])
-                        trash(args, torrent_info["path"])
-                    else:
-                        log.info(
-                            "[%s]: Skipping known info_hash %s. Use --force to override",
-                            torrent_info["path"],
-                            torrent_info["info_hash"],
-                        )
-                    continue
-                known_hashes.add(torrent_info["info_hash"])
-
-                percent = (idx + 1) / num_paths * 100
-                eta = (
-                    printing.eta(idx + 1, num_paths, start_time=start_time)
-                    if num_paths > MIN_PATHS_FOR_METADATA_ETA
-                    else ""
-                )
-                printing.print_overwrite(
-                    f"[{torrent_info['path']}] Extracting metadata {idx + 1} of {num_paths} ({percent:3.1f}%) {eta}",
-                    flush=True,
-                )
-
-                files = torrent_info.pop("files")
-                log.debug(torrent_info)
-                torrent_info["webpath"] = iterables.safe_unpack(
-                    sorted(torrent_info.pop("web_seeds"), key=len, reverse=True)
-                )
-
-                playlists_id = db_playlists._add(args, objects.dict_filter_bool(torrent_info))
-                files = [file | {"playlists_id": playlists_id} for file in files]
-                args.db["media"].insert_all(files, pk=["playlists_id", "path"], alter=True, replace=True)
+                _save_torrent_info(args, torrent_info, known_hashes, idx, num_paths, start_time)
 
     if num_paths > 0:
         print("Extracted metadata from", num_paths, "files")

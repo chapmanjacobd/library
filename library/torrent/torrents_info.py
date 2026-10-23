@@ -183,102 +183,81 @@ def qbt_enhance_torrents(qbt_client, qbt_torrents):
 
 
 def filter_torrents_by_activity(args, torrents):
-    if args.stopped is not None:
-        torrents = [t for t in torrents if args.stopped is t.state_enum.is_stopped]
-    if args.errored is not None:
-        torrents = [t for t in torrents if args.errored is (t.state == "error")]
-    if args.missing is not None:
-        torrents = [t for t in torrents if args.missing is (t.state == "missingFiles")]
-    if args.moving is not None:
-        torrents = [t for t in torrents if args.moving is (t.state == "moving")]
-    if args.checking is not None:
-        torrents = [t for t in torrents if args.checking is t.state.startswith("checking")]
-    if args.queued is not None:
-        torrents = [t for t in torrents if args.queued is t.state.startswith("queued")]
-
-    if args.complete:
-        torrents = [t for t in torrents if t.state_enum.is_complete]
-    if args.completed:
-        torrents = [t for t in torrents if t.completion_on > 0]
-    if args.incomplete:
-        torrents = [t for t in torrents if not t.state_enum.is_complete]
-
-    if args.active:
-        torrents = [t for t in torrents if t.is_active]
-    if args.inactive:
-        torrents = [t for t in torrents if t.is_inactive]
-    if args.now is not None:
-        torrents = [
-            t
-            for t in torrents
-            if args.now
-            is (
+    optional_filters = [
+        (args.stopped, lambda t: t.state_enum.is_stopped),
+        (args.errored, lambda t: t.state == "error"),
+        (args.missing, lambda t: t.state == "missingFiles"),
+        (args.moving, lambda t: t.state == "moving"),
+        (args.checking, lambda t: t.state.startswith("checking")),
+        (args.queued, lambda t: t.state.startswith("queued")),
+        (
+            args.now,
+            lambda t: (
                 (not t.state_enum.is_complete and t.dlspeed > MIN_TRANSFER_SPEED)
                 or (t.state_enum.is_complete and t.upspeed > MIN_TRANSFER_SPEED)
-            )
-        ]
-    if args.fast is not None:
-        torrents = [
-            t
-            for t in torrents
-            if args.fast
-            is (
+            ),
+        ),
+        (
+            args.fast,
+            lambda t: (
                 (not t.state_enum.is_complete and t.dlspeed > 5 * 1000 * 1000)
                 or (t.state_enum.is_complete and t.upspeed > 2 * 1000 * 1000)
-            )
-        ]
+            ),
+        ),
+    ]
+    for expected, predicate in optional_filters:
+        if expected is not None:
+            torrents = [t for t in torrents if expected is predicate(t)]
 
+    enabled_filters = [
+        (args.complete, lambda t: t.state_enum.is_complete),
+        (args.completed, lambda t: t.completion_on > 0),
+        (args.incomplete, lambda t: not t.state_enum.is_complete),
+        (args.active, lambda t: t.is_active),
+        (args.inactive, lambda t: t.is_inactive),
+    ]
+    for enabled, predicate in enabled_filters:
+        if enabled:
+            torrents = [t for t in torrents if predicate(t)]
     return torrents
 
 
 def filter_torrents_by_criteria(args, torrents):
-    if "dl_speed" not in args.defaults:
-        torrents = [t for t in torrents if args.dl_speed(t.dlspeed)]
-    if "ul_speed" not in args.defaults:
-        torrents = [t for t in torrents if args.ul_speed(t.upspeed)]
-    if "sizes" not in args.defaults:
-        torrents = [t for t in torrents if args.sizes(t.total_size)]
-    if "file_count" not in args.defaults:
-        torrents = [t for t in torrents if args.file_count(len(torrent_files(t)))]
-    if "avg_sizes" not in args.defaults:
-        torrents = [t for t in torrents if args.avg_sizes(median([f.size for f in torrent_files(t)] or [0]))]
-    if "ratio" not in args.defaults:
-        torrents = [t for t in torrents if args.ratio(t.ratio)]
-    if "seeders" not in args.defaults:
-        torrents = [t for t in torrents if args.seeders(t.num_complete)]
-    if "leechers" not in args.defaults:
-        torrents = [t for t in torrents if args.leechers(t.num_incomplete)]
-    if "time_added" not in args.defaults:
-        torrents = [t for t in torrents if t.added_on > 0 and args.time_added(consts.APPLICATION_START - t.added_on)]
-    if "time_stalled" not in args.defaults:
-        torrents = [
-            t for t in torrents if t.last_activity > 0 and args.time_stalled(consts.APPLICATION_START - t.last_activity)
-        ]
-    if "time_completed" not in args.defaults:
-        torrents = [
-            t
-            for t in torrents
-            if t.completion_on
+    filters = [
+        ("dl_speed", lambda t: args.dl_speed(t.dlspeed)),
+        ("ul_speed", lambda t: args.ul_speed(t.upspeed)),
+        ("sizes", lambda t: args.sizes(t.total_size)),
+        ("file_count", lambda t: args.file_count(len(torrent_files(t)))),
+        ("avg_sizes", lambda t: args.avg_sizes(median([f.size for f in torrent_files(t)] or [0]))),
+        ("ratio", lambda t: args.ratio(t.ratio)),
+        ("seeders", lambda t: args.seeders(t.num_complete)),
+        ("leechers", lambda t: args.leechers(t.num_incomplete)),
+        ("time_added", lambda t: t.added_on > 0 and args.time_added(consts.APPLICATION_START - t.added_on)),
+        (
+            "time_stalled",
+            lambda t: t.last_activity > 0 and args.time_stalled(consts.APPLICATION_START - t.last_activity),
+        ),
+        (
+            "time_completed",
+            lambda t: t.completion_on
             and t.completion_on > 0
-            and args.time_completed(consts.APPLICATION_START - t.completion_on)
-        ]
-    if "time_remaining" not in args.defaults:
-        torrents = [
-            t
-            for t in torrents
-            if (not t.state_enum.is_complete and t.eta and t.eta < MAX_ETA_SECONDS and args.time_remaining(t.eta))
-            or (
-                t.state_enum.is_complete
-                and t.upspeed
-                and t.upspeed > MIN_TRANSFER_SPEED
-                and args.time_remaining(t.total_size / t.upspeed)
-            )
-        ]
-    if "time_unseeded" not in args.defaults:
-        torrents = [
-            t
-            for t in torrents
-            if args.time_unseeded(
+            and args.time_completed(consts.APPLICATION_START - t.completion_on),
+        ),
+        (
+            "time_remaining",
+            lambda t: (
+                (not t.state_enum.is_complete and t.eta and t.eta < MAX_ETA_SECONDS and args.time_remaining(t.eta))
+                or (
+                    t.state_enum.is_complete
+                    and t.upspeed
+                    and t.upspeed > MIN_TRANSFER_SPEED
+                    and args.time_remaining(t.total_size / t.upspeed)
+                )
+            ),
+        ),
+        (
+            "time_unseeded",
+            lambda t: args.time_unseeded(
                 (consts.APPLICATION_START - t.seen_complete)
                 if t.num_complete == 0 and t.seen_complete > 0
                 else (
@@ -287,57 +266,58 @@ def filter_torrents_by_criteria(args, torrents):
                     and t.num_complete == 0
                     else 0
                 )
-            )
-        ]
-    if "time_active" not in args.defaults:
-        torrents = [t for t in torrents if args.time_active(t.time_active)]
-    if "time_downloading" not in args.defaults:
-        torrents = [t for t in torrents if args.time_downloading(t.downloading_time)]
-    if "time_seeding" not in args.defaults:
-        torrents = [t for t in torrents if args.time_seeding(t.seeding_time)]
-    if "priority" not in args.defaults:
-        torrents = [t for t in torrents if args.priority(t.priority)]
-    if "progress" not in args.defaults:
-        torrents = [t for t in torrents if args.progress(t.progress)]
-    if "downloaded" not in args.defaults:
-        torrents = [t for t in torrents if args.downloaded(t.downloaded)]
-    if "uploaded" not in args.defaults:
-        torrents = [t for t in torrents if args.uploaded(t.uploaded)]
-    if "downloaded_session" not in args.defaults:
-        torrents = [t for t in torrents if args.downloaded_session(t.downloaded_session)]
-    if "uploaded_session" not in args.defaults:
-        torrents = [t for t in torrents if args.uploaded_session(t.uploaded_session)]
-    if "remaining" not in args.defaults:
-        torrents = [t for t in torrents if args.remaining(t.amount_left)]
+            ),
+        ),
+        ("time_active", lambda t: args.time_active(t.time_active)),
+        ("time_downloading", lambda t: args.time_downloading(t.downloading_time)),
+        ("time_seeding", lambda t: args.time_seeding(t.seeding_time)),
+        ("priority", lambda t: args.priority(t.priority)),
+        ("progress", lambda t: args.progress(t.progress)),
+        ("downloaded", lambda t: args.downloaded(t.downloaded)),
+        ("uploaded", lambda t: args.uploaded(t.uploaded)),
+        ("downloaded_session", lambda t: args.downloaded_session(t.downloaded_session)),
+        ("uploaded_session", lambda t: args.uploaded_session(t.uploaded_session)),
+        ("remaining", lambda t: args.remaining(t.amount_left)),
+    ]
+    for name, predicate in filters:
+        if name not in args.defaults:
+            torrents = [t for t in torrents if predicate(t)]
+    return _filter_torrents_by_extra_criteria(args, torrents)
 
+
+def _filter_torrents_by_extra_criteria(args, torrents):
     if args.private is not None:
         torrents = [t for t in torrents if args.private is t.private]
     if args.different_drives is not None:
-        torrents = [
-            t for t in torrents if torrent_paths_on_different_drives(t) is args.different_drives
-        ]
+        torrents = [t for t in torrents if torrent_paths_on_different_drives(t) is args.different_drives]
     if args.no_tagged:
         tags = set(args.no_tagged)
         torrents = [t for t in torrents if tags.isdisjoint(t.tags.split(", "))]
     if args.tagged:
         tags = set(args.tagged)
         torrents = [t for t in torrents if tags.issubset(t.tags.split(", "))]
+    torrents = _filter_torrents_by_name(args, torrents)
+    torrents = _filter_torrents_by_tracker(args, torrents)
+    torrents = _filter_torrents_by_paths(args, torrents)
+    if args.timeout_size:
+        torrents = [t for t in torrents if not processes.sizeout(args.timeout_size, t.total_size)]
+        processes.reset_sizeout()
+    return torrents
+
+
+def _filter_torrents_by_name(args, torrents):
     if args.torrent_search:
         torrents = [
             t
             for t in torrents
-            if strings.glob_match_all(
-                args.torrent_search,
-                [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash],
-            )
+            if strings.glob_match_all(args.torrent_search, [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash])
         ]
     if args.torrent_exclude:
         torrents = [
             t
             for t in torrents
             if not strings.glob_match_any(
-                args.torrent_exclude,
-                [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash],
+                args.torrent_exclude, [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash]
             )
         ]
     if args.torrent_include:
@@ -345,8 +325,7 @@ def filter_torrents_by_criteria(args, torrents):
             t
             for t in torrents
             if strings.glob_match_any(
-                args.torrent_include,
-                [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash],
+                args.torrent_include, [t.name, t.comment, *torrent_paths_for_search(args, t), t.hash]
             )
         ]
     if args.file_search:
@@ -355,7 +334,10 @@ def filter_torrents_by_criteria(args, torrents):
         torrents = [
             t for t in torrents if not strings.glob_match_any(args.file_exclude, [f.name for f in torrent_files(t)])
         ]
+    return torrents
 
+
+def _filter_torrents_by_tracker(args, torrents):
     if args.tracker:
         trackers = set(args.tracker)
         torrents = [t for t in torrents if t.tracker_domain() in trackers]
@@ -364,52 +346,28 @@ def filter_torrents_by_criteria(args, torrents):
         torrents = [t for t in torrents if t.tracker_domain() not in trackers]
     if "tracker_count" not in args.defaults:
         torrents = [t for t in torrents if args.tracker_count(t.tracker_count())]
+    return torrents
+
+
+def _filter_torrents_by_paths(args, torrents):
+    def file_path(t, file):
+        base_path = t.save_path if t.state_enum.is_complete else t.download_path
+        return Path(base_path) / file.name
 
     if args.any_exists is not None:
         torrents = [
-            t
-            for t in torrents
-            if args.any_exists
-            is any(
-                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
-                for f in torrent_files(t)
-            )
+            t for t in torrents if args.any_exists is any(file_path(t, f).exists() for f in torrent_files(t))
         ]
     if args.all_exists is True:
-        torrents = [
-            t
-            for t in torrents
-            if all(
-                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
-                for f in torrent_files(t)
-            )
-        ]
+        torrents = [t for t in torrents if all(file_path(t, f).exists() for f in torrent_files(t))]
     elif args.all_exists is False:
-        torrents = [
-            t
-            for t in torrents
-            if any(
-                not (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
-                for f in torrent_files(t)
-            )
-        ]
+        torrents = [t for t in torrents if any(not file_path(t, f).exists() for f in torrent_files(t))]
     if args.opened is not None:
         torrents = [
             t
             for t in torrents
-            if args.opened
-            is any(
-                file_utils.is_file_open(Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name)
-                for f in torrent_files(t)
-            )
+            if args.opened is any(file_utils.is_file_open(file_path(t, f)) for f in torrent_files(t))
         ]
-
-    if args.timeout_size:
-        torrents = [t for t in torrents if not processes.sizeout(args.timeout_size, t.total_size)]
-        # reset sizeout for check during --move
-        processes.sizeout_max = None
-        processes.sizeout_total = 0
-
     return torrents
 
 
@@ -573,116 +531,85 @@ def set_torrent_paths(qbt_client, t, temp_path, download_path):
         qbt_client.torrents_set_download_path(str(temp_path), torrent_hashes=[t.hash])
 
 
-def torrents_info():
-    args = parse_args()
-
-    if args.simulate:
-        print("Simulation: no torrent changes made")
+def _report_tracker_errors(args, torrents):
+    if not (args.errored and args.trackers):
         return
+    table = defaultdict(lambda: {"count": 0})
+    for torrent in torrents:
+        if torrent.is_active and not args.verbose >= consts.LOG_INFO:
+            continue
+        for tracker, message in get_error_messages(torrent):
+            table[fqdn_from_url(tracker.url), message]["count"] += 1
+    if table:
+        print(f"Error Torrents ({sum(data['count'] for data in table.values())})")
+        table_data = [
+            {"tracker": tracker, "msg": message, "count": data["count"]}
+            for (tracker, message), data in table.items()
+        ]
+        printing.table(sorted(table_data, key=lambda d: (d["msg"], d["count"], d["tracker"])))
+        print()
 
-    def shorten(s, width):
-        return s if args.verbose >= consts.LOG_INFO else strings.shorten(s, width)
 
-    qbt_client = torrents_start.start_qBittorrent(args)
-    torrents = qbt_client.torrents_info()
-    qbt_enhance_torrents(qbt_client, torrents)
-
-    if args.errored and args.trackers:
-        tbl = defaultdict(lambda: {"count": 0})
-        for t in torrents:
-            if t.is_active and not args.verbose >= consts.LOG_INFO:
-                continue
-
-            for tr, msg in get_error_messages(t):
-                tracker = fqdn_from_url(tr.url)
-                # fmt: off
-                tbl[tracker, msg]["count"] += 1
-                # fmt: on
-        if tbl:
-            print(f"Error Torrents ({sum(data['count'] for data in tbl.values())})")
-
-            table_data = []
-            for (tracker, msg), data in tbl.items():
-                table_data.append({"tracker": tracker, "msg": msg, "count": data["count"]})
-            printing.table(sorted(table_data, key=lambda d: (d["msg"], d["count"], d["tracker"])))
-            print()
-
-    error_torrents = [t for t in torrents if t.state_enum.is_errored]
-    if error_torrents:
-        args.status = True
-
+def _sort_torrents(args, torrents):
     reverse_sort = False
     if args.sort and args.sort.startswith("-"):
         args.sort = args.sort[1:]
         reverse_sort = True
 
-    if args.sort == "priority":
-        torrents = sorted(torrents, key=lambda t: t.priority, reverse=reverse_sort)
-    elif args.sort == "progress":
-        torrents = sorted(torrents, key=lambda t: t.progress, reverse=reverse_sort)
-    elif args.sort == "ratio":
-        torrents = sorted(torrents, key=lambda t: t.ratio, reverse=reverse_sort)
-    elif args.sort == "remaining":
-        torrents = sorted(torrents, key=lambda t: t.amount_left, reverse=reverse_sort)
-    elif args.sort == "random":
+    sorters = {
+        "priority": lambda t: t.priority,
+        "progress": lambda t: t.progress,
+        "ratio": lambda t: t.ratio,
+        "remaining": lambda t: t.amount_left,
+        "seeders": lambda t: t.num_complete,
+        "leechers": lambda t: t.num_incomplete,
+        "time_active": lambda t: t.time_active,
+        "time_added": lambda t: t.added_on,
+        "time_stalled": lambda t: t.last_activity,
+        "time_completed": lambda t: t.completion_on,
+        "time_remaining": lambda t: (not t.state_enum.is_complete and t.eta and t.eta < MAX_ETA_SECONDS, t.eta),
+        "time_unseeded": lambda t: (t.num_complete == 0 and t.seen_complete > 0, t.seen_complete),
+        "time_downloading": lambda t: t.downloading_time,
+        "time_seeding": lambda t: t.seeding_time,
+        "downloaded_session": lambda t: t.downloaded_session,
+        "download_session": lambda t: t.downloaded_session,
+        "uploaded_session": lambda t: t.uploaded_session,
+        "upload_session": lambda t: t.uploaded_session,
+        "dl_speed": lambda t: t.dlspeed,
+        "dlspeed": lambda t: t.dlspeed,
+        "ul_speed": lambda t: t.upspeed,
+        "ulspeed": lambda t: t.upspeed,
+        "upspeed": lambda t: t.upspeed,
+        "tracker": lambda t: t.tracker_domain(),
+        "tracker_count": lambda t: t.tracker_count(),
+        "counts": lambda t: len(torrent_files(t)),
+        "count": lambda t: len(torrent_files(t)),
+        "size": lambda t: t.total_size,
+        "total_size": lambda t: t.total_size,
+        "avg_size": lambda t: mean([f.size for f in torrent_files(t)]),
+        "network": lambda t: (
+            t.downloaded if not t.state_enum.is_complete else t.uploaded,
+            t.downloaded_session if not t.state_enum.is_complete else t.uploaded_session,
+        ),
+        "download+upload": lambda t: (
+            t.downloaded if not t.state_enum.is_complete else t.uploaded,
+            t.downloaded_session if not t.state_enum.is_complete else t.uploaded_session,
+        ),
+        "ingress+egress": lambda t: (
+            t.downloaded if not t.state_enum.is_complete else t.uploaded,
+            t.downloaded_session if not t.state_enum.is_complete else t.uploaded_session,
+        ),
+        "downloaded": lambda t: (t.downloaded, t.downloaded_session),
+        "download": lambda t: (t.downloaded, t.downloaded_session),
+        "ingress": lambda t: (t.downloaded, t.downloaded_session),
+        "uploaded": lambda t: (t.uploaded, t.uploaded_session),
+        "upload": lambda t: (t.uploaded, t.uploaded_session),
+        "egress": lambda t: (t.uploaded, t.uploaded_session),
+    }
+    if args.sort == "random":
         shuffle(torrents)
-    elif args.sort == "seeders":
-        torrents = sorted(torrents, key=lambda t: t.num_complete, reverse=reverse_sort)
-    elif args.sort == "leechers":
-        torrents = sorted(torrents, key=lambda t: t.num_incomplete, reverse=reverse_sort)
-    elif args.sort == "time_active":
-        torrents = sorted(torrents, key=lambda t: t.time_active, reverse=reverse_sort)
-    elif args.sort == "time_added":
-        torrents = sorted(torrents, key=lambda t: t.added_on, reverse=reverse_sort)
-    elif args.sort == "time_stalled":
-        torrents = sorted(torrents, key=lambda t: t.last_activity, reverse=reverse_sort)
-    elif args.sort == "time_completed":
-        torrents = sorted(torrents, key=lambda t: t.completion_on, reverse=reverse_sort)
-    elif args.sort == "time_remaining":
-        torrents = sorted(
-            torrents,
-            key=lambda t: (not t.state_enum.is_complete and t.eta and t.eta < MAX_ETA_SECONDS, t.eta),
-            reverse=reverse_sort,
-        )
-    elif args.sort == "time_unseeded":
-        torrents = sorted(
-            torrents, key=lambda t: (t.num_complete == 0 and t.seen_complete > 0, t.seen_complete), reverse=reverse_sort
-        )
-    elif args.sort == "time_downloading":
-        torrents = sorted(torrents, key=lambda t: t.downloading_time, reverse=reverse_sort)
-    elif args.sort == "time_seeding":
-        torrents = sorted(torrents, key=lambda t: t.seeding_time, reverse=reverse_sort)
-    elif args.sort in ["downloaded_session", "download_session"]:
-        torrents = sorted(torrents, key=lambda t: t.downloaded_session, reverse=reverse_sort)
-    elif args.sort in ["uploaded_session", "upload_session"]:
-        torrents = sorted(torrents, key=lambda t: t.uploaded_session, reverse=reverse_sort)
-    elif args.sort in ["dl_speed", "dlspeed"]:
-        torrents = sorted(torrents, key=lambda t: t.dlspeed, reverse=reverse_sort)
-    elif args.sort in ["ul_speed", "ulspeed", "upspeed"]:
-        torrents = sorted(torrents, key=lambda t: t.upspeed, reverse=reverse_sort)
-    elif args.sort == "tracker":
-        torrents = sorted(torrents, key=lambda t: t.tracker_domain(), reverse=reverse_sort)
-    elif args.sort == "tracker_count":
-        torrents = sorted(torrents, key=lambda t: t.tracker_count(), reverse=reverse_sort)
-    elif args.sort in ["counts", "count"]:
-        torrents = sorted(torrents, key=lambda t: len(torrent_files(t)), reverse=reverse_sort)
-    elif args.sort in ["size", "total_size"]:
-        torrents = sorted(torrents, key=lambda t: t.total_size, reverse=reverse_sort)
-    elif args.sort == "avg_size":
-        torrents = sorted(torrents, key=lambda t: mean([f.size for f in torrent_files(t)]), reverse=reverse_sort)
-    elif args.sort in ["network", "download+upload", "ingress+egress"]:
-        torrents = sorted(
-            torrents,
-            key=lambda t: (
-                t.downloaded if not t.state_enum.is_complete else t.uploaded,
-                t.downloaded_session if not t.state_enum.is_complete else t.uploaded_session,
-            ),
-            reverse=reverse_sort,
-        )
-    elif args.sort in ["downloaded", "download", "ingress"]:
-        torrents = sorted(torrents, key=lambda t: (t.downloaded, t.downloaded_session), reverse=reverse_sort)
-    elif args.sort in ["uploaded", "upload", "egress"]:
-        torrents = sorted(torrents, key=lambda t: (t.uploaded, t.uploaded_session), reverse=reverse_sort)
+    elif args.sort in sorters:
+        torrents = sorted(torrents, key=sorters[args.sort], reverse=reverse_sort)
     elif args.move:
         torrents = sorted(torrents, key=lambda t: (t.state_enum.is_complete, t.downloaded))
     elif args.inactive:
@@ -705,435 +632,382 @@ def torrents_info():
                 t.added_on,
             ),
         )
+    return torrents
 
-    torrents = filter_torrents(args, torrents)
 
-    if args.print and "a" in arggroups.get_compact_print_args(args):
-        interesting_states = [
-            # 'uploading',
-            "activeUP",
-            "inactiveUP",
-            "queuedUP",
-            "stoppedUP",
-            # "downloading",
-            "stoppedDL",
-            "queuedDL",
-            "forcedMetaDL",
-            "metaDL",
-            "inactiveDL",
-            "activeDL",
-            "missingFiles",
-            "error",
-        ]
+def _shorten_torrent_name(args, name, width):
+    return name if args.verbose >= consts.LOG_INFO else strings.shorten(name, width)
 
-        torrents_by_state = {}
-        for t in torrents:
-            state = t.state
-            if state not in interesting_states:
-                if t.state_enum.is_complete:
-                    state = "activeUP" if t.uploaded_session > 0 else "inactiveUP"
-                else:
-                    state = "activeDL" if t.downloaded_session > 0 else "inactiveDL"
-            torrents_by_state.setdefault(state, []).append(t)
 
-        categories = []
-        for state, state_torrents in torrents_by_state.items():
-            categories.append(agg_torrents_state(args, state, state_torrents))
+def _print_compact_torrents(args, torrents):
+    interesting_states = [
+        "activeUP",
+        "inactiveUP",
+        "queuedUP",
+        "stoppedUP",
+        "stoppedDL",
+        "queuedDL",
+        "forcedMetaDL",
+        "metaDL",
+        "inactiveDL",
+        "activeDL",
+        "missingFiles",
+        "error",
+    ]
+    torrents_by_state = {}
+    for torrent in torrents:
+        state = torrent.state
+        if state not in interesting_states:
+            if torrent.state_enum.is_complete:
+                state = "activeUP" if torrent.uploaded_session > 0 else "inactiveUP"
+            else:
+                state = "activeDL" if torrent.downloaded_session > 0 else "inactiveDL"
+        torrents_by_state.setdefault(state, []).append(torrent)
+    categories = [
+        agg_torrents_state(args, state, state_torrents)
+        for state, state_torrents in torrents_by_state.items()
+    ]
+    categories = sorted(categories, key=lambda d: iterables.safe_index(interesting_states, d["state"]))
+    if len(categories) > 1:
+        categories.append(agg_torrents_state(args, "total", torrents))
+    printing.table(iterables.list_dict_filter_bool(categories))
+    print()
+    if args.trackers:
+        print_torrents_by_tracker(args, torrents)
 
-        categories = sorted(categories, key=lambda d: (iterables.safe_index(interesting_states, d["state"])))
-        if len(categories) > 1:
-            categories.append(agg_torrents_state(args, "total", torrents))
 
-        printing.table(iterables.list_dict_filter_bool(categories))
+def _torrent_print_base_path(torrent):
+    if torrent.state_enum.is_complete:
+        base_paths = [torrent.save_path, torrent.content_path, torrent.download_path]
+    else:
+        base_paths = [torrent.download_path, torrent.content_path, torrent.save_path]
+    for test_path in base_paths:
+        if test_path and (
+            (Path(test_path) / torrent.name).exists()
+            or (Path(test_path) / torrent_files(torrent)[0].name).exists()
+        ):
+            return test_path
+    base_path = torrent.save_path if torrent.state_enum.is_complete else torrent.download_path
+    return base_path or torrent.content_path
+
+
+def _print_torrent_paths(args, qbt_client, torrents):
+    ignore_trackers = ("** [DHT] **", "** [PeX] **", "** [LSD] **")
+    compact_args = arggroups.get_compact_print_args(args)
+    for torrent in torrents:
+        if "tr" in compact_args:
+            for tracker in qbt_client.torrents_trackers(torrent.hash):
+                try:
+                    if tracker.url not in ignore_trackers:
+                        print(tracker.url)
+                except UnicodeDecodeError:
+                    pass
+            continue
+        base_path = _torrent_print_base_path(torrent)
+        if base_path is None:
+            log.warning("%s files do not exist", torrent.name)
+            continue
+        if "f" in compact_args:
+            for file in torrent_files(torrent):
+                print(Path(base_path) / file.name)
+        else:
+            print(Path(base_path) / torrent.name)
+
+
+def _add_common_torrent_row_fields(args, torrent, row, verbose_fields):
+    if args.sizes or args.avg_sizes or args.move or (args.sort and "size" in args.sort):
+        row["size"] = strings.file_size(torrent.total_size)
+    if args.sort == "priority":
+        row["priority"] = str(torrent.priority) + (" [F]" if torrent.force_start else "")
+    if args.trackers:
+        row["tracker"] = torrent.tracker_domain()
+    if args.file_search:
+        files = torrent_files(torrent)
+        files = [f for f in torrent_files(torrent) if strings.glob_match_all(args.file_search, [f.name])]
+        print(torrent.name)
+        printing.extended_view(files)
+        print()
+        row["files"] = f"{len(files)} ({len(torrent_files(torrent))})"
+    elif args.file_counts:
+        row["files"] = len(torrent_files(torrent))
+    if args.paths:
+        row["path"] = torrent.save_path if torrent.state_enum.is_complete else torrent.download_path
+    if args.verbose >= consts.LOG_INFO:
+        row |= verbose_fields(torrent)
+
+
+def _inactive_torrent_row(args, torrent):
+    row = {
+        "name": _shorten_torrent_name(args, torrent.name, 35),
+        "num_seeds": f"{torrent.num_seeds} ({torrent.num_complete})",
+        "progress": strings.percent(torrent.progress),
+        "seen_complete": strings.relative_datetime(torrent.seen_complete) if torrent.seen_complete > 0 else "",
+        "last_activity": strings.relative_datetime(torrent.last_activity),
+    }
+    if args.status or args.verbose >= consts.LOG_INFO:
+        row["state"] = torrent.state
+    if not torrent.state_enum.is_complete:
+        row |= {
+            "duration": strings.duration_short(torrent.downloading_time),
+            "downloaded": strings.file_size(torrent.downloaded),
+            "remaining": strings.file_size(torrent.amount_left) if torrent.amount_left > 0 else None,
+        }
+    if torrent.state_enum.is_complete:
+        row |= {"duration": strings.duration_short(torrent.seeding_time), "uploaded": strings.file_size(torrent.uploaded)}
+    _add_common_torrent_row_fields(
+        args,
+        torrent,
+        row,
+        lambda t: {
+            "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
+            "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
+            "comment": t.comment,
+            "download_path": t.download_path,
+            "save_path": t.save_path,
+            "content_path": t.content_path,
+        },
+    )
+    return row
+
+
+def _active_torrent_row(args, torrent):
+    row = {
+        "name": _shorten_torrent_name(args, torrent.name, 35),
+        "num_seeds": f"{torrent.num_seeds} ({torrent.num_complete})",
+        "progress": strings.percent(torrent.progress),
+    }
+    if args.status or args.verbose >= consts.LOG_INFO:
+        row["state"] = torrent.state
+    if not torrent.state_enum.is_complete:
+        row |= {
+            "duration": strings.duration_short(torrent.downloading_time),
+            "session": strings.file_size(torrent.downloaded_session),
+            "remaining": strings.file_size(torrent.amount_left) if torrent.amount_left > 0 else None,
+            "speed": strings.file_size(torrent.dlspeed) + "/s" if torrent.dlspeed else None,
+            "eta": strings.duration_short(torrent.eta) if torrent.eta < MAX_ETA_SECONDS else None,
+        }
+    if torrent.state_enum.is_complete:
+        row |= {
+            "duration": strings.duration_short(torrent.seeding_time),
+            "session": strings.file_size(torrent.uploaded_session),
+            "uploaded": strings.file_size(torrent.uploaded),
+            "speed": strings.file_size(torrent.upspeed) + "/s" if torrent.upspeed else None,
+            "eta": (
+                strings.duration_short(torrent.total_size / torrent.upspeed)
+                if torrent.upspeed and torrent.upspeed > MIN_TRANSFER_SPEED
+                else None
+            ),
+        }
+    _add_common_torrent_row_fields(
+        args,
+        torrent,
+        row,
+        lambda t: {
+            "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
+            "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
+            "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
+            "last_activity": strings.relative_datetime(t.last_activity) if t.last_activity > 0 else None,
+            "comment": t.comment,
+            "download_path": t.download_path,
+            "save_path": t.save_path,
+            "content_path": t.content_path,
+        },
+    )
+    return row
+
+
+def _print_detailed_torrents(args, torrents):
+    inactive_torrents = [t for t in torrents if t.is_inactive]
+    if inactive_torrents:
+        print(f"Inactive Torrents ({len(inactive_torrents)})")
+        printing.table(iterables.conform([_inactive_torrent_row(args, t) for t in inactive_torrents]))
+        print()
+    active_torrents = [t for t in torrents if t.is_active]
+    if active_torrents:
+        print(f"Active Torrents ({len(active_torrents)})")
+        printing.table(iterables.conform([_active_torrent_row(args, t) for t in active_torrents]))
         print()
 
-        if args.trackers:
-            print_torrents_by_tracker(args, torrents)
 
+def _print_torrents(args, qbt_client, torrents):
+    if args.print and "a" in arggroups.get_compact_print_args(args):
+        _print_compact_torrents(args, torrents)
     elif args.print:
-        ignore_trackers = ("** [DHT] **", "** [PeX] **", "** [LSD] **")
-        for t in torrents:
-            if "tr" in arggroups.get_compact_print_args(args):
-                for tr in qbt_client.torrents_trackers(t.hash):
-                    try:
-                        if tr.url not in ignore_trackers:
-                            print(tr.url)
-                    except UnicodeDecodeError:
-                        pass
-                continue
+        _print_torrent_paths(args, qbt_client, torrents)
+    else:
+        _print_detailed_torrents(args, torrents)
 
-            if t.state_enum.is_complete:
-                base_paths = [t.save_path, t.content_path, t.download_path]
-            else:
-                base_paths = [t.download_path, t.content_path, t.save_path]
 
-            base_path = None
-            for test_path in base_paths:
-                if test_path and (
-                    (Path(test_path) / t.name).exists() or (Path(test_path) / torrent_files(t)[0].name).exists()
-                ):
-                    base_path = test_path
+def _delete_incomplete_torrents(args, torrents):
+    if not args.delete_incomplete:
+        return
+    for torrent in torrents:
+        base_paths = (
+            [torrent.save_path, torrent.download_path]
+            if torrent.state_enum.is_complete
+            else [torrent.download_path, torrent.save_path]
+        )
+        invalid_state = torrent.state.startswith("checking") or torrent.state in ("missingFiles", "error")
+        if invalid_state:
+            continue
+        for file in torrent_files(torrent):
+            if invalid_state:
+                break
+            for base_path in base_paths:
+                file_path = Path(base_path) / file.name
+                if file_path.exists() and not file_path.is_dir():
+                    if file.progress == 0.0:
+                        stat = file_path.stat()
+                        if stat.st_blocks and stat.st_blocks > MIN_ALLOCATED_BLOCKS:
+                            log.error(
+                                "Skipping the rest of torrent because invalid state likely. Recheck first. %s",
+                                torrent.name,
+                            )
+                            invalid_state = True
+                            break
+                    if file.progress < args.delete_incomplete:
+                        log.warning("Deleting incomplete file: %s", file_path)
+                        shell_utils.trash(args, str(file_path), detach=False)
+                    elif file.progress == 1.0:
+                        log.info("Keeping complete file: %s", file_path)
+                    else:
+                        log.warning("Keeping %s incomplete file: %s", strings.percent(1 - file.progress), file_path)
                     break
 
-            if base_path is None:
-                base_path = t.save_path if t.state_enum.is_complete else t.download_path
-            if base_path is None:
-                base_path = t.content_path
-            if base_path is None:
-                log.warning("%s files do not exist", t.name)
-                continue
 
-            if "f" in arggroups.get_compact_print_args(args):
-                for f in torrent_files(t):
-                    file_path = Path(base_path) / f.name
-                    print(file_path)
-            else:
-                print(Path(base_path) / t.name)
+def _resolve_move_path(args, torrent, path, prefix_name, existing_path):
+    if path:
+        if not path.is_absolute():
+            path = Path(path_utils.mountpoint(torrent.content_path)) / path
+        if os.path.isfile(path):
+            path = path.parent
+        elif os.path.isdir(path) and path_utils.basename(path) == path_utils.basename(existing_path):
+            pass
+        else:
+            prefix = getattr(args, prefix_name)
+            if prefix and prefix not in path.parts:
+                path /= prefix
+            if args.tracker_dirnames:
+                domain = torrent.tracker_domain()
+                if domain and domain not in path.parts:
+                    path /= domain
+    return path
 
+
+def _torrent_move_paths(args, torrent):
+    if "temp_drive" not in args.defaults:
+        temp_path = Path(args.temp_drive)
+    elif "temp_prefix" not in args.defaults:
+        temp_path = Path(path_utils.mountpoint(torrent.download_path or torrent.content_path))
+        log.debug("temp_path: using t.download_path %s mountpoint %s", torrent.download_path, temp_path)
     else:
-        inactive_torrents = [t for t in torrents if t.is_inactive]
-        if inactive_torrents:
-            print(f"Inactive Torrents ({len(inactive_torrents)})")
+        temp_path = args.move
+    if "download_drive" not in args.defaults:
+        download_path = Path(args.download_drive)
+    elif "download_prefix" not in args.defaults:
+        download_path = Path(path_utils.mountpoint(torrent.save_path or torrent.content_path))
+        log.debug("download_path: using t.save_path %s mountpoint %s", torrent.save_path, download_path)
+    else:
+        download_path = args.move
+    temp_path = _resolve_move_path(args, torrent, temp_path, "temp_prefix", torrent.download_path or torrent.content_path)
+    download_path = _resolve_move_path(args, torrent, download_path, "download_prefix", torrent.save_path or torrent.content_path)
+    log.debug("temp_path %s", temp_path)
+    log.debug("download_path %s", download_path)
+    return temp_path, download_path
 
-            def gen_row(t):
-                d = {
-                    "name": shorten(t.name, 35),
-                    "num_seeds": f"{t.num_seeds} ({t.num_complete})",
-                    "progress": strings.percent(t.progress),
-                    "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else ""),
-                    "last_activity": strings.relative_datetime(t.last_activity),
-                }
-                if args.status or args.verbose >= consts.LOG_INFO:
-                    d |= {"state": t.state}
 
-                if not t.state_enum.is_complete:
-                    d |= {
-                        "duration": strings.duration_short(t.downloading_time),
-                        "downloaded": strings.file_size(t.downloaded),
-                        "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
-                    }
-                if t.state_enum.is_complete:
-                    d |= {
-                        "duration": strings.duration_short(t.seeding_time),
-                        "uploaded": strings.file_size(t.uploaded),
-                    }
+def _move_torrent(args, qbt_client, torrent):
+    originally_stopped = bool(torrent.state_enum.is_stopped)
+    qbt_client.torrents_stop(torrent_hashes=[torrent.hash])
+    temp_path, download_path = _torrent_move_paths(args, torrent)
+    new_path = download_path if torrent.state_enum.is_complete else temp_path
+    if new_path is None:
+        new_path = torrent.save_path if torrent.state_enum.is_complete else torrent.download_path
+    if args.simulate:
+        print("Moving", torrent.content_path, "to", new_path)
+        return
+    content_path = Path(torrent.content_path) if torrent.content_path else None
+    if content_path and content_path.exists() and new_path is not None:
+        if content_path.is_file():
+            print("Moving file", content_path, "to", new_path)
+            merge_mv.move(args, [str(content_path)], str(new_path))
+        else:
+            new_path = Path(new_path) / content_path.name
+            print("Moving folder", content_path, "to", new_path)
+            merge_mv.move(args, [str(content_path)], str(new_path))
+    if not (args.delete_files or args.delete_rows):
+        set_torrent_paths(qbt_client, torrent, temp_path, download_path)
+        if not originally_stopped:
+            qbt_client.torrents_start(torrent_hashes=[torrent.hash])
 
-                if args.sizes or args.avg_sizes or args.move or (args.sort and "size" in args.sort):
-                    d |= {"size": strings.file_size(t.total_size)}
 
-                if args.sort == "priority":
-                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
-                if args.trackers:
-                    d |= {"tracker": t.tracker_domain()}
+def _move_torrents(args, qbt_client, torrents):
+    alt_move_syntax = any(
+        k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]
+    )
+    if args.move or alt_move_syntax:
+        for index, torrent in enumerate(torrents):
+            print("Moving", index + 1, "of", len(torrents))
+            _move_torrent(args, qbt_client, torrent)
 
-                if args.file_search:
-                    files = torrent_files(t)
-                    files = [f for f in torrent_files(t) if strings.glob_match_all(args.file_search, [f.name])]
 
-                    print(t.name)
-                    printing.extended_view(files)
-                    print()
-
-                    d |= {"files": f"{len(files)} ({len(torrent_files(t))})"}
-                elif args.file_counts:
-                    d |= {"files": len(torrent_files(t))}
-
-                if args.paths:
-                    if t.state_enum.is_complete:
-                        d |= {"path": t.save_path}
-                    else:
-                        d |= {"path": t.download_path}
-
-                if args.verbose >= consts.LOG_INFO:
-                    d |= {
-                        "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
-                        "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
-                        "comment": t.comment,
-                        "download_path": t.download_path,
-                        "save_path": t.save_path,
-                        "content_path": t.content_path,
-                    }
-
-                return d
-
-            printing.table(iterables.conform([gen_row(t) for t in inactive_torrents]))
-            print()
-
-        active_torrents = [t for t in torrents if t.is_active]
-        if active_torrents:
-            print(f"Active Torrents ({len(active_torrents)})")
-
-            def gen_row(t):
-                d = {
-                    "name": shorten(t.name, 35),
-                    "num_seeds": f"{t.num_seeds} ({t.num_complete})",
-                    "progress": strings.percent(t.progress),
-                }
-                if args.status or args.verbose >= consts.LOG_INFO:
-                    d |= {"state": t.state}
-
-                if not t.state_enum.is_complete:
-                    d |= {
-                        "duration": strings.duration_short(t.downloading_time),
-                        "session": strings.file_size(t.downloaded_session),
-                        "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
-                        "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
-                        "eta": strings.duration_short(t.eta) if t.eta < MAX_ETA_SECONDS else None,
-                    }
-                if t.state_enum.is_complete:
-                    d |= {
-                        "duration": strings.duration_short(t.seeding_time),
-                        "session": strings.file_size(t.uploaded_session),
-                        "uploaded": strings.file_size(t.uploaded),
-                        "speed": strings.file_size(t.upspeed) + "/s" if t.upspeed else None,
-                        "eta": (
-                            strings.duration_short(t.total_size / t.upspeed)
-                            if t.upspeed and t.upspeed > MIN_TRANSFER_SPEED
-                            else None
-                        ),
-                    }
-
-                if args.sizes or args.avg_sizes or args.move or (args.sort and "size" in args.sort):
-                    d |= {"size": strings.file_size(t.total_size)}
-
-                if args.sort == "priority":
-                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
-                if args.trackers:
-                    d |= {"tracker": t.tracker_domain()}
-
-                if args.file_search:
-                    files = torrent_files(t)
-                    files = [f for f in torrent_files(t) if strings.glob_match_all(args.file_search, [f.name])]
-
-                    print(t.name)
-                    printing.extended_view(files)
-                    print()
-
-                    d |= {"files": f"{len(files)} ({len(torrent_files(t))})"}
-                elif args.file_counts:
-                    d |= {"files": len(torrent_files(t))}
-
-                if args.paths:
-                    if t.state_enum.is_complete:
-                        d |= {"path": t.save_path}
-                    else:
-                        d |= {"path": t.download_path}
-
-                if args.verbose >= consts.LOG_INFO:
-                    d |= {
-                        "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
-                        "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
-                        "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
-                        "last_activity": strings.relative_datetime(t.last_activity) if t.last_activity > 0 else None,
-                        "comment": t.comment,
-                        "download_path": t.download_path,
-                        "save_path": t.save_path,
-                        "content_path": t.content_path,
-                    }
-
-                return d
-
-            printing.table(iterables.conform([gen_row(t) for t in active_torrents]))
-            print()
-
-    torrent_hashes = [t.hash for t in torrents]
-
+def _apply_tags_and_state(args, qbt_client, torrents, torrent_hashes):
     if args.tag:
         print("Tagging", len(torrents))
         qbt_client.torrents_add_tags(args.tag, torrent_hashes=torrent_hashes)
     if args.untag:
         print("Untagging", len(torrents))
         qbt_client.torrents_remove_tags(args.untag, torrent_hashes=torrent_hashes)
-
     if args.stop:
         print("Stopping", len(torrents))
         qbt_client.torrents_stop(torrent_hashes=torrent_hashes)
 
-    if args.delete_incomplete:
-        for t in torrents:
-            # check both in case of moving failure
-            if t.state_enum.is_complete:
-                base_paths = [t.save_path, t.download_path]
-            else:
-                base_paths = [t.download_path, t.save_path]
 
-            invalid_state = t.state.startswith("checking") or t.state in ("missingFiles", "error")
-            if invalid_state:
-                continue
-
-            for file in torrent_files(t):
-                if invalid_state:
-                    break
-
-                for base_path in base_paths:
-                    file_path = Path(base_path) / file.name
-                    if file_path.exists() and not file_path.is_dir():
-                        if file.progress == 0.0:
-                            stat = file_path.stat()
-                            if stat.st_blocks and stat.st_blocks > MIN_ALLOCATED_BLOCKS:
-                                log.error(
-                                    "Skipping the rest of torrent because invalid state likely. Recheck first. %s",
-                                    t.name,
-                                )
-                                invalid_state = True
-                                break
-
-                        if file.progress < args.delete_incomplete:
-                            log.warning("Deleting incomplete file: %s", file_path)
-                            shell_utils.trash(args, str(file_path), detach=False)
-                        elif file.progress == 1.0:
-                            log.info("Keeping complete file: %s", file_path)
-                        else:
-                            log.warning("Keeping %s incomplete file: %s", strings.percent(1 - file.progress), file_path)
-                        break  # Stop after deleting first valid path
-
-    if args.reset_progress:
-        print("Resetting progress of", len(torrents))
-        for t in torrents:
-            reset_torrent_progress(args, qbt_client, t)
-
-    alt_move_syntax = any(
-        k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]
-    )
-    if args.move or alt_move_syntax:
-        for idx, t in enumerate(torrents):
-            print("Moving", idx + 1, "of", len(torrents))
-
-            originally_stopped = bool(t.state_enum.is_stopped)
-            qbt_client.torrents_stop(torrent_hashes=[t.hash])
-
-            if "temp_drive" not in args.defaults:
-                temp_path = Path(args.temp_drive)
-            elif "temp_prefix" not in args.defaults:
-                temp_path = Path(path_utils.mountpoint(t.download_path or t.content_path))  # keep existing drive
-                log.debug("temp_path: using t.download_path %s mountpoint %s", t.download_path, temp_path)
-            else:
-                temp_path = args.move
-
-            if "download_drive" not in args.defaults:
-                download_path = Path(args.download_drive)
-            elif "download_prefix" not in args.defaults:
-                download_path = Path(path_utils.mountpoint(t.save_path or t.content_path))  # keep existing drive
-                log.debug("download_path: using t.save_path %s mountpoint %s", t.save_path, download_path)
-            else:
-                download_path = args.move
-
-            if temp_path:
-                if not temp_path.is_absolute():  # --temp-drive or --move could be relative
-                    mountpoint = path_utils.mountpoint(t.content_path)
-                    temp_path = Path(mountpoint) / temp_path
-
-                if os.path.isfile(temp_path):
-                    temp_path = temp_path.parent
-                elif os.path.isdir(temp_path) and path_utils.basename(temp_path) == path_utils.basename(
-                    t.download_path or t.content_path
-                ):
-                    pass
-                else:
-                    if args.temp_prefix and args.temp_prefix not in temp_path.parts:
-                        temp_path /= args.temp_prefix
-                    if args.tracker_dirnames:
-                        domain = t.tracker_domain()
-                        if domain and temp_path and domain not in temp_path.parts:
-                            temp_path /= domain
-
-            if download_path:
-                if not download_path.is_absolute():  # --download-drive or --move could be relative
-                    mountpoint = path_utils.mountpoint(t.content_path)
-                    download_path = Path(mountpoint) / download_path
-
-                if os.path.isfile(download_path):
-                    download_path = download_path.parent
-                elif os.path.isdir(download_path) and path_utils.basename(download_path) == path_utils.basename(
-                    t.save_path or t.content_path
-                ):
-                    pass
-                else:
-                    if args.download_prefix and args.download_prefix not in download_path.parts:
-                        download_path /= args.download_prefix
-                    if args.tracker_dirnames:
-                        domain = t.tracker_domain()
-                        if domain and download_path and domain not in download_path.parts:
-                            download_path /= domain
-
-            log.debug("temp_path %s", temp_path)
-            log.debug("download_path %s", download_path)
-
-            new_path = download_path if t.state_enum.is_complete else temp_path
-            if new_path is None:
-                new_path = t.save_path if t.state_enum.is_complete else t.download_path
-            if args.simulate:
-                print("Moving", t.content_path, "to", new_path)
-                continue
-
-            content_path = Path(t.content_path) if t.content_path else None
-            if content_path and content_path.exists() and new_path is not None:
-                if content_path.is_file():
-                    print("Moving file", content_path, "to", new_path)
-                    merge_mv.move(args, [str(content_path)], str(new_path))
-                else:
-                    new_path = Path(new_path) / content_path.name
-                    print("Moving folder", content_path, "to", new_path)
-                    merge_mv.move(args, [str(content_path)], str(new_path))
-
-            if not (args.delete_files or args.delete_rows):
-                # update metadata
-                set_torrent_paths(qbt_client, t, temp_path, download_path)
-
-                if not originally_stopped:
-                    qbt_client.torrents_start(torrent_hashes=[t.hash])
-
+def _apply_limits_and_checks(args, qbt_client, torrents, torrent_hashes):
     if args.start:
         print("Starting", len(torrents))
         qbt_client.torrents_start(torrent_hashes=torrent_hashes)
-
     if args.force_start is not None:
-        if args.force_start:
-            print("Setting force-start", len(torrents))
-        else:
-            print("Setting normal-start", len(torrents))
+        print("Setting force-start" if args.force_start else "Setting normal-start", len(torrents))
         qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
-
     if args.download_limit is not None:
-        if args.download_limit:
-            print("Setting DL limit", len(torrents))
-        else:
-            print("Removing DL limit", len(torrents))
+        print("Setting DL limit" if args.download_limit else "Removing DL limit", len(torrents))
         qbt_client.torrents_set_download_limit(args.download_limit or -1, torrent_hashes=torrent_hashes)
-
     if args.upload_limit is not None:
-        if args.upload_limit:
-            print("Setting UP limit", len(torrents))
-        else:
-            print("Removing UP limit", len(torrents))
+        print("Setting UP limit" if args.upload_limit else "Removing UP limit", len(torrents))
         qbt_client.torrents_set_upload_limit(args.upload_limit or -1, torrent_hashes=torrent_hashes)
-
     if args.check:
         print("Checking", len(torrents))
         qbt_client.torrents_recheck(torrent_hashes=torrent_hashes)
 
+
+def _apply_tracker_actions(args, qbt_client, torrents):
     if args.add_tracker:
-        for idx, t in enumerate(torrents):
-            printing.print_overwrite("Adding tracker", idx + 1, "of", len(torrents), args.add_tracker)
-            qbt_client.torrents_add_trackers(t.hash, args.add_tracker)
+        for index, torrent in enumerate(torrents):
+            printing.print_overwrite("Adding tracker", index + 1, "of", len(torrents), args.add_tracker)
+            qbt_client.torrents_add_trackers(torrent.hash, args.add_tracker)
         print()
     if args.remove_tracker:
-        for idx, t in enumerate(torrents):
-            printing.print_overwrite("Removing tracker", idx + 1, "of", len(torrents), args.remove_tracker)
-            qbt_client.torrents_remove_trackers(t.hash, args.remove_tracker)
+        for index, torrent in enumerate(torrents):
+            printing.print_overwrite("Removing tracker", index + 1, "of", len(torrents), args.remove_tracker)
+            qbt_client.torrents_remove_trackers(torrent.hash, args.remove_tracker)
         print()
 
+
+def _export_torrents(args, qbt_client, torrents):
     if args.export:
-        p = Path("exported_torrents")
-        p.mkdir(exist_ok=True)
-        for idx, t in enumerate(torrents):
-            printing.print_overwrite("Exporting", idx + 1, "of", len(torrents), "to", p)
-
-            file_name = f"{t.tracker_domain()}_{t.name}_{t.hash}.torrent"
-            file_name = path_utils.clean_path(file_name.encode())
-            (p / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=t.hash))
+        export_path = Path("exported_torrents")
+        export_path.mkdir(exist_ok=True)
+        for index, torrent in enumerate(torrents):
+            printing.print_overwrite("Exporting", index + 1, "of", len(torrents), "to", export_path)
+            file_name = path_utils.clean_path(
+                f"{torrent.tracker_domain()}_{torrent.name}_{torrent.hash}.torrent".encode()
+            )
+            (export_path / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=torrent.hash))
         print()
 
+
+def _delete_torrents(args, qbt_client, torrents, torrent_hashes):
     if args.mark_deleted:
         print("Marking deleted", len(torrents))
         qbt_client.torrents_add_tags(tags="library-delete", torrent_hashes=torrent_hashes)
@@ -1145,19 +1019,54 @@ def torrents_info():
         print("Deleting from qBit", len(torrents))
         qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
 
-    if args.wait:
-        for idx, t in enumerate(torrents):
-            print("Waiting for", idx + 1, "of", len(torrents), "to be one of:", ", ".join(args.wait))
 
-            while True:
-                ts = qbt_client.torrents_info(torrent_hashes=t.hash)
-                if not ts:
-                    log.error("Torrent %s not found %s", t.name, t.hash)
-                    break
-                if len(ts) > 1:
-                    log.warning("More than one torrent matched %s: %s", t.hash, ts)
+def _wait_for_torrents(args, qbt_client, torrents):
+    if not args.wait:
+        return
+    for index, torrent in enumerate(torrents):
+        print("Waiting for", index + 1, "of", len(torrents), "to be one of:", ", ".join(args.wait))
+        while True:
+            refreshed_torrents = qbt_client.torrents_info(torrent_hashes=torrent.hash)
+            if not refreshed_torrents:
+                log.error("Torrent %s not found %s", torrent.name, torrent.hash)
+                break
+            if len(refreshed_torrents) > 1:
+                log.warning("More than one torrent matched %s: %s", torrent.hash, refreshed_torrents)
+            current_torrent = refreshed_torrents[0]
+            if any(map_value_status(current_torrent, status) for status in args.wait):
+                break
+            sleep(3)
 
-                t = ts[0]
-                if any(map_value_status(t, status) for status in args.wait):
-                    break
-                sleep(3)
+
+def _apply_torrent_actions(args, qbt_client, torrents):
+    torrent_hashes = [t.hash for t in torrents]
+    _apply_tags_and_state(args, qbt_client, torrents, torrent_hashes)
+    _delete_incomplete_torrents(args, torrents)
+    if args.reset_progress:
+        print("Resetting progress of", len(torrents))
+        for torrent in torrents:
+            reset_torrent_progress(args, qbt_client, torrent)
+    _move_torrents(args, qbt_client, torrents)
+    _apply_limits_and_checks(args, qbt_client, torrents, torrent_hashes)
+    _apply_tracker_actions(args, qbt_client, torrents)
+    _export_torrents(args, qbt_client, torrents)
+    _delete_torrents(args, qbt_client, torrents, torrent_hashes)
+    _wait_for_torrents(args, qbt_client, torrents)
+
+
+def torrents_info():
+    args = parse_args()
+    if args.simulate:
+        print("Simulation: no torrent changes made")
+        return
+
+    qbt_client = torrents_start.start_qBittorrent(args)
+    torrents = qbt_client.torrents_info()
+    qbt_enhance_torrents(qbt_client, torrents)
+    _report_tracker_errors(args, torrents)
+    if any(t.state_enum.is_errored for t in torrents):
+        args.status = True
+    torrents = _sort_torrents(args, torrents)
+    torrents = filter_torrents(args, torrents)
+    _print_torrents(args, qbt_client, torrents)
+    _apply_torrent_actions(args, qbt_client, torrents)

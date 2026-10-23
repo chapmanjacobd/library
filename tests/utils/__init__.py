@@ -44,7 +44,7 @@ def get_default_args(*funcs):
     parser = argparse_utils.ArgumentParser()
     for func in funcs:
         func(parser)
-    defaults = {action.dest: action.default for action in parser._actions}
+    defaults = {action.dest: action.default for action in parser._actions}  # noqa: SLF001
     return defaults
 
 

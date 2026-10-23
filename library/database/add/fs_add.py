@@ -81,16 +81,7 @@ def extract_chunk(args, media) -> None:
     is_scan_all_files = getattr(args, "scan_all_files", False)
 
     if objects.is_profile(args, DBType.image) and arggroups.image_profile_available():
-        if is_scan_all_files:
-            image_media = list(media)
-            other_media = []
-        else:
-            image_media, other_media = [], []
-            for m in media:
-                if m["path"].rsplit(".", 1)[-1].lower() in consts.IMAGE_EXTENSIONS:
-                    image_media.append(m)
-                else:
-                    other_media.append(m)
+        image_media, other_media = _split_image_media(media, is_scan_all_files)
         if image_media:
             image_media = extract_image_metadata_chunk(image_media)
             media = image_media + other_media
@@ -98,6 +89,25 @@ def extract_chunk(args, media) -> None:
     if args.scan_subtitles:
         clean_up_temp_dirs()
 
+    captions = _extract_captions(media)
+    media = iterables.list_dict_filter_bool(media)
+    media = [{"playlists_id": args.playlists_id, **d} for d in media]
+    args.db["media"].insert_all(media, pk=["playlists_id", "path"], alter=True, replace=True)
+    _insert_captions(args, captions)
+
+
+def _split_image_media(media, is_scan_all_files):
+    if is_scan_all_files:
+        return list(media), []
+
+    image_media, other_media = [], []
+    for entry in media:
+        target = image_media if entry["path"].rsplit(".", 1)[-1].lower() in consts.IMAGE_EXTENSIONS else other_media
+        target.append(entry)
+    return image_media, other_media
+
+
+def _extract_captions(media):
     captions = []
     for d in media:
         caption = {}
@@ -112,13 +122,11 @@ def extract_chunk(args, media) -> None:
             tags += "\n" + description
         if tags:
             caption["caption_t0"] = {"time": 0, "text": tags}
-
         captions.append(caption)
+    return captions
 
-    media = iterables.list_dict_filter_bool(media)
-    media = [{"playlists_id": args.playlists_id, **d} for d in media]
-    args.db["media"].insert_all(media, pk=["playlists_id", "path"], alter=True, replace=True)
 
+def _insert_captions(args, captions):
     for d in captions:
         media_id = args.db.pop("select id from media where path = ?", [d["path"]])
         if len(d["chapters"]) > 0:
@@ -129,24 +137,25 @@ def extract_chunk(args, media) -> None:
             args.db["captions"].insert({**d["caption_t0"], "media_id": media_id}, alter=True)
 
 
-def find_new_files(args, path) -> list[str]:
-    if path.is_file():
-        path = str(path)
-        if db_media.exists(args, path):
-            try:
-                time_deleted = args.db.pop(
-                    """select time_deleted from media where path = ?""",
-                    [path],
-                )
-            except Exception as excinfo:
-                log.debug(excinfo)
-            else:
-                if time_deleted > 0:
-                    undeleted_count = db_media.mark_media_undeleted(args, [path])
-                    if undeleted_count > 0:
-                        print(f"[{path}] Marking as undeleted")
-        return [path]
+def _find_single_file(args, path):
+    path = str(path)
+    if db_media.exists(args, path):
+        try:
+            time_deleted = args.db.pop(
+                """select time_deleted from media where path = ?""",
+                [path],
+            )
+        except Exception as excinfo:
+            log.debug(excinfo)
+        else:
+            if time_deleted > 0:
+                undeleted_count = db_media.mark_media_undeleted(args, [path])
+                if undeleted_count > 0:
+                    print(f"[{path}] Marking as undeleted")
+    return [path]
 
+
+def _scan_extensions(args):
     exts = args.ext
     if not exts:
         if args.scan_all_files or DBType.filesystem in args.profiles:
@@ -157,9 +166,10 @@ def find_new_files(args, path) -> list[str]:
                     args.profiles, ocr=args.ocr, speech_recognition=args.speech_recognition
                 )
             )
+    return exts
 
-    scanned_set = shell_utils.rglob(path, exts or None, args.exclude)[0]
 
+def _find_directory_files(args, path, scanned_set):
     m_columns = db_utils.columns(args, "media")
 
     try:
@@ -214,6 +224,14 @@ def find_new_files(args, path) -> list[str]:
     return new_files
 
 
+def find_new_files(args, path) -> list[str]:
+    if path.is_file():
+        return _find_single_file(args, path)
+    exts = _scan_extensions(args)
+    scanned_set = shell_utils.rglob(path, exts or None, args.exclude)[0]
+    return _find_directory_files(args, path, scanned_set)
+
+
 def needs_process_pool(args, path: str) -> bool:
     """Text extraction is not thread-safe (textract starts its own multiprocessing pool),
     so those files are processed with a ProcessPoolExecutor. Everything else -- including
@@ -233,14 +251,7 @@ def needs_process_pool(args, path: str) -> bool:
     return False
 
 
-def scan_path(args, path_str: str) -> int:
-    path = Path(path_str).expanduser().resolve()
-    if not path.exists():
-        print(f"[{path}] Path does not exist")
-        if args.force:
-            playlists.delete_playlists(args, [str(path)])
-        return 0
-
+def _get_worker_count(args):
     n_jobs = None
     if args.verbose >= consts.LOG_DEBUG:
         n_jobs = 1
@@ -248,7 +259,10 @@ def scan_path(args, path_str: str) -> int:
         n_jobs = args.threads
     elif getattr(args, "process", False):
         n_jobs = max(1, int(os.cpu_count() or 4) // 2)
+    return n_jobs
 
+
+def _prepare_playlist(args, path):
     if path.is_dir():
         info = {
             "extractor_key": "Local",
@@ -259,6 +273,97 @@ def scan_path(args, path_str: str) -> int:
     else:
         args.playlists_id = 0
 
+
+def _get_batch_count(args, n_jobs):
+    if getattr(args, "process", False) and n_jobs:
+        return n_jobs
+    if DBType.video in args.profiles:
+        return 500
+    if DBType.audio in args.profiles:
+        return 1000
+    if DBType.image in args.profiles:
+        return 1500
+    if DBType.text in args.profiles:
+        return int(os.cpu_count() or 4)
+    return 15000
+
+
+def _extract_large_first(args, path, new_files):
+    if len(new_files) > MIN_FILES_FOR_FTS and not args.db["media"].detect_fts():
+        args.playlist_path = path
+        m = extract_metadata(args, new_files.pop())
+        while m is None:
+            m = extract_metadata(args, new_files.pop())
+
+        extract_chunk(args, iterables.conform(m))
+        db_utils.optimize(args)
+        del args.playlist_path
+
+
+def _process_chunks(args, path, new_files, n_jobs):
+    batch_count = _get_batch_count(args, n_jobs)
+    chunks_count = math.ceil(len(new_files) / batch_count)
+    files_chunked = iterables.chunks(new_files, batch_count)
+
+    start_time = consts.now()
+    thread_pool = None
+    process_pool = None
+    try:
+        for idx, chunk_paths in enumerate(files_chunked):
+            percent = (idx + 1) / chunks_count * 100
+            eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if idx > CHUNK_ETA_START_INDEX else ""
+            printing.print_overwrite(
+                f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
+            )
+
+            mp_args = argparse.Namespace(
+                playlist_path=path, **{k: v for k, v in args.__dict__.items() if k != "db"}
+            )
+            thread_paths = []
+            process_paths = []
+            for file_path in chunk_paths:
+                (process_paths if needs_process_pool(mp_args, file_path) else thread_paths).append(file_path)
+
+            results = {}
+            if thread_paths:
+                if thread_pool is None:
+                    thread_pool = ThreadPoolExecutor(n_jobs)
+                results.update(
+                    dict(zip(thread_paths, thread_pool.map(partial(extract_metadata, mp_args), thread_paths), strict=False))
+                )
+            if process_paths:
+                if process_pool is None:
+                    process_pool = ProcessPoolExecutor(n_jobs)
+                results.update(
+                    dict(
+                        zip(
+                            process_paths,
+                            process_pool.map(partial(extract_metadata, mp_args), process_paths),
+                            strict=False,
+                        )
+                    )
+                )
+
+            extract_chunk(args, iterables.conform([results.get(file_path) for file_path in chunk_paths]))
+        print()
+    finally:
+        if thread_pool is not None:
+            thread_pool.shutdown()
+        if process_pool is not None:
+            process_pool.shutdown()
+
+
+def scan_path(args, path_str: str) -> int:
+    path = Path(path_str).expanduser().resolve()
+    if not path.exists():
+        print(f"[{path}] Path does not exist")
+        if args.force:
+            playlists.delete_playlists(args, [str(path)])
+        return 0
+
+    n_jobs = _get_worker_count(args)
+    _prepare_playlist(args, path)
+
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)
     if args.simulate:
@@ -267,87 +372,8 @@ def scan_path(args, path_str: str) -> int:
 
     if new_files:
         print(f"[{path}] Adding {len(new_files)} new media")
-        # log.debug(new_files)
-
-        if len(new_files) > MIN_FILES_FOR_FTS and not args.db["media"].detect_fts():
-            args.playlist_path = path
-            m = extract_metadata(args, new_files.pop())
-            while m is None:
-                m = extract_metadata(args, new_files.pop())
-
-            extract_chunk(args, iterables.conform(m))
-            db_utils.optimize(args)
-            del args.playlist_path
-
-        # Text-only scans use a small chunk because textract is slow per-file; any other
-        # media keeps its prior chunk size even when `auto` also includes text.
-        if getattr(args, "process", False) and n_jobs:
-            batch_count = n_jobs
-        elif DBType.video in args.profiles:
-            batch_count = 500
-        elif DBType.audio in args.profiles:
-            batch_count = 1000
-        elif DBType.image in args.profiles:
-            batch_count = 1500
-        elif DBType.text in args.profiles:
-            batch_count = int(os.cpu_count() or 4)
-        else:
-            batch_count = 15000
-        chunks_count = math.ceil(len(new_files) / batch_count)
-        files_chunked = iterables.chunks(new_files, batch_count)
-
-        start_time = consts.now()
-        thread_pool = None
-        process_pool = None
-        # audio/video/image/filesystem metadata only shells out (ffprobe/exiftool/ImageMagick) or
-        # reads files, so it is safe to run in threads; only text extraction starts its own pool
-        # inside textract and therefore needs a ProcessPoolExecutor (see `needs_process_pool`).
-        try:
-            for idx, chunk_paths in enumerate(files_chunked):
-                percent = (idx + 1) / chunks_count * 100
-                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if idx > CHUNK_ETA_START_INDEX else ""
-                printing.print_overwrite(
-                    f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
-                )
-
-                mp_args = argparse.Namespace(
-                    playlist_path=path, **{k: v for k, v in args.__dict__.items() if k != "db"}
-                )
-
-                thread_paths = []
-                process_paths = []
-                for p in chunk_paths:
-                    (process_paths if needs_process_pool(mp_args, p) else thread_paths).append(p)
-
-                # The two executors run independently; key the results by path so the
-                # metadata is reassembled in the original chunk order.
-                results = {}
-                if thread_paths:
-                    if thread_pool is None:
-                        thread_pool = ThreadPoolExecutor(n_jobs)
-                    results.update(
-                        dict(zip(thread_paths, thread_pool.map(partial(extract_metadata, mp_args), thread_paths), strict=False))
-                    )
-                if process_paths:
-                    if process_pool is None:
-                        process_pool = ProcessPoolExecutor(n_jobs)
-                    results.update(
-                        dict(
-                            zip(
-                                process_paths,
-                                process_pool.map(partial(extract_metadata, mp_args), process_paths),
-                                strict=False,
-                            )
-                        )
-                    )
-
-                extract_chunk(args, iterables.conform([results.get(p) for p in chunk_paths]))
-            print()
-        finally:
-            if thread_pool is not None:
-                thread_pool.shutdown()
-            if process_pool is not None:
-                process_pool.shutdown()
+        _extract_large_first(args, path, new_files)
+        _process_chunks(args, path, new_files, n_jobs)
 
     return len(new_files)
 

@@ -211,45 +211,12 @@ def add(args, entry):
         log.warning('Skipping insert: no "path" in entry %s', entry)
         return
 
-    tags = entry.pop("tags", None) or ""
-    chapters = entry.pop("chapters", None) or []
-    subtitles = entry.pop("subtitles", None) or []
-    entry.pop("description", None)
-    entry = objects.dict_filter_bool(entry)
+    entry, tags, chapters, subtitles = _prepare_entry(entry)
     if entry is None:
         return
 
-    with args.db.conn:
-        existing_record = args.db.pop_dict("select * from media where path = ?", [entry["path"]])
-        if not existing_record and "webpath" in entry and not entry.get("error"):
-            existing_record = args.db.pop_dict(
-                "select * from media where path = ?", [entry["webpath"]]
-            )  # replace remote with local
-        media_id = None
-        if existing_record:
-            media_id = existing_record["id"]
-            entry = existing_record | entry
-            if existing_record.get("time_created"):
-                entry["time_created"] = existing_record["time_created"]
-        if "download_attempts" in entry:
-            attempts = entry["download_attempts"] or 0
-            if existing_record and "download_attempts" in existing_record:
-                attempts = max(attempts or 0, existing_record["download_attempts"] or 0)
-            entry["download_attempts"] = min(consts.SQLITE_INT2, attempts + 1)
-        try:
-            args.db["media"].insert(entry, pk=["playlists_id", "path"], alter=True, replace=True)
-        except sqlite3.IntegrityError:
-            log.error("media_id %s: %s", media_id, entry)
-            raise
-    if media_id is None:
-        media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
-
-    if tags:
-        args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
-    for chapter in chapters:
-        args.db["captions"].insert({"media_id": media_id, **chapter}, alter=True)
-    if len(subtitles) > 0:
-        args.db["captions"].insert_all([{**d, "media_id": media_id} for d in subtitles], alter=True)
+    media_id = _upsert_entry(args, entry)
+    _insert_captions(args, media_id, tags, chapters, subtitles)
 
 
 def mark_media_undeleted(args, paths) -> int:
@@ -298,6 +265,49 @@ def mark_media_deleted(args, paths) -> int:
                 modified_row_count += cursor.rowcount
 
     return modified_row_count
+
+
+def _prepare_entry(entry):
+    tags = entry.pop("tags", None) or ""
+    chapters = entry.pop("chapters", None) or []
+    subtitles = entry.pop("subtitles", None) or []
+    entry.pop("description", None)
+    return objects.dict_filter_bool(entry), tags, chapters, subtitles
+
+
+def _upsert_entry(args, entry):
+    with args.db.conn:
+        existing_record = args.db.pop_dict("select * from media where path = ?", [entry["path"]])
+        if not existing_record and "webpath" in entry and not entry.get("error"):
+            existing_record = args.db.pop_dict("select * from media where path = ?", [entry["webpath"]])
+        media_id = None
+        if existing_record:
+            media_id = existing_record["id"]
+            entry = existing_record | entry
+            if existing_record.get("time_created"):
+                entry["time_created"] = existing_record["time_created"]
+        if "download_attempts" in entry:
+            attempts = entry["download_attempts"] or 0
+            if existing_record and "download_attempts" in existing_record:
+                attempts = max(attempts or 0, existing_record["download_attempts"] or 0)
+            entry["download_attempts"] = min(consts.SQLITE_INT2, attempts + 1)
+        try:
+            args.db["media"].insert(entry, pk=["playlists_id", "path"], alter=True, replace=True)
+        except sqlite3.IntegrityError:
+            log.error("media_id %s: %s", media_id, entry)
+            raise
+    if media_id is None:
+        media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
+    return media_id
+
+
+def _insert_captions(args, media_id, tags, chapters, subtitles):
+    if tags:
+        args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
+    for chapter in chapters:
+        args.db["captions"].insert({"media_id": media_id, **chapter}, alter=True)
+    if subtitles:
+        args.db["captions"].insert_all([{**d, "media_id": media_id} for d in subtitles], alter=True)
 
 
 def update_media(args, media, mark_deleted=True):
@@ -420,15 +430,53 @@ def download_add(
             args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
 
 
+def _media_sort_key(sort_key):
+    ignore_pattern = re.compile(r"\d{3,4}[pi]")  # ignore 720p, 1080i, etc
+
+    @strings.output_filter(ignore_pattern)
+    def sort_entry(entry):
+        if sort_key == "parent":
+            return Path(entry.get("path") or "").parent
+        if sort_key == "stem":
+            return Path(entry.get("path") or "").stem
+        if sort_key == "ps":
+            path = Path(entry.get("path") or "")
+            return path.parent, path.stem
+        if sort_key == "pts":
+            path = Path(entry.get("path") or "")
+            return path.parent, entry["title"], path.stem
+        return entry[sort_key]
+
+    return sort_entry
+
+
+def _sort_media(media, alg, media_sort_key, ns_opts, reverse, natsorted, ns, os_sorted):
+    algorithms = {
+        "natural": ns.DEFAULT,
+        "nspath": ns.PATH,
+        "path": ns.PATH,
+        "ignorecase": ns.IGNORECASE,
+        "lowercase": ns.LOWERCASEFIRST,
+        "human": ns.LOCALE,
+        "locale": ns.LOCALE,
+        "signed": ns.REAL,
+    }
+    if alg in algorithms:
+        return natsorted(media, key=media_sort_key, alg=ns_opts | algorithms[alg], reverse=reverse)
+    if alg == "os":
+        return os_sorted(media, key=media_sort_key, reverse=reverse)
+    if alg == "python":
+        return sorted(media, key=media_sort_key, reverse=reverse)
+    return natsorted(media, key=_media_sort_key(alg), alg=ns_opts | ns.DEFAULT, reverse=reverse)
+
+
 def natsort_media(args, media):
     from natsort import natsorted, ns, os_sorted
 
     config = args.play_in_order
-
-    reverse = False
-    if config.startswith("reverse_"):
+    reverse = config.startswith("reverse_")
+    if reverse:
         config = config.replace("reverse_", "", 1)
-        reverse = True
 
     compat = False
     for opt in ("compat_", "nfkd_"):
@@ -440,53 +488,13 @@ def natsort_media(args, media):
         alg, sort_key = config.split("_", 1)
     else:
         alg, sort_key = config, "ps"
+    media_sort_key = _media_sort_key(sort_key)
 
-    def func_sort_key(sort_key):
-        ignore_pattern = re.compile(r"\d{3,4}[pi]")  # ignore 720p, 1080i, etc
-
-        @strings.output_filter(ignore_pattern)
-        def fn_key(d):
-            if sort_key in ("parent", "stem", "ps", "pts"):
-                path = Path(d.get("path") or "")
-
-                if sort_key == "parent":
-                    return path.parent
-                elif sort_key == "stem":
-                    return path.stem
-                elif sort_key == "ps":
-                    return (path.parent, path.stem)
-                else:  # sort_key == 'pts'
-                    return (path.parent, d["title"], path.stem)
-            else:
-                return d[sort_key]
-
-        return fn_key
-
-    media_sort_key = func_sort_key(sort_key)
-
-    NS_OPTS = ns.NUMAFTER | ns.NOEXP | ns.NANLAST
+    ns_opts = ns.NUMAFTER | ns.NOEXP | ns.NANLAST
     if compat:
-        NS_OPTS = NS_OPTS | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
+        ns_opts |= ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
 
-    if alg == "natural":
-        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
-    elif alg in ("nspath", "path"):
-        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.PATH, reverse=reverse)
-    elif alg == "ignorecase":
-        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.IGNORECASE, reverse=reverse)
-    elif alg == "lowercase":
-        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOWERCASEFIRST, reverse=reverse)
-    elif alg in ("human", "locale"):
-        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOCALE, reverse=reverse)
-    elif alg == "signed":
-        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.REAL, reverse=reverse)
-    elif alg == "os":
-        media = os_sorted(media, key=media_sort_key, reverse=reverse)
-    elif alg == "python":
-        media = sorted(media, key=media_sort_key, reverse=reverse)
-    else:
-        media = natsorted(media, key=func_sort_key(alg), alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
-
+    media = _sort_media(media, alg, media_sort_key, ns_opts, reverse, natsorted, ns, os_sorted)
     log.debug("natsort[0] %s", media[0:1])
     return media
 
@@ -621,56 +629,69 @@ def get_next_dir_media(args, folder, limit=1):
     return m
 
 
-def get_sibling_media(args, media):
-    if args.fetch_siblings in ("all", "always"):
-        dirs = {str(Path(d["path"]).parent) + os.sep for d in media}
-        media = get_dir_media(args, dirs)
+def _all_siblings(args, media):
+    dirs = {str(Path(entry["path"]).parent) + os.sep for entry in media}
+    return get_dir_media(args, dirs)
 
-    elif args.fetch_siblings == "each":
-        parent_counts = Counter(str(Path(d["path"]).parent) + os.sep for d in media)
-        media = []
-        for parent, count in parent_counts.items():
-            media.extend(
-                get_next_dir_media(
-                    args, parent, limit=min(args.fetch_siblings_max, count) if args.fetch_siblings_max > 0 else count
+
+def _each_siblings(args, media):
+    parent_counts = Counter(str(Path(entry["path"]).parent) + os.sep for entry in media)
+    siblings = []
+    for parent, count in parent_counts.items():
+        limit = min(args.fetch_siblings_max, count) if args.fetch_siblings_max > 0 else count
+        siblings.extend(get_next_dir_media(args, parent, limit=limit))
+    return siblings
+
+
+def _first_siblings(args, media):
+    original_paths = {entry["path"] for entry in media}
+    parents = {str(Path(entry["path"]).parent) + os.sep for entry in media}
+    siblings = []
+    for parent in parents:
+        next_media = get_next_dir_media(args, parent)[0]
+        if next_media["path"] in original_paths:
+            siblings.append(next_media)
+    return siblings
+
+
+def _audiobook_siblings(args, media):
+    new_media = []
+    seen_parents = {}
+    for entry in media:
+        if "audiobook" in entry["path"].lower():
+            parent = str(Path(entry["path"]).parent) + os.sep
+            if parent not in seen_parents:
+                seen_parents[parent] = sum(
+                    1 for media_entry in media if str(Path(media_entry["path"]).parent) + os.sep == parent
                 )
-            )
+                count = seen_parents[parent]
+                limit = min(args.fetch_siblings_max, count) if args.fetch_siblings_max > 0 else count
+                new_media.extend(get_next_dir_media(args, parent, limit=limit))
+        else:
+            new_media.append(entry)
+    return new_media
 
-    elif args.fetch_siblings == "if-first":
-        original_paths = {d["path"] for d in media}
-        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
-        media = []
-        for parent in parents:
-            next_media = get_next_dir_media(args, parent)[0]
-            if next_media["path"] in original_paths:
-                media.append(next_media)
 
-    elif args.fetch_siblings == "if-audiobook":
-        new_media = []
-        seen_parents = {}
-        for d in media:
-            if "audiobook" in d["path"].lower():
-                parent = str(Path(d["path"]).parent) + os.sep
-                if parent not in seen_parents:
-                    seen_parents[parent] = sum(1 for m in media if str(Path(m["path"]).parent) + os.sep == parent)
-                    count = seen_parents[parent]
-                    new_media.extend(
-                        get_next_dir_media(
-                            args,
-                            parent,
-                            limit=min(args.fetch_siblings_max, count) if args.fetch_siblings_max > 0 else count,
-                        )
-                    )
-            else:
-                new_media.append(d)
-        media = new_media
+def _count_siblings(args, media):
+    parents = {str(Path(entry["path"]).parent) + os.sep for entry in media}
+    siblings = []
+    for parent in parents:
+        siblings.extend(get_next_dir_media(args, parent, limit=int(args.fetch_siblings)))
+    return siblings
 
-    elif args.fetch_siblings.isdigit():
-        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
-        media = []
-        for parent in parents:
-            media.extend(get_next_dir_media(args, parent, limit=int(args.fetch_siblings)))
 
+def get_sibling_media(args, media):
+    handlers = {
+        "all": _all_siblings,
+        "always": _all_siblings,
+        "each": _each_siblings,
+        "if-first": _first_siblings,
+        "if-audiobook": _audiobook_siblings,
+    }
+    if args.fetch_siblings in handlers:
+        return handlers[args.fetch_siblings](args, media)
+    if args.fetch_siblings.isdigit():
+        return _count_siblings(args, media)
     return media
 
 

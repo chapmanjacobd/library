@@ -109,47 +109,54 @@ simple_file_tree = {
 }
 
 
+def _make_merge_source(temp_file_tree, src_type):
+    if src_type == "not_exist":
+        return temp_file_tree({})
+    if src_type in ("file", "parent"):
+        return temp_file_tree({"file4.txt": "5"})
+    return temp_file_tree(simple_file_tree | {"file4.txt": "5"})
+
+
+def _make_merge_source_arg(src1, src_type):
+    if src_type in ("file", "parent"):
+        return src1 + os.sep + "file4.txt"
+    if src_type == "folder":
+        return src1 + os.sep
+    return src1
+
+
+def _make_merge_destination(temp_file_tree, dest_type):
+    dest = temp_file_tree({} if dest_type == "not_exist" else simple_file_tree)
+    if dest_type == "clobber_file":
+        return dest, os.path.join(dest, "file4.txt")
+    if dest_type == "clobber_folder":
+        return dest, os.path.join(dest, "folder1")
+    return dest, dest
+
+
+def _make_merge_command(src_type, dest_opt, file_over_file_mode):
+    cmd = ["merge-mv", "--file-over-file", file_over_file_mode]
+    if src_type == "parent":
+        cmd += ["--parent"]
+    elif src_type == "bsd":
+        cmd += ["--bsd"]
+    cmd += {
+        "folder": ["--dest-folder"],
+        "bsd": ["--dest-bsd"],
+        "file": ["--dest-file"],
+    }[dest_opt]
+    return cmd
+
+
 @pytest.mark.parametrize("src_type", ["folder", "bsd", "file", "parent", "not_exist"])
 @pytest.mark.parametrize("dest_type", ["not_exist", "folder_merge", "clobber_folder", "clobber_file"])
 @pytest.mark.parametrize("dest_opt", ["folder", "bsd", "file"])
 @pytest.mark.parametrize("file_over_file_mode", ["delete-dest-hash rename-src", "delete-dest", "skip"])
 def test_merge(assert_unchanged, src_type, dest_type, dest_opt, file_over_file_mode, temp_file_tree):
-    if src_type == "not_exist":
-        src1 = temp_file_tree({})
-    elif src_type in ("file", "parent"):
-        src1 = temp_file_tree({"file4.txt": "5"})
-    else:  # folder, bsd
-        src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
-
-    src1_arg = src1
-    if src_type in ("file", "parent"):
-        src1_arg = src1 + os.sep + "file4.txt"
-    elif src_type == "folder":
-        src1_arg = src1 + os.sep
-
-    if dest_type == "not_exist":
-        dest = temp_file_tree({})
-    else:
-        dest = temp_file_tree(simple_file_tree)
-
-    dest_arg = dest
-    if dest_type == "clobber_file":
-        dest_arg = os.path.join(dest, "file4.txt")
-    elif dest_type == "clobber_folder":
-        dest_arg = os.path.join(dest, "folder1")
-
-    cmd = ["merge-mv", "--file-over-file", file_over_file_mode]
-    if src_type == "parent":
-        cmd += ["--parent"]
-    if src_type == "bsd":
-        cmd += ["--bsd"]
-
-    if dest_opt == "folder":
-        cmd += ["--dest-folder"]
-    elif dest_opt == "bsd":
-        cmd += ["--dest-bsd"]
-    elif dest_opt == "file":
-        cmd += ["--dest-file"]
+    src1 = _make_merge_source(temp_file_tree, src_type)
+    src1_arg = _make_merge_source_arg(src1, src_type)
+    dest, dest_arg = _make_merge_destination(temp_file_tree, dest_type)
+    cmd = _make_merge_command(src_type, dest_opt, file_over_file_mode)
 
     src1_before = read_relative_file_tree_dict(src1, inodes=False)
     src1_before = objects.replace_key_in_dict(src1_before, path_utils.basename(src1), "src1")

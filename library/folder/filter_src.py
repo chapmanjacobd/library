@@ -1,11 +1,23 @@
 import os, sys, time
+from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
 
 from library.utils import nums, printing, processes, strings
 
-MOVED_COUNT = 0
-MOVED_SIZE = 0
+
+@dataclass
+class _MoveStats:
+    count: int = 0
+    size: int = 0
+
+
+def _get_move_stats(args):
+    stats = getattr(args, "_move_stats", None)
+    if stats is None:
+        stats = _MoveStats()
+        args._move_stats = stats  # noqa: SLF001
+    return stats
 
 
 def add_time_filters(parser, prefix="move"):
@@ -123,57 +135,56 @@ def process_time_filters(args, prefix="move"):
     args.time_modified = time_modified_filter
 
 
+def _passes_file_filters(args, path, stat):
+    return all(
+        (
+            not args.move_sizes or args.move_sizes(stat.st_size),
+            not getattr(args, "time_created", None) or args.time_created(stat.st_ctime),
+            not getattr(args, "time_modified", None) or args.time_modified(stat.st_mtime),
+            not args.ext or path.lower().endswith(args.ext),
+            not args.move_exclude or not any(fnmatch(path, s) for s in args.move_exclude),
+            not args.move_include or any(fnmatch(path, s) for s in args.move_include),
+        )
+    )
+
+
+def _check_move_limits(args, stat):
+    if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
+        print(f"\nReached sizeout... ({args.timeout_size})", file=sys.stderr)
+        raise SystemExit(124)
+    if args.move_limit and args.move_limit <= _get_move_stats(args).count:
+        print(f"\nReached file move limit... ({args.move_limit})", file=sys.stderr)
+        raise SystemExit(124)
+
+
 def filter_src(args, path):
     # REMEMBER to exclude in merge-mv shortcut
-
     try:
         stat = os.stat(path)
     except FileNotFoundError:
         return False
-    if args.move_sizes and not args.move_sizes(stat.st_size):
+    if not _passes_file_filters(args, path, stat):
         return False
-
-    # Filter by time_created (ctime)
-    if getattr(args, "time_created", None) and not args.time_created(stat.st_ctime):
-        return False
-
-    # Filter by time_modified (mtime)
-    if getattr(args, "time_modified", None) and not args.time_modified(stat.st_mtime):
-        return False
-
-    if args.ext and not path.lower().endswith(args.ext):
-        return False
-
-    if args.move_exclude and any(fnmatch(path, s) for s in args.move_exclude):
-        return False
-
-    if args.move_include and not any(fnmatch(path, s) for s in args.move_include):
-        return False
-
-    if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
-        print(f"\nReached sizeout... ({args.timeout_size})", file=sys.stderr)
-        raise SystemExit(124)
-    elif args.move_limit and args.move_limit <= MOVED_COUNT:
-        print(f"\nReached file move limit... ({args.move_limit})", file=sys.stderr)
-        raise SystemExit(124)
-
+    _check_move_limits(args, stat)
     return True
 
 
 def print_stats(args, dest_path=None, file_size=None):
+    stats = _get_move_stats(args)
+
     def file_plural(x):
         return "files" if x > 1 else "file"
 
     pr = print if args.simulate else printing.print_overwrite
 
     msg = [
-        str(MOVED_COUNT),
+        str(stats.count),
         " ",
-        file_plural(MOVED_COUNT),
+        file_plural(stats.count),
         " ",
         "copied" if args.copy else "moved",
         " ",
-        f"({strings.file_size(MOVED_SIZE)})",
+        f"({strings.file_size(stats.size)})",
     ]
     if dest_path:
         msg.append(f"; {dest_path} ({strings.file_size(file_size)})")
@@ -185,22 +196,21 @@ def track_moved(func):
     def wrapper(*args, **kwargs):
         if args[0].verbose == 0:
             return func(*args, **kwargs)
-        else:
-            global MOVED_COUNT, MOVED_SIZE
-            try:
-                file_size = Path(args[1]).stat().st_size
-            except FileNotFoundError:
-                file_size = 0
+        stats = _get_move_stats(args[0])
+        try:
+            file_size = Path(args[1]).stat().st_size
+        except FileNotFoundError:
+            file_size = 0
 
-            if not args[0].simulate:
-                print_stats(args[0], args[2], file_size)
-            try:
-                result = func(*args, **kwargs)
-                if result is not False:
-                    MOVED_SIZE += file_size
-                    MOVED_COUNT += 1
-                return result
-            finally:
-                print_stats(args[0])
+        if not args[0].simulate:
+            print_stats(args[0], args[2], file_size)
+        try:
+            result = func(*args, **kwargs)
+            if result is not False:
+                stats.size += file_size
+                stats.count += 1
+            return result
+        finally:
+            print_stats(args[0])
 
     return wrapper

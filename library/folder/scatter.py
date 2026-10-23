@@ -143,41 +143,65 @@ def print_path_stats(tbl) -> None:
     printing.table(tbl)
 
 
-def rebin_files(args, disk_stats, all_files) -> tuple[list, list]:
-    total_size = sum(d["size"] or 0 for d in all_files)
-
-    untouched = []
-    to_rebin = []
-    full_disks = []
-
+def _rebin_read_only_files(args, all_files):
     read_only_mounts = [
         s for s in args.relative_paths if Path(s).is_absolute() and not any(m in s for m in args.targets)
     ]
+    to_rebin = []
     for disk_stat in devices.get_mount_stats(read_only_mounts):
         disk_files = [d for d in all_files if d["path"].startswith(disk_stat["mount"])]
         to_rebin.extend({"mount": disk_stat["mount"], **file} for file in disk_files)
+    return to_rebin
 
-    for disk_stat in disk_stats:
-        disk_files = [d for d in all_files if d["path"].startswith(disk_stat["mount"])]
 
+def _rebin_disk_files(args, disk_stat, all_files, total_size, disk_count):
+    disk_files = [d for d in all_files if d["path"].startswith(disk_stat["mount"])]
+    if not disk_files:
+        return [], []
+    if args.group == "size":
+        ideal_allocation_size = total_size * disk_stat["total"]
+        untouched = []
         disk_rebin = []
-        if disk_files:
-            if args.group == "size":
-                ideal_allocation_size = total_size * disk_stat["total"]
-
-                size = 0
-                for file in disk_files:
-                    size += file["size"]
-                    if size < ideal_allocation_size:
-                        untouched.append(file)
-                    else:
-                        disk_rebin.append({"mount": disk_stat["mount"], **file})
+        size = 0
+        for file in disk_files:
+            size += file["size"]
+            if size < ideal_allocation_size:
+                untouched.append(file)
             else:
-                ideal_allocation_count = len(disk_files) // len(disk_stats)
-                untouched.extend(disk_files[:ideal_allocation_count])
-                disk_rebin.extend({"mount": disk_stat["mount"], **file} for file in disk_files[ideal_allocation_count:])
+                disk_rebin.append({"mount": disk_stat["mount"], **file})
+        return untouched, disk_rebin
 
-        if len(disk_rebin) > 0:
+    ideal_allocation_count = len(disk_files) // disk_count
+    untouched = disk_files[:ideal_allocation_count]
+    disk_rebin = [{"mount": disk_stat["mount"], **file} for file in disk_files[ideal_allocation_count:]]
+    return untouched, disk_rebin
+
+
+def _choose_rebin_mount(args, valid_targets):
+    mount_list = [d["mount"] for d in valid_targets]
+    policy_weights = {
+        "free": "free",
+        "pfrd": "free",
+        "used": "used",
+        "purd": "used",
+        "total": "total",
+        "ptrd": "total",
+    }
+    weight_key = policy_weights.get(args.policy)
+    if weight_key:
+        return random.choices(mount_list, weights=[stat[weight_key] for stat in valid_targets], k=1)[0]
+    return random.choices(mount_list, k=1)[0]
+
+
+def rebin_files(args, disk_stats, all_files) -> tuple[list, list]:
+    total_size = sum(d["size"] or 0 for d in all_files)
+    untouched = []
+    to_rebin = _rebin_read_only_files(args, all_files)
+    full_disks = []
+    for disk_stat in disk_stats:
+        disk_untouched, disk_rebin = _rebin_disk_files(args, disk_stat, all_files, total_size, len(disk_stats))
+        untouched.extend(disk_untouched)
+        if disk_rebin:
             full_disks.append(disk_stat["mount"])
         to_rebin.extend(disk_rebin)
 
@@ -193,17 +217,7 @@ def rebin_files(args, disk_stats, all_files) -> tuple[list, list]:
     rebinned = []
     for file in to_rebin:
         valid_targets = [d for d in disk_stats if d["mount"] not in [*full_disks, file["mount"]]]
-
-        mount_list = [d["mount"] for d in valid_targets]
-        if args.policy in ["free", "pfrd"]:
-            new_mount = random.choices(mount_list, weights=[stat["free"] for stat in valid_targets], k=1)[0]
-        elif args.policy in ["used", "purd"]:
-            new_mount = random.choices(mount_list, weights=[stat["used"] for stat in valid_targets], k=1)[0]
-        elif args.policy in ["total", "ptrd"]:
-            new_mount = random.choices(mount_list, weights=[stat["total"] for stat in valid_targets], k=1)[0]
-        else:
-            new_mount = random.choices(mount_list, k=1)[0]
-
+        new_mount = _choose_rebin_mount(args, valid_targets)
         file["from_path"] = file["path"]
         file["path"] = file["path"].replace(file["mount"], new_mount)
         rebinned.append(file)
@@ -258,14 +272,7 @@ def rebin_folders(paths, max_files_per_folder=16000):
     return untouched, rebinned_tuples
 
 
-def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
-    total_size = sum(d["size"] or 0 for d in all_files)
-    print(strings.file_size(total_size), len(all_files), "files total")
-
-    disk_free = {
-        src_mount: shutil.disk_usage(src_mount).free for src_mount in sorted(args.targets, key=len, reverse=True)
-    }
-
+def _get_folder_files(disk_free, all_files):
     folder_files = defaultdict(list)
     for file_dict in sorted(all_files, key=operator.itemgetter("size")):
         for mount_point in disk_free.keys():
@@ -278,71 +285,82 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
                 break
         if not "mount" in file_dict:
             log.debug("No mountpoint found %s", file_dict["path"])
+    return folder_files
 
-    # log.debug('folder_files %s', folder_files)
+
+def _get_folder_weights(files_in_folder, disk_free):
+    folder_weights = []
+    for mount_point in disk_free.keys():
+        mount_files = [file_dict for file_dict in files_in_folder if file_dict["mount"] == mount_point]
+        if mount_files:
+            folder_weights.append(
+                {
+                    "mount_point": mount_point,
+                    "folder_weight": (len(mount_files) / 20)
+                    + (sum(file_dict.get("size", 0) or 0 for file_dict in mount_files) / (1024 * 1024)),
+                }
+            )
+    return sorted(folder_weights, key=operator.itemgetter("folder_weight"), reverse=True)
+
+
+def _get_consolidate_target(files_in_folder, folder_weights, disk_free, folder_path):
+    if len(folder_weights) <= 1:
+        return None
+    total_folder_size = sum(d["size"] for d in files_in_folder)
+    target_mount = next(
+        (weight["mount_point"] for weight in folder_weights if disk_free[weight["mount_point"]] >= total_folder_size),
+        None,
+    )
+    if target_mount:
+        return target_mount
+
+    most_free = max(disk_free.values())
+    mount_point = next(k for k, v in disk_free.items() if v == most_free)
+    if disk_free[mount_point] >= total_folder_size:
+        return mount_point
+    log.warning("Could not determine target mount %s (not enough planned free space)", folder_path)
+    return None
+
+
+def _rebin_folder(files_in_folder, folder_path, disk_free):
+    folder_weights = _get_folder_weights(files_in_folder, disk_free)
+    if len(folder_weights) <= 1:
+        return files_in_folder, []
+
+    target_mount = _get_consolidate_target(files_in_folder, folder_weights, disk_free, folder_path)
+    if not target_mount:
+        return files_in_folder, []
 
     untouched = []
     rebinned = []
+    for file_dict in files_in_folder:
+        current_mount = file_dict["mount"]
+        if current_mount == target_mount:
+            untouched.append(file_dict)
+            continue
+        disk_free[current_mount] += file_dict["size"]
+        disk_free[target_mount] -= file_dict["size"]
+        file_dict["mount"] = current_mount
+        file_dict["from_path"] = file_dict["path"]
+        relative_file_path = file_dict["path"].replace(current_mount, "", 1)
+        file_dict["path"] = os.path.join(target_mount, relative_file_path.lstrip(os.sep))
+        rebinned.append(file_dict)
+    return untouched, rebinned
+
+
+def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
+    total_size = sum(d["size"] or 0 for d in all_files)
+    print(strings.file_size(total_size), len(all_files), "files total")
+    disk_free = {
+        src_mount: shutil.disk_usage(src_mount).free for src_mount in sorted(args.targets, key=len, reverse=True)
+    }
+    folder_files = _get_folder_files(disk_free, all_files)
+    untouched = []
+    rebinned = []
     for folder_path, files_in_folder in folder_files.items():
-        folder_weights = []
-        for mount_point in disk_free.keys():
-            folder_file_count = 0
-            folder_file_size = 0
-            for file_dict in files_in_folder:
-                if file_dict["mount"] == mount_point:
-                    folder_file_count += 1
-                    folder_file_size += file_dict.get("size", 0) or 0
-            if folder_file_count:
-                folder_weights.append(
-                    {
-                        "mount_point": mount_point,
-                        "folder_weight": (folder_file_count / 20) + (folder_file_size / (1024 * 1024)),
-                    }
-                )
-
-        folder_weights = sorted(folder_weights, key=operator.itemgetter("folder_weight"), reverse=True)
-        if len(folder_weights) <= 1:  # no need to move any files
-            untouched.extend(files_in_folder)
-            continue
-
-        # log.info("Binning %s", folder_path)
-        # log.debug(folder_weights)
-
-        target_mount = None
-        total_folder_size = sum(d["size"] for d in files_in_folder)
-        for d in folder_weights:
-            mount_point = d["mount_point"]
-            if disk_free[mount_point] >= total_folder_size:
-                target_mount = mount_point
-                break
-
-        if not target_mount:
-            most_free = max(disk_free.values())
-            mount_point = next(k for k, v in disk_free.items() if v == most_free)
-            if disk_free[mount_point] >= total_folder_size:
-                target_mount = mount_point
-
-        if not target_mount:
-            log.warning("Could not determine target mount %s (not enough planned free space)", folder_path)
-            untouched.extend(files_in_folder)
-            continue
-
-        for file_dict in files_in_folder:
-            current_mount = file_dict["mount"]
-
-            if current_mount == target_mount:
-                untouched.append(file_dict)
-            else:
-                # Move file to target mount (virtually)
-                disk_free[current_mount] += file_dict["size"]
-                disk_free[target_mount] -= file_dict["size"]
-
-                file_dict["mount"] = current_mount
-                file_dict["from_path"] = file_dict["path"]
-                relative_file_path = file_dict["path"].replace(current_mount, "", 1)
-                file_dict["path"] = os.path.join(target_mount, relative_file_path.lstrip(os.sep))
-
-                rebinned.append(file_dict)
+        folder_untouched, folder_rebinned = _rebin_folder(files_in_folder, folder_path, disk_free)
+        untouched.extend(folder_untouched)
+        rebinned.extend(folder_rebinned)
 
     return untouched, rebinned
 

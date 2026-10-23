@@ -84,17 +84,15 @@ def select_grouped_info(args, html_content):
         yield args.separator.join(texts)
 
 
-def get_text(args, url):
-    if not args.local_html and not url.startswith("http") and Path(url).is_file():
-        text = fs_add_metadata.munge_book_tags_fast(url)
-        if text:
-            tags = text.get("tags")
-            if tags:
-                yield tags.replace(";", "\n")
-        return None
+def _get_local_book_text(url):
+    text = fs_add_metadata.munge_book_tags_fast(url)
+    if text:
+        tags = text.get("tags")
+        if tags:
+            yield tags.replace(";", "\n")
 
-    select_fn = select_grouped_info if args.selectors else select_all
 
+def _select_text(args, select_fn, url):
     if args.selenium:
         web.selenium_get_page(args, url)
 
@@ -105,23 +103,32 @@ def get_text(args, url):
         else:
             for markup in web.infinite_scroll(args.driver):
                 yield from select_fn(args, markup)
-    else:
-        if args.local_html:
-            markup = Path(url).read_text()
-            url = "file://" + url
-        else:
-            try:
-                r = web.session.get(url, timeout=120)
-            except Exception:
-                log.exception("Could not get a valid response from the server")
-                return None
-            if r.status_code == HTTPStatus.NOT_FOUND:
-                log.warning("404 Not Found Error: %s", url)
-                return None
-            r.raise_for_status()
-            markup = r.content
+        return
 
-        yield from select_fn(args, markup)
+    if args.local_html:
+        markup = Path(url).read_text()
+    else:
+        try:
+            response = web.session.get(url, timeout=120)
+        except Exception:
+            log.exception("Could not get a valid response from the server")
+            return
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            log.warning("404 Not Found Error: %s", url)
+            return
+        response.raise_for_status()
+        markup = response.content
+
+    yield from select_fn(args, markup)
+
+
+def get_text(args, url):
+    if not args.local_html and not url.startswith("http") and Path(url).is_file():
+        yield from _get_local_book_text(url)
+        return None
+
+    select_fn = select_grouped_info if args.selectors else select_all
+    yield from _select_text(args, select_fn, url)
 
     web.sleep(args)
 

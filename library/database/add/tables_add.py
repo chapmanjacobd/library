@@ -49,7 +49,8 @@ def table_add(args, path):
         transpose=args.transpose,
         skip_headers=args.skip_headers,
     )
-    for i, (df_name, df) in enumerate(dfs):
+    for i, (df_name, input_df) in enumerate(dfs):
+        df = input_df
         if args.table_rename:
             table = args.table_rename.replace("%n", df_name).replace("%i", str(i))
         elif args.table_name == "stdin":

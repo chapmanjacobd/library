@@ -61,84 +61,77 @@ def parse_args():
     return args
 
 
+def _get_output_path(args, input_path):
+    if args.output_path:
+        return Path(args.output_path)
+
+    params: list[str] = []
+    if args.autolevels:
+        params.append("A")
+    if args.autocontrast:
+        params.append(f"AC{', '.join(args.autocontrast)}")
+        if not args.autotone:
+            params.append("nT")
+
+    for option, prefix in (("contrast", "c"), ("brightness", "b"), ("color", "C"), ("sharpness", "s")):
+        value = getattr(args, option)
+        if value != DEFAULT_IMAGE_ADJUSTMENT:
+            params.append(f"{prefix}{value}")
+
+    params.extend(method for method in ["flip", "grayscale", "invert", "mirror"] if getattr(args, method))
+    if args.posterize < DEFAULT_POSTERIZE_BITS:
+        params.append(f"p{args.posterize}")
+
+    return input_path.with_suffix("." + ".".join(params) + ".pdf")
+
+
+def _process_image(args, img, image_enhance, image_ops):
+    if args.autocontrast:
+        autocontrast = tuple(float(s) for s in args.autocontrast.split(","))
+        if len(autocontrast) == 1:
+            autocontrast *= 2
+        img = image_ops.autocontrast(img, autocontrast, preserve_tone=args.autotone)  # type: ignore
+
+    if args.autolevels:
+        img = image_ops.equalize(img)
+
+    for method in ["Brightness", "Contrast", "Color", "Sharpness"]:
+        value = getattr(args, method.lower())
+        if value != DEFAULT_IMAGE_ADJUSTMENT:
+            enhancer = getattr(image_enhance, method)(img)
+            img = enhancer.enhance(value / DEFAULT_IMAGE_ADJUSTMENT)
+
+    if args.posterize < DEFAULT_POSTERIZE_BITS:
+        img = image_ops.posterize(img, args.posterize)
+
+    for method in ["flip", "grayscale", "invert", "mirror"]:
+        if getattr(args, method):
+            img = getattr(image_ops, method)(img)
+
+    out_img_bytes = io.BytesIO()
+    img.save(out_img_bytes, format="JPEG")
+    return out_img_bytes.getvalue()
+
+
 def process_path(args, input_path):
     import img2pdf, ocrmypdf, pdf2image
     from PIL import ImageEnhance, ImageOps
     from tqdm import tqdm
 
     input_path = Path(input_path)
-    output_path = Path(args.output_path) if args.output_path else None
-
-    if output_path is None:
-        params: list[str] = []
-        if args.autolevels:
-            params.append("A")
-        if args.autocontrast:
-            params.append(f"AC{', '.join(args.autocontrast)}")
-            if not args.autotone:
-                params.append("nT")
-
-        if args.contrast != DEFAULT_IMAGE_ADJUSTMENT:
-            params.append(f"c{args.contrast}")
-        if args.brightness != DEFAULT_IMAGE_ADJUSTMENT:
-            params.append(f"b{args.brightness}")
-        if args.color != DEFAULT_IMAGE_ADJUSTMENT:
-            params.append(f"C{args.color}")
-        if args.sharpness != DEFAULT_IMAGE_ADJUSTMENT:
-            params.append(f"s{args.sharpness}")
-
-        for method in ["flip", "grayscale", "invert", "mirror"]:
-            val = getattr(args, method)
-            if val:
-                params.append(method)
-
-        if args.posterize < DEFAULT_POSTERIZE_BITS:
-            params.append(f"p{args.posterize}")
-
-        suffix = "." + ".".join(params) + ".pdf"
-        output_path = input_path.with_suffix(suffix)
-
+    output_path = _get_output_path(args, input_path)
     if args.simulate:
         print("pdf-edit", input_path, output_path)
         return
 
     input_images = pdf2image.convert_from_path(input_path)
     print(f"Loaded {len(input_images)} pages")
-
-    output_images: list[bytes] = []
-    for img in tqdm(input_images, unit="pages"):
-        if args.autocontrast:
-            autocontrast = tuple(float(s) for s in args.autocontrast.split(","))
-            if len(autocontrast) == 1:
-                autocontrast *= 2  # duplicate the item; make the tuple size of two
-            img = ImageOps.autocontrast(img, autocontrast, preserve_tone=args.autotone)  # type: ignore
-
-        if args.autolevels:
-            img = ImageOps.equalize(img)
-
-        for method in ["Brightness", "Contrast", "Color", "Sharpness"]:
-            val = getattr(args, method.lower())
-            if val != DEFAULT_IMAGE_ADJUSTMENT:
-                enhancer = getattr(ImageEnhance, method)(img)
-                img = enhancer.enhance(val / DEFAULT_IMAGE_ADJUSTMENT)
-
-        if args.posterize < DEFAULT_POSTERIZE_BITS:
-            img = ImageOps.posterize(img, args.posterize)
-
-        for method in ["flip", "grayscale", "invert", "mirror"]:
-            val = getattr(args, method)
-            if val:
-                img = getattr(ImageOps, method)(img)
-
-        out_img_bytes = io.BytesIO()
-        img.save(out_img_bytes, format="JPEG")
-        output_images.append(out_img_bytes.getvalue())
+    output_images = [_process_image(args, img, ImageEnhance, ImageOps) for img in tqdm(input_images, unit="pages")]
 
     if input_path != output_path:
         output_path = devices.clobber_new_file(args, output_path)
 
     print(f"Saving {output_path}")
-
     with open(output_path, "wb") as outf:
         img2pdf.convert(*output_images, outputstream=outf)
 

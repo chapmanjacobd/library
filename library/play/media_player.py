@@ -61,31 +61,39 @@ def calculate_duration(args, m) -> tuple[int, int]:
         start = playhead
 
     duration = m.get("duration", 20 * 60)
-    if args.start:
-        if args.start.isnumeric() and int(args.start) > 0:
-            start = int(args.start)
-        elif "%" in args.start:
-            start_percent = int(args.start.rstrip("%"))
-            start = int(duration * start_percent / 100)
-        elif playhead and any([end == 0, end > minimum_duration]):
-            start = playhead
-        elif args.start == "wadsworth":
-            start = duration * 0.3
-        else:
-            start = int(args.start)
-    if args.end:
-        if args.end == "dawsworth":
-            end = duration * 0.65
-        elif "%" in args.end:
-            end_percent = int(args.end.rstrip("%"))
-            end = int(duration * end_percent / 100)
-        elif "+" in args.end:
-            end = int(args.start) + int(args.end)
-        else:
-            end = int(args.end)
+    start = _calculate_start(args, start, end, duration, playhead, minimum_duration)
+    end = _calculate_end(args, end, duration)
 
     log.debug("calculate_duration: %s -- %s", start, end)
     return start, end
+
+
+def _calculate_start(args, start, end, duration, playhead, minimum_duration):
+    if not args.start:
+        return start
+    if args.start.isnumeric() and int(args.start) > 0:
+        return int(args.start)
+    if "%" in args.start:
+        start_percent = int(args.start.rstrip("%"))
+        return int(duration * start_percent / 100)
+    if playhead and any([end == 0, end > minimum_duration]):
+        return playhead
+    if args.start == "wadsworth":
+        return duration * 0.3
+    return int(args.start)
+
+
+def _calculate_end(args, end, duration):
+    if not args.end:
+        return end
+    if args.end == "dawsworth":
+        return duration * 0.65
+    if "%" in args.end:
+        end_percent = int(args.end.rstrip("%"))
+        return int(duration * end_percent / 100)
+    if "+" in args.end:
+        return int(args.start) + int(args.end)
+    return int(args.end)
 
 
 def listen_chromecast(args, m: dict) -> subprocess.CompletedProcess | None:
@@ -401,87 +409,100 @@ class MediaPrefetcher:
 
     def infer_command(self, m) -> tuple[list[str], bool]:
         args = self.args
-
         player = generic_player()
-        player_need_sleep = True
 
         if getattr(args, "override_player", False):
-            player = [*args.override_player]
-            player_need_sleep = False
+            return [*args.override_player], False
+        if getattr(args, "folders", False):
+            return player, True
+        if args.action == SC.read:
+            return self._read_player(m, player)
 
-        elif getattr(args, "folders", False):
-            player_need_sleep = True
-
-        elif args.action in (SC.read):
-            if system() == "Linux":
-                player_path = find_xdg_application(m["path"])
-                if player_path:
-                    player_need_sleep = False
-                    player = [player_path]
-
-        else:
-            mpv = which("mpv.com") or which("mpv")
-            if mpv:
-                player_need_sleep = False
-                player = [mpv]
-                if args.action in (SC.listen):
-                    player.extend(
-                        [f"--input-ipc-server={args.mpv_socket}", "--video=no", "--keep-open=no", "--really-quiet=yes"]
-                    )
-                elif args.action in (SC.watch):
-                    player.extend(["--force-window=yes", "--really-quiet=yes"])
-
-                if args.fullscreen:
-                    player.extend(["--fullscreen=yes"])
-                elif args.fullscreen is False:
-                    player.extend(["--fullscreen=no"])
-
-                if getattr(args, "loop", False):
-                    player.extend(["--loop-file=inf"])
-
-                if getattr(args, "pause", False):
-                    player.extend(["--pause=yes"])
-
-                if getattr(args, "crop", None):
-                    player.extend(["--panscan=1.0"])
-
-                if getattr(args, "start", False):
-                    player.extend(["--save-position-on-quit=no"])
-
-                if args.action == SC.watch and m.get("subtitle_count") is not None:
-                    if m["subtitle_count"] > 0:
-                        player.extend(args.player_args_sub)
-                    elif m["size"] > 500 * 1000000:  # 500 MB
-                        log.debug("Skipping subs player_args: size")
-                    else:
-                        player.extend(args.player_args_no_sub)
-
-                if getattr(args, "volume", None) is not None:
-                    player.extend([f"--volume={args.volume}"])
-
-                if getattr(args, "mute", False):
-                    player.extend(["--mute"])
-
-                if m["path"] and m["path"].startswith("http"):
-                    player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
-
-                if args.action in (SC.watch, SC.listen, SC.search):
-                    try:
-                        start, end = calculate_duration(args, m)
-                    except Exception as excinfo:
-                        log.info(excinfo)
-                    else:
-                        if end != 0:
-                            if start != 0:
-                                player.extend([f"--start={start}"])
-                            if end != m["duration"]:
-                                player.extend([f"--end={end}"])
-
-                if getattr(args, "interdimensional_cable", False):
-                    player.extend(["--save-position-on-quit=no", "--resume-playback=no"])
+        mpv_player = self._mpv_player(m)
+        if mpv_player is not None:
+            return mpv_player, False
 
         log.debug("player: %s", player)
-        return player, player_need_sleep
+        return player, True
+
+    def _read_player(self, m, player):
+        if system() == "Linux":
+            player_path = find_xdg_application(m["path"])
+            if player_path:
+                player = [player_path]
+                return player, False
+        return player, True
+
+    def _mpv_player(self, m):
+        mpv = which("mpv.com") or which("mpv")
+        if not mpv:
+            return None
+
+        player = [mpv]
+        self._add_mpv_action_args(player)
+        self._add_mpv_display_args(player)
+        self._add_mpv_media_args(player, m)
+        self._add_mpv_duration_args(player, m)
+        return player
+
+    def _add_mpv_action_args(self, player):
+        args = self.args
+        if args.action == SC.listen:
+            player.extend(
+                [f"--input-ipc-server={args.mpv_socket}", "--video=no", "--keep-open=no", "--really-quiet=yes"]
+            )
+        elif args.action == SC.watch:
+            player.extend(["--force-window=yes", "--really-quiet=yes"])
+
+    def _add_mpv_display_args(self, player):
+        args = self.args
+        if args.fullscreen:
+            player.extend(["--fullscreen=yes"])
+        elif args.fullscreen is False:
+            player.extend(["--fullscreen=no"])
+
+        if getattr(args, "loop", False):
+            player.extend(["--loop-file=inf"])
+        if getattr(args, "pause", False):
+            player.extend(["--pause=yes"])
+        if getattr(args, "crop", None):
+            player.extend(["--panscan=1.0"])
+        if getattr(args, "start", False):
+            player.extend(["--save-position-on-quit=no"])
+        if getattr(args, "volume", None) is not None:
+            player.extend([f"--volume={args.volume}"])
+        if getattr(args, "mute", False):
+            player.extend(["--mute"])
+
+    def _add_mpv_media_args(self, player, m):
+        args = self.args
+        if args.action == SC.watch and m.get("subtitle_count") is not None:
+            if m["subtitle_count"] > 0:
+                player.extend(args.player_args_sub)
+            elif m["size"] > 500 * 1000000:  # 500 MB
+                log.debug("Skipping subs player_args: size")
+            else:
+                player.extend(args.player_args_no_sub)
+
+        if m["path"] and m["path"].startswith("http"):
+            player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
+
+    def _add_mpv_duration_args(self, player, m):
+        args = self.args
+        if args.action in (SC.watch, SC.listen, SC.search):
+            try:
+                start, end = calculate_duration(args, m)
+            except Exception as excinfo:
+                log.info(excinfo)
+            else:
+                if end:
+                    if start:
+                        player.extend([f"--start={start}"])
+                    if end != m["duration"]:
+                        player.extend([f"--end={end}"])
+
+        if getattr(args, "interdimensional_cable", False):
+            player.extend(["--save-position-on-quit=no", "--resume-playback=no"])
 
     def prep_media(self, m: dict):
         t = log_utils.Timer()

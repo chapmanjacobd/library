@@ -398,20 +398,18 @@ def get_fs_duplicates(args) -> list[dict]:
     return dup_media
 
 
-def dedupe_media() -> None:
-    args = parse_args()
-
+def _get_duplicates(args):
     if args.strategy == "extractor_id":
-        duplicates = get_id_duplicates(args)
-    elif args.strategy == "title":
-        duplicates = get_title_duplicates(args)
-    elif args.strategy == "duration":
-        duplicates = get_duration_duplicates(args)
-    elif args.profile == DBType.audio:
-        duplicates = get_music_duplicates(args)
-    elif args.profile == DBType.filesystem:
-        duplicates = get_fs_duplicates(args)
-    elif args.profile == DBType.image:
+        return get_id_duplicates(args)
+    if args.strategy == "title":
+        return get_title_duplicates(args)
+    if args.strategy == "duration":
+        return get_duration_duplicates(args)
+    if args.profile == DBType.audio:
+        return get_music_duplicates(args)
+    if args.profile == DBType.filesystem:
+        return get_fs_duplicates(args)
+    if args.profile == DBType.image:
         print(
             """
         You should use `czkawka` or `cbird` instead:
@@ -423,22 +421,23 @@ def dedupe_media() -> None:
             $ cbird -i.algos 1 -update
             $ cbird -dups -select-result -sort-rev resolution -chop -nuke  # exact duplicates
             $ cbird -p.dht 1 -similar -select-result -sort-rev resolution -chop -nuke  # similar photos
-        """,
+        """
         )
-        return
-    else:
-        raise argparse.ArgumentError(
-            None, "No dedupe key selected. Use --audio OR --id OR --title OR --same-duration OR --filesystem"
-        )
+        return None
+    raise argparse.ArgumentError(
+        None, "No dedupe key selected. Use --audio OR --id OR --title OR --same-duration OR --filesystem"
+    )
 
+
+def _filter_duplicate_candidates(args, duplicates):
     deletion_candidates = []
     deletion_paths = []
-    for d in duplicates:
+    for duplicate in duplicates:
         if args.dirname and (
             difflib.SequenceMatcher(
                 None,
-                path_utils.parent(d["keep_path"]),
-                path_utils.parent(d["duplicate_path"]),
+                path_utils.parent(duplicate["keep_path"]),
+                path_utils.parent(duplicate["duplicate_path"]),
             ).ratio()
             < args.min_similarity_ratio
         ):
@@ -447,8 +446,8 @@ def dedupe_media() -> None:
         if args.basename and (
             difflib.SequenceMatcher(
                 None,
-                path_utils.basename(d["keep_path"]),
-                path_utils.basename(d["duplicate_path"]),
+                path_utils.basename(duplicate["keep_path"]),
+                path_utils.basename(duplicate["duplicate_path"]),
             ).ratio()
             < args.min_similarity_ratio
         ):
@@ -456,29 +455,30 @@ def dedupe_media() -> None:
 
         if any(
             [
-                d["keep_path"] in deletion_paths or d["duplicate_path"] in deletion_paths,
-                d["keep_path"] == d["duplicate_path"],
+                duplicate["keep_path"] in deletion_paths or duplicate["duplicate_path"] in deletion_paths,
+                duplicate["keep_path"] == duplicate["duplicate_path"],
             ],
         ):
             continue
 
-        if not consts.PYTEST_RUNNING and not Path(d["keep_path"]).resolve().exists():
+        if not consts.PYTEST_RUNNING and not Path(duplicate["keep_path"]).resolve().exists():
             continue
 
-        deletion_paths.append(d["duplicate_path"])
-        deletion_candidates.append(d)
-    duplicates = deletion_candidates
+        deletion_paths.append(duplicate["duplicate_path"])
+        deletion_candidates.append(duplicate)
+    return deletion_candidates
 
+
+def _delete_duplicates(args, duplicates):
     if not duplicates:
         log.error("No duplicates found")
         raise SystemExit(1)
     if consts.PYTEST_RUNNING:
-        for d in duplicates:
-            db_media.mark_media_deleted(args, d["duplicate_path"])
+        for duplicate in duplicates:
+            db_media.mark_media_deleted(args, duplicate["duplicate_path"])
         return
 
-    tbl = deepcopy(duplicates)
-    tbl = tbl[: int(args.limit)]
+    tbl = deepcopy(duplicates)[: int(args.limit)]
     media_printer.media_printer(args, tbl, units="duplicates", media_len=len(duplicates))
 
     try:
@@ -490,22 +490,31 @@ def dedupe_media() -> None:
     except ModuleNotFoundError:
         log.info("Skipping CSV export because pandas is not installed")
 
-    duplicates_size = sum(filter(None, [d["duplicate_size"] for d in duplicates]))
+    duplicates_size = sum(filter(None, [duplicate["duplicate_size"] for duplicate in duplicates]))
     print(f"Approx. space savings: {strings.file_size(duplicates_size // 2)}")
 
     if duplicates and (args.force or devices.confirm("Delete duplicates?")):  # type: ignore
         log.info("Deleting...")
-        for d in duplicates:
-            path = d["duplicate_path"]
+        for duplicate in duplicates:
+            path = duplicate["duplicate_path"]
             if path.startswith("http"):
                 pass
             elif args.dedupe_cmd:
                 if args.simulate:
-                    print("Would run", args.dedupe_cmd, d["duplicate_path"], d["keep_path"])
+                    print("Would run", args.dedupe_cmd, duplicate["duplicate_path"], duplicate["keep_path"])
                 else:
                     processes.cmd(
-                        *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]
-                    )  # follows rmlint interface
+                        *shlex.split(args.dedupe_cmd), duplicate["duplicate_path"], duplicate["keep_path"]
+                    )
             else:
                 shell_utils.trash(args, path, detach=False)
             db_media.mark_media_deleted(args, path)
+
+
+def dedupe_media() -> None:
+    args = parse_args()
+    duplicates = _get_duplicates(args)
+    if duplicates is None:
+        return
+    duplicates = _filter_duplicate_candidates(args, duplicates)
+    _delete_duplicates(args, duplicates)

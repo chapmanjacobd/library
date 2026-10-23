@@ -24,8 +24,8 @@ def find_missing_modules(paths):
     missing_modules = set()
     for path in paths:
         modules = extract_imports(path)
-        for module in modules:
-            module = module.split(".")[0]
+        for raw_module in modules:
+            module = raw_module.split(".")[0]
             if module in checked_modules:
                 continue
 

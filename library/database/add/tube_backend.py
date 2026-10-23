@@ -22,15 +22,13 @@ from library.utils.processes import FFProbe
 
 MAX_CORRUPTION_SCORE = 7
 
-yt_dlp = None
 yt_archive = set()
 
 
+@functools.cache
 def load_module_level_yt_dlp() -> ModuleType:
-    global yt_dlp
+    import yt_dlp
 
-    if yt_dlp is None:
-        import yt_dlp
     return yt_dlp
 
 
@@ -125,35 +123,27 @@ def _is_supported_cached(url) -> bool:
     return any(ie.suitable(url) and ie.IE_NAME != "generic" for ie in is_supported.yt_ies)
 
 
-playlists_of_playlists = set()
-added_media_count = 0
+class _PlaylistState:
+    def __init__(self):
+        self.playlists_of_playlists = set()
+        self.added_media_count = 0
 
 
-def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, retrieved_paths=None) -> None:
-    if retrieved_paths is None:
-        retrieved_paths = set()
-    if playlist_path in retrieved_paths:
-        return
-    retrieved_paths.add(playlist_path)
+_playlist_state = _PlaylistState()
 
-    yt_dlp = load_module_level_yt_dlp()
-    t = Timer()
 
+def _archive_postprocessor(yt_dlp, args, playlist_path, ydl_opts, playlist_root, retrieved_paths, t, state):
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
 
     class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
         def run(self, info) -> tuple[list, dict]:  # pylint: disable=arguments-renamed
-            global added_media_count
-
             if info:
                 webpath = iterables.safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
                 extractor_key = "ydl_" + (
                     iterables.safe_unpack(info.get("ie_key"), info.get("extractor_key"), info.get("extractor")) or ""
                 )
 
-                # TODO: webpage_url_basename seems like a weird property to check
-                # or is this just extra guarding for YouTube behavior
                 if webpath != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if playlist_root:
                         if not info.get("playlist_id") or webpath == playlist_path:
@@ -162,10 +152,10 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, ret
                         log.debug("playlists.add %s", t.elapsed())
 
                     if args.ignore_errors:
-                        if webpath in playlists_of_playlists and not playlist_root:
-                            raise ExistingPlaylistVideoReached  # prevent infinite bug
-                    elif webpath in playlists_of_playlists:
-                        raise ExistingPlaylistVideoReached  # prevent infinite bug
+                        if webpath in state.playlists_of_playlists and not playlist_root:
+                            raise ExistingPlaylistVideoReached
+                    elif webpath in state.playlists_of_playlists:
+                        raise ExistingPlaylistVideoReached
 
                     get_playlist_metadata(
                         args,
@@ -173,9 +163,10 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, ret
                         ydl_opts,
                         playlist_root=False,
                         retrieved_paths=retrieved_paths,
+                        _state=state,
                     )
                     log.debug("get_playlist_metadata %s", t.elapsed())
-                    playlists_of_playlists.add(webpath)
+                    state.playlists_of_playlists.add(webpath)
                     return [], info
 
                 entry = objects.dumbcopy(info)
@@ -186,28 +177,42 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, ret
                     if not info.get("playlist_id") or webpath == playlist_path:
                         log.warning("Importing playlist-less media %s", playlist_path)
                     else:
-                        # add sub-playlist
                         entry["playlists_id"] = db_playlists.add(args, playlist_path, info, extractor_key=extractor_key)
                         log.debug("playlists.add2 %s", t.elapsed())
 
                     db_media.playlist_media_add(args, webpath, entry)  # type: ignore
                     log.debug("media.playlist_media_add %s", t.elapsed())
 
-                    added_media_count += 1
-                    if added_media_count > 1:
-                        printing.print_overwrite(f"[{playlist_path}] Added {added_media_count} media")
+                    state.added_media_count += 1
+                    if state.added_media_count > 1:
+                        printing.print_overwrite(f"[{playlist_path}] Added {state.added_media_count} media")
 
             return [], info
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.add_post_processor(AddToArchivePP(), when="pre_process")
+    return AddToArchivePP, ExistingPlaylistVideoReached
 
-        log.debug("yt-dlp initialized %s", t.elapsed())
-        count_before_extract = added_media_count
-        try:
-            pl = ydl.extract_info(playlist_path, download=False, process=True)
-            log.debug("ydl.extract_info done %s", t.elapsed())
-        except yt_dlp.DownloadError:
+
+def _extract_playlist_info(ydl, yt_dlp, args, playlist_path, count_before_extract, error_type, t, state):
+    try:
+        playlist = ydl.extract_info(playlist_path, download=False, process=True)
+        log.debug("ydl.extract_info done %s", t.elapsed())
+    except yt_dlp.DownloadError:
+        if args.safe:
+            log.error("DownloadError skipping %s", playlist_path)
+        else:
+            log.warning(
+                "Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)"
+            )
+            db_playlists.save_undownloadable(args, playlist_path)
+        return False
+    except error_type:
+        if state.added_media_count > count_before_extract:
+            sys.stderr.write("\n")
+        db_playlists.log_problem(args, playlist_path)
+    else:
+        if state.added_media_count > count_before_extract:
+            sys.stderr.write("\n")
+        if not playlist:
             if args.safe:
                 log.error("DownloadError skipping %s", playlist_path)
             else:
@@ -215,28 +220,42 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, ret
                     "Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)"
                 )
                 db_playlists.save_undownloadable(args, playlist_path)
-            return
-        except ExistingPlaylistVideoReached:
-            if added_media_count > count_before_extract:
-                sys.stderr.write("\n")
-            db_playlists.log_problem(args, playlist_path)
-        else:
-            if added_media_count > count_before_extract:
-                sys.stderr.write("\n")
-            if not pl:
-                if args.safe:
-                    log.error("DownloadError skipping %s", playlist_path)
-                else:
-                    log.warning(
-                        "Could not scrape playlist metadata successfully (will try again [in a few days] during tubeupdate)"
-                    )
-                    db_playlists.save_undownloadable(args, playlist_path)
+    return True
 
-        if args.action == consts.SC.tube_update:
-            if added_media_count > count_before_extract:
-                db_playlists.update_more_frequently(args, playlist_path)
-            else:
-                db_playlists.update_less_frequently(args, playlist_path)
+
+def _update_playlist_frequency(args, playlist_path, count_before_extract, state):
+    if args.action != consts.SC.tube_update:
+        return
+    if state.added_media_count > count_before_extract:
+        db_playlists.update_more_frequently(args, playlist_path)
+    else:
+        db_playlists.update_less_frequently(args, playlist_path)
+
+
+def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, retrieved_paths=None, _state=None) -> None:
+    if retrieved_paths is None:
+        retrieved_paths = set()
+    if playlist_path in retrieved_paths:
+        return
+    retrieved_paths.add(playlist_path)
+
+    state = _playlist_state if _state is None else _state
+    yt_dlp = load_module_level_yt_dlp()
+    t = Timer()
+
+    AddToArchivePP, ExistingPlaylistVideoReached = _archive_postprocessor(
+        yt_dlp, args, playlist_path, ydl_opts, playlist_root, retrieved_paths, t, state
+    )
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.add_post_processor(AddToArchivePP(), when="pre_process")
+
+        log.debug("yt-dlp initialized %s", t.elapsed())
+        count_before_extract = state.added_media_count
+        if _extract_playlist_info(
+            ydl, yt_dlp, args, playlist_path, count_before_extract, ExistingPlaylistVideoReached, t, state
+        ):
+            _update_playlist_frequency(args, playlist_path, count_before_extract, state)
 
 
 def yt_subs_config(args):
@@ -408,47 +427,52 @@ def log_error(ydl_log, webpath):
     return DLStatus.UNKNOWN_ERROR, ydl_errors_txt
 
 
-def download(args, m) -> bool:
-    yt_dlp = load_module_level_yt_dlp()
+class _DownloadLogger:
+    def __init__(self, ydl_log):
+        self.ydl_log = ydl_log
 
-    ydl_log = {"error": [], "warning": [], "info": []}
+    def debug(self, msg):
+        if not msg.startswith("[debug] "):
+            self.info(msg)
 
-    class DictLogger:
-        def debug(self, msg):
-            if msg.startswith("[debug] "):
-                pass
-            else:
-                self.info(msg)
+    def info(self, msg):
+        self.ydl_log["info"].append(msg)
 
-        def info(self, msg):
-            ydl_log["info"].append(msg)
+    def warning(self, msg):
+        self.ydl_log["warning"].append(msg)
 
-        def warning(self, msg):
-            ydl_log["warning"].append(msg)
+    def error(self, msg):
+        self.ydl_log["error"].append(msg)
 
-        def error(self, msg):
-            ydl_log["error"].append(msg)
 
-    ignoreerrors = False
-    if m.get("time_modified") and m.get("time_modified") > 0:
-        ignoreerrors = True
-
-    def out_dir(p):
-        return str(
-            Path(
-                args.prefix,
-                "%(extractor_key,extractor,ie_key).220B",
-                "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id,webpage_url_basename).220B",
-                "%(album,playlist_title,playlist,playlist_id).220B",
-                p,
-            )
+def _download_output_dir(args, path):
+    return str(
+        Path(
+            args.prefix,
+            "%(extractor_key,extractor,ie_key).220B",
+            "%(uploader,uploader_id,channel,channel_id,creator,artist,author,playlist_uploader,playlist_uploader_id,playlist_channel,playlist_channel_id,webpage_url_basename).220B",
+            "%(album,playlist_title,playlist,playlist_id).220B",
+            path,
         )
+    )
 
+
+def _yt_cli_to_api(yt_dlp, opts):
+    default = yt_dlp.parse_options([]).ydl_opts
+    supplied = yt_dlp.parse_options(opts).ydl_opts
+    diff = {key: value for key, value in supplied.items() if default[key] != value}
+    if diff.get("postprocessors"):
+        diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default["postprocessors"]]
+    return diff
+
+
+def _build_download_options(args, m, yt_dlp, ydl_log):
+    ignoreerrors = bool(m.get("time_modified") and m.get("time_modified") > 0)
     func_opts = {
         "ignoreerrors": ignoreerrors,
         "extractor_args": {"youtubetab": {"skip": ["authcheck"]}, "youtube": {"skip": ["hls", "dash"]}},
         "check_formats": "selected",
-        "logger": DictLogger(),
+        "logger": _DownloadLogger(ydl_log),
         "skip_download": False,
         "postprocessors": [{"key": "FFmpegMetadata"}],
         "extract_flat": False,
@@ -464,56 +488,46 @@ def download(args, m) -> bool:
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
-            "default": out_dir("%(id).220B.%(ext)s"),
-            "chapter": out_dir("%(id).220B.%(section_number)03d.%(ext)s"),
+            "default": _download_output_dir(args, "%(id).220B.%(ext)s"),
+            "chapter": _download_output_dir(args, "%(id).220B.%(section_number)03d.%(ext)s"),
         },
         "outtmpl_na_placeholder": "",
     }
-
     if args.verbose >= consts.LOG_DEBUG:
         func_opts["progress_hooks"] = [
             lambda d: log.debug(
                 f"downloading {d.get('_percent_str')} {d.get('_speed_str')} {d.get('downloaded_bytes')} bytes"
             )
         ]
-
     if args.profile != DBType.audio:
         func_opts["subtitlesformat"] = "srt/best"
         func_opts["subtitleslangs"] = args.subtitle_languages
         func_opts |= yt_subs_config(args)
         func_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
-    def yt_cli_to_api(opts):
-        default = yt_dlp.parse_options([]).ydl_opts
-        supplied = yt_dlp.parse_options(opts).ydl_opts
-        diff = {k: v for k, v in supplied.items() if default[k] != v}
-        if diff.get("postprocessors"):
-            diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default["postprocessors"]]
-        return diff
-
-    extra_args = yt_cli_to_api(getattr(args, "unk", []))
+    extra_args = _yt_cli_to_api(yt_dlp, getattr(args, "unk", []))
     ydl_opts = tube_opts(
         args,
         func_opts=func_opts | extra_args,
         playlist_opts=m.get("extractor_config", "{}"),
     )
+    return ydl_opts, extra_args
 
+
+def _set_download_filters(args, yt_dlp, ydl_opts):
     match_filters = []
-    match_filter_user_config = ydl_opts.get("match_filter")
-    if match_filter_user_config is not None:
-        match_filters.append(match_filter_user_config)
-
+    user_filter = ydl_opts.get("match_filter")
+    if user_filter is not None:
+        match_filters.append(user_filter)
     if not args.live:
         match_filters.append("live_status=?not_live")
-
     if args.small:
-        if match_filter_user_config is None:
+        if user_filter is None:
             match_filters.append("duration >? 59 & duration <? 14399")
         ydl_opts["format_sort"] = ["res:576", "channels:2"]
         ydl_opts["format"] = (
             "(bestvideo[filesize<2G]+bestaudio/best[filesize<2G]/bestvideo*+bestaudio/best)[format_id!$=-drc][dynamic_range!^=HDR]/bestvideo[filesize<2G]+bestaudio/best[filesize<2G]/bestvideo*+bestaudio/best"
         )
-
     if args.profile == DBType.audio:
         ydl_opts["format"] = (
             "(bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best)[format_id!$=-drc]/bestaudio/best"
@@ -525,7 +539,6 @@ def download(args, m) -> bool:
             media_entry = db_media.consolidate(deepcopy(info))
             if sql_utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
                 raise yt_dlp.utils.RejectedVideoReached("Video matched library blocklist")
-
         if match_filters:
             ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
             return ytdlp_match_filter(info, *pargs, incomplete)
@@ -533,19 +546,23 @@ def download(args, m) -> bool:
 
     ydl_opts["match_filter"] = blocklist_check
 
+
+def _configure_download_archive(args, yt_dlp, ydl_opts):
     download_archive = Path(args.download_archive or "~/.local/share/yt_archive.txt").expanduser().resolve()
     if download_archive.exists() and not consts.PYTEST_RUNNING:
-        # ydl_opts["cookiesfrombrowser"] = ("firefox",)
         if len(yt_archive) == 0:
             with yt_dlp.utils.locked_file(str(download_archive), "r", encoding="utf-8") as archive_file:
                 yt_archive.update(line.strip() for line in archive_file)
-        if len(yt_archive) > 0:  # check again
+        if len(yt_archive) > 0:
             ydl_opts["download_archive"] = yt_archive
         else:
             ydl_opts["download_archive"] = str(download_archive)
+    return download_archive
 
+
+def _extract_download_info(args, m, yt_dlp, ydl_opts, extra_args, ydl_log):
     webpath = m["path"]
-    temp_path, local_path = None, None
+    local_path = None
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         log.debug("[yt-dlp]: Downloading %s", webpath)
         try:
@@ -565,8 +582,6 @@ def download(args, m) -> bool:
             ydl_log["error"].append(error)
             info = None
             log.debug("yt-dlp %s %s", error, webpath)
-            # media.download_add(args, webpath, error=error)
-            # return
         except Exception as excinfo:
             if args.ignore_errors:
                 error = consts.REGEX_ANSI_ESCAPE.sub("", str(excinfo))
@@ -579,44 +594,42 @@ def download(args, m) -> bool:
 
         if info is None:
             log.debug("yt-dlp returned no info %s", webpath)
-            info = m
+            return m, local_path, ydl
+
+        info = {**m, **info}
+        if args.profile == DBType.audio:
+            info = {**info, "ext": args.extract_audio_ext}
+        temp_path = ydl.prepare_filename(info)
+        if "outtmpl" in extra_args:
+            local_path = temp_path
         else:
-            info = {**m, **info}
-            temp_path = info.get("local_path")
-            if args.profile == DBType.audio:
-                info = {**info, "ext": args.extract_audio_ext}
-            temp_path = ydl.prepare_filename(info)
-
-            if "outtmpl" in extra_args:
+            local_path = ydl.prepare_filename(
+                info,
+                outtmpl=_download_output_dir(
+                    args,
+                    "%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                    if "section_number" in info
+                    else "%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s",
+                ),
+            )
+            local_path = path_utils.clean_path(local_path.encode())
+            if Path(temp_path).exists():
+                shell_utils.rename_move_file(temp_path, local_path)
+            elif Path(local_path).exists():
                 local_path = temp_path
-            else:
-                local_path = ydl.prepare_filename(
-                    info,
-                    outtmpl=out_dir(
-                        "%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
-                        if "section_number" in info
-                        else "%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
-                    ),
-                )
-                local_path = path_utils.clean_path(local_path.encode())
-                if Path(temp_path).exists():  # may be download error
-                    shell_utils.rename_move_file(temp_path, local_path)
-                # TODO: wtf is this doing...
-                elif Path(local_path).exists():  # media might already be in download archive
-                    local_path = temp_path
+    return info, local_path, ydl
 
-    download_status = DLStatus.SUCCESS
+
+def _check_download(args, info, local_path):
     media_check_failed = False
     if info and local_path and Path(local_path).exists():
-        log.info("Downloaded to %s %s", local_path, webpath)
-
+        log.info("Downloaded to %s %s", local_path, info["path"])
         if getattr(args, "check_corrupt", False) and path_utils.ext(local_path) not in consts.SKIP_MEDIA_CHECK:
             try:
                 if args.profile == DBType.audio:
                     dl_probe = FFProbe(local_path)
                     if not dl_probe.has_audio:
                         raise RuntimeError
-
                 corruption = media_check.calculate_corruption(
                     local_path,
                     chunk_size=args.chunk_size,
@@ -631,31 +644,70 @@ def download(args, m) -> bool:
                 info["corruption"] = 50
             if info["corruption"] > MAX_CORRUPTION_SCORE:
                 media_check_failed = True
+    return media_check_failed
 
-    if not (info and local_path and Path(local_path).exists()) or media_check_failed:
-        archives = (
-            "https://web.archive.org/web/0id_/http://wayback-fakeurl.archive.org/yt/",
-            "https://ghostarchive.org/varchive/",
-            "https://preservetube.com/watch?v=",
-        )
-        if webpath.startswith(archives):
-            raise VideoArchiveError
-        # else: log original error only
-        log.debug(ydl_log)
-        download_status, ydl_errors_txt = log_error(ydl_log, webpath)
 
-        if download_status != DLStatus.BLOCKED:
-            vid = coerce_to_yt_id(webpath)
-            if vid:  # try archives
-                for prefix in archives:
-                    try:
-                        archive_succeeded = download(args, m | {"path": prefix + vid})
-                    except VideoArchiveError:
-                        continue
-                    if archive_succeeded:
-                        download_status = DLStatus.SUCCESS
-                        media_check_failed = False
-                        break
+def _handle_failed_download(args, m, info, local_path, media_check_failed, ydl_log):
+    download_status = DLStatus.SUCCESS
+    ydl_errors_txt = ""
+    webpath = m["path"]
+    if (info and local_path and Path(local_path).exists()) and not media_check_failed:
+        return download_status, ydl_errors_txt, media_check_failed
+
+    archives = (
+        "https://web.archive.org/web/0id_/http://wayback-fakeurl.archive.org/yt/",
+        "https://ghostarchive.org/varchive/",
+        "https://preservetube.com/watch?v=",
+    )
+    if webpath.startswith(archives):
+        raise VideoArchiveError
+    log.debug(ydl_log)
+    download_status, ydl_errors_txt = log_error(ydl_log, webpath)
+
+    if download_status != DLStatus.BLOCKED:
+        vid = coerce_to_yt_id(webpath)
+        if vid:
+            for prefix in archives:
+                try:
+                    archive_succeeded = download(args, m | {"path": prefix + vid})
+                except VideoArchiveError:
+                    continue
+                if archive_succeeded:
+                    download_status = DLStatus.SUCCESS
+                    media_check_failed = False
+                    break
+    return download_status, ydl_errors_txt, media_check_failed
+
+
+def _save_download_archive(ydl, yt_dlp, _args, m, info, download_archive):
+    if len(yt_archive) == 0 or info is None:
+        return
+    archive_id = ydl._make_archive_id(info)  # noqa: SLF001
+    if archive_id is None:
+        vid = coerce_to_yt_id(m["path"])
+        if vid:
+            archive_id = f"youtube {vid}"
+        else:
+            log.info("archive_id not found %s", info)
+    else:
+        yt_archive.add(archive_id)
+        with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
+            archive_file.write(archive_id + "\n")
+
+
+def download(args, m) -> bool:
+    yt_dlp = load_module_level_yt_dlp()
+    ydl_log = {"error": [], "warning": [], "info": []}
+
+    ydl_opts, extra_args = _build_download_options(args, m, yt_dlp, ydl_log)
+    _set_download_filters(args, yt_dlp, ydl_opts)
+    download_archive = _configure_download_archive(args, yt_dlp, ydl_opts)
+
+    info, local_path, ydl = _extract_download_info(args, m, yt_dlp, ydl_opts, extra_args, ydl_log)
+    media_check_failed = _check_download(args, info, local_path)
+    download_status, ydl_errors_txt, media_check_failed = _handle_failed_download(
+        args, m, info, local_path, media_check_failed, ydl_log
+    )
 
     if media_check_failed:
         log.info("Media check failed %s", local_path)
@@ -663,21 +715,11 @@ def download(args, m) -> bool:
         ydl_errors_txt = "Media check failed\n" + ydl_errors_txt
 
     if download_status == DLStatus.SUCCESS and len(yt_archive) > 0 and info is not None:
-        archive_id = ydl._make_archive_id(info)
-        if archive_id is None:
-            vid = coerce_to_yt_id(m["path"])
-            if vid:
-                archive_id = f"youtube {vid}"
-            else:
-                log.info("archive_id not found %s", info)
-        else:
-            yt_archive.add(archive_id)
-            with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
-                archive_file.write(archive_id + "\n")
+        _save_download_archive(ydl, yt_dlp, args, m, info, download_archive)
 
     db_media.download_add(
         args,
-        webpath,
+        m["path"],
         info,
         local_path,
         error=None if download_status == DLStatus.SUCCESS else ydl_errors_txt,

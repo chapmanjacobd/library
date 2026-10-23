@@ -142,87 +142,96 @@ config = {
 }
 
 
+def _reset_fts(db, table):
+    try:
+        db[table].disable_fts()  # type: ignore
+    except Exception as excinfo:
+        log.debug(excinfo)
+
+    triggers = db.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name = ?;", [table]).fetchall()
+    for (trigger_name,) in triggers:
+        db.execute(f"DROP TRIGGER IF EXISTS {trigger_name};")
+
+    fts_tables = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE ? OR name LIKE ?);",
+        [f"{table}_fts_%", f"{table}_fts"],
+    ).fetchall()
+    for (fts_name,) in fts_tables:
+        db.execute(f"DROP TABLE IF EXISTS {fts_name};")
+
+
+def _rebuild_table_indexes(args, db, table, int_columns, str_columns, unique_columns):
+    if getattr(args, "force", False):
+        for index in db[table].indexes:  # type: ignore
+            if index.unique == 1:
+                db.execute(f"REINDEX {index.name}")
+            else:
+                db.execute(f"DROP index {index.name}")
+
+    for column in int_columns + str_columns:
+        log.info("Creating index: %s", column)
+        try:
+            db[table].create_index([column], unique=column in unique_columns, if_not_exists=True, analyze=True)  # type: ignore
+        except sqlite3.IntegrityError:
+            log.warning("%s %s table %s column is not unique", args.database, table, column)
+            db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
+
+
+def _optimize_table_fts(args, db, table, fts_columns, was_transformed):
+    if not getattr(args, "fts", True) or not any(fts_columns):
+        return
+    if db[table].detect_fts() is None or was_transformed:  # type: ignore
+        log.info("Creating fts index: %s", fts_columns)
+        db[table].enable_fts(
+            fts_columns,
+            create_triggers=True,
+            replace=True,
+            tokenize="trigram" if sqlite3.sqlite_version_info >= (3, 34, 0) else 'unicode61 "tokenchars=_."',
+        )
+    else:
+        with db.conn:  # type: ignore
+            log.info("Optimizing fts index: %s", table)
+            db[table].optimize()  # type: ignore
+
+
+def _optimize_table(args, db, table):
+    if getattr(args, "force", False):
+        _reset_fts(db, table)
+
+    log.info("Processing table: %s", table)
+    table_columns = db[table].columns_dict
+    table_config = config.get(table) or {}
+    ignore_columns = table_config.get("ignore_columns") or []
+    search_columns = table_config.get("search_columns") or []
+
+    fts_columns = [column for column in search_columns if column in table_columns]
+    int_columns = [key for key, value in table_columns.items() if value is int and key not in search_columns + ignore_columns]
+    str_columns = [key for key, value in table_columns.items() if value is str and key not in search_columns + ignore_columns]
+    if "path" in table_columns:
+        str_columns = list({*str_columns, "path"})
+    unique_columns = table_config.get("unique_columns")
+    if unique_columns is None:
+        unique_columns = ["path"] if "path" in table_columns else []
+
+    optimized_column_order = list(iterables.ordered_set([*int_columns, *(table_config.get("column_order") or [])]))
+    compare_order = zip(table_columns, optimized_column_order, strict=False)
+    was_transformed = False
+    if not all(first == second for first, second in compare_order):
+        log.info("Transforming column order: %s", optimized_column_order)
+        db[table].transform(column_order=optimized_column_order)  # type: ignore
+        was_transformed = True
+
+    _rebuild_table_indexes(args, db, table, int_columns, str_columns, unique_columns)
+    _optimize_table_fts(args, db, table, fts_columns, was_transformed)
+
+
 def optimize(args) -> None:
     log.info("\nOptimizing database")
-
     db: Database = args.db
 
     for table in config:
-        if table not in db.table_names():
-            continue
-        if getattr(args, "force", False):
-            try:
-                db[table].disable_fts()  # type: ignore
-            except Exception as excinfo:
-                log.debug(excinfo)
-
-            triggers = db.execute(
-                "SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name = ?;", [table]
-            ).fetchall()
-            for (name,) in triggers:
-                db.execute(f"DROP TRIGGER IF EXISTS {name};")
-
-            fts_tables = db.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE ? OR name LIKE ?);",
-                [f"{table}_fts_%", f"{table}_fts"],
-            ).fetchall()
-            for (name,) in fts_tables:
-                db.execute(f"DROP TABLE IF EXISTS {name};")
-
-        log.info("Processing table: %s", table)
-        table_columns = db[table].columns_dict
-        table_config = config.get(table) or {}
-        ignore_columns = table_config.get("ignore_columns") or []
-        search_columns = table_config.get("search_columns") or []
-
-        fts_columns = [c for c in search_columns if c in table_columns]
-        int_columns = [k for k, v in table_columns.items() if v is int and k not in search_columns + ignore_columns]
-        str_columns = [k for k, v in table_columns.items() if v is str and k not in search_columns + ignore_columns]
-        if "path" in table_columns:
-            str_columns = list({*str_columns, "path"})
-        unique_columns = table_config.get("unique_columns")
-        if unique_columns is None:
-            unique_columns = ["path"] if "path" in table_columns else []
-
-        optimized_column_order = list(iterables.ordered_set([*int_columns, *(table_config.get("column_order") or [])]))
-        compare_order = zip(table_columns, optimized_column_order, strict=False)
-        was_transformed = False
-        if not all(x == y for x, y in compare_order):
-            log.info("Transforming column order: %s", optimized_column_order)
-            db[table].transform(column_order=optimized_column_order)  # type: ignore
-            was_transformed = True
-
-        if getattr(args, "force", False):
-            indexes = db[table].indexes  # type: ignore
-            for index in indexes:
-                if index.unique == 1:
-                    db.execute(f"REINDEX {index.name}")
-                else:
-                    db.execute(f"DROP index {index.name}")
-
-        for column in int_columns + str_columns:
-            log.info("Creating index: %s", column)
-            try:
-                db[table].create_index([column], unique=column in unique_columns, if_not_exists=True, analyze=True)  # type: ignore
-            except sqlite3.IntegrityError:
-                log.warning("%s %s table %s column is not unique", args.database, table, column)
-                db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
-
-        if getattr(args, "fts", True) and any(fts_columns):
-            if db[table].detect_fts() is None or was_transformed:  # type: ignore
-                log.info("Creating fts index: %s", fts_columns)
-                db[table].enable_fts(
-                    fts_columns,
-                    create_triggers=True,
-                    replace=True,
-                    tokenize=(
-                        "trigram" if sqlite3.sqlite_version_info >= (3, 34, 0) else 'unicode61 "tokenchars=_."'
-                    ),  # https://www.sqlite.org/releaselog/3_34_0.html
-                )
-            else:
-                with db.conn:  # type: ignore
-                    log.info("Optimizing fts index: %s", table)
-                    db[table].optimize()  # type: ignore
+        if table in db.table_names():
+            _optimize_table(args, db, table)
 
     log.info("Running VACUUM")
     db.vacuum()

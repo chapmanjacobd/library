@@ -96,56 +96,63 @@ def generate_strings(length):
                 yield prefix + char
 
 
+def _append_parts(args, part, dictionary):
+    if not args.append:
+        return []
+    if not args.append.isnumeric():
+        return [args.append]
+
+    append = int(args.append)
+    if args.all:
+        return generate_strings(append)
+    return sorted(
+        s.split(part, 1)[1]
+        for s in dictionary
+        if s.startswith(part) and len(s) == len(part) + append
+    )
+
+
+def _prepend_parts(args, part, dictionary):
+    if not args.prepend:
+        return []
+    if not args.prepend.isnumeric():
+        return [args.prepend]
+
+    prepend = int(args.prepend)
+    if args.all:
+        return generate_strings(prepend)
+    return sorted(
+        s.rsplit(part, 1)[0]
+        for s in dictionary
+        if s.endswith(part) and len(s) == len(part) + prepend
+    )
+
+
+def _process_part(args, part, dictionary):
+    append_gen = _append_parts(args, part, dictionary)
+    prepend_gen = _prepend_parts(args, part, dictionary)
+
+    if prepend_gen and append_gen:
+        yield from (pre + part + post for pre, post in itertools.product(prepend_gen, append_gen))
+    elif prepend_gen:
+        yield from (pre + part for pre in prepend_gen)
+    elif append_gen:
+        yield from (part + post for post in append_gen)
+    else:
+        yield part
+
+
 def nouns() -> None:
     args = parse_args()
 
+    dictionary = ()
     if not args.all:
         with (Path(__file__).parent / ".." / "data" / "dictionary.pkl").open("rb") as f:
             dictionary = pickle.load(f)  # noqa: S301 - this is a bundled, read-only application asset
 
     def part_processor(args, parts):
         for part in parts:
-            append_gen = []
-            if args.append:
-                if args.append.isnumeric():
-                    append = int(args.append)
-                    if args.all:
-                        append_gen = generate_strings(append)
-                    else:
-                        append_gen = sorted(
-                            s.split(part, 1)[1]
-                            for s in dictionary
-                            if s.startswith(part) and len(s) == len(part) + append
-                        )
-                else:
-                    append_gen = [args.append]
-
-            prepend_gen = []
-            if args.prepend:
-                if args.prepend.isnumeric():
-                    prepend = int(args.prepend)
-                    if args.all:
-                        prepend_gen = generate_strings(prepend)
-                    else:
-                        prepend_gen = sorted(
-                            s.rsplit(part, 1)[0]
-                            for s in dictionary
-                            if s.endswith(part) and len(s) == len(part) + prepend
-                        )
-                else:
-                    prepend_gen = [args.prepend]
-
-            if prepend_gen and append_gen:
-                for pre, post in itertools.product(prepend_gen, append_gen):
-                    yield pre + part + post
-            elif prepend_gen:
-                for pre in prepend_gen:
-                    yield pre + part
-            elif append_gen:
-                for post in append_gen:
-                    yield part + post
-            else:
-                yield part
+            yield from _process_part(args, part, dictionary)
 
     if args.unique:
         part_processor = iterables.return_unique(part_processor)
@@ -160,7 +167,8 @@ def nouns() -> None:
 
         part_processor = check_dictionary
 
-    for line in args.paths:
+    for raw_line in args.paths:
+        line = raw_line
         if args.html_strip:
             line = strip_tags(line)
 

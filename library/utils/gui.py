@@ -6,31 +6,37 @@ base_folder = Path(__file__).resolve().parent
 
 class MrSuperDialogue:
     def __init__(self, path, qty, geom_data=None, true_action="keep", false_action="delete") -> None:
-        from tkinter import PhotoImage, Tk
-        from tkinter.ttk import Button, Frame, Label, Style
+        from tkinter import Tk
 
         self.action = None
+        self.root = Tk()
+        self._configure_window()
+        self._configure_widgets(path, qty, true_action, false_action)
+        self._bind_keys(true_action, false_action)
+        self.move_window(*(geom_data or []))
+        self.root.mainloop()
+
+    def _configure_window(self):
+        from tkinter import PhotoImage
+        from tkinter.ttk import Style
 
         def raise_error(_self, _exc_type, exc_value, traceback):
             raise exc_value.with_traceback(traceback)
 
-        Tk.report_callback_exception = raise_error
-
-        self.root = Tk()
+        type(self.root).report_callback_exception = raise_error
         self.root.title("Library dialogue")
         self.root.wm_attributes("-alpha", 0)
-
         style = Style(self.root)
         style.theme_use("clam")
-
         photo = PhotoImage(file=str((base_folder / ".." / "assets" / "kotobago.png").resolve()))
         self.root.wm_iconphoto(True, photo)  # noqa: FBT003
         self.root.wm_attributes("-topmost", 1)
 
+    def _configure_widgets(self, path, qty, true_action, false_action):
+        from tkinter.ttk import Button, Frame, Label
+
         for keyseq in ("<Escape>", "<Control-c>", "<Control-q>"):
             self.root.bind(keyseq, lambda _ev: self.user_quit())
-
-        # menu left
         self.menu_left = Frame(self.root, width=150)
         self.menu_left_upper = Frame(self.menu_left, width=150, height=150)
         self.menu_left_lower = Frame(self.menu_left, width=150)
@@ -51,16 +57,11 @@ class MrSuperDialogue:
 
         self.menu_left_upper.pack(side="top", fill="both", expand=True)
         self.menu_left_lower.pack(side="top", fill="both", expand=True)
-
-        # title
         self.some_title_frame = Frame(self.root)
         self.some_title = Label(self.some_title_frame, text=f"{true_action.title()} or {false_action.title()}?")
         self.some_title.pack()
-
         self.message = Label(self.root, text=f"{true_action.title()} {path}?", wraplength=180, justify="center")
         self.message.grid(row=1, column=1)
-
-        # status bar
         self.status_frame = Frame(self.root)
         self.status = Label(self.status_frame, text=f"{qty} media to go")
         self.status.pack(fill="both", expand=True)
@@ -69,10 +70,10 @@ class MrSuperDialogue:
         self.some_title_frame.grid(row=0, column=1, sticky="ew")
         self.message.grid(row=1, column=1, sticky="nsew")
         self.status_frame.grid(row=2, column=0, columnspan=2, sticky="ew")
-
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
+    def _bind_keys(self, true_action, false_action):
         for keyseq in ("y", "2"):
             self.root.bind(keyseq, lambda _ev: self.return_true())
         for keyseq in ("n", "1"):
@@ -86,9 +87,6 @@ class MrSuperDialogue:
         # bind first letter key
         self.root.bind(true_action[0], lambda _ev: self.return_true())
         self.root.bind(false_action[0], lambda _ev: self.return_false())
-
-        self.move_window(*(geom_data or []))
-        self.root.mainloop()
 
     def user_quit(self) -> NoReturn:
         print("\nCtrl+C exit")

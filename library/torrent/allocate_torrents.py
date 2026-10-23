@@ -181,23 +181,10 @@ def print_torrents_by_tracker(torrents):
     print()
 
 
-def allocate_torrents():
-    args = parse_args()
-
-    import paramiko
-
-    computer_db = db_utils.connect(args, conn=sqlite3.connect(args.computer_database))
-
-    disks = get_disks(args, computer_db)
-
-    total_available = sum(d["free"] - args.min_free_space for d in disks if d["free"] - args.min_free_space > 0)
-    print(f"{len(disks)} disks matched. {strings.file_size(total_available)} available space")
-    if not disks:
-        raise SystemExit(28)
-
+def _select_torrents(args, disks):
     if args.hide_unallocatable:
         args.filter_sql.append("and size < :download_size")
-        args.filter_bindings["download_size"] = disks[-1]["free"] - args.min_free_space  # largest free disk
+        args.filter_bindings["download_size"] = disks[-1]["free"] - args.min_free_space
 
     torrents = list(args.db.query(*sqlgroups.playlists_fs_sql(args, limit=None)))
     total_size = sum(d["size"] for d in torrents)
@@ -215,10 +202,8 @@ def allocate_torrents():
         }
         for d in torrents
     ]
-
     if not torrents:
         processes.no_media_found()
-
     if "sort" in args.defaults:
         import pandas as pd
 
@@ -233,12 +218,13 @@ def allocate_torrents():
                 "tracker_count": {"weight": 4},
             },
         ).to_dict(orient="records")
-    torrents = torrents[: args.limit]
+    return torrents[: args.limit]
 
+
+def _allocate_to_disks(args, disks, torrents):
     downloaded_torrents = set()
     for disk in disks:
         available_space = disk["free"] - args.min_free_space
-
         disk["downloads"] = []
         for torrent in torrents:
             if torrent["size"] < available_space and torrent["path"] not in downloaded_torrents:
@@ -246,67 +232,68 @@ def allocate_torrents():
                 available_space -= torrent["size"]
                 disk["downloads"].append(torrent)
 
-    # TODO: use nvme download_dir
-    # but better to chunk one drive at a time because temp download _moving_ can occur
-    # at the same time as nvme save_path saving. maybe 2x buffer could work
 
+def _start_allocated_downloads(args, disks):
+    import paramiko
+    import paramiko.ssh_exception
+
+    for disk in disks:
+        torrent_files = [torrent["path"] for torrent in disk["downloads"] if os.path.exists(torrent["path"])]
+        if not torrent_files:
+            continue
+        try:
+            with paramiko.SSHClient() as ssh:
+                ssh.load_system_host_keys()
+                ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
+                ssh.connect(disk["host"])
+                ssh.host = disk["host"]
+                for torrent_files_chunk in iterables.chunks(torrent_files, 128):
+                    remote_processes.cmd(
+                        ssh,
+                        "python3",
+                        "-m",
+                        "library",
+                        "torrents-start",
+                        *argparse_utils.forward_arggroups(args, arggroups.torrents_start),
+                        *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
+                        *argparse_utils.forward_arggroups(
+                            args,
+                            arggroups.qBittorrent_paths,
+                            download_drive=disk["mountpoint"],
+                        ),
+                        *torrent_files_chunk,
+                        local_files=torrent_files_chunk,
+                    )
+            if args.delete_torrent:
+                for torrent_file in torrent_files:
+                    log.debug("Trashed %s", torrent_file)
+                    trash(args, torrent_file, detach=False)
+        except (TimeoutError, paramiko.ssh_exception.NoValidConnectionsError):
+            log.error("Unable to connect to %s", disk["host"])
+
+
+def allocate_torrents():
+    args = parse_args()
+    computer_db = db_utils.connect(args, conn=sqlite3.connect(args.computer_database))
+    disks = get_disks(args, computer_db)
+    total_available = sum(d["free"] - args.min_free_space for d in disks if d["free"] - args.min_free_space > 0)
+    print(f"{len(disks)} disks matched. {strings.file_size(total_available)} available space")
+    if not disks:
+        raise SystemExit(28)
+
+    torrents = _select_torrents(args, disks)
+    _allocate_to_disks(args, disks, torrents)
     if args.verbose >= consts.LOG_INFO:
         print_torrent_info(disks)
-
-    allocated_torrents = [t for d in disks for t in d["downloads"]]
-
+    allocated_torrents = [torrent for disk in disks for torrent in disk["downloads"]]
     print_torrents_by_tracker(allocated_torrents)
     print_disks(args, disks)
-
     if not allocated_torrents:
         processes.exit_error("No torrents could be allocated")
-
-    total_size = sum(t["size"] for t in allocated_torrents)
+    total_size = sum(torrent["size"] for torrent in allocated_torrents)
     print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")
-
     if args.simulate:
         print("Would allocate and start downloads")
         return
-
     if not args.print and (args.no_confirm or devices.confirm("Allocate and start downloads?")):
-        import paramiko.ssh_exception
-
-        for d in disks:
-            torrent_files = [t["path"] for t in d["downloads"] if os.path.exists(t["path"])]
-            if not torrent_files:
-                continue
-
-            try:
-                with paramiko.SSHClient() as ssh:
-                    ssh.load_system_host_keys()
-                    ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
-                    ssh.connect(d["host"])
-                    ssh.host = d["host"]
-
-                    torrent_files_chunks = iterables.chunks(torrent_files, 128)
-                    for torrent_files_chunk in torrent_files_chunks:
-                        remote_processes.cmd(
-                            ssh,
-                            "python3",
-                            "-m",
-                            "library",
-                            "torrents-start",
-                            *argparse_utils.forward_arggroups(args, arggroups.torrents_start),
-                            *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
-                            *argparse_utils.forward_arggroups(
-                                args,
-                                arggroups.qBittorrent_paths,
-                                download_drive=d["mountpoint"],
-                            ),
-                            *torrent_files_chunk,
-                            local_files=torrent_files_chunk,
-                            # cwd="lb",  # debug
-                        )
-
-                if args.delete_torrent:
-                    for path in torrent_files:
-                        log.debug("Trashed %s", path)
-                        trash(args, path, detach=False)
-
-            except (TimeoutError, paramiko.ssh_exception.NoValidConnectionsError):
-                log.error("Unable to connect to %s", d["host"])
+        _start_allocated_downloads(args, disks)

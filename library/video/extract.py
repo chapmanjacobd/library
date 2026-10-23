@@ -461,8 +461,8 @@ def _load_similarity_tools():
 
 
 def _frame_vector(path: Path, np, image_library):
-    with image_library.open(path) as image:
-        image = image.resize((64, 64)).convert("L")
+    with image_library.open(path) as image_file:
+        image = image_file.resize((64, 64)).convert("L")
         return np.array(image).flatten().astype("float32") / 255.0
 
 

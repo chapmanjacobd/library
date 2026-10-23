@@ -141,7 +141,7 @@ def get_ids(args, playlist_paths) -> list[int]:
     ]
 
 
-def _add(args, entry):
+def add_entry(args, entry):
     entry = {**entry, "extractor_config": _normalize_extractor_config(args, entry.get("extractor_config"))}
     playlists_id = get_id(args, entry["path"], entry["extractor_config"])
     if getattr(args, "simulate", False):
@@ -289,7 +289,7 @@ def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key
         playlist = {**playlist, "path": playlist_path}
     if extractor_key:
         playlist["extractor_key"] = extractor_key
-    playlists_id = _add(args, objects.dict_filter_bool(playlist) or {})
+    playlists_id = add_entry(args, objects.dict_filter_bool(playlist) or {})
     if playlist_path and check_subpath:
         delete_subpath_playlists(
             args,
@@ -405,7 +405,7 @@ def log_problem(args, playlist_path) -> None:
 
 def save_undownloadable(args, playlist_path) -> None:
     entry = {"extractor_config": args.extractor_config}
-    _add(args, consolidate(args, entry) | {"path": playlist_path})
+    add_entry(args, consolidate(args, entry) | {"path": playlist_path})
 
     if args.action == consts.SC.tube_update:
         update_less_frequently(args, playlist_path, args.extractor_config)

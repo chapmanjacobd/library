@@ -134,20 +134,18 @@ def collect_codecs(streams):
     )
 
 
-def munge_av_tags(args, m) -> dict:
-    path = m["path"]
+def _probe_file(path, m, args):
     try:
-        probe = processes.FFProbe(path)
+        return processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
         raise SystemExit(130) from sys_exit
     except (TimeoutError, subprocess.TimeoutExpired):
         log.error(f"FFProbe timed out. {path}")
         m["error"] = "FFProbe timed out"
-        return m
     except OSError as excinfo:
         if excinfo.errno == errno.ENFILE:  # Too many open files
             raise
-        elif excinfo.errno == errno.EIO:  # IO Error
+        if excinfo.errno == errno.EIO:  # IO Error
             raise
         raise
     except processes.UnplayableFileError as excinfo:
@@ -161,35 +159,21 @@ def munge_av_tags(args, m) -> dict:
             shell_utils.trash(args, path, detach=False)
             m["time_deleted"] = consts.APPLICATION_START
         m["error"] = "Metadata check failed"
-        return m
+    return None
 
-    if not probe.format:
-        log.error(f"Failed reading format. {path}")
-        log.warning(probe)
-        return m
 
-    format_ = probe.format
+def _update_file_size(m, format_, duration):
     size = format_.pop("size", None)
     bitrate_bps = format_.pop("bit_rate", None)
-    format_.pop("format_name", None)
-    format_.pop("format_long_name", None)
-    format_.pop("nb_programs", None)
-    format_.pop("nb_streams", None)
-    format_.pop("nb_stream_groups", None)
-    format_.pop("probe_score", None)
-    format_.pop("start_time", None)
-    format_.pop("filename", None)
-    format_.pop("duration", None)
-    duration = probe.duration
-
     if not m.get("size"):
         if size:
             m["size"] = int(size)
         elif bitrate_bps and duration:
             total_bits = duration * float(bitrate_bps)
-            total_bytes = math.ceil(total_bits / 8)
-            m["size"] = total_bytes
+            m["size"] = math.ceil(total_bits / 8)
 
+
+def _check_corruption(args, path, m, duration):
     corruption = None
     if getattr(args, "check_corrupt", False) and path_utils.ext(path) not in consts.SKIP_MEDIA_CHECK:
         try:
@@ -220,6 +204,22 @@ def munge_av_tags(args, m) -> dict:
                 shell_utils.trash(args, path, detach=False)
                 m["time_deleted"] = consts.APPLICATION_START
                 m["error"] = "Media check failed"
+    return corruption
+
+
+def _extract_format_tags(format_):
+    for key in (
+        "format_name",
+        "format_long_name",
+        "nb_programs",
+        "nb_streams",
+        "nb_stream_groups",
+        "probe_score",
+        "start_time",
+        "filename",
+        "duration",
+    ):
+        format_.pop(key, None)
 
     tags = format_.pop("tags", None)
     if tags:
@@ -230,72 +230,83 @@ def munge_av_tags(args, m) -> dict:
                 **{k: v for k, v in parse_tags(tags, tags).items() if v},
             },
         )
-
     if format_ != {}:
         log.info("Extra data %s", format_)
+    return tags
 
+
+def _stream_metadata(probe):
     streams = probe.streams
-
-    width = iterables.safe_unpack([s.get("width") for s in streams])
-    height = iterables.safe_unpack([s.get("height") for s in streams])
-
     stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
-    language = strings.combine(
-        [t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")],
-    )
+    return {
+        "video_codecs": collect_codecs(probe.video_streams),
+        "audio_codecs": collect_codecs(probe.audio_streams),
+        "subtitle_codecs": collect_codecs(probe.subtitle_streams),
+        "other_codecs": collect_codecs(probe.other_streams),
+        "album_art_count": len(probe.album_art_streams),
+        "video_count": len(probe.video_streams),
+        "audio_count": len(probe.audio_streams),
+        "other_count": len(probe.other_streams),
+        "width": iterables.safe_unpack([s.get("width") for s in streams]),
+        "height": iterables.safe_unpack([s.get("height") for s in streams]),
+        "language": strings.combine(
+            [t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")],
+        ),
+    }
 
-    album_art_count = len(probe.album_art_streams)
-    video_count = len(probe.video_streams)
-    audio_count = len(probe.audio_streams)
-    other_count = len(probe.other_streams)
 
-    video_codecs = collect_codecs(probe.video_streams)
-    audio_codecs = collect_codecs(probe.audio_streams)
-    subtitle_codecs = collect_codecs(probe.subtitle_streams)
-    other_codecs = collect_codecs(probe.other_streams)
-
+def _chapter_metadata(probe):
     chapters = probe.chapters or []
     chapter_count = len(chapters)
-    if chapter_count > 0:
-        chapters = [
-            {"time": int(float(d["start_time"])), "text": d["tags"]["title"]}
-            for d in chapters
-            if "tags" in d and "title" in d["tags"] and not strings.is_generic_title(d["tags"]["title"])
-        ]
+    chapters = [
+        {"time": int(float(d["start_time"])), "text": d["tags"]["title"]}
+        for d in chapters
+        if "tags" in d and "title" in d["tags"] and not strings.is_generic_title(d["tags"]["title"])
+    ]
+    return chapter_count, chapters
+
+
+def _apply_profile_tags(args, m, path, streams):
+    if m.get("time_deleted"):
+        return m
+
+    ext = path_utils.ext(path)
+    if ext in consts.VIDEO_EXTENSIONS:
+        return {**m, **get_subtitle_tags(path, streams, scan_subtitles=getattr(args, "scan_subtitles", False))}
+    if ext in consts.AUDIO_ONLY_EXTENSIONS and not str(path).startswith("http"):
+        stream_tags = {k: v for k, v in get_audio_tags(path).items() if v}
+        return {**m, **stream_tags}
+    return m
+
+
+def munge_av_tags(args, m) -> dict:
+    path = m["path"]
+    probe = _probe_file(path, m, args)
+    if probe is None:
+        return m
+
+    if not probe.format:
+        log.error(f"Failed reading format. {path}")
+        log.warning(probe)
+        return m
+
+    format_ = probe.format
+    duration = probe.duration
+    _update_file_size(m, format_, duration)
+    corruption = _check_corruption(args, path, m, duration)
+    tags = _extract_format_tags(format_)
+    stream_metadata = _stream_metadata(probe)
+    chapter_count, chapters = _chapter_metadata(probe)
 
     m = {
         **m,
-        "video_codecs": video_codecs,
-        "audio_codecs": audio_codecs,
-        "subtitle_codecs": subtitle_codecs,
-        "other_codecs": other_codecs,
-        "album_art_count": album_art_count,
-        "video_count": video_count,
-        "audio_count": audio_count,
+        **stream_metadata,
         "chapter_count": chapter_count,
-        "other_count": other_count,
-        "width": width,
-        "height": height,
         "fps": probe.fps,
         "duration": nums.safe_int(duration),
-        "language": language,
         "corruption": None if corruption is None else int(corruption * 100),
         **(tags or {}),
         "chapters": chapters,
     }
 
-    if m.get("time_deleted"):
-        return m
-
-    # Use the file extension, not the selected profile: `auto` enables both video
-    # and audio, so a profile-based `if/elif` would always shadow the audio branch.
-    ext = path_utils.ext(path)
-    if ext in consts.VIDEO_EXTENSIONS:
-        video_tags = get_subtitle_tags(path, streams, scan_subtitles=getattr(args, "scan_subtitles", False))
-        m = {**m, **video_tags}
-    elif ext in consts.AUDIO_ONLY_EXTENSIONS and not str(path).startswith("http"):
-        stream_tags = get_audio_tags(path)
-        stream_tags = {k: v for k, v in stream_tags.items() if v}
-        m = {**m, **stream_tags}
-
-    return m
+    return _apply_profile_tags(args, m, path, probe.streams)

@@ -6,8 +6,8 @@ import pytest
 from library.__main__ import library as lb
 from library.__main__ import (
     _canonical_nested_paths_for_all_groups,
-    _canonical_target_paths,
-    _nested_target,
+    canonical_target_paths,
+    nested_target,
     modules,
 )
 
@@ -35,8 +35,8 @@ def test_usage(capsys, subcommand):
 
     usage = capsys.readouterr().out.splitlines()[0]
     assert usage.startswith("usage: library")
-    target, _consumed = _nested_target(subcommand.split())
-    canonical_path = _canonical_target_paths().get(target, subcommand)
+    target, _consumed = nested_target(subcommand.split())
+    canonical_path = canonical_target_paths().get(target, subcommand)
     assert canonical_path in usage
 
 

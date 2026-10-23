@@ -6,9 +6,6 @@ from library.database.manage import db_media, db_playlists
 from library.utils import consts, printing, strings
 from library.utils.log_utils import log
 
-gallery_dl = None
-
-
 @functools.lru_cache(maxsize=1)
 def gallery_dl_available() -> bool:
     """Whether gallery-dl (pip install gallery-dl) is importable.
@@ -19,38 +16,41 @@ def gallery_dl_available() -> bool:
     return importlib.util.find_spec("gallery_dl") is not None
 
 
+@functools.lru_cache(maxsize=1)
+def _load_gallery_dl() -> ModuleType:
+    import gallery_dl
+
+    gallery_dl.config.load()
+
+    parent_directory_enabled = False
+    gallery_dl.config.set(("extractor",), "parent-directory", parent_directory_enabled)
+    gallery_dl.config.set(
+        ("extractor",),
+        "directory",
+        [
+            "{user[account]|username|account[username]|user[id]|account[id]|subcategory}",
+            "{category}",
+            "{original_title[0]|title[0]|filename[0]}",
+            "{original_title[1]|title[1]|filename[1]}",
+        ],
+    )
+    gallery_dl.config.set(
+        ("extractor",),
+        "filename",
+        "{filename[:100]|title[:100]|original_title[:100]|id[:100]}.{extension}",
+    )
+    gallery_dl.config.set(("extractor",), "browser", "firefox")
+
+    if consts.PYTEST_RUNNING:
+        download_enabled = False
+        gallery_dl.config.set(("extractor",), "download", download_enabled)
+
+    is_supported.extractors = gallery_dl.extractor.extractors()
+    return gallery_dl
+
+
 def load_module_level_gallery_dl(args=None) -> ModuleType:
-    global gallery_dl
-
-    if gallery_dl is None:
-        import gallery_dl
-
-        gallery_dl.config.load()
-
-        parent_directory_enabled = False
-        gallery_dl.config.set(("extractor",), "parent-directory", parent_directory_enabled)
-        gallery_dl.config.set(
-            ("extractor",),
-            "directory",
-            [
-                "{user[account]|username|account[username]|user[id]|account[id]|subcategory}",
-                "{category}",
-                "{original_title[0]|title[0]|filename[0]}",
-                "{original_title[1]|title[1]|filename[1]}",
-            ],
-        )
-        gallery_dl.config.set(
-            ("extractor",),
-            "filename",
-            "{filename[:100]|title[:100]|original_title[:100]|id[:100]}.{extension}",
-        )
-        gallery_dl.config.set(("extractor",), "browser", "firefox")
-
-        if consts.PYTEST_RUNNING:
-            download_enabled = False
-            gallery_dl.config.set(("extractor",), "download", download_enabled)
-
-        is_supported.extractors = gallery_dl.extractor.extractors()
+    gallery_dl = _load_gallery_dl()
 
     if args is not None:
         is_supported.configured = True
@@ -235,30 +235,30 @@ def get_playlist_metadata(args, playlist_path):
 
     is_playlist = len(job.results) > 1
 
-    for webpath, info, result_job in job.results:
+    for webpath, info_data, result_job in job.results:
         errors = parse_gdl_job_status(result_job.status, webpath, ignore_errors=args.ignore_errors)
         extractor_key = "gdl_" + result_job.extractor.category
 
-        if not info:
+        if not info_data:
             log.error("No info returned from image extractor %s", extractor_key)
             message = f"No info returned from image extractor {extractor_key}"
             raise RuntimeError(message)
 
         assert webpath
-        info["extractor_key"] = extractor_key
+        info_data["extractor_key"] = extractor_key
 
         log.debug("webpath == playlist_path" if webpath == playlist_path else "webpath != playlist_path")
 
         playlists_id = None
         if is_playlist:
-            playlists_id = db_playlists.add(args, playlist_path, info)
+            playlists_id = db_playlists.add(args, playlist_path, info_data)
         else:
             log.warning("Importing playlist-less media %s", playlist_path)
 
         if db_media.exists(args, webpath):
             log.warning("Media already exists")
 
-        info = {**info, "playlists_id": playlists_id, "webpath": webpath}
+        info = {**info_data, "playlists_id": playlists_id, "webpath": webpath}
         db_media.playlist_media_add(
             args,
             playlist_path,

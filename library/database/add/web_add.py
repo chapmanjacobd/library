@@ -175,66 +175,96 @@ def extract_html_size(m) -> int | None:
     return int(match.group("size")) if match else None
 
 
+def _scan_html_path(args, path, paths, traversed_paths, known_paths, new_paths):
+    try:
+        link_dicts = list(iterables.return_unique(extract_links.get_inner_urls, lambda d: d.values())(args, path))
+    except requests.HTTPError as excinfo:
+        log.error(excinfo)
+        return
+
+    log.debug("%s urls found in %s", len(link_dicts), path)
+    random.shuffle(link_dicts)
+    for link_dict in link_dicts:
+        link = web.remove_apache_sorting_params(link_dict.pop("link"))
+        if link in traversed_paths or link in paths:
+            continue
+        if db_media.exists(args, link):
+            known_paths.add(link)
+        elif web.is_subpath(path, link) and web.is_html(args, link):
+            log.info("queueing sub-page %s", link)
+            paths.append(link)
+        else:
+            new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)
+
+
+def _discover_spider_paths(args, path, paths, original_paths, known_paths, traversed_paths):
+    new_paths = {}
+    traversed_paths.add(path)
+    if args.media:
+        paths.append(path)
+        for _ in range(args.threads * 5):
+            if paths:
+                queued_path = paths.pop()
+                if args.force:
+                    new_paths[queued_path] = None
+                elif db_media.exists(args, queued_path):
+                    known_paths.add(queued_path)
+                else:
+                    new_paths[queued_path] = None
+    elif path in original_paths or web.is_index(path) or web.is_html(args, path):
+        _scan_html_path(args, path, paths, traversed_paths, known_paths, new_paths)
+    elif path in traversed_paths or path in paths:
+        pass
+    elif db_media.exists(args, path):
+        known_paths.add(path)
+    else:
+        new_paths[path] = None
+    return new_paths
+
+
+def _enrich_media(args, media, paths, new_media_count, known_count, operation, label):
+    enriched_media = []
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=1 if args.verbose >= consts.LOG_DEBUG else args.threads
+    ) as executor:
+        gen_media = (f.result() for f in [executor.submit(operation, args, m) for m in media])
+        for i, media_entry in enumerate(gen_media):
+            enriched_media.append(media_entry)
+            printing.print_overwrite(
+                f"Pages to scan {len(paths)} link scan: {new_media_count} new [{known_count} known]; "
+                f"{label} metadata {i + 1} of {len(media)}"
+            )
+    return enriched_media
+
+
+def _enrich_spider_media(args, media, paths, new_media_count, known_count):
+    if DBType.filesystem in args.profiles or args.hash:
+        media = _enrich_media(args, media, paths, new_media_count, known_count, add_basic_metadata, "basic")
+        add_media(args, media)
+
+    if args.sizes:
+        media = [d for d in media if d.get("size") is None or args.sizes(d["size"])]
+
+    media = _enrich_media(args, media, paths, new_media_count, known_count, add_extra_metadata, "extra")
+    if media:
+        add_media(args, media)
+
+
 def spider(args, paths: list):
     original_paths = set(paths)
-    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d.values())
 
     new_media_count = 0
     known_paths = set()
     traversed_paths = set()
     while len(paths) > 0:
-        new_paths = {}
         path = paths.pop()
-        traversed_paths.add(path)
         log.info("Loading %s", path)
 
         printing.print_overwrite(
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
         )
 
-        if args.media:
-            paths.append(path)
-            for _ in range(args.threads * 5):  # batch
-                if len(paths) > 0:
-                    path = paths.pop()
-
-                    if args.force:
-                        new_paths[path] = None  # add key to map; title: None
-                    elif db_media.exists(args, path):
-                        known_paths.add(path)
-                    else:
-                        new_paths[path] = None  # add key to map; title: None
-
-        elif path in original_paths or web.is_index(path) or web.is_html(args, path):
-            try:
-                link_dicts = list(get_inner_urls(args, path))
-            except requests.HTTPError as excinfo:
-                log.error(excinfo)
-                continue
-
-            log.debug("%s urls found in %s", len(link_dicts), path)
-            random.shuffle(link_dicts)
-            for _link_idx, link_dict in enumerate(link_dicts):
-                link = web.remove_apache_sorting_params(link_dict.pop("link"))
-
-                if link in traversed_paths or link in paths:
-                    continue
-
-                if db_media.exists(args, link):
-                    known_paths.add(link)
-                elif web.is_subpath(path, link) and web.is_html(args, link):
-                    log.info("queueing sub-page %s", link)
-                    paths.append(link)
-                else:
-                    new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)
-
-        # not HTML page
-        elif path in traversed_paths or path in paths:
-            pass
-        elif db_media.exists(args, path):
-            known_paths.add(path)
-        else:
-            new_paths[path] = None  # add key to map; title: None
+        new_paths = _discover_spider_paths(args, path, paths, original_paths, known_paths, traversed_paths)
 
         media = [consolidate_media(args, k) | (v or {}) for k, v in new_paths.items()]
         for m in media:
@@ -243,39 +273,7 @@ def spider(args, paths: list):
                 m["size"] = html_size
         new_media_count += len(media)
 
-        # get basic metadata
-        if DBType.filesystem in args.profiles or args.hash:
-            enriched_media = []
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=1 if args.verbose >= consts.LOG_DEBUG else args.threads
-            ) as executor:
-                gen_media = (f.result() for f in [executor.submit(add_basic_metadata, args, m) for m in media])
-                for i, m in enumerate(gen_media):
-                    enriched_media.append(m)
-                    printing.print_overwrite(
-                        f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i + 1} of {len(media)}"
-                    )
-            media = enriched_media
-        if media:
-            add_media(args, media)
-
-        # get extra_metadata
-        if args.sizes:
-            media = [d for d in media if d.get("size") is None or args.sizes(d["size"])]
-
-        enriched_media = []
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=1 if args.verbose >= consts.LOG_DEBUG else args.threads
-        ) as executor:
-            gen_media = (f.result() for f in [executor.submit(add_extra_metadata, args, m) for m in media])
-            for i, m in enumerate(gen_media):
-                enriched_media.append(m)
-                printing.print_overwrite(
-                    f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; extra metadata {i + 1} of {len(media)}"
-                )
-        media = enriched_media
-        if media:
-            add_media(args, media)
+        _enrich_spider_media(args, media, paths, new_media_count, len(known_paths))
 
         printing.print_overwrite(
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
@@ -294,6 +292,34 @@ def add_playlist(args, path):
     return db_playlists.add(args, str(path), info)
 
 
+def _web_add_without_extract(args):
+    media_new = set()
+    media_known = set()
+    for path in shell_utils.gen_paths(args):
+        if db_media.exists(args, path):
+            media_known.add(path)
+        else:
+            add_media(args, [consolidate_media(args, path)])
+            media_new.add(path)
+        printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
+    print()
+
+
+def _web_add_spider(args):
+    if args.selenium:
+        web.load_selenium(args)
+    try:
+        if args.media:
+            spider(args, list(shell_utils.gen_paths(args)))
+        else:
+            for playlist_path in shell_utils.gen_paths(args):
+                args.playlists_id = add_playlist(args, playlist_path)
+                spider(args, [playlist_path])
+    finally:
+        if args.selenium:
+            web.quit_selenium(args)
+
+
 def web_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
@@ -304,30 +330,9 @@ def web_add(args=None) -> None:
     db_media.create(args)
 
     if args.no_extract:
-        media_new = set()
-        media_known = set()
-        for p in shell_utils.gen_paths(args):
-            if db_media.exists(args, p):
-                media_known.add(p)
-            else:
-                add_media(args, [consolidate_media(args, p)])
-                media_new.add(p)
-            printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
-        print()
+        _web_add_without_extract(args)
     else:
-        if args.selenium:
-            web.load_selenium(args)
-        try:
-            if args.media:
-                spider(args, list(shell_utils.gen_paths(args)))
-            else:
-                for playlist_path in shell_utils.gen_paths(args):
-                    args.playlists_id = add_playlist(args, playlist_path)
-                    spider(args, [playlist_path])
-
-        finally:
-            if args.selenium:
-                web.quit_selenium(args)
+        _web_add_spider(args)
 
     if not args.db["media"].detect_fts():
         db_utils.optimize(args)

@@ -251,7 +251,7 @@ def subreddit_new(args, subreddit_dict) -> None:
         post_dict = saveable(post)
 
         if idx == 0:
-            db_playlists._add(
+            db_playlists.add_entry(
                 args,
                 objects.dict_filter_bool(
                     {
@@ -295,8 +295,8 @@ def reddit_add(args=None) -> None:
     db_playlists.create(args)
     db_media.create(args)
 
-    for path in args.paths:
-        path = path.lower()
+    for raw_path in args.paths:
+        path = raw_path.lower()
         subreddit_matches = consts.REGEX_SUBREDDIT.match(path)
         redditor_matches = consts.REGEX_REDDITOR.match(path)
         extractor_key = "reddit_praw"
@@ -327,7 +327,7 @@ def reddit_add(args=None) -> None:
             except skip_errors as excinfo:
                 log.error("[%s] skipping: %s", name, excinfo)
 
-        db_playlists._add(
+        db_playlists.add_entry(
             args,
             objects.dict_filter_bool(
                 {

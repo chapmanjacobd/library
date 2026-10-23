@@ -39,67 +39,71 @@ def line_splitter(regexs: list[re.Pattern], l: str) -> list[str]:
     return words
 
 
+def _word_sort_value(sort_name, word, corpus_stats, words, reverse_words, ns_opts):
+    sort_values = {
+        "skip": lambda: None,
+        "len": lambda: len(word),
+        "count": lambda: corpus_stats.get(word),
+        "dup": lambda: (corpus_stats.get(word) or 0) > 1,
+        "unique": lambda: (corpus_stats.get(word) or 0) == 1,
+        "index": lambda: words.index(word),
+        "lastindex": lambda: reverse_words.index(word),
+        "linecount": lambda: words.count(word),
+        "alpha": lambda: word,
+        "python": lambda: word,
+        "natural": lambda: natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(word),
+        "natsort": lambda: natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(word),
+        "path": lambda: natsort.natsort_keygen(alg=ns_opts | ns.PATH)(word),
+        "nspath": lambda: natsort.natsort_keygen(alg=ns_opts | ns.PATH)(word),
+        "locale": lambda: natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(word),
+        "human": lambda: natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(word),
+        "signed": lambda: natsort.natsort_keygen(alg=ns_opts | ns.REAL)(word),
+        "os": lambda: natsort.os_sort_keygen()(word),
+    }
+    try:
+        return sort_values[sort_name]()
+    except KeyError as exc:
+        raise NotImplementedError from exc
+
+
+def _gen_word_key(word_sorts, word, _args, ns_opts, corpus_stats, words, reverse_words):
+    key_parts = []
+    for sort_option in word_sorts:
+        reverse = sort_option.startswith("-")
+        sort_name = sort_option.lstrip("-") if reverse else sort_option
+        value = _word_sort_value(sort_name, word, corpus_stats, words, reverse_words, ns_opts)
+        key_parts.append(Reverser(value) if reverse else value)
+    log.debug("word_sorter xs: %s", key_parts)
+    return tuple(key_parts)
+
+
 def word_sorter(args, ns_opts, word_sorts: list[consts.WordSortOpt], corpus_stats: Counter, l: list[str]):
-    if "lastindex" in word_sorts or "-lastindex" in word_sorts:
-        rl = list(reversed(l))
-
-    def gen_word_key(word_sorts, word):
-        key_parts = []
-        for s in word_sorts:
-            reverse = False
-            if s.startswith("-"):
-                s = s.lstrip("-")
-                reverse = True
-
-            if s == "skip":
-                val = None  # no sorting
-            elif s == "len":
-                val = len(word)
-            elif s == "count":
-                val = corpus_stats.get(word)
-            elif s == "dup":
-                val = (corpus_stats.get(word) or 0) > 1
-            elif s == "unique":
-                val = (corpus_stats.get(word) or 0) == 1
-            elif s == "index":
-                val = l.index(word)
-            elif s == "lastindex":
-                val = rl.index(word)
-            elif s == "linecount":
-                val = l.count(word)
-
-            elif s in ("alpha", "python"):
-                val = word
-            elif s in ("natural", "natsort"):
-                val = natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(word)
-            elif s in ("path", "nspath"):
-                val = natsort.natsort_keygen(alg=ns_opts | ns.PATH)(word)
-            elif s in ("locale", "human"):
-                val = natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(word)
-            elif s == "signed":
-                val = natsort.natsort_keygen(alg=ns_opts | ns.REAL)(word)
-            elif s == "os":
-                val = natsort.os_sort_keygen()(word)
-            else:
-                raise NotImplementedError
-
-            key_parts.append(Reverser(val) if reverse else val)
-
-        log.debug("word_sorter xs: %s", key_parts)
-        return tuple(key_parts)
+    reverse_words = list(reversed(l))
 
     try:
         split_index = word_sorts.index("mcda")
     except ValueError:
-        words = sorted(l, key=partial(gen_word_key, word_sorts))
+        words = sorted(l, key=partial(_gen_word_key, word_sorts, args=args, ns_opts=ns_opts, corpus_stats=corpus_stats, words=l, reverse_words=reverse_words))
     else:
         # Split the list into two parts
         before_mcda = word_sorts[:split_index]
         after_mcda = word_sorts[split_index + 1 :]  # remove "mcda" from word_sorts
 
-        rank = mcda.mcda_sorted(args, keys=[gen_word_key(after_mcda, xs) for xs in l])
+        rank = mcda.mcda_sorted(
+            args,
+            keys=[
+                _gen_word_key(after_mcda, xs, args, ns_opts, corpus_stats, l, reverse_words)
+                for xs in l
+            ],
+        )
         log.debug("word_sorter mcda: %s", [l[i] for i in rank["original_index"]])
-        words = sorted(l, key=lambda word: (*gen_word_key(before_mcda, word), rank["original_index"][l.index(word)]))
+        words = sorted(
+            l,
+            key=lambda word: (
+                *_gen_word_key(before_mcda, word, args, ns_opts, corpus_stats, l, reverse_words),
+                rank["original_index"][l.index(word)],
+            ),
+        )
 
     log.debug(f"word_sorter: {words}")
     return words
@@ -113,71 +117,6 @@ def line_sorter(
     original_lines: list[str],
     corpus: list[list[str]],
 ):
-    def gen_line_key(line_sorts, original_line, words):
-        key_parts = []
-        for s in line_sorts:
-            reverse = False
-            if s.startswith("-"):
-                s = s.lstrip("-")
-                reverse = True
-
-            if s == "skip":
-                val = None  # no sorting
-            elif s == "line":
-                val = original_line
-            elif s == "count":
-                val = len(words)
-            elif s == "len":
-                val = len("".join(words))
-            elif s == "dup":
-                val = sum((corpus_stats.get(word) or 0) > 1 for word in words)
-            elif s == "unique":
-                val = sum((corpus_stats.get(word) or 0) == 1 for word in words)
-            elif s == "alldup":
-                val = len(words) >= 1 and all((corpus_stats.get(word) or 0) > 1 for word in words)
-            elif s == "allunique":
-                val = len(words) >= 1 and all((corpus_stats.get(word) or 0) == 1 for word in words)
-            elif s == "alldups":
-                val = len(words) > 1 and all((corpus_stats.get(word) or 0) > 1 for word in words)
-            elif s == "alluniques":
-                val = len(words) > 1 and all((corpus_stats.get(word) or 0) == 1 for word in words)
-            elif s == "sum":
-                val = sum(corpus_stats.get(word) or 0 for word in words)
-            elif s == "dupmax":
-                val = max((corpus_stats.get(word) or 0 for word in words), default=None)
-            elif s == "dupmin":
-                val = min((corpus_stats.get(word) or 0 for word in words), default=None)
-            elif s in ("dupavg", "dupmean"):
-                val = statistics.mean(corpus_stats.get(word) or 0 for word in words)
-            elif s == "dupmedian":
-                try:
-                    val = statistics.median(corpus_stats.get(word) or 0 for word in words)
-                except statistics.StatisticsError:
-                    val = None
-            elif s == "dupmode":
-                try:
-                    val = statistics.mode(corpus_stats.get(word) or 0 for word in words)
-                except statistics.StatisticsError:
-                    val = None
-
-            elif s in ("alpha", "python"):
-                val = words
-            elif s in ("natural", "natsort"):
-                val = natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(words)
-            elif s in ("path", "nspath"):
-                val = natsort.natsort_keygen(alg=ns_opts | ns.PATH)(words)
-            elif s in ("locale", "human"):
-                val = natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(words)
-            elif s == "signed":
-                val = natsort.natsort_keygen(alg=ns_opts | ns.REAL)(words)
-            elif s == "os":
-                val = natsort.os_sort_keygen()(words)
-            else:
-                raise NotImplementedError
-
-            key_parts.append(Reverser(val) if reverse else val)
-        return tuple(key_parts)
-
     try:
         split_index = line_sorts.index("mcda")
     except ValueError:
@@ -190,7 +129,7 @@ def line_sorter(
     mcda_index = None
     if after_mcda:
         keys = [
-            gen_line_key(after_mcda, original_line, words)
+            _gen_line_key(after_mcda, original_line, words, corpus_stats, ns_opts)
             for words, original_line in zip(corpus, original_lines, strict=True)
         ]
         rank = mcda.mcda_sorted(args, keys)
@@ -198,7 +137,7 @@ def line_sorter(
 
     line_sort_keys: list[tuple[tuple, str]] = []
     for line_idx, (words, original_line) in enumerate(zip(corpus, original_lines, strict=True)):
-        line_sort_key = gen_line_key(before_mcda, original_line, words)
+        line_sort_key = _gen_line_key(before_mcda, original_line, words, corpus_stats, ns_opts)
         if mcda_index is not None:
             line_sort_key += (mcda_index[line_idx],)
         log.debug(repr(line_sort_key) + "\t" + repr(words))
@@ -207,6 +146,60 @@ def line_sorter(
     sorted_z = sorted(line_sort_keys, key=lambda y: y[0])
     lines = [x[1] for x in sorted_z]
     return lines
+
+
+def _safe_line_statistic(function, values):
+    try:
+        return function(values)
+    except statistics.StatisticsError:
+        return None
+
+
+def _line_sort_value(sort_name, original_line, words, corpus_stats, ns_opts):
+    duplicate_counts = [corpus_stats.get(word) or 0 for word in words]
+    value_functions = {
+        "skip": lambda: None,
+        "line": lambda: original_line,
+        "count": lambda: len(words),
+        "len": lambda: len("".join(words)),
+        "dup": lambda: sum(count > 1 for count in duplicate_counts),
+        "unique": lambda: sum(count == 1 for count in duplicate_counts),
+        "alldup": lambda: len(words) >= 1 and all(count > 1 for count in duplicate_counts),
+        "allunique": lambda: len(words) >= 1 and all(count == 1 for count in duplicate_counts),
+        "alldups": lambda: len(words) > 1 and all(count > 1 for count in duplicate_counts),
+        "alluniques": lambda: len(words) > 1 and all(count == 1 for count in duplicate_counts),
+        "sum": lambda: sum(duplicate_counts),
+        "dupmax": lambda: max(duplicate_counts, default=None),
+        "dupmin": lambda: min(duplicate_counts, default=None),
+        "dupavg": lambda: statistics.mean(duplicate_counts),
+        "dupmean": lambda: statistics.mean(duplicate_counts),
+        "dupmedian": lambda: _safe_line_statistic(statistics.median, duplicate_counts),
+        "dupmode": lambda: _safe_line_statistic(statistics.mode, duplicate_counts),
+        "alpha": lambda: words,
+        "python": lambda: words,
+        "natural": lambda: natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(words),
+        "natsort": lambda: natsort.natsort_keygen(alg=ns_opts | ns.DEFAULT)(words),
+        "path": lambda: natsort.natsort_keygen(alg=ns_opts | ns.PATH)(words),
+        "nspath": lambda: natsort.natsort_keygen(alg=ns_opts | ns.PATH)(words),
+        "locale": lambda: natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(words),
+        "human": lambda: natsort.natsort_keygen(alg=ns_opts | ns.LOCALE)(words),
+        "signed": lambda: natsort.natsort_keygen(alg=ns_opts | ns.REAL)(words),
+        "os": lambda: natsort.os_sort_keygen()(words),
+    }
+    try:
+        return value_functions[sort_name]()
+    except KeyError as exc:
+        raise NotImplementedError from exc
+
+
+def _gen_line_key(line_sorts, original_line, words, corpus_stats, ns_opts):
+    key_parts = []
+    for sort_option in line_sorts:
+        reverse = sort_option.startswith("-")
+        sort_name = sort_option.lstrip("-") if reverse else sort_option
+        value = _line_sort_value(sort_name, original_line, words, corpus_stats, ns_opts)
+        key_parts.append(Reverser(value) if reverse else value)
+    return tuple(key_parts)
 
 
 def prepare_corpus(corpus):
@@ -221,25 +214,27 @@ def prepare_corpus(corpus):
 def filter_corpus(corpus_stats, words, unique, dups):
     if len(words) == 0:
         return False
-    elif unique is True and dups is None:  # --unique
+
+    def unique_count():
         return any((corpus_stats.get(word) or 0) == 1 for word in words)
-    elif unique is False and dups is None:  # --no-unique
-        return not any((corpus_stats.get(word) or 0) == 1 for word in words)
-    elif unique is True and dups is False:  # --unique --no-dups
-        return all((corpus_stats.get(word) or 0) == 1 for word in words)
-    elif unique is None and dups is True:  # --dups
+
+    def duplicate_count():
         return any((corpus_stats.get(word) or 0) > 1 for word in words)
-    elif unique is None and dups is False:  # --no-dups
-        return not any((corpus_stats.get(word) or 0) > 1 for word in words)
-    elif unique is False and dups is True:  # --no-unique --dups
-        return all((corpus_stats.get(word) or 0) > 1 for word in words)
-    elif unique is None and dups is None:  # no filtering
-        return True
-    elif unique is True and dups is True:  # no filtering
-        return True
-    elif unique is False and dups is False:  # no filtering
-        return True
-    raise NotImplementedError
+    rules = {
+        (True, None): unique_count,
+        (False, None): lambda: not unique_count(),
+        (True, False): lambda: all((corpus_stats.get(word) or 0) == 1 for word in words),
+        (None, True): duplicate_count,
+        (None, False): lambda: not duplicate_count(),
+        (False, True): lambda: all((corpus_stats.get(word) or 0) > 1 for word in words),
+        (None, None): lambda: True,
+        (True, True): lambda: True,
+        (False, False): lambda: True,
+    }
+    try:
+        return rules[(unique, dups)]()
+    except KeyError as exc:
+        raise NotImplementedError from exc
 
 
 def text_processor(args, lines):
@@ -258,11 +253,11 @@ def text_processor(args, lines):
         ns_opts = ns_opts | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
 
     corpus = []
-    for l in lines:
-        l = l.replace("http://", "", 1)
-        l = l.replace("https://", "", 1)
+    for raw_line in lines:
+        line = raw_line.replace("http://", "", 1)
+        line = line.replace("https://", "", 1)
 
-        words = line_splitter(args.regexs, l)
+        words = line_splitter(args.regexs, line)
         log.debug(f"line_splitter:    {words}")
 
         words = [s.lower() for s in words]

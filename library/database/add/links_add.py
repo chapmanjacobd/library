@@ -256,6 +256,57 @@ def update_category(args, path):
         args.db.conn.execute("UPDATE media SET category = ? WHERE path = ?", [args.category, path])
 
 
+def _page_path(args, playlist_path, page_value, page_limit):
+    if (page_limit == 1 and args.page_start is None) or (page_value == (args.page_start or 0) == 0):
+        return playlist_path
+    if args.page_replace:
+        return playlist_path.replace(args.page_replace, str(page_value))
+    return set_page(playlist_path, args.page_key, page_value)
+
+
+def _scan_page(args, page_path, _page_limit, page_count):
+    page_known = set()
+    page_new = {}
+    end_of_playlist = False
+    try:
+        link_iter = extract_links.crawl(args, [page_path]) if args.recursive else extract_links.iter_links(args, page_path)
+        for link_dict in link_iter:
+            link = link_dict.pop("link")
+            link_dict.pop("mime", None)
+
+            if link == args.stop_link:
+                end_of_playlist = True
+                break
+            if link in page_known:
+                continue
+            if db_media.exists(args, link):
+                page_known.add(link)
+                if args.category:
+                    update_category(args, link)
+            else:
+                page_new[link] = objects.merge_dict_values_str(page_new.get(link) or {}, link_dict)
+            printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
+        print(file=sys.stderr)
+        if (
+            not args.recursive
+            and not (args.backfill_pages or args.fixed_pages)
+            and (
+                (args.stop_known and len(page_known) > args.stop_known)
+                or (args.stop_new and args.stop_new >= len(page_new))
+            )
+        ):
+            end_of_playlist = True
+    except requests.HTTPError as excinfo:
+        log.error(excinfo)
+    return page_known, page_new, end_of_playlist
+
+
+def _update_page_stops(page_count_since_new, page_count_since_match, page_new, page_known):
+    page_count_since_new = 0 if page_new else page_count_since_new + 1
+    page_count_since_match = 0 if page_new or page_known else page_count_since_match + 1
+    return page_count_since_new, page_count_since_match
+
+
 def extractor(args, playlist_path):
     known_media = set()
     new_media = set()
@@ -281,68 +332,23 @@ def extractor(args, playlist_path):
         if page_count > PAGE_DELAY_THRESHOLD:
             time.sleep(random.uniform(0.3, 4.55))
 
-        if (page_limit == 1 and args.page_start is None) or (page_value == (args.page_start or 0) == 0):
-            page_path = playlist_path
-        elif args.page_replace:
-            page_path = playlist_path.replace(args.page_replace, str(page_value))
-        else:
-            page_path = set_page(playlist_path, args.page_key, page_value)
+        page_path = _page_path(args, playlist_path, page_value, page_limit)
 
         log.info("Loading page %s", page_path)
-        page_known = set()
-        page_new = {}
-        try:
-            link_iter = (
-                extract_links.crawl(args, [page_path])
-                if args.recursive
-                else extract_links.iter_links(args, page_path)
-            )
-            for link_dict in link_iter:
-                link = link_dict.pop("link")
-                link_dict.pop("mime", None)
-
-                if link == args.stop_link:
-                    end_of_playlist = True
-                    break
-
-                if link in page_known:
-                    pass
-                elif db_media.exists(args, link):
-                    page_known.add(link)
-                    if args.category:
-                        update_category(args, link)
-                else:
-                    page_new[link] = objects.merge_dict_values_str(page_new.get(link) or {}, link_dict)
-
-                printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
-            print(file=sys.stderr)
-
-            if (
-                not args.recursive
-                and not (args.backfill_pages or args.fixed_pages)
-                and (
-                    (args.stop_known and len(page_known) > args.stop_known)
-                    or (args.stop_new and args.stop_new >= len(page_new))
-                )
-            ):
-                end_of_playlist = True
-                break
-        except requests.HTTPError as excinfo:
-            log.error(excinfo)
+        page_known, page_new, page_finished = _scan_page(args, page_path, page_limit, page_count)
+        end_of_playlist = end_of_playlist or page_finished
 
         add_media(args, [{"path": k, **v} for k, v in page_new.items()])
 
         new_media |= set(page_new.keys())
         known_media |= page_known
 
-        if len(page_new) > 0:
-            page_count_since_new = 0
-        else:
-            page_count_since_new += 1
-        if len(page_new) > 0 or len(page_known) > 0:
-            page_count_since_match = 0
-        else:
-            page_count_since_match += 1
+        page_count_since_new, page_count_since_match = _update_page_stops(
+            page_count_since_new,
+            page_count_since_match,
+            page_new,
+            page_known,
+        )
 
         if not (args.backfill_pages or args.fixed_pages) and (
             page_count_since_new >= args.stop_pages_no_new or page_count_since_match >= args.stop_pages_no_match
@@ -355,6 +361,55 @@ def extractor(args, playlist_path):
     return len(new_media)
 
 
+def _add_titles(args):
+    media_new = set()
+    media_known = set()
+    for url in shell_utils.gen_paths(args):
+        if url in media_known:
+            continue
+
+        d = db_media.get(args, url)
+        if d:
+            media_known.add(url)
+        else:
+            media_new.add(url)
+            d = consolidate_media(args, url)
+
+        d["title"] = web.get_title(args, url)
+        add_media(args, [d])
+        printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
+    print()
+
+
+def _add_without_extract(args):
+    media_new = set()
+    media_known = set()
+    for path in shell_utils.gen_paths(args):
+        if db_media.exists(args, path):
+            media_known.add(path)
+            if args.category:
+                update_category(args, path)
+        else:
+            add_media(args, [path])
+            media_new.add(path)
+        printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
+    print()
+
+
+def _add_extracted(args):
+    if args.selenium:
+        web.load_selenium(args)
+    try:
+        for playlist_count, playlist_path in enumerate(shell_utils.gen_paths(args)):
+            args.playlists_id = add_playlist(args, playlist_path)
+            extractor(args, playlist_path)
+            if playlist_count > PLAYLIST_DELAY_THRESHOLD:
+                time.sleep(random.uniform(0.05, 2))
+    finally:
+        if args.selenium:
+            web.quit_selenium(args)
+
+
 def links_add() -> None:
     args = parse_args(consts.SC.links_add, usage=usage.links_add)
 
@@ -365,54 +420,14 @@ def links_add() -> None:
         if args.selenium:
             web.load_selenium(args)
         try:
-            media_new = set()
-            media_known = set()
-            for url in shell_utils.gen_paths(args):
-                if url in media_known:
-                    continue
-
-                d = db_media.get(args, url)
-                if d:
-                    media_known.add(url)
-                else:
-                    media_new.add(url)
-                    d = consolidate_media(args, url)
-
-                d["title"] = web.get_title(args, url)
-
-                add_media(args, [d])
-                printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
-            print()
+            _add_titles(args)
         finally:
             if args.selenium:
                 web.quit_selenium(args)
     elif args.no_extract:
-        media_new = set()
-        media_known = set()
-        for p in shell_utils.gen_paths(args):
-            if db_media.exists(args, p):
-                media_known.add(p)
-                if args.category:
-                    update_category(args, p)
-            else:
-                add_media(args, [p])
-                media_new.add(p)
-            printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
-        print()
+        _add_without_extract(args)
     else:
-        if args.selenium:
-            web.load_selenium(args)
-        try:
-            for playlist_count, playlist_path in enumerate(shell_utils.gen_paths(args)):
-                args.playlists_id = add_playlist(args, playlist_path)
-                extractor(args, playlist_path)
-
-                if playlist_count > PLAYLIST_DELAY_THRESHOLD:
-                    time.sleep(random.uniform(0.05, 2))
-
-        finally:
-            if args.selenium:
-                web.quit_selenium(args)
+        _add_extracted(args)
 
 
 def links_update() -> None:

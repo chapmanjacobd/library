@@ -120,7 +120,7 @@ def tabs_shuffle() -> None:
 
     tabs = list(
         args.db.query(
-            f"""
+            """
         WITH m as (
             SELECT
                 m.rowid as id
@@ -143,8 +143,9 @@ def tabs_shuffle() -> None:
         FROM m
         WHERE time_last_played > 0
             AND frequency != 'daily'
-            {"AND frequency = '" + args.frequency + "'" if args.frequency else ''}
-        """
+            AND (? IS NULL OR frequency = ?)
+        """,
+            [args.frequency, args.frequency],
         )
     )
 

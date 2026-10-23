@@ -6,6 +6,50 @@ from library.utils import consts
 from library.utils.log_utils import log
 
 
+def _print_remote_output(text, is_success, quiet, error_verbosity, ignore_regexps):
+    if ignore_regexps is not None:
+        text = "\n".join(line for line in text.splitlines() if not any(pattern.match(line) for pattern in ignore_regexps))
+
+    text = text.strip()
+    if text:
+        if quiet and is_success:
+            log.debug(text)
+        elif consts.PYTEST_RUNNING:
+            log.warning(text)
+        elif error_verbosity == 0:
+            log.debug(text)
+        elif error_verbosity == 1:
+            log.info(text)
+        else:
+            log.warning(text)
+    return text
+
+
+def _copy_remote_files(ssh, command, local_files):
+    log.debug("Copying %s files to remote", len(local_files))
+    with ssh.open_sftp() as sftp:
+        tempdir = ssh_tempdir(ssh) or "."
+        library_dir = os.path.join(tempdir, "library_cmd_files")
+        cmd(ssh, "mkdir", "-p", library_dir)
+
+        remote_command = list(command)
+        for file_path in local_files:
+            remote_temp_file = os.path.join(library_dir, Path(file_path).name)
+            sftp.put(file_path, remote_temp_file)
+            remote_command = [remote_temp_file if item == file_path else item for item in remote_command]
+    return remote_command, library_dir
+
+
+def _cleanup_remote_files(ssh, local_files, library_dir):
+    if not local_files:
+        return
+    with ssh.open_sftp() as sftp:
+        for file_path in local_files:
+            remote_temp_file = os.path.join(library_dir, Path(file_path).name)
+            with suppress(FileNotFoundError):
+                sftp.remove(remote_temp_file)
+
+
 def cmd(
     ssh,  # paramiko.SSHClient
     *command,
@@ -18,37 +62,9 @@ def cmd(
     cwd=None,
     **kwargs,
 ) -> subprocess.CompletedProcess:
-    def print_std(s, is_success):
-        if ignore_regexps is not None:
-            s = "\n".join(line for line in s.splitlines() if not any(r.match(line) for r in ignore_regexps))
-
-        s = s.strip()
-        if s:
-            if quiet and is_success:
-                log.debug(s)
-            elif consts.PYTEST_RUNNING:
-                log.warning(s)
-            elif error_verbosity == 0:
-                log.debug(s)
-            elif error_verbosity == 1:
-                log.info(s)
-            else:
-                log.warning(s)
-        return s
-
+    library_dir = None
     if local_files:
-        log.debug("Copying %s files to remote", len(local_files))
-        with ssh.open_sftp() as sftp:
-            sftp = ssh.open_sftp()
-
-            tempdir = ssh_tempdir(ssh) or "."
-            library_dir = os.path.join(tempdir, "library_cmd_files")
-            r = cmd(ssh, "mkdir", "-p", library_dir)
-
-            for file in local_files:
-                remote_temp_file = os.path.join(library_dir, Path(file).name)
-                sftp.put(file, remote_temp_file)
-                command = [remote_temp_file if s == file else s for s in command]
+        command, library_dir = _copy_remote_files(ssh, command, local_files)
 
     command = shlex.join(str(s) for s in command)
     if cwd:
@@ -63,15 +79,11 @@ def cmd(
     r = subprocess.CompletedProcess(command, returncode, stdout.read().decode(), stderr.read().decode())
 
     if cleanup_local_files and local_files:
-        with ssh.open_sftp() as sftp:
-            for file in local_files:
-                remote_temp_file = os.path.join(library_dir, Path(file).name)
-                with suppress(FileNotFoundError):
-                    sftp.remove(remote_temp_file)
+        _cleanup_remote_files(ssh, local_files, library_dir)
 
     log.debug(r.args)
-    print_std(r.stdout, r.returncode == 0)
-    print_std(r.stderr, r.returncode == 0)
+    _print_remote_output(r.stdout, r.returncode == 0, quiet, error_verbosity, ignore_regexps)
+    _print_remote_output(r.stderr, r.returncode == 0, quiet, error_verbosity, ignore_regexps)
     if r.returncode != 0:
         if error_verbosity == 0:
             log.debug("[%s] exited %s", command, r.returncode)

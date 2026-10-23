@@ -113,14 +113,29 @@ def get_terminal_size():
     return shutil.get_terminal_size(fallback=(600, 50))
 
 
-TERMINAL_SIZE = get_terminal_size()
-MOBILE_TERMINAL = TERMINAL_SIZE.columns < MOBILE_TERMINAL_WIDTH
+class _TerminalState:
+    def __init__(self):
+        self.size = get_terminal_size()
+        self.is_mobile = self.size.columns < MOBILE_TERMINAL_WIDTH
+
+
+_terminal_state = _TerminalState()
+TERMINAL_SIZE = _terminal_state.size
+MOBILE_TERMINAL = _terminal_state.is_mobile
+
+
+def terminal_size():
+    return _terminal_state.size
+
+
+def is_mobile_terminal():
+    return _terminal_state.is_mobile
 
 
 def _on_winch(_signal, _frame):
-    global TERMINAL_SIZE, MOBILE_TERMINAL
-    TERMINAL_SIZE = get_terminal_size()
-    MOBILE_TERMINAL = TERMINAL_SIZE.columns < MOBILE_TERMINAL_WIDTH
+    _terminal_state.size = get_terminal_size()
+    _terminal_state.is_mobile = _terminal_state.size.columns < MOBILE_TERMINAL_WIDTH
+    globals().update(TERMINAL_SIZE=_terminal_state.size, MOBILE_TERMINAL=_terminal_state.is_mobile)
 
 
 if hasattr(signal, "SIGWINCH"):

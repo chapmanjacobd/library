@@ -38,8 +38,8 @@ def args_help(subcommand, text):
 def search_help():
     args = parse_args()
 
-    target_paths = __main__._canonical_target_paths()
-    alias_targets = __main__._module_alias_targets()
+    target_paths = __main__.canonical_target_paths()
+    alias_targets = __main__.module_alias_targets()
     all_commands = {
         command: target_paths[target]
         for command, target in alias_targets.items()
@@ -51,7 +51,7 @@ def search_help():
     subcommand = None
     for end in range(len(text), 0, -1):
         candidate = " ".join(text[:end]).replace("_", "-")
-        nested_target = __main__._nested_target(text[:end])
+        nested_target = __main__.nested_target(text[:end])
         if candidate in all_commands:
             subcommand, text = all_commands[candidate], text[end:]
             break
@@ -63,7 +63,7 @@ def search_help():
         args_help(subcommand, text)
         return
 
-    for category, commands in __main__._command_catalog():
+    for category, commands in __main__.command_catalog():
         matching_commands = []
         for canonical_path, description in commands:
             prog_usage = __main__.canonicalize_usage_for_command(

@@ -106,8 +106,8 @@ def scan_torrent_location(torrent, roots, max_depth=3):
     if torrent.num_files() == 0:
         return None, None
     first_file = Path(next(iter(torrent.files())).path)
-    for root in roots:
-        root = Path(root)
+    for raw_root in roots:
+        root = Path(raw_root)
         if not root.is_dir():
             continue
         for dirpath, dirnames, _filenames in os.walk(root):
@@ -150,6 +150,58 @@ def torrent_paths(args, torrent, temp_prefix, download_prefix):
     return download_path, temp_path
 
 
+def _torrent_prefixes(args):
+    if args.temp_drive and Path(args.temp_drive).is_absolute():
+        temp_drive = Path(args.temp_drive)
+    else:
+        temp_drive = Path(args.download_drive)
+    if "download_drive" in args.defaults and args.temp_drive:
+        download_drive = temp_drive
+    else:
+        download_drive = Path(args.download_drive)
+    return temp_drive / args.temp_prefix, download_drive / args.download_prefix
+
+
+def _expand_torrent_paths(paths):
+    expanded_paths = []
+    for raw_path in paths:
+        path = Path(raw_path)
+        if path.is_dir():
+            expanded_paths.extend(path.glob("*.torrent"))
+        else:
+            expanded_paths.append(path)
+    return expanded_paths
+
+
+def _start_torrent(args, qbt_client, path, temp_prefix, download_prefix):
+    torrent = torrent_decode(path)
+    download_path, temp_path = torrent_paths(args, torrent, temp_prefix, download_prefix)
+    if download_path is None:
+        log.warning(
+            "Skipping %s: no file matches under %s or %s (torrent file left in place)",
+            path,
+            temp_prefix,
+            download_prefix,
+        )
+        return
+    qbt_client.torrents_add(
+        torrent_files=path,
+        download_path=temp_path,
+        save_path=download_path,
+        tags=["library"],
+        use_auto_torrent_management=False,
+        is_stopped=args.stop,
+        add_to_top_of_queue=False,
+    )
+    info_hash = wait_torrent_loaded(qbt_client, torrent)
+    if info_hash and not args.stop:
+        qbt_client.torrents_start(info_hash)
+    if info_hash and args.force_start is not None:
+        qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=info_hash)
+    if args.delete_torrent:
+        trash(args, path)
+
+
 def torrents_start():
     args = parse_args()
 
@@ -160,58 +212,9 @@ def torrents_start():
 
     qbt_client = start_qBittorrent(args)
 
-    if args.temp_drive and Path(args.temp_drive).is_absolute():
-        temp_drive = Path(args.temp_drive)
-    else:
-        temp_drive = Path(args.download_drive)
-
-    if "download_drive" in args.defaults and args.temp_drive:
-        # --temp-drive set but not --download-drive: use the same drive for both prefixes
-        download_drive = temp_drive
-    else:
-        download_drive = Path(args.download_drive)
-    temp_prefix = temp_drive / args.temp_prefix
-    download_prefix = download_drive / args.download_prefix
-
-    paths = []
-    for p in args.paths:
-        p = Path(p)
-        if p.is_dir():
-            paths.extend(p.glob("*.torrent"))
-        else:
-            paths.append(p)
-
-    for path in paths:
-        torrent = torrent_decode(path)
-
-        download_path, temp_path = torrent_paths(args, torrent, temp_prefix, download_prefix)
-        if download_path is None:
-            log.warning(
-                "Skipping %s: no file matches under %s or %s (torrent file left in place)",
-                path,
-                temp_prefix,
-                download_prefix,
-            )
-            continue
-
-        qbt_client.torrents_add(
-            torrent_files=path,
-            download_path=temp_path,
-            save_path=download_path,
-            tags=["library"],
-            use_auto_torrent_management=False,
-            is_stopped=args.stop,
-            add_to_top_of_queue=False,
-        )
-
-        info_hash = wait_torrent_loaded(qbt_client, torrent)
-        if info_hash and not args.stop:
-            qbt_client.torrents_start(info_hash)
-        if info_hash and args.force_start is not None:
-            qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=info_hash)
-
-        if args.delete_torrent:
-            trash(args, path)
+    temp_prefix, download_prefix = _torrent_prefixes(args)
+    for path in _expand_torrent_paths(args.paths):
+        _start_torrent(args, qbt_client, path, temp_prefix, download_prefix)
 
     if shutil.which("qbt_prioritize.py"):
         processes.cmd("qbt_prioritize.py", strict=False)

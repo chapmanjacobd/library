@@ -96,21 +96,58 @@ def mark_media_deleted_like(args, paths) -> int:
     return modified_row_count
 
 
-def move_list() -> None:
-    args = parse_args()
-    _total, _used, free = shutil.disk_usage(args.target_mount_point)
+def _read_selection_input():
+    try:
+        return input("Paste a path: ").strip()
+    except EOFError:
+        return None
 
-    print("Current free space in target:", strings.file_size(free))
 
-    data = get_table(args)
+def _process_selection_input(args, input_path, cur, rest, data, selected_paths):
+    if input_path.lower() in ["done", "q"]:
+        return cur, rest, True, False
+    if input_path.lower() == "more":
+        cur, rest = iterate_and_show_options(args, rest)
+        return cur, rest, False, False
+    if input_path == "*":
+        if cur:
+            selected_paths.update([d["path"] for d in cur])
+        else:
+            selected_paths.update(data.keys())
+        cur, rest = iterate_and_show_options(args, rest)
+        return cur, rest, False, True
+    if input_path not in data:
+        return cur, rest, False, False
+    if input_path in selected_paths:
+        selected_paths.discard(input_path)
+    else:
+        selected_paths.add(input_path)
+    return cur, rest, False, True
 
-    tbl = deepcopy(data)
+
+def _remove_child_paths(selected_paths):
+    temp_set = selected_paths.copy()
+    for path1 in temp_set:
+        for path2 in temp_set:
+            if path1 != path2 and path1.startswith(path2):
+                selected_paths.discard(path1)
+
+
+def _print_selection_status(selected_paths, data, free):
+    selected_paths_size = sum([data[path]["size"] for path in selected_paths])
+    print(
+        len(selected_paths),
+        "selected paths:",
+        strings.file_size(selected_paths_size),
+        "; future free space:",
+        strings.file_size(selected_paths_size + free),
+    )
+
+
+def _select_paths(args, data, free):
+    tbl = deepcopy(list(data.values()))
     cur, rest = iterate_and_show_options(args, tbl)
-
-    data = {d["path"]: d for d in data}
-
     devices.set_readline_completion(list(data.keys()))
-
     print(
         """
 ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
@@ -126,67 +163,46 @@ Paste a folder (and press enter) to toggle selection
 Type "*" to select all files in the most recently printed table
 """,
     )
-
     selected_paths = set()
     while True:
-        try:
-            input_path = input("Paste a path: ").strip()
-        except EOFError:
+        input_path = _read_selection_input()
+        if input_path is None:
             break
-        if input_path.lower() in ["done", "q"]:
+        cur, rest, finished, show_status = _process_selection_input(
+            args, input_path, cur, rest, data, selected_paths
+        )
+        if finished:
             break
-
-        if input_path.lower() == "more":
-            cur, rest = iterate_and_show_options(args, rest)
+        if not show_status:
             continue
+        _remove_child_paths(selected_paths)
+        _print_selection_status(selected_paths, data, free)
+    return selected_paths
 
-        if input_path == "*":
-            if cur:
-                selected_paths.update([d["path"] for d in cur])
-            else:
-                selected_paths.update(data.keys())
 
-            cur, rest = iterate_and_show_options(args, rest)
-        else:
-            try:
-                data[input_path]
-            except KeyError:
-                continue
+def _save_selected_paths(args, selected_paths):
+    if not selected_paths:
+        return
+    temp_file = Path(tempfile.mktemp())
+    with temp_file.open("w") as f:
+        f.writelines(l + "\n" for l in selected_paths)
 
-            if input_path in selected_paths:
-                selected_paths.discard(input_path)
-            else:
-                selected_paths.add(input_path)
+    print(
+        f"""
 
-        # remove child paths so that the size of data is not counted twice
-        temp_set = selected_paths.copy()
-        for path1 in temp_set:
-            for path2 in temp_set:
-                if path1 != path2 and path1.startswith(path2):
-                    selected_paths.discard(path1)
+Folder list saved to {temp_file}. You may want to use the following command to move files to an EMPTY folder target:
 
-        selected_paths_size = sum([data[p]["size"] for p in selected_paths])
-        print(
-            len(selected_paths),
-            "selected paths:",
-            strings.file_size(selected_paths_size),
-            "; future free space:",
-            strings.file_size(selected_paths_size + free),
-        )
+    rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} -r -vv --dry-run / jim:/free/real/estate/
+    """,
+    )
+    if devices.confirm(f"Mark as deleted in {args.database}?"):  # type: ignore
+        mark_media_deleted_like(args, list(selected_paths))
 
-    if selected_paths:
-        temp_file = Path(tempfile.mktemp())
-        with temp_file.open("w") as f:
-            f.writelines(l + "\n" for l in selected_paths)
 
-        print(
-            f"""
-
-    Folder list saved to {temp_file}. You may want to use the following command to move files to an EMPTY folder target:
-
-        rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} -r -vv --dry-run / jim:/free/real/estate/
-        """,
-        )
-
-        if devices.confirm(f"Mark as deleted in {args.database}?"):  # type: ignore
-            mark_media_deleted_like(args, list(selected_paths))
+def move_list() -> None:
+    args = parse_args()
+    _total, _used, free = shutil.disk_usage(args.target_mount_point)
+    print("Current free space in target:", strings.file_size(free))
+    data = {d["path"]: d for d in get_table(args)}
+    selected_paths = _select_paths(args, data, free)
+    _save_selected_paths(args, selected_paths)

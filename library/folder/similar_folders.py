@@ -164,37 +164,42 @@ def filter_groups_by_numbers(args, groups):
     return groups
 
 
-def similar_folders():
-    args = parse_args()
+def _load_media(args):
     media = shell_utils.gen_d(args)
-
     media = filter_engine.filter_items_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
-
     media = big_dirs.group_files_by_parent(args, media)
-    media = big_dirs.process_big_dirs(args, media)
+    return big_dirs.process_big_dirs(args, media)
 
-    if args.filter_sizes or args.filter_counts or args.filter_durations:
-        clusters = cluster_by_numbers(args, media)
-        groups = map_and_name(media, clusters)
-        log.info("Folder size/duration/count clustering sorted %s folders into %s groups", len(media), len(groups))
-        single_folder_groups = [d for d in groups if len(d["grouped_paths"]) == 1]
-        groups = [d for d in groups if len(d["grouped_paths"]) > 1]
-        log.info("Filtered out %s single-folder groups", len(single_folder_groups))
 
-        if args.filter_names:
-            media = [d for group in groups for d in group["grouped_paths"]]
-
+def _filter_number_groups(args, media):
+    if not (args.filter_sizes or args.filter_counts or args.filter_durations):
+        return media, None
+    clusters = cluster_by_numbers(args, media)
+    groups = map_and_name(media, clusters)
+    log.info("Folder size/duration/count clustering sorted %s folders into %s groups", len(media), len(groups))
+    single_folder_groups = [d for d in groups if len(d["grouped_paths"]) == 1]
+    groups = [d for d in groups if len(d["grouped_paths"]) > 1]
+    log.info("Filtered out %s single-folder groups", len(single_folder_groups))
     if args.filter_names:
-        groups = cluster_folders(args, media)
-        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
-        log.info("Name clustering sorted %s folders into %s groups", len(media), len(groups))
+        media = [d for group in groups for d in group["grouped_paths"]]
+    return media, groups
 
-        if args.filter_sizes or args.filter_counts or args.filter_durations:
-            prev_count = len(groups)
-            groups = filter_groups_by_numbers(args, groups)  # effectively a second pass
-            log.info("(2nd pass) group size/duration/count filtering removed %s groups", prev_count - len(groups))
 
+def _filter_name_groups(args, media, groups):
+    if not args.filter_names:
+        return groups
+    groups = cluster_folders(args, media)
+    groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
+    log.info("Name clustering sorted %s folders into %s groups", len(media), len(groups))
+    if args.filter_sizes or args.filter_counts or args.filter_durations:
+        prev_count = len(groups)
+        groups = filter_groups_by_numbers(args, groups)
+        log.info("(2nd pass) group size/duration/count filtering removed %s groups", prev_count - len(groups))
+    return groups
+
+
+def _print_groups(args, groups):
     if not args.only_originals and not args.only_duplicates:
         print("Duplicate groups:")
 
@@ -230,3 +235,11 @@ def similar_folders():
 
     if not args.only_originals and not args.only_duplicates:
         print(len(groups), "groups found")
+
+
+def similar_folders():
+    args = parse_args()
+    media = _load_media(args)
+    media, groups = _filter_number_groups(args, media)
+    groups = _filter_name_groups(args, media, groups)
+    _print_groups(args, groups)

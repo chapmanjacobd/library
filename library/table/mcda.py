@@ -133,7 +133,8 @@ def words_to_numbers(args, words):
     mappings_file = getattr(args, "words_nums_map", None)
     mappings_context = objects.json_shelve(mappings_file, default) if mappings_file else nullcontext(default)
     with mappings_context as mappings:
-        for word in words:
+        for raw_word in words:
+            word = raw_word
             if word is None:
                 numbers.append(getattr(args, "nodata", 0))
                 continue

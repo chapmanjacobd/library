@@ -26,7 +26,8 @@ def history_add() -> None:
     history_exists = set()
     history_new = set()
     media_unknown = set()
-    for p in shell_utils.gen_paths(args):
+    for raw_path in shell_utils.gen_paths(args):
+        p = raw_path
         if Path(p).exists():
             p = str(Path(p).resolve())
         media_ids = [d["id"] for d in args.db.query("select id from media where path = ?", [p])]

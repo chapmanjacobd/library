@@ -47,8 +47,8 @@ def group_lines() -> None:
     groups: dict[str | None, list[str]] = {}
 
     for path in args.paths or [None]:
-        for line in _read_lines(path):
-            line = line.rstrip("\n")
+        for raw_line in _read_lines(path):
+            line = raw_line.rstrip("\n")
             match = pattern.search(line)
             if match:
                 key = "".join(group or "" for group in match.groups()) if match.groups() else match.group(0)

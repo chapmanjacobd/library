@@ -253,7 +253,7 @@ def file_plot(args, path):
 
     plt.rcParams["figure.max_open_warning"] = 100  # auto mode can open many figures
 
-    for df_name, df in file_utils.read_file_to_dataframes(
+    for df_name, input_df in file_utils.read_file_to_dataframes(
         path,
         table_name=args.table_name,
         table_index=args.table_index,
@@ -266,6 +266,7 @@ def file_plot(args, path):
         transpose=args.transpose,
         skip_headers=args.skip_headers,
     ):
+        df = input_df
         if args.cols:
             df = df[args.cols]
 

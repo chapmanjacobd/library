@@ -49,20 +49,27 @@ def timeout(time_str) -> None:
     signal.alarm(max_seconds)
 
 
-sizeout_max = None
-sizeout_total = 0
+class _SizeoutState:
+    max_size = None
+    total = 0
+
+
+_sizeout_state = _SizeoutState()
+
+
+def reset_sizeout() -> None:
+    _sizeout_state.max_size = None
+    _sizeout_state.total = 0
 
 
 def sizeout(max_size: str, next_size: int) -> bool:
-    global sizeout_max, sizeout_total
+    if _sizeout_state.max_size is None:
+        _sizeout_state.max_size = nums.human_to_bytes(max_size)
 
-    if sizeout_max is None:
-        sizeout_max = nums.human_to_bytes(max_size)
-
-    if (sizeout_total + next_size) > sizeout_max:
+    if (_sizeout_state.total + next_size) > _sizeout_state.max_size:
         return True
 
-    sizeout_total += next_size
+    _sizeout_state.total += next_size
     return False
 
 
@@ -335,95 +342,102 @@ def adjust_duration(duration, start, end):
     return duration
 
 
+def _run_ffprobe(path, command_args):
+    command = [
+        "ffprobe",
+        "-hide_banner",
+        "-rw_timeout",
+        "100000000",
+        "-show_format",
+        "-show_streams",
+        "-show_chapters",
+        "-of",
+        "json",
+        *command_args,
+        path,
+    ]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = process.communicate(timeout=120)
+    if process.returncode != 0:
+        log.info("ffprobe %s out %s error %s", process.returncode, output, error)
+        if process.returncode == FFPROBE_INTERRUPTED:
+            raise KeyboardInterrupt
+        if process.returncode == FFPROBE_MISSING_LIBRARY:
+            raise RuntimeError
+        if process.returncode == FFPROBE_TOO_MANY_FILES:
+            raise OSError
+        raise UnplayableFileError(output, error)
+    return strings.safe_json_loads(output.decode("utf-8"))
+
+
+def _classify_probe_streams(streams):
+    classified = {
+        "video_streams": [],
+        "audio_streams": [],
+        "subtitle_streams": [],
+        "album_art_streams": [],
+        "other_streams": [],
+    }
+    stream_types = {
+        "audio": "audio_streams",
+        "subtitle": "subtitle_streams",
+    }
+    for stream in streams:
+        codec_type = stream.get("codec_type")
+        if codec_type == "video":
+            target = "album_art_streams" if is_album_art(stream) else "video_streams"
+        else:
+            target = stream_types.get(codec_type, "other_streams")
+        if codec_type:
+            classified[target].append(stream)
+    return classified
+
+
+def _probe_duration(format_data, audio_streams, video_streams):
+    duration = None
+    with suppress(KeyError):
+        duration = float(format_data["duration"])
+    if duration is None:
+        with suppress(IndexError, KeyError):
+            duration = float(audio_streams[0]["duration"])
+    if duration is None:
+        with suppress(IndexError, KeyError):
+            duration = float(video_streams[0]["duration"])
+    if duration and duration > 0:
+        start_time = abs(nums.safe_float(format_data.get("start_time")) or 0)
+        end_time = abs(nums.safe_float(format_data.get("end_time")) or 0)
+        return adjust_duration(duration, start_time, end_time)
+    return duration
+
+
+def _probe_framerate(streams):
+    rates = [
+        FFProbe.parse_framerate(stream.get(rate_name))
+        for rate_name in ("avg_frame_rate", "r_frame_rate")
+        for stream in streams
+        if stream.get(rate_name) is not None and "/0" not in stream.get(rate_name)
+    ]
+    return iterables.safe_unpack(rates)
+
+
 class FFProbe:
     def __init__(self, path, *args):
-        args = [
-            "ffprobe",
-            "-hide_banner",
-            "-rw_timeout",
-            "100000000",  # 1m40s
-            "-show_format",
-            "-show_streams",
-            "-show_chapters",
-            "-of",
-            "json",
-            *args,
-            path,
-        ]
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        out, err = p.communicate(timeout=120)  # 2 mins
-        if p.returncode != 0:
-            log.info("ffprobe %s out %s error %s", p.returncode, out, err)
-            if p.returncode == FFPROBE_INTERRUPTED:
-                raise KeyboardInterrupt
-            elif p.returncode == FFPROBE_MISSING_LIBRARY:  # Cannot open shared object file
-                raise RuntimeError
-            elif p.returncode == FFPROBE_TOO_MANY_FILES:  # Too many open files
-                raise OSError
-            else:
-                raise UnplayableFileError(out, err)
-        d = strings.safe_json_loads(out.decode("utf-8"))
+        data = _run_ffprobe(path, args)
 
         self.path = path
+        self.streams = data.get("streams")
+        self.chapters = data.get("chapters")
+        self.format = data.get("format")
 
-        self.streams = d.get("streams")
-        self.chapters = d.get("chapters")
-        self.format = d.get("format")
-
-        self.video_streams = []
-        self.audio_streams = []
-        self.subtitle_streams = []
-        self.album_art_streams = []
-        self.other_streams = []
-
-        for s in self.streams:
-            if "codec_type" not in s:
-                continue
-            elif s["codec_type"] == "video":
-                if is_album_art(s):
-                    self.album_art_streams.append(s)
-                else:
-                    self.video_streams.append(s)
-            elif s["codec_type"] == "audio":
-                self.audio_streams.append(s)
-            elif s["codec_type"] == "subtitle":
-                self.subtitle_streams.append(s)
-            else:
-                self.other_streams.append(s)
+        classified = _classify_probe_streams(self.streams)
+        for stream_name, stream_values in classified.items():
+            setattr(self, stream_name, stream_values)
 
         self.has_video = len(self.video_streams) > 0
         self.has_audio = len(self.audio_streams) > 0
 
-        duration = None
-        with suppress(KeyError):
-            duration = float(self.format["duration"])
-        if duration is None:
-            with suppress(IndexError, KeyError):
-                duration = float(self.audio_streams[0]["duration"])
-        if duration is None:
-            with suppress(IndexError, KeyError):
-                duration = float(self.video_streams[0]["duration"])
-
-        if duration and duration > 0:
-            start_time = abs(nums.safe_float(self.format.get("start_time")) or 0)
-            end_time = abs(nums.safe_float(self.format.get("end_time")) or 0)
-            self.duration = adjust_duration(duration, start_time, end_time)
-        else:
-            self.duration = duration
-
-        self.fps = iterables.safe_unpack(
-            [
-                self.parse_framerate(s.get("avg_frame_rate"))
-                for s in self.streams
-                if s.get("avg_frame_rate") is not None and "/0" not in s.get("avg_frame_rate")
-            ]
-            + [
-                self.parse_framerate(s.get("r_frame_rate"))
-                for s in self.streams
-                if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
-            ],
-        )
+        self.duration = _probe_duration(self.format, self.audio_streams, self.video_streams)
+        self.fps = _probe_framerate(self.streams)
 
     @staticmethod
     def parse_framerate(string) -> float | None:
@@ -598,6 +612,41 @@ def lsar(archive_path):
     return archive_info_list
 
 
+def _flatten_single_archive_file(archive_path, output_path, files, original_stats):
+    try:
+        rel_path = files[0].get("XADFileName")
+    except (IndexError, AttributeError):
+        return output_path, [], False
+    if not rel_path:
+        return output_path, [], False
+
+    parts = rel_path.replace("\\", "/").split("/")
+    skipped_folders = parts[:-1]
+    if skipped_folders:
+        log.warning("[%s]: Skipped folders: %s", archive_path, " / ".join(skipped_folders))
+
+    extracted_file_path = path_utils.safe_join(output_path, rel_path)
+    target_file_path = os.path.join(os.path.dirname(archive_path), parts[-1])
+    if not os.path.exists(extracted_file_path) or shell_utils.rename_move_file(extracted_file_path, target_file_path) is None:
+        return output_path, [], False
+
+    path_update = {"path": extracted_file_path, "new_path": target_file_path}
+    os.utime(target_file_path, (original_stats.st_atime, original_stats.st_mtime))
+    shutil.rmtree(output_path)
+    return os.path.dirname(archive_path), [path_update], True
+
+
+def _remove_archive_parts(archive_path, part_files):
+    try:
+        for part_file in part_files:
+            resolved_part_file = part_file
+            if not os.path.abspath(resolved_part_file):
+                resolved_part_file = path_utils.safe_join(os.path.dirname(archive_path), resolved_part_file)
+            os.unlink(resolved_part_file)
+    except Exception as excinfo:
+        log.warning("Error deleting files: %s %s", excinfo, part_files)
+
+
 def unar_delete(archive_path, single_file_flatten=False, flatten=True):
     output_path = unar_out_path(archive_path)
     if not os.path.exists(output_path):
@@ -610,67 +659,37 @@ def unar_delete(archive_path, single_file_flatten=False, flatten=True):
         log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
         return output_path, []
     part_files = lsar_json["lsarProperties"]["XADVolumes"]
-
     original_stats = os.stat(archive_path)
 
     try:
         cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path, nice=9)
     except subprocess.CalledProcessError as excinfo:
         error_log = excinfo.stderr.splitlines()
-        is_unsupported = any(unar_errors.unsupported_error.match(l) for l in error_log)
-        is_file_error = any(unar_errors.file_error.match(l) for l in error_log)
-        is_env_error = any(unar_errors.environment_error.match(l) for l in error_log)
-
-        if is_env_error:
+        if any(unar_errors.environment_error.match(line) for line in error_log):
             raise
-        elif is_unsupported:
+        if any(unar_errors.unsupported_error.match(line) for line in error_log):
             log.error(
                 "[%s]: Skipping unsupported archive. %s",
                 archive_path,
                 excinfo.stderr.replace("Use the -p option to provide one.", "Use unar -p to extract."),
             )
             return output_path, []
-        elif is_file_error:
-            pass  # delete archive
-        else:
+        if not any(unar_errors.file_error.match(line) for line in error_log):
             raise
 
     path_updates = []
+    files = [entry for entry in lsar_json.get("lsarContents", []) if not entry.get("XADIsDirectory")]
     is_flattened = False
-    lsar_contents = lsar_json.get("lsarContents", [])
-    files = [d for d in lsar_contents if not d.get("XADIsDirectory")]
     if single_file_flatten and len(files) == 1:
-        rel_path = files[0].get("XADFileName")
-        if rel_path:
-            parts = rel_path.replace("\\", "/").split("/")
-            skipped_folders = parts[:-1]
-            if skipped_folders:
-                log.warning("[%s]: Skipped folders: %s", archive_path, " / ".join(skipped_folders))
-
-            extracted_file_path = path_utils.safe_join(output_path, rel_path)
-            target_file_path = os.path.join(os.path.dirname(archive_path), parts[-1])
-
-            if os.path.exists(extracted_file_path) and shell_utils.rename_move_file(
-                extracted_file_path, target_file_path
-            ) is not None:
-                path_updates.append({"path": extracted_file_path, "new_path": target_file_path})
-                os.utime(target_file_path, (original_stats.st_atime, original_stats.st_mtime))
-                shutil.rmtree(output_path)
-                output_path = os.path.dirname(archive_path)
-                is_flattened = True
+        output_path, path_updates, is_flattened = _flatten_single_archive_file(
+            archive_path, output_path, files, original_stats
+        )
 
     if not is_flattened and flatten:
         path_updates.extend(shell_utils.flatten_wrapper_folder(output_path))
         path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
-    try:
-        for part_file in part_files:
-            if not os.path.abspath(part_file):
-                part_file = path_utils.safe_join(os.path.dirname(archive_path), part_file)
-            os.unlink(part_file)
-    except Exception as excinfo:
-        log.warning("Error deleting files: %s %s", excinfo, part_files)
-
+    _remove_archive_parts(archive_path, part_files)
     return output_path, path_updates
 
 

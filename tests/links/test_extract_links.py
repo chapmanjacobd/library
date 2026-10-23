@@ -324,7 +324,7 @@ def test_links_download_routes_by_profile(monkeypatch):
     cache = {}
 
     for url in ["https://x/clip", "https://x/pic", "https://x/raw.html"]:
-        extract_links._download_one(args, url, cache)
+        extract_links._download_one(args, url, cache)  # noqa: SLF001
 
     assert routed["tube"] == ["https://x/clip"]
     assert routed["gallery"] == ["https://x/pic"]
@@ -336,7 +336,7 @@ def test_links_download_explicit_profile_skips_resolution(monkeypatch):
     args = SimpleNamespace(profile=DBType.filesystem, direct=False, safe=False, prefix=".")
     cache = {}
 
-    extract_links._download_one(args, "https://x/clip", cache)
+    extract_links._download_one(args, "https://x/clip", cache)  # noqa: SLF001
 
     assert routed["tube"] == []
     assert routed["builtin"] == ["https://x/clip"]
@@ -349,7 +349,7 @@ def test_links_download_direct_uses_builtin(monkeypatch):
     args = SimpleNamespace(profile=DBType.auto, direct=True, safe=False, prefix=".")
     cache = {}
 
-    extract_links._download_one(args, "https://x/clip", cache)
+    extract_links._download_one(args, "https://x/clip", cache)  # noqa: SLF001
 
     assert routed["tube"] == []
     assert routed["gallery"] == []
@@ -362,7 +362,7 @@ def test_links_download_safe_skips_unsafe_links(monkeypatch):
     cache = {}
 
     for url in ["https://x/clip", "https://x/raw.html"]:
-        extract_links._download_one(args, url, cache)
+        extract_links._download_one(args, url, cache)  # noqa: SLF001
 
     assert routed["tube"] == ["https://x/clip"]
     assert routed["builtin"] == []
@@ -375,4 +375,4 @@ def test_builtin_download_propagates_failures(monkeypatch):
     monkeypatch.setattr(extract_links.web, "download_link", fail)
 
     with pytest.raises(OSError, match="destination is not writable"):
-        extract_links._builtin_download(SimpleNamespace(), "https://example.com/file")
+        extract_links._builtin_download(SimpleNamespace(), "https://example.com/file")  # noqa: SLF001

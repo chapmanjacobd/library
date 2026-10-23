@@ -268,130 +268,137 @@ def mv_to_keep_folder(args, d) -> None:
     log.info(f"{new_path}: new location")
 
 
-def group_and_delete(args, groups):
-    is_interactive = not any([args.all_keep, args.all_left, args.all_right, args.all_delete])
+def _delete_dupe(args, duplicate, detach):
+    shell_utils.trash(args, duplicate["path"], detach=detach)
+    log.info(f"{duplicate['path']}: Deleted")
 
-    for group_content in groups:
-        if group_content == "":
+
+def _auto_delete_similar(args, left, right, delete_dupe):
+    if args.auto_select_min_ratio >= 1.0:
+        return False
+    similar_ratio = difflib.SequenceMatcher(
+        None,
+        os.path.basename(left["path"]),
+        os.path.basename(right["path"]),
+    ).ratio()
+    if similar_ratio >= args.auto_select_min_ratio or any(
+        value in left["path"] and value in right["path"] for value in ["Goldmines_Bollywood"]
+    ):
+        delete_dupe(right)
+    return True
+
+
+def _handle_noninteractive(args, left, right, kept_dups, delete_dupe):
+    if args.all_left:
+        kept_dups.append(left)
+        delete_dupe(right)
+    elif args.all_right:
+        kept_dups.append(right)
+        delete_dupe(left)
+        left = right
+    elif args.all_delete:
+        delete_dupe(left)
+        delete_dupe(right)
+    return left
+
+
+def _handle_interactive(args, left, right, dups, kept_dups, delete_dupe):
+    is_next_iter_not_last = len(dups) > 1
+    if args.override_player:
+        for path in (left["path"], right["path"]):
+            player_process = processes.cmd(*shlex.split(args.override_player), path, strict=False)
+            if player_process.returncode == 0:
+                post_actions.post_act(
+                    args,
+                    path,
+                    media_len=len(dups),
+                    record_history=False,
+                    player_process=player_process,
+                    action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE",
+                )
+            else:
+                truncate_file_before_match(args.file_path, left["path"])
+                processes.player_exit(player_process)
+        return
+
+    side_by_side_mpv(args, left["path"], right["path"])
+    while True:
+        devices.clear_input()
+        user_input = (
+            input("Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: ").strip().lower()
+        )
+        if args.all_keep or user_input in ("k", "keep"):
+            kept_dups.extend((left, right))
+            break
+        if args.all_left or user_input in ("l", "left", ""):
+            kept_dups.append(left)
+            delete_dupe(right, detach=is_next_iter_not_last)
+            break
+        if args.all_right or user_input in ("r", "right"):
+            kept_dups.append(right)
+            delete_dupe(left, detach=is_next_iter_not_last)
+            break
+        if args.all_delete or user_input in ("d", "delete"):
+            delete_dupe(right, detach=is_next_iter_not_last)
+            delete_dupe(left, detach=is_next_iter_not_last)
+            break
+        if user_input in ("q", "quit"):
+            truncate_file_before_match(args.file_path, left["path"])
+            sys.exit(0)
+        print("Invalid input. Please type 'left', 'right', 'keep', 'delete', or 'quit' and enter")
+
+
+def _process_duplicate_group(args, group, is_interactive):
+    group.sort(key=lambda x: x["size"], reverse=True)
+    left = group[0]
+    dups = group[1:]
+    kept_dups = []
+    def delete_dupe(duplicate, detach=is_interactive):
+        _delete_dupe(args, duplicate, detach)
+    while dups:
+        right = dups.pop()
+        if right["path"] == left["path"]:
+            continue
+        if not os.path.exists(right["path"]):
+            log.debug(f"{right['path']}: not found")
+            continue
+        if not os.path.exists(left["path"]):
+            log.debug(f"{left['path']}: not found")
+            left = right
             continue
 
+        print(left["path"], strings.file_size(left["size"]))
+        print(right["path"], strings.file_size(right["size"]))
+        if _auto_delete_similar(args, left, right, delete_dupe):
+            continue
+        if not is_interactive:
+            left = _handle_noninteractive(args, left, right, kept_dups, delete_dupe)
+            continue
+
+        _handle_interactive(args, left, right, dups, kept_dups, delete_dupe)
+        if len(dups) > 1:
+            left = dups.pop()
+        elif len(dups) == 1 and kept_dups:
+            left = kept_dups[-1]
+
+    if args.keep_dir:
+        for duplicate in iterables.list_dict_unique(kept_dups, ["path"]):
+            if os.path.exists(duplicate["path"]):
+                mv_to_keep_folder(args, duplicate)
+
+
+def group_and_delete(args, groups):
+    is_interactive = not any([args.all_keep, args.all_left, args.all_right, args.all_delete])
+    for group_content in groups:
+        if not group_content:
+            continue
         group = extract_group_data(group_content)
         if group is None:
             continue
         if args.simulate:
             print("Would process duplicate group:", *(d["path"] for d in group), sep="\n")
             continue
-
-        def delete_dupe(d, detach=is_interactive):
-            shell_utils.trash(args, d["path"], detach=detach)
-            log.info(f"{d['path']}: Deleted")
-
-        group.sort(key=lambda x: x["size"], reverse=True)
-        left = group[0]
-
-        dups = group[1:]
-        kept_dups = []
-        while len(dups) > 0:
-            right = dups.pop()
-
-            if right["path"] == left["path"]:
-                continue
-
-            if not os.path.exists(right["path"]):
-                log.debug(f"{right['path']}: not found")
-                continue
-
-            if not os.path.exists(left["path"]):
-                log.debug(f"{left['path']}: not found")
-                left = right
-                continue
-
-            print(left["path"], strings.file_size(left["size"]))
-            print(right["path"], strings.file_size(right["size"]))
-
-            if args.auto_select_min_ratio < 1.0:
-                similar_ratio = difflib.SequenceMatcher(
-                    None,
-                    os.path.basename(left["path"]),
-                    os.path.basename(right["path"]),
-                ).ratio()
-                if similar_ratio >= args.auto_select_min_ratio or any(
-                    s in left["path"] and s in right["path"] for s in ["Goldmines_Bollywood"]
-                ):
-                    delete_dupe(right)
-                continue
-
-            if not is_interactive:
-                if args.all_left:
-                    kept_dups.append(left)
-                    delete_dupe(right)
-                elif args.all_right:
-                    kept_dups.append(right)
-                    delete_dupe(left)
-                    left = right
-                elif args.all_delete:
-                    delete_dupe(left)
-                    delete_dupe(right)
-                continue
-
-            is_next_iter_not_last = len(dups) > 1
-
-            if args.override_player:
-                for path in (left["path"], right["path"]):
-                    player_process = processes.cmd(*shlex.split(args.override_player), path, strict=False)
-                    if player_process.returncode == 0:
-                        post_actions.post_act(
-                            args,
-                            path,
-                            media_len=len(dups),
-                            record_history=False,
-                            player_process=player_process,
-                            action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE",
-                        )
-                    else:
-                        truncate_file_before_match(args.file_path, left["path"])
-                        processes.player_exit(player_process)
-            else:
-                side_by_side_mpv(args, left["path"], right["path"])
-                while True:
-                    devices.clear_input()
-                    user_input = (
-                        input("Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: ")
-                        .strip()
-                        .lower()
-                    )
-                    if args.all_keep or user_input in ("k", "keep"):
-                        kept_dups.append(left)
-                        kept_dups.append(right)
-                        break
-                    if args.all_left or user_input in ("l", "left", ""):
-                        kept_dups.append(left)
-                        delete_dupe(right, detach=is_next_iter_not_last)
-                        break
-                    if args.all_right or user_input in ("r", "right"):
-                        kept_dups.append(right)
-                        delete_dupe(left, detach=is_next_iter_not_last)
-                        break
-                    if args.all_delete or user_input in ("d", "delete"):
-                        delete_dupe(right, detach=is_next_iter_not_last)
-                        delete_dupe(left, detach=is_next_iter_not_last)
-                        break
-                    if user_input in ("q", "quit"):
-                        truncate_file_before_match(args.file_path, left["path"])
-                        sys.exit(0)
-                    else:
-                        print("Invalid input. Please type 'left', 'right', 'keep', 'delete', or 'quit' and enter")
-
-            if len(dups) > 1:
-                left = dups.pop()
-            elif len(dups) == 1 and len(kept_dups) > 0:
-                left = kept_dups[-1]
-
-        if args.keep_dir:
-            for d in iterables.list_dict_unique(kept_dups, ["path"]):
-                if os.path.exists(d["path"]):
-                    mv_to_keep_folder(args, d)
-
+        _process_duplicate_group(args, group, is_interactive)
         print()
 
 

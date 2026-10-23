@@ -78,16 +78,7 @@ def from_duration_to_duration_str(duration, segment_start, segment_end):
     return duration_str
 
 
-def reformat_ffprobe(path):
-    try:
-        probe = processes.FFProbe(path)
-    except Exception:
-        log.exception(f"Failed reading header. {path}")
-        return path
-
-    codec_types = [s.get("codec_type") for s in probe.streams]
-    audio_count = sum(1 for s in codec_types if s == "audio")
-
+def _clean_probe_metadata(probe, path):
     excluded_keys = [
         "encoder",
         "major_brand",
@@ -127,94 +118,96 @@ def reformat_ffprobe(path):
     ]
 
     tags = {k: v for d in [*probe.streams, probe.format] for k, v in d.get("tags", {}).items()}
-
     seen = set()
     metadata = objects.lower_keys(tags)
     for key, value in deepcopy(metadata).items():
         if key in excluded_keys or any(s in key for s in excluded_key_like) or value in seen or path in value:
             metadata.pop(key, None)
         seen.add(value)
+    return metadata
 
+
+def _probe_metadata_fields(metadata):
     comment = metadata.pop("comment", None) or ""
     if len(comment) < MIN_COVER_COMMENT_LENGTH and "cover" in comment.lower():
         comment = ""
-    description = iterables.safe_unpack(
-        metadata.pop("description", None),
-        metadata.pop("synopsis", None),
-        metadata.pop("unsynced lyrics", None),
-        metadata.pop("lyrics-none-eng", None),
-        metadata.pop("songs-db_custom1", None),
-        metadata.pop("songs-db_custom2", None),
-        metadata.pop("songs-db_custom3", None),
-        metadata.pop("songs-db_custom4", None),
-        metadata.pop("songs-db_occasion", None),
-        metadata.pop("albummood", None),
-        comment if "http" not in comment else None,
-    )
-    genre = iterables.safe_unpack(
-        metadata.pop("genre", None),
-        metadata.pop("albumgenre", None),
-        metadata.pop("albumgrouping", None),
-    )
-    artist = iterables.safe_unpack(
-        metadata.pop("artist", None),
-        metadata.pop("album_artist", None),
-        metadata.pop("tso2", None),
-        metadata.pop("performer", None),
-        metadata.pop("artists", None),
-        metadata.pop("composer", None),
-    )
-    album = iterables.safe_unpack(
-        metadata.pop("album", None),
-    )
-    track = iterables.safe_unpack(
-        metadata.pop("track", None),
-    )
-    track_total = iterables.safe_unpack(
-        metadata.pop("tracktotal", None),
-    )
-    title = iterables.safe_unpack(
-        metadata.pop("title", None),
-    )
-    url = iterables.safe_unpack(
-        metadata.pop("purl", None),
-        metadata.pop("url", None),
-        comment if "http" in comment else None,
-    )
-    date = iterables.safe_unpack(
-        metadata.pop("date", None),
-        metadata.pop("time", None),
-        metadata.pop("originalyear", None),
-        metadata.pop("creation_time", None),
-    )
+    return {
+        "description": iterables.safe_unpack(
+            metadata.pop("description", None),
+            metadata.pop("synopsis", None),
+            metadata.pop("unsynced lyrics", None),
+            metadata.pop("lyrics-none-eng", None),
+            metadata.pop("songs-db_custom1", None),
+            metadata.pop("songs-db_custom2", None),
+            metadata.pop("songs-db_custom3", None),
+            metadata.pop("songs-db_custom4", None),
+            metadata.pop("songs-db_occasion", None),
+            metadata.pop("albummood", None),
+            comment if "http" not in comment else None,
+        ),
+        "genre": iterables.safe_unpack(
+            metadata.pop("genre", None),
+            metadata.pop("albumgenre", None),
+            metadata.pop("albumgrouping", None),
+        ),
+        "artist": iterables.safe_unpack(
+            metadata.pop("artist", None),
+            metadata.pop("album_artist", None),
+            metadata.pop("tso2", None),
+            metadata.pop("performer", None),
+            metadata.pop("artists", None),
+            metadata.pop("composer", None),
+        ),
+        "album": iterables.safe_unpack(metadata.pop("album", None)),
+        "track": iterables.safe_unpack(metadata.pop("track", None)),
+        "track_total": iterables.safe_unpack(metadata.pop("tracktotal", None)),
+        "title": iterables.safe_unpack(metadata.pop("title", None)),
+        "url": iterables.safe_unpack(
+            metadata.pop("purl", None),
+            metadata.pop("url", None),
+            comment if "http" in comment else None,
+        ),
+        "date": iterables.safe_unpack(
+            metadata.pop("date", None),
+            metadata.pop("time", None),
+            metadata.pop("originalyear", None),
+            metadata.pop("creation_time", None),
+        ),
+    }
 
+
+def _format_probe_tags(fields):
     formatted_output = ""
-    # for key, value in metadata.items():
-    #     formatted_output += f"{key}::{value.strip()}\n"
+    description = fields["description"]
+    if description and not consts.MOBILE_TERMINAL:
+        description = printing.wrap_paragraphs(description.strip(), width=100)
+        formatted_output += f" Details: {textwrap.indent(description, '          ').lstrip()}\n"
+    if fields["artist"]:
+        formatted_output += f"  Artist: {fields['artist']}\n"
+    if fields["album"]:
+        formatted_output += f"   Album: {fields['album']}"
+        if fields["track"]:
+            track_total = f" of {fields['track_total']}" if fields["track_total"] else ""
+            formatted_output += f" (track {fields['track']}{track_total})"
+        formatted_output += "\n"
+    if fields["title"]:
+        formatted_output += f"   Title: {fields['title']}\n"
+    if fields["genre"]:
+        formatted_output += f"   Genre: {fields['genre']}\n"
+    if fields["date"]:
+        formatted_output += f"    Date: {fields['date']}\n"
+    if fields["url"]:
+        formatted_output += f"     URL: {fields['url']}\n"
+    return formatted_output
 
+
+def _format_probe_output(probe, fields, audio_count):
+    formatted_output = ""
     if audio_count > 1:
         formatted_output += f"Audio tracks: {audio_count}\n"
     if len(probe.chapters) > 1:
         formatted_output += f"Chapters: {len(probe.chapters)}\n"
-
-    if description and not consts.MOBILE_TERMINAL:
-        description = printing.wrap_paragraphs(description.strip(), width=100)
-        formatted_output += f" Details: {textwrap.indent(description, '          ').lstrip()}\n"
-    if artist:
-        formatted_output += f"  Artist: {artist}\n"
-    if album:
-        formatted_output += f"   Album: {album}"
-        if track:
-            formatted_output += f" (track {track}{(' of ' + track_total) if track_total else ''})"
-        formatted_output += "\n"
-    if title:
-        formatted_output += f"   Title: {title}\n"
-    if genre:
-        formatted_output += f"   Genre: {genre}\n"
-    if date:
-        formatted_output += f"    Date: {date}\n"
-    if url:
-        formatted_output += f"     URL: {url}\n"
+    formatted_output += _format_probe_tags(fields)
 
     duration = nums.safe_int(probe.duration) or 0
     if duration > 0:
@@ -224,8 +217,21 @@ def reformat_ffprobe(path):
             segment_end=nums.safe_int(probe.format.get("end_time")) or 0,
         )
         formatted_output += duration_str
+    return formatted_output
 
-    # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
+
+def reformat_ffprobe(path):
+    try:
+        probe = processes.FFProbe(path)
+    except Exception:
+        log.exception(f"Failed reading header. {path}")
+        return path
+
+    audio_count = sum(1 for stream in probe.streams if stream.get("codec_type") == "audio")
+    metadata = _clean_probe_metadata(probe, path)
+    fields = _probe_metadata_fields(metadata)
+    formatted_output = _format_probe_output(probe, fields, audio_count)
+
     return textwrap.indent(formatted_output, "    ")
 
 
@@ -368,14 +374,7 @@ def playback_next() -> None:
             shell_utils.trash(args, playing["mpv"])
 
 
-def playback_seek(command="seek") -> None:
-    args = parse_args(usage.seek, command=command)
-    if args.simulate:
-        print("Would seek playback by", args.time)
-        return
-
-    playing = _now_playing(args)
-
+def _seek_seconds(args, command):
     s = args.time
     is_relative = False
     is_negative = False
@@ -398,6 +397,29 @@ def playback_seek(command="seek") -> None:
         is_relative = True
         is_negative = False
         seconds = abs(seconds)
+    return seconds, is_relative, is_negative
+
+
+def _seek_chromecast(args, seconds, is_relative, is_negative):
+    catt_device = []
+    if args.chromecast_device:
+        catt_device = ["-d", args.chromecast_device]
+    if is_relative and is_negative:
+        processes.cmd("catt", *catt_device, "rewind", str(int(seconds)))
+    elif is_relative:
+        processes.cmd("catt", *catt_device, "ffwd", str(int(seconds)))
+    else:
+        processes.cmd("catt", *catt_device, "seek", str(int(seconds)))
+
+
+def playback_seek(command="seek") -> None:
+    args = parse_args(usage.seek, command=command)
+    if args.simulate:
+        print("Would seek playback by", args.time)
+        return
+
+    playing = _now_playing(args)
+    seconds, is_relative, is_negative = _seek_seconds(args, command)
 
     if playing["mpv"]:
         args.mpv.command("seek", seconds, "relative" if is_relative else "absolute")
@@ -405,15 +427,7 @@ def playback_seek(command="seek") -> None:
             args.mpv.terminate(join=None)
 
     if playing["catt"]:
-        catt_device = []
-        if args.chromecast_device:
-            catt_device = ["-d", args.chromecast_device]
-        if is_relative and is_negative:
-            processes.cmd("catt", *catt_device, "rewind", str(int(seconds)))
-        elif is_relative:
-            processes.cmd("catt", *catt_device, "ffwd", str(int(seconds)))
-        else:
-            processes.cmd("catt", *catt_device, "seek", str(int(seconds)))
+        _seek_chromecast(args, seconds, is_relative, is_negative)
 
 
 def playback_ffwd() -> None:

@@ -11,7 +11,7 @@ def _portable_usage(text: str) -> str:
     )
 
 
-for category, category_progs in __main__._command_catalog():
+for category, category_progs in __main__.command_catalog():
     usage_details_md.append(f"\n### {category}\n")
 
     for canonical_command, prog_description in category_progs:

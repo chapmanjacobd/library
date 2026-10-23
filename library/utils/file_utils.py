@@ -98,77 +98,82 @@ def head_foot_stream(url, head_len, foot_len):
     return stream
 
 
+def _detect_special_mimetype(path, ext, _puremagic):
+    if ext in (".zarr", ".zarr/"):
+        return "Zarr"
+    if Path(path).is_dir():
+        return "directory"
+    file_type, _encoding = mimetypes.guess_type(path, strict=False)
+    if file_type is not None:
+        return file_type
+
+    pandas_ext = {
+        ".dta": "Stata",
+        ".xlsx": "Excel",
+        ".xls": "Excel",
+        ".json": "JSON",
+        ".jsonl": "JSON Lines",
+        ".ndjson": "JSON Lines",
+        ".geojson": "GeoJSON",
+        ".geojsonl": "GeoJSON Lines",
+        ".ndgeojson": "GeoJSON Lines",
+        ".hdf": "HDF5",
+        ".feather": "Feather",
+        ".parquet": "Parquet",
+        ".sas7bdat": "SAS",
+        ".sav": "SPSS",
+        ".pkl": "Pickle",
+        ".orc": "ORC",
+    }
+    return pandas_ext.get(ext)
+
+
+def _detect_magic_mimetype(path, puremagic):
+    p = Path(path)
+    try:
+        if path.startswith("http"):
+            max_head = max([len(x.byte_match) + x.offset for x in puremagic.magic_header_array])
+            max_foot = max([len(x.byte_match) + abs(x.offset) for x in puremagic.magic_footer_array])
+            info = puremagic.magic_stream(head_foot_stream(path, max_head, max_foot), path)
+        else:
+            try:
+                info = puremagic.magic_file(path)
+            except OSError as excinfo:
+                if excinfo.errno == errno.ENXIO:
+                    raise puremagic.PureError("No such device or address") from excinfo
+                raise
+        log.debug(info)
+        return info[0].name
+    except (puremagic.PureError, IndexError, ValueError):
+        device_types = (
+            ("socket", p.is_socket),
+            ("fifo", p.is_fifo),
+            ("symlink", p.is_symlink),
+            ("block device", p.is_block_device),
+            ("char device", p.is_char_device),
+        )
+        for file_type, predicate in device_types:
+            if predicate():
+                return file_type
+        try:
+            if Path(path).stat().st_size == 0:
+                return "empty file"
+        except Exception:
+            return None
+    except (FileNotFoundError, PermissionError):
+        return None
+    return None
+
+
 @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
 def detect_mimetype(path):
     import puremagic
 
-    p = Path(path)
-
-    file_type = None
     ext = puremagic.ext_from_filename(path)
-    if ext in (".zarr", ".zarr/"):
-        file_type = "Zarr"
-    elif p.is_dir():
-        file_type = "directory"
-    else:
-        file_type, _encoding = mimetypes.guess_type(path, strict=False)
-
-    if ext and file_type is None:
-        pandas_ext = {
-            ".dta": "Stata",
-            ".xlsx": "Excel",
-            ".xls": "Excel",
-            ".json": "JSON",
-            ".jsonl": "JSON Lines",
-            ".ndjson": "JSON Lines",
-            ".geojson": "GeoJSON",
-            ".geojsonl": "GeoJSON Lines",
-            ".ndgeojson": "GeoJSON Lines",
-            ".hdf": "HDF5",
-            ".feather": "Feather",
-            ".parquet": "Parquet",
-            ".sas7bdat": "SAS",
-            ".sav": "SPSS",
-            ".pkl": "Pickle",
-            ".orc": "ORC",
-        }
-        file_type = pandas_ext.get(ext)
+    file_type = _detect_special_mimetype(path, ext, puremagic)
 
     if file_type is None:
-        try:
-            if path.startswith("http"):
-                max_head = max([len(x.byte_match) + x.offset for x in puremagic.magic_header_array])
-                max_foot = max([len(x.byte_match) + abs(x.offset) for x in puremagic.magic_footer_array])
-                info = puremagic.magic_stream(head_foot_stream(path, max_head, max_foot), path)
-            else:
-                try:
-                    info = puremagic.magic_file(path)
-                except OSError as excinfo:
-                    if excinfo.errno == errno.ENXIO:
-                        raise puremagic.PureError("No such device or address") from excinfo
-                    else:
-                        raise
-            log.debug(info)
-            file_type = info[0].name
-        except (puremagic.PureError, IndexError, ValueError):
-            if p.is_socket():
-                file_type = "socket"
-            elif p.is_fifo():
-                file_type = "fifo"
-            elif p.is_symlink():
-                file_type = "symlink"
-            elif p.is_block_device():
-                file_type = "block device"
-            elif p.is_char_device():
-                file_type = "char device"
-            try:
-                if Path(path).stat().st_size == 0:
-                    file_type = "empty file"
-            except Exception:
-                return None
-
-        except (FileNotFoundError, PermissionError):
-            return None
+        file_type = _detect_magic_mimetype(path, puremagic)
 
     return file_type
 
@@ -217,6 +222,225 @@ def json_source(path: str):
     return StringIO(path)
 
 
+def _read_sqlite_tables(path, table_name, table_index, start_row, end_row, order_by):
+    import pandas as pd
+    from sqlite_utils import Database
+
+    db = Database(path)
+    if table_name:
+        tables = [table_name]
+    else:
+        tables = [
+            table
+            for table in db.table_names() + db.view_names()
+            if not any(["_fts_" in table, table.endswith("_fts"), table.startswith("sqlite_")])
+        ]
+        if table_index is not None:
+            tables = [tables[table_index]]
+
+    dataframes = [
+        NDF(table, pd.DataFrame(db[table].rows_where(offset=start_row, limit=end_row, order_by=order_by)))
+        for table in tables
+    ]
+    db.close()
+    return dataframes
+
+
+def _read_excel_tables(path, table_name, table_index, start_row, end_row, skip_headers):
+    import pandas as pd
+
+    excel_data = pd.read_excel(
+        path,
+        sheet_name=table_name or table_index,
+        nrows=end_row,
+        skiprows=start_row,
+        header=None if skip_headers else 0,
+    )
+    if isinstance(excel_data, pd.DataFrame):
+        return [NDF(name, excel_data.loc[name]) for name in excel_data.index.levels[0]]  # type: ignore
+    return [NDF(sheet_name, dataframe) for sheet_name, dataframe in excel_data.items()]
+
+
+def _read_xarray_table(path, mimetype):
+    import xarray as xr  # type: ignore
+
+    dataset = xr.open_dataset(path) if mimetype in ("netcdf", "application/x-netcdf") else xr.open_zarr(path)
+    return [NDF(None, dataset.to_dataframe())]
+
+
+def _read_pandas_table(path, mimetype, start_row, end_row, encoding, skip_headers):
+    import pandas as pd
+
+    readers = {
+        "hdf": lambda: pd.read_hdf(path, start=start_row, stop=end_row),
+        "application/x-hdf": lambda: pd.read_hdf(path, start=start_row, stop=end_row),
+        "json": lambda: pd.read_json(json_source(path), encoding=encoding),
+        "application/json": lambda: pd.read_json(json_source(path), encoding=encoding),
+        "jsonl": lambda: pd.read_json(json_source(path), nrows=end_row, lines=True, encoding=encoding),
+        "json lines": lambda: pd.read_json(json_source(path), nrows=end_row, lines=True, encoding=encoding),
+        "geojson lines": lambda: pd.read_json(json_source(path), nrows=end_row, lines=True, encoding=encoding),
+        "csv": lambda: pd.read_csv(
+            path, nrows=end_row, skiprows=start_row or 0, encoding=encoding, header=None if skip_headers else 0
+        ),
+        "text/csv": lambda: pd.read_csv(
+            path, nrows=end_row, skiprows=start_row or 0, encoding=encoding, header=None if skip_headers else 0
+        ),
+        "lines": lambda: pd.read_csv(
+            path,
+            names=["text"],
+            sep="\r",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "text/plain": lambda: pd.read_csv(
+            path,
+            names=["text"],
+            sep="\r",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "plaintext": lambda: pd.read_csv(
+            path,
+            names=["text"],
+            sep="\r",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "plain": lambda: pd.read_csv(
+            path,
+            names=["text"],
+            sep="\r",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "wsv": lambda: pd.read_csv(
+            path,
+            delim_whitespace=True,
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "text/wsv": lambda: pd.read_csv(
+            path,
+            delim_whitespace=True,
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "text/whitespace-separated-values": lambda: pd.read_csv(
+            path,
+            delim_whitespace=True,
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "tsv": lambda: pd.read_csv(
+            path,
+            delimiter="\t",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "text/tsv": lambda: pd.read_csv(
+            path,
+            delimiter="\t",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "text/tab-separated-values": lambda: pd.read_csv(
+            path,
+            delimiter="\t",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        ),
+        "parq": lambda: pd.read_parquet(path),
+        "parquet": lambda: pd.read_parquet(path),
+        "application/parquet": lambda: pd.read_parquet(path),
+        "pkl": lambda: pd.read_pickle(path),  # Pickle is explicitly selected by the caller.
+        "pickle": lambda: pd.read_pickle(path),
+        "stata": lambda: pd.read_stata(path),
+        "feather": lambda: pd.read_feather(path),
+        "orc": lambda: pd.read_orc(path),
+    }
+    reader = readers.get(mimetype)
+    return [NDF(None, reader())] if reader else None
+
+
+def _read_html_tables(path, start_row, encoding):
+    import pandas as pd
+
+    if path.startswith("http"):
+        path = StringIO(web.extract_html(path))
+    return [NDF(None, dataframe) for dataframe in pd.read_html(path, skiprows=start_row, encoding=encoding)]
+
+
+def _read_pdf_tables(path, start_row, end_row):
+    import pandas as pd
+    import camelot
+
+    if path.startswith(("http://", "https://", "ftp://")) and " " in path:
+        path = web.url_encode(path)
+
+    dataframes = []
+    for table in camelot.read_pdf(path, pages="all", suppress_stdout=False):  # type: ignore
+        dataframe = table.df
+        if start_row:
+            dataframe = dataframe.iloc[start_row:]
+        if end_row:
+            dataframe = dataframe.iloc[:end_row]
+        if isinstance(dataframe.columns, pd.RangeIndex):
+            dataframe.columns = dataframe.iloc[0]
+            dataframe = dataframe.iloc[1:]
+        dataframe.columns = [" ".join(column.replace("\n", "").split()) for column in dataframe.columns]
+        dataframes.append(NDF(None, dataframe))
+    return dataframes
+
+
+def _read_typed_tables(path, mimetype, table_name, table_index, start_row, end_row, order_by, encoding, skip_headers):
+    dataframes = None
+    if mimetype in ("sqlite", "sqlite3", "sqlite database file", "application/vnd.sqlite3"):
+        dataframes = _read_sqlite_tables(path, table_name, table_index, start_row, end_row, order_by)
+    elif mimetype in (
+        "excel",
+        "application/vnd.ms-excel",
+        "excel spreadsheet subheader",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ):
+        dataframes = _read_excel_tables(path, table_name, table_index, start_row, end_row, skip_headers)
+    elif mimetype in ("netcdf", "application/x-netcdf", "zarr"):
+        dataframes = _read_xarray_table(path, mimetype)
+    else:
+        dataframes = _read_pandas_table(path, mimetype, start_row, end_row, encoding, skip_headers)
+        if dataframes is None and mimetype in ("html", "htm", "text/html", "html document"):
+            dataframes = _read_html_tables(path, start_row, encoding)
+        elif dataframes is None and "pdf" in mimetype:
+            dataframes = _read_pdf_tables(path, start_row, end_row)
+        elif dataframes is None and "xml" in mimetype:
+            import pandas as pd
+
+            dataframes = [NDF(None, pd.read_xml(path, encoding=encoding or "utf-8"))]
+        elif dataframes is None:
+            message = f"{path}: Unsupported file type: {mimetype}"
+            raise ValueError(message)
+    return dataframes
+
+
 @retry_with_different_encodings
 def read_file_to_dataframes(
     path,
@@ -244,182 +468,10 @@ def read_file_to_dataframes(
         msg = f"{path}: File type could not be determined. Pass in --filetype"
         raise ValueError(msg)
 
-    dfs: list[NDF] = []
 
-    if mimetype in ("sqlite", "sqlite3", "sqlite database file", "application/vnd.sqlite3"):
-        import pandas as pd
-        from sqlite_utils import Database
-
-        db = Database(path)
-
-        if table_name:
-            tables = [table_name]
-        else:
-            tables = [
-                s
-                for s in db.table_names() + db.view_names()
-                if not any(["_fts_" in s, s.endswith("_fts"), s.startswith("sqlite_")])
-            ]
-            if table_index is not None:
-                tables = [tables[table_index]]
-
-        for table in tables:
-            df = pd.DataFrame(db[table].rows_where(offset=start_row, limit=end_row, order_by=order_by))
-            dfs.append(NDF(table, df))
-        db.close()
-    elif mimetype in (
-        "excel",
-        "application/vnd.ms-excel",
-        "excel spreadsheet subheader",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ):
-        excel_data = pd.read_excel(
-            path,
-            sheet_name=table_name or table_index,
-            nrows=end_row,
-            skiprows=start_row,
-            header=None if skip_headers else 0,
-        )
-
-        if isinstance(excel_data, pd.DataFrame):
-            worksheet_names = excel_data.index.levels[0]  # type: ignore
-            for name in worksheet_names:
-                df = excel_data.loc[name]
-                dfs.append(NDF(name, df))
-        else:
-            for worksheet_name, df in excel_data.items():
-                dfs.append(NDF(worksheet_name, df))
-    elif mimetype in (
-        "netcdf",
-        "application/x-netcdf",
-    ):
-        import xarray as xr  # type: ignore
-
-        ds = xr.open_dataset(path)
-        df = ds.to_dataframe()
-        dfs.append(NDF(None, df))
-    elif mimetype == "zarr":
-        import xarray as xr  # type: ignore
-
-        ds = xr.open_zarr(path)
-        df = ds.to_dataframe()
-        dfs.append(NDF(None, df))
-    elif mimetype in (
-        "hdf",
-        "application/x-hdf",
-    ):
-        df = pd.read_hdf(path, start=start_row, stop=end_row)
-        dfs.append(NDF(None, df))
-    elif mimetype in (
-        "json",
-        "application/json",
-    ):
-        df = pd.read_json(json_source(path), encoding=encoding)
-        dfs.append(NDF(None, df))
-    elif mimetype in ("jsonl", "json lines", "geojson lines"):
-        df = pd.read_json(json_source(path), nrows=end_row, lines=True, encoding=encoding)
-        dfs.append(NDF(None, df))
-    elif mimetype in (
-        "csv",
-        "text/csv",
-    ):
-        df = pd.read_csv(
-            path, nrows=end_row, skiprows=start_row or 0, encoding=encoding, header=None if skip_headers else 0
-        )
-        dfs.append(NDF(None, df))
-    elif mimetype in (
-        "lines",
-        "text/plain",
-        "plaintext",
-        "plain",
-    ):
-        df = pd.read_csv(
-            path,
-            names=["text"],
-            sep="\r",  # just something to keep the parser busy
-            nrows=end_row,
-            skiprows=start_row or 0,
-            encoding=encoding,
-            header=None if skip_headers else 0,
-        )
-        dfs.append(NDF(None, df))
-    elif mimetype in (
-        "wsv",
-        "text/wsv",
-        "text/whitespace-separated-values",
-    ):
-        df = pd.read_csv(
-            path,
-            delim_whitespace=True,
-            nrows=end_row,
-            skiprows=start_row or 0,
-            encoding=encoding,
-            header=None if skip_headers else 0,
-        )
-        dfs.append(NDF(None, df))
-    elif mimetype in (
-        "tsv",
-        "text/tsv",
-        "text/tab-separated-values",
-    ):
-        df = pd.read_csv(
-            path,
-            delimiter="\t",
-            nrows=end_row,
-            skiprows=start_row or 0,
-            encoding=encoding,
-            header=None if skip_headers else 0,
-        )
-        dfs.append(NDF(None, df))
-    elif mimetype in ("parq", "parquet", "application/parquet"):
-        df = pd.read_parquet(path)
-        dfs.append(NDF(None, df))
-    elif mimetype in ("pkl", "pickle"):
-        # Pickle is executable by design; only opt in when the caller identifies this format.
-        df = pd.read_pickle(path)  # noqa: S301
-        dfs.append(NDF(None, df))
-    elif mimetype in (
-        "html",
-        "htm",
-        "text/html",
-        "html document",
-    ):
-        if path.startswith("http"):
-            path = StringIO(web.extract_html(path))
-        dfs.extend(NDF(None, df) for df in pd.read_html(path, skiprows=start_row, encoding=encoding))
-    elif mimetype == "stata":
-        df = pd.read_stata(path)
-        dfs.append(NDF(None, df))
-    elif mimetype == "feather":
-        df = pd.read_feather(path)
-        dfs.append(NDF(None, df))
-    elif mimetype == "orc":
-        df = pd.read_orc(path)
-        dfs.append(NDF(None, df))
-    elif "pdf" in mimetype:
-        import camelot
-
-        if path.startswith(("http://", "https://", "ftp://")) and " " in path:
-            path = web.url_encode(path)  # camelot does not like spaces in URLs...
-
-        for t in camelot.read_pdf(path, pages="all", suppress_stdout=False):  # type: ignore
-            df = t.df
-            if start_row:
-                df = df.iloc[start_row:]
-            if end_row:
-                df = df.iloc[:end_row]
-            if isinstance(df.columns, pd.RangeIndex):
-                new_column_names = df.iloc[0]
-                df = df.iloc[1:]
-                df.columns = new_column_names
-            df.columns = [" ".join(col.replace("\n", "").split()) for col in df.columns]
-            dfs.append(NDF(None, df))
-    elif "xml" in mimetype:
-        df = pd.read_xml(path, encoding=encoding or "utf-8")
-        dfs.append(NDF(None, df))
-    else:
-        msg = f"{path}: Unsupported file type: {mimetype}"
-        raise ValueError(msg)
+    dfs: list[NDF] = _read_typed_tables(
+        path, mimetype, table_name, table_index, start_row, end_row, order_by, encoding, skip_headers
+    )
 
     if mimetype not in ("sqlite", "sqlite3", "sqlite database file") and table_index is not None:
         dfs = [dfs[table_index]]

@@ -98,43 +98,57 @@ def process_paths(args, paths):
     return output_path
 
 
-def gen_arg_groups(args):
+def _get_local_paths(args):
     local_paths = []
     for path in args.paths:
         if path.startswith("http"):
             if args.simulate:
                 log.info("Downloading %s", path)
                 continue
-            path = web.download_url(args, path)
-            if path:
-                local_paths.append(os.path.realpath(path))
+            downloaded_path = web.download_url(args, path)
+            if downloaded_path:
+                local_paths.append(os.path.realpath(downloaded_path))
             else:
                 log.error("Could not save URL %s", path)
         else:
             local_paths.append(os.path.realpath(path))
+    return local_paths
+
+
+def _get_special_image_group(args, path):
+    if os.path.isdir(path):
+        image_paths = shell_utils.rglob(
+            str(path), args.ext or DEFAULT_EXTENSIONS, getattr(args, "exclude", None)
+        )[0]
+        if image_paths:
+            return image_paths
+        log.warning("No images found in %s", path)
+        return []
+
+    if path_utils.ext(path) in consts.ARCHIVE_EXTENSIONS:
+        if args.simulate:
+            log.info("Extracting images %s", path)
+            return []
+        archive_dir, _ = processes.unar_delete(path)
+        image_paths = shell_utils.rglob(str(archive_dir), DEFAULT_EXTENSIONS, quiet=True)[0]
+        if image_paths:
+            return image_paths
+        log.warning("No images found from extracted archive in %s", archive_dir)
+        return []
+
+    return None
+
+
+def gen_arg_groups(args):
+    local_paths = _get_local_paths(args)
 
     individual_files = []
     for path in local_paths:
-        if os.path.isdir(path):
-            dir_image_paths = shell_utils.rglob(
-                str(path), args.ext or DEFAULT_EXTENSIONS, getattr(args, "exclude", None)
-            )[0]
-            if dir_image_paths:
-                yield dir_image_paths
-            else:
-                log.warning("No images found in %s", path)
-        elif path_utils.ext(path) in consts.ARCHIVE_EXTENSIONS:
-            if args.simulate:
-                log.info("Extracting images %s", path)
-                continue
-            archive_dir, _ = processes.unar_delete(path)
-            archive_image_paths = shell_utils.rglob(str(archive_dir), DEFAULT_EXTENSIONS, quiet=True)[0]
-            if archive_image_paths:
-                yield archive_image_paths
-            else:
-                log.warning("No images found from extracted archive in %s", archive_dir)
-        else:
+        image_group = _get_special_image_group(args, path)
+        if image_group is None:
             individual_files.append(path)
+        elif image_group:
+            yield image_group
     if individual_files:
         yield individual_files
 

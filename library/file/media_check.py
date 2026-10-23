@@ -243,3 +243,4 @@ def media_check() -> None:
                         "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str
                     )
                     shell_utils.trash(args, path)
+    return None

@@ -26,7 +26,7 @@ from library.utils.consts import SC, DBType
 from library.utils.log_utils import Timer, log
 
 
-def parse_args(action, default_chromecast=None) -> argparse.Namespace:
+def _configure_parser(action, default_chromecast=None):
     DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
@@ -217,7 +217,10 @@ If you don't know the exact name of your chromecast group run `catt scan`
     arggroups.paths_or_stdin(parser, required=False)
 
     parser.add_argument("search", nargs="*")
-    args = parser.parse_intermixed_args()
+    return parser
+
+
+def _postprocess_args(args, parser, action):
     for i in range(255):
         if getattr(args, f"cmd{i}") is None:
             delattr(args, f"cmd{i}")
@@ -256,6 +259,12 @@ If you don't know the exact name of your chromecast group run `catt scan`
 
     args.sock = None
     return args
+
+
+def parse_args(action, default_chromecast=None) -> argparse.Namespace:
+    parser = _configure_parser(action, default_chromecast)
+    args = parser.parse_intermixed_args()
+    return _postprocess_args(args, parser, action)
 
 
 def file_or_folder_media(args, paths):
@@ -314,100 +323,96 @@ def filter_total_size(media, max_size):
             break
 
 
-def process_playqueue(args) -> None:
-    t = Timer()
-    filter_engine_obj = filter_engine.FilterEngine(args)
+def _get_database_media(args, filter_engine_obj):
+    db_history.create(args)
+    m_columns = filter_engine.db_utils.columns(args, "media")
+    args.table, m_columns = filter_engine_obj.apply_sql_filters(m_columns)
+    args.select_sql = sqlgroups.media_select_sql(args, m_columns)
 
+    if args.action == SC.filesystem:
+        def db_sql_func(a):
+            return sqlgroups.fs_sql(a, a.limit)
+    else:
+        db_sql_func = sqlgroups.media_sql
+
+    if args.playlists:
+        args.playlists = [p if p.startswith("http") else str(Path(p).resolve()) for p in args.playlists]
+        return db_media.get_playlist_media(args, args.playlists)
+    media = filter_engine_obj.get_filtered_data(db_sql_func=db_sql_func)
+    log.debug("len(media_sql) = %s", len(media))
+    return media
+
+
+def _collect_playqueue_media(args, filter_engine_obj, timer):
     if args.database:
-        db_history.create(args)
-
-        m_columns = filter_engine.db_utils.columns(args, "media")
-        args.table, m_columns = filter_engine_obj.apply_sql_filters(m_columns)
-        args.select_sql = sqlgroups.media_select_sql(args, m_columns)
-
-        if args.action == SC.filesystem:
-            def db_sql_func(a):
-                return sqlgroups.fs_sql(a, a.limit)
-        else:
-            db_sql_func = sqlgroups.media_sql
-
-        if args.playlists:
-            args.playlists = [p if p.startswith("http") else str(Path(p).resolve()) for p in args.playlists]
-            media = db_media.get_playlist_media(args, args.playlists)
-        else:
-            media = filter_engine_obj.get_filtered_data(db_sql_func=db_sql_func)
-            log.debug("len(media_sql) = %s", len(media))
-        log.debug("query: %s", t.elapsed())
+        media = _get_database_media(args, filter_engine_obj)
+        log.debug("query: %s", timer.elapsed())
     else:
         media = file_or_folder_media(args, args.paths)
-        log.debug("file_or_folder_media: %s", t.elapsed())
+        log.debug("file_or_folder_media: %s", timer.elapsed())
+    return media
 
-    if args.fetch_siblings:
-        media = db_media.get_sibling_media(args, media)
 
-    media = filter_engine_obj.apply_post_filters(media)
-    log.debug("apply_post_filters: %s", t.elapsed())
+def _recover_include_media(args, media):
+    if media:
+        return media
+    if not args.include:
+        processes.no_media_found()
 
+    include_flat = [i for inc in args.include for i in (inc if isinstance(inc, list) else [inc])]
+    path = " ".join(include_flat)
+    media = db_media.get_playlist_media(args, [path if path.startswith("http") else str(Path(path).resolve())])
+    if not media and os.path.exists(path):
+        media = db_media.get_dir_media(args, [path])
+    if not media and os.path.exists(include_flat[0]):
+        if getattr(args, "fs_add_attempted", False):
+            processes.no_media_found()
+        args.fs_add_attempted = True
+        args.scan_all_files = False
+        args.force = False
+        args.process = False
+        args.check_corrupt = False
+        for include_path in include_flat:
+            file_count = fs_add.scan_path(args, include_path)
+            log.info("Imported %s media", file_count)
+            process_playqueue(args)
+        return None
     if not media:
-        if not args.include:
-            processes.no_media_found()
+        processes.no_media_found()
+    return media
 
-        include_flat = [i for inc in args.include for i in (inc if isinstance(inc, list) else [inc])]
-        path = " ".join(include_flat)
-        media = db_media.get_playlist_media(args, [path if path.startswith("http") else str(Path(path).resolve())])
-        if not media and os.path.exists(path):
-            media = db_media.get_dir_media(args, [path])
-        if not media and os.path.exists(include_flat[0]):
-            if getattr(args, "fs_add_attempted", False):
-                processes.no_media_found()
-            args.fs_add_attempted = True
 
-            args.scan_all_files = False
-            args.force = False
-            args.process = False
-            args.check_corrupt = False
-            for p in include_flat:
-                file_count = fs_add.scan_path(args, p)
-                log.info("Imported %s media", file_count)
-                process_playqueue(args)
-            return None
-        if not media:
-            processes.no_media_found()
+def _apply_big_dirs(args, media, timer):
+    if not args.big_dirs:
+        return media
 
-    if args.safe:
-        media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
-        log.debug("tube_backend.is_supported: %s", t.elapsed())
+    media_keyed = {d["path"]: d for d in media}
+    folders = big_dirs.group_files_by_parents(args, media)
+    folders = big_dirs.process_big_dirs(args, folders)
+    folders = mcda.group_sort_by(args, folders)
+    log.debug("process_bigdirs: %s", timer.elapsed())
+    folders = list(reversed([d["path"] for d in folders]))
+    if "limit" in args.defaults:
+        media = db_media.get_dir_media(args, folders)
+        log.debug("get_dir_media: %s", timer.elapsed())
+        return media
 
-    if args.related >= consts.RELATED:
-        media = db_media.get_related_media(args, media[0])
-        log.debug("player.get_related_media: %s", t.elapsed())
+    media = []
+    media_set = set()
+    for folder in folders:
+        if len(folder) == 1:
+            continue
+        for key, media_item in media_keyed.items():
+            if key in media_set:
+                continue
+            if os.sep not in key.replace(folder, "") and key.startswith(folder):
+                media_set.add(key)
+                media.append(media_item)
+    log.debug("double for loop compare_block_strings: %s", timer.elapsed())
+    return media
 
-    if args.big_dirs:
-        media_keyed = {d["path"]: d for d in media}
-        folders = big_dirs.group_files_by_parents(args, media)
-        folders = big_dirs.process_big_dirs(args, folders)
-        folders = mcda.group_sort_by(args, folders)
-        log.debug("process_bigdirs: %s", t.elapsed())
-        folders = list(reversed([d["path"] for d in folders]))
-        if "limit" in args.defaults:
-            media = db_media.get_dir_media(args, folders)
-            log.debug("get_dir_media: %s", t.elapsed())
-        else:
-            media = []
-            media_set = set()
-            for folder in folders:
-                if len(folder) == 1:
-                    continue
 
-                for key, media_item in media_keyed.items():
-                    if key in media_set:
-                        continue
-
-                    if os.sep not in key.replace(folder, "") and key.startswith(folder):
-                        media_set.add(key)
-                        media.append(media_item)
-            log.debug("double for loop compare_block_strings: %s", t.elapsed())
-
+def _apply_playqueue_filters(args, media, _timer):
     if getattr(args, "exists", False):
         marked = db_media.mark_media_deleted(
             args, [d["path"] for d in media if d and d["path"] and not Path(d["path"]).exists()]
@@ -420,76 +425,104 @@ def process_playqueue(args) -> None:
         media = folder_media(args, media)
     elif args.folder_glob:
         media = ({"path": s} for m in media for s in shell_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
+    return media
 
+
+def _sort_reranked_media(args, media, timer):
+    import numpy as np
+    import pandas as pd
+
+    from library.utils import pd_utils
+
+    df = pd.DataFrame(media)
+    df = pd_utils.from_dict_add_path_rank(df, media, "sort")
+    if args.regex_sort:
+        from library.text import regex_sort
+
+        sorted_media = regex_sort.sort_dicts(args, media)
+        df = pd_utils.from_dict_add_path_rank(df, sorted_media, "regex_sort")
+        log.debug("regex-sort: %s", timer.elapsed())
+    elif args.cluster_sort:
+        from library.text import cluster_sort
+
+        sorted_media = cluster_sort.sort_dicts(args, media)
+        df = pd_utils.from_dict_add_path_rank(df, sorted_media, "cluster_sort")
+        log.debug("cluster-sort: %s", timer.elapsed())
+
+    column_weights = {
+        k.lstrip("-"): {
+            "direction": "desc" if k.startswith("-") else "asc",
+            "weight": v or 1,
+        }
+        for k, v in args.re_rank.items()
+    }
+    df = pd_utils.rank_dataframe(df, column_weights)
+    return df.replace({np.nan: None}).to_dict(orient="records")
+
+
+def _sort_playqueue(args, media, timer):
     if args.play_in_order:
         media = db_media.natsort_media(args, media)
-
     if args.re_rank:
-        import numpy as np
-        import pandas as pd
-
-        from library.utils import pd_utils
-
-        df = pd.DataFrame(media)
-        df = pd_utils.from_dict_add_path_rank(df, media, "sort")
-
-        if args.regex_sort:
-            from library.text import regex_sort
-
-            sorted_media = regex_sort.sort_dicts(args, media)
-            df = pd_utils.from_dict_add_path_rank(df, sorted_media, "regex_sort")
-            log.debug("regex-sort: %s", t.elapsed())
-        elif args.cluster_sort:
-            from library.text import cluster_sort
-
-            sorted_media = cluster_sort.sort_dicts(args, media)
-            df = pd_utils.from_dict_add_path_rank(df, sorted_media, "cluster_sort")
-            log.debug("cluster-sort: %s", t.elapsed())
-
-        column_weights = {
-            k.lstrip("-"): {
-                "direction": "desc" if k.startswith("-") else "asc",
-                "weight": v or 1,
-            }
-            for k, v in args.re_rank.items()
-        }
-        df = pd_utils.rank_dataframe(df, column_weights)
-        media = df.replace({np.nan: None}).to_dict(orient="records")
-        log.debug("re-rank: %s", t.elapsed())
+        media = _sort_reranked_media(args, media, timer)
     elif args.regex_sort:
         from library.text import regex_sort
 
         media = regex_sort.sort_dicts(args, media)
-        log.debug("regex-sort: %s", t.elapsed())
+        log.debug("regex-sort: %s", timer.elapsed())
     elif args.cluster_sort:
         from library.text import cluster_sort
 
         media = cluster_sort.sort_dicts(args, media)
-        log.debug("cluster-sort: %s", t.elapsed())
+        log.debug("cluster-sort: %s", timer.elapsed())
+    return media
+
+
+def _output_playqueue(args, media):
+    if not media:
+        processes.no_media_found()
+    if any([args.print, args.delete_files, args.delete_rows, args.mark_deleted, args.mark_watched]):
+        media_printer.media_printer(args, media)
+    elif args.simulate:
+        print("Would play:", *(m["path"] for m in media), sep="\n")
+    else:
+        media_player.play_list(args, media)
+
+
+def process_playqueue(args) -> None:
+    timer = Timer()
+    filter_engine_obj = filter_engine.FilterEngine(args)
+    media = _collect_playqueue_media(args, filter_engine_obj, timer)
+
+    if args.fetch_siblings:
+        media = db_media.get_sibling_media(args, media)
+
+    media = filter_engine_obj.apply_post_filters(media)
+    log.debug("apply_post_filters: %s", timer.elapsed())
+    media = _recover_include_media(args, media)
+    if media is None:
+        return
+
+    if args.safe:
+        media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
+        log.debug("tube_backend.is_supported: %s", timer.elapsed())
+
+    if args.related >= consts.RELATED:
+        media = db_media.get_related_media(args, media[0])
+        log.debug("player.get_related_media: %s", timer.elapsed())
+
+    media = _apply_big_dirs(args, media, timer)
+    media = _apply_playqueue_filters(args, media, timer)
+    if media is None:
+        return
+    media = _sort_playqueue(args, media, timer)
 
     if args.timeout_size:
         max_size = nums.human_to_bytes(args.timeout_size)
         media = filter_total_size(media, max_size)
 
-    if not media:
-        processes.no_media_found()
-    if any(
-        [
-            args.print,
-            args.delete_files,
-            args.delete_rows,
-            args.mark_deleted,
-            args.mark_watched,
-        ]
-    ):
-        media_printer.media_printer(args, media)
-        return None
-    elif args.simulate:
-        print("Would play:", *(m["path"] for m in media), sep="\n")
-        return None
-    else:
-        media_player.play_list(args, media)
-        return None
+    _output_playqueue(args, media)
+    return
 
 
 def media() -> None:

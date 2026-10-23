@@ -128,104 +128,111 @@ def mcp_file(args, source, destination):
         log.debug("copied %s\t%s", source, out)
 
 
+def _source_destination(args, source, destination):
+    if args.relative_to:
+        return path_utils.gen_rel_path(source, destination, args.relative_to)
+    return destination
+
+
+def _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
+    if not all(
+        [
+            shortcut_allowed,
+            not args.ext,
+            not args.simulate,
+            not args.timeout_size,
+            not args.move_limit,
+            not args.move_sizes,
+            not args.move_exclude,
+            not args.move_include,
+            not args.modify_depth,
+            not os.path.exists(folder_dest),
+        ]
+    ):
+        return False
+
+    log.debug("taking shortcut")
+    try:
+        parent = os.path.dirname(folder_dest)
+        if not os.path.exists(parent):
+            log.debug("taking shortcut: making dirs")
+            os.makedirs(parent)
+        os.rename(source, folder_dest)
+    except OSError:
+        log.debug("taking shortcut: failed")
+    else:
+        log.debug("taking shortcut: success")
+        return True
+    return False
+
+
+def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
+    folder_dest = source_destination
+    if not args.relative_to and (args.parent or (args.bsd and not source.endswith(os.sep))):
+        folder_dest = os.path.join(folder_dest, path_utils.basename(source))
+        log.debug("folder parent %s", folder_dest)
+
+    if _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
+        return
+
+    for path in rglob_gen(source, args.ext or None):
+        if filter_src.filter_src(args, path) is False:
+            log.debug("rglob-file skipped %s", path)
+            continue
+        relpath = os.path.relpath(path, source)
+        log.debug("rglob-file relpath %s", relpath)
+        if args.modify_depth:
+            rel_path = Path(relpath)
+            parts = rel_path.parent.parts
+            parts = parts[args.modify_depth]
+            relpath = os.path.join(*parts, rel_path.name)
+            log.debug("rglob-file modify_depth %s %s", parts, relpath)
+        file_dest = os.path.join(folder_dest, relpath)
+        log.debug("rglob-file file_dest %s", file_dest)
+        src, dest = devices.clobber(args, path, file_dest)
+        if src:
+            yield src, dest
+
+
+def _file_destination(args, source, destination, source_destination):
+    file_dest = source_destination
+    if args.relative_to:
+        return file_dest
+    if args.parent:
+        file_dest = os.path.join(file_dest, path_utils.parent(source))
+        log.debug("file parent %s", file_dest)
+
+    if args.dest_file:
+        append_basename = False
+    elif args.dest_folder or destination.endswith(os.sep) or os.path.isdir(destination):
+        append_basename = True
+    else:
+        same_basename = path_utils.basename(source) == path_utils.basename(destination)
+        append_basename = not same_basename and not os.path.exists(destination)
+
+    if append_basename:
+        file_dest = os.path.join(file_dest, path_utils.basename(source))
+        log.debug("file append basename %s", file_dest)
+    return file_dest
+
+
+def _gen_file_dest(args, source, destination, source_destination):
+    if filter_src.filter_src(args, source) is False:
+        log.debug("rglob-file skipped %s", source)
+        return
+    file_dest = _file_destination(args, source, destination, source_destination)
+    src, dest = devices.clobber(args, source, file_dest)
+    if src:
+        yield src, dest
+
+
 def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowed=False):
     for source in sources:
-        if args.relative_to:  # modify the destination for each source
-            source_destination = path_utils.gen_rel_path(source, destination, args.relative_to)
-        else:
-            source_destination = destination
-
+        source_destination = _source_destination(args, source, destination)
         if os.path.isdir(source):
-            folder_dest = source_destination
-            if not args.relative_to and (args.parent or (args.bsd and not source.endswith(os.sep))):  # use BSD behavior
-                folder_dest = os.path.join(folder_dest, path_utils.basename(source))
-                log.debug("folder parent %s", folder_dest)
-
-            # if no conflict, use shortcut
-            if all(
-                [
-                    shortcut_allowed,
-                    not args.ext,
-                    not args.simulate,
-                    not args.timeout_size,
-                    not args.move_limit,
-                    not args.move_sizes,
-                    not args.move_exclude,
-                    not args.move_include,
-                    not args.modify_depth,
-                    not os.path.exists(folder_dest),
-                ]
-            ):
-                log.debug("taking shortcut")
-                try:
-                    parent = os.path.dirname(folder_dest)
-                    if not os.path.exists(parent):
-                        log.debug("taking shortcut: making dirs")
-                        os.makedirs(parent)
-                    os.rename(source, folder_dest)
-                except OSError:
-                    log.debug("taking shortcut: failed")
-                else:
-                    log.debug("taking shortcut: success")
-                    continue
-            # merge source folder with conflict folder/file
-            files = rglob_gen(source, args.ext or None)
-
-            for p in files:
-                if filter_src.filter_src(args, p) is False:
-                    log.debug("rglob-file skipped %s", p)
-                    continue
-
-                relpath = os.path.relpath(p, source)
-                log.debug("rglob-file relpath %s", relpath)
-                if args.modify_depth:
-                    rel_p = Path(relpath)
-                    parts = rel_p.parent.parts
-                    parts = parts[args.modify_depth]
-                    relpath = os.path.join(*parts, rel_p.name)
-                    log.debug("rglob-file modify_depth %s %s", parts, relpath)
-
-                file_dest = os.path.join(folder_dest, relpath)
-                log.debug("rglob-file file_dest %s", file_dest)
-
-                src, dest = devices.clobber(args, p, file_dest)
-                if src:
-                    yield src, dest
-        else:  # source is a file
-            if filter_src.filter_src(args, source) is False:
-                log.debug("rglob-file skipped %s", source)
-                continue
-
-            file_dest = source_destination
-            if not args.relative_to:
-                if args.parent:
-                    file_dest = os.path.join(file_dest, path_utils.parent(source))
-                    log.debug("file parent %s", file_dest)
-
-                if args.dest_file:
-                    append_basename = False
-                elif args.dest_folder:
-                    append_basename = True
-                elif destination.endswith(os.sep):  # args.dest_bsd
-                    append_basename = True
-                elif os.path.isdir(destination):
-                    append_basename = True
-                else:  # destination is not an existing directory
-                    same_basename = path_utils.basename(source) == path_utils.basename(destination)
-                    if same_basename:
-                        append_basename = False
-                    elif os.path.exists(destination):  # exists: file or file-like
-                        append_basename = False
-                    else:
-                        append_basename = True
-
-                if append_basename:
-                    file_dest = os.path.join(file_dest, path_utils.basename(source))
-                    log.debug("file append basename %s", file_dest)
-
-            src, dest = devices.clobber(args, source, file_dest)
-            if src:
-                yield src, dest
+            yield from _gen_folder_dest(args, source, source_destination, shortcut_allowed)
+        else:
+            yield from _gen_file_dest(args, source, destination, source_destination)
 
 
 def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):

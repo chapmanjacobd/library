@@ -12,7 +12,7 @@ def print_timestamp(n):
     print(n if nonzero_denominator else int(n))
 
 
-def timestamps(defaults_override=None, usage_override=None):
+def _timestamp_parser(defaults_override=None, usage_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage_override or usage.timestamps)
     parser.add_argument("--from-unix", "--unix", "-u", action="store_true", help="Parse from UNIX time")
     parser.add_argument("--from-timezone", "--from-tz", "-fz", help="Convert from timezone")
@@ -58,86 +58,98 @@ YDM  09/08/07
     parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_args()
     arggroups.args_post(args, parser)
+    return args
 
-    day_first = None
-    year_first = None
-    if args.month_day_year:
-        day_first = False
-        year_first = False
-    elif args.day_month_year:
-        day_first = True
-        year_first = False
-    elif args.year_month_day:
-        day_first = False
-        year_first = True
-    elif args.year_day_month:
-        day_first = True
-        year_first = True
+
+def _timestamp_preferences(args):
+    date_order = {
+        "month_day_year": (False, False),
+        "day_month_year": (True, False),
+        "year_month_day": (False, True),
+        "year_day_month": (True, True),
+    }
+    selected_order = next((name for name in date_order if getattr(args, name)), None)
+    day_first, year_first = date_order.get(selected_order, (None, None))
 
     if args.from_timezone:
         from_tzinfo = strings.timezone(args.from_timezone)
     elif args.from_unix:
-        from_tzinfo = datetime.timezone.utc  # this is needed to set the initial timezone
+        from_tzinfo = datetime.timezone.utc
     else:
-        from_tzinfo = None  # localtime
+        from_tzinfo = None
 
     if args.to_timezone:
         to_tzinfo = strings.timezone(args.to_timezone)
     elif args.to_unix:
-        to_tzinfo = datetime.timezone.utc  # not really necessary but you can see the symmetry
+        to_tzinfo = datetime.timezone.utc
     else:
-        to_tzinfo = None  # localtime
+        to_tzinfo = None
+
+    return day_first, year_first, from_tzinfo, to_tzinfo
+
+
+def _parse_timestamp(date_str, args, day_first, year_first, from_tzinfo):
+    if args.from_unix:
+        date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=datetime.timezone.utc)  # type: ignore
+        date = date.replace(tzinfo=from_tzinfo)
+    else:
+        date = parse(
+            date_str,
+            default=datetime.datetime.now(tz=datetime.timezone.utc)
+            .astimezone()
+            .replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None),
+            fuzzy=True,
+            dayfirst=day_first,
+            yearfirst=year_first,
+        )
+        if date.tzinfo is None:
+            date = date.replace(tzinfo=from_tzinfo)
+
+    log.debug("%s\t%s", date, date.tzinfo)
+    return date
+
+
+def _print_formatted_timestamp(date, args):
+    if args.to_unix:
+        if args.to_time_only:
+            print_timestamp(date.hour * 3600 + date.minute * 60 + date.second + date.microsecond / 1e6)
+        elif args.to_date_only:
+            print_timestamp(
+                datetime.datetime(
+                    year=date.year,
+                    month=date.month,
+                    day=date.day,
+                    hour=0,
+                    minute=0,
+                    microsecond=0,
+                    tzinfo=date.tzinfo,
+                ).timestamp()
+            )
+        else:
+            print_timestamp(date.timestamp())
+        return
+
+    if not args.print_timezone:
+        date = date.replace(tzinfo=None)
+
+    if args.to_time_only:
+        date = date.time()
+    elif args.to_date_only:
+        date = date.date()
+
+    print(date.isoformat())
+
+
+def timestamps(defaults_override=None, usage_override=None):
+    args = _timestamp_parser(defaults_override, usage_override)
+    day_first, year_first, from_tzinfo, to_tzinfo = _timestamp_preferences(args)
 
     for date_str in args.dates:
-        if args.from_unix:
-            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=datetime.timezone.utc)  # type: ignore
-            date = date.replace(tzinfo=from_tzinfo)
-            log.debug("%s\t%s", date, date.tzinfo)
-        else:
-            date = parse(
-                date_str,
-                default=datetime.datetime.now(tz=datetime.timezone.utc)
-                .astimezone()
-                .replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None),
-                fuzzy=True,
-                dayfirst=day_first,
-                yearfirst=year_first,
-            )
-            log.debug("%s\t%s", date, date.tzinfo)
-            if date.tzinfo is None:
-                date = date.replace(tzinfo=from_tzinfo)  # naive datetime => timezone-aware datetime
-                log.debug("%s\t%s", date, date.tzinfo)
+        date = _parse_timestamp(date_str, args, day_first, year_first, from_tzinfo)
 
         date = date.astimezone(tz=to_tzinfo)
         log.debug("%s\t%s", date, date.tzinfo)
-
-        if args.to_unix:
-            if args.to_time_only:  # datetime.time
-                print_timestamp(date.hour * 3600 + date.minute * 60 + date.second + date.microsecond / 1e6)
-            elif args.to_date_only:  # datetime.date
-                print_timestamp(
-                    datetime.datetime(
-                        year=date.year,
-                        month=date.month,
-                        day=date.day,
-                        hour=0,
-                        minute=0,
-                        microsecond=0,
-                        tzinfo=date.tzinfo,
-                    ).timestamp()
-                )
-            else:  # datetime.datetime
-                print_timestamp(date.timestamp())
-        else:
-            if not args.print_timezone:
-                date = date.replace(tzinfo=None)
-
-            if args.to_time_only:
-                date = date.time()
-            elif args.to_date_only:
-                date = date.date()
-
-            print(date.isoformat())
+        _print_formatted_timestamp(date, args)
 
 
 def times():

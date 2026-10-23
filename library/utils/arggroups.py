@@ -45,7 +45,7 @@ def get_caller_name():
 
 def get_argparse_defaults(parser):
     defaults = {}
-    for action in parser._actions:
+    for action in parser._actions:  # noqa: SLF001
         if not action.required and action.default is not None and action.dest != "help":
             default = action.default
             if action.type is not None:
@@ -698,55 +698,39 @@ def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
     return sort.replace(",,", ","), select_list
 
 
-def sql_fs_post(args, table_prefix="m.") -> None:
-    if args.to_json:
-        args.print = "p"
-
-    args.include += getattr(args, "search", [])
+def _normalize_include_paths(args):
     if len(args.include) == 1:
         if args.include == ["."]:
             args.include = [str(Path().cwd().resolve())]
         elif os.sep in args.include[0]:
             args.include[0] = shell_utils.resolve_existing_path(args.include[0])
 
+
+def _encode_terms(terms):
+    from library.utils.path_utils import safe_unquote
+    from library.utils.web import url_encode
+
+    encoded_terms = []
+    for term in terms:
+        if not term.startswith("http"):
+            encoded_terms.append(term)
+            continue
+        variants = {term, url_encode(term), safe_unquote(term)}
+        encoded_terms.append(list(variants) if len(variants) > 1 else term)
+    return encoded_terms
+
+
+def _encode_search_terms(args):
+    if args.to_json:
+        args.print = "p"
+    args.include += getattr(args, "search", [])
+    _normalize_include_paths(args)
     if not args.no_url_encode_search:
-        from library.utils.path_utils import safe_unquote
-        from library.utils.web import url_encode
+        args.include = _encode_terms(args.include)
+        args.exclude = _encode_terms(args.exclude)
 
-        new_include = []
-        for s in args.include:
-            if s.startswith("http"):
-                variants = {s, url_encode(s), safe_unquote(s)}
-                if len(variants) > 1:
-                    new_include.append(list(variants))
-                else:
-                    new_include.append(s)
-            else:
-                new_include.append(s)
-        args.include = new_include
 
-        new_exclude = []
-        for s in args.exclude:
-            if s.startswith("http"):
-                variants = {s, url_encode(s), safe_unquote(s)}
-                if len(variants) > 1:
-                    new_exclude.append(list(variants))
-                else:
-                    new_exclude.append(s)
-            else:
-                new_exclude.append(s)
-        args.exclude = new_exclude
-
-    parse_args_limit(args)
-
-    pl_columns = db_utils.columns(args, "playlists")
-    args.playlists_sort, args.playlists_select = parse_args_sort(args, pl_columns)
-    m_columns = db_utils.columns(args, "media")
-    args.sort, args.select = parse_args_sort(args, m_columns)
-
-    if not args.database:
-        return
-
+def _prepare_sql_filters(args, m_columns):
     args.filter_sql = []
     args.aggregate_filter_sql = []
     args.filter_bindings = {}
@@ -776,76 +760,69 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         sql_bitrates = sql_utils.parse_human_to_sql(nums.human_to_bits, "size*8/duration", args.bitrates)
         args.filter_sql.append(" and size IS NOT NULL " + sql_bitrates)
 
-    for s in args.time_created:
-        if s.startswith("+"):
-            args.created_before.append(s.lstrip("+"))
-        else:
-            args.created_within.append(s.lstrip("-"))
 
-    for s in args.time_modified:
-        if s.startswith("+"):
-            args.modified_before.append(s.lstrip("+"))
+def _append_time_sql_filters(args):
+    for value in args.time_created:
+        if value.startswith("+"):
+            args.created_before.append(value.lstrip("+"))
         else:
-            args.modified_within.append(s.lstrip("-"))
+            args.created_within.append(value.lstrip("-"))
 
-    for s in args.created_within:
-        args.filter_sql.append(
-            f"and m.time_created >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
-    for s in args.created_before:
-        args.filter_sql.append(
-            f"and m.time_created < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
-    for s in args.modified_within:
-        args.filter_sql.append(
-            f"and m.time_modified >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
-    for s in args.modified_before:
-        args.filter_sql.append(
-            f"and m.time_modified < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
-    for s in args.deleted_within:
-        args.filter_sql.append(
-            f"and m.time_deleted >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
-    for s in args.deleted_before:
-        args.filter_sql.append(
-            f"and m.time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
-    for s in args.time_deleted:
-        threshold = f"cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s.lstrip('+-'))}')) as int)"
-        if s.startswith("+"):
-            args.filter_sql.append(f"and (COALESCE(m.time_deleted,0) = 0 or m.time_deleted < {threshold})")
+    for value in args.time_modified:
+        if value.startswith("+"):
+            args.modified_before.append(value.lstrip("+"))
         else:
-            args.filter_sql.append(f"and (COALESCE(m.time_deleted,0) = 0 or m.time_deleted >= {threshold})")
-    for s in args.downloaded_within:
-        args.filter_sql.append(
-            f"and m.time_downloaded >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
-    for s in args.downloaded_before:
-        args.filter_sql.append(
-            f"and m.time_downloaded < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(s)}')) as int)",
-        )
+            args.modified_within.append(value.lstrip("-"))
 
+    time_filters = (
+        ("created_within", "time_created", ">="),
+        ("created_before", "time_created", "<"),
+        ("modified_within", "time_modified", ">="),
+        ("modified_before", "time_modified", "<"),
+        ("deleted_within", "time_deleted", ">="),
+        ("deleted_before", "time_deleted", "<"),
+        ("downloaded_within", "time_downloaded", ">="),
+        ("downloaded_before", "time_downloaded", "<"),
+    )
+    for attribute, column, operator in time_filters:
+        for value in getattr(args, attribute):
+            args.filter_sql.append(
+                f"and m.{column} {operator} cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(value)}')) as int)",
+            )
+
+    for value in args.time_deleted:
+        threshold = f"cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(value.lstrip('+-'))}')) as int)"
+        operator = "<" if value.startswith("+") else ">="
+        args.filter_sql.append(f"and (COALESCE(m.time_deleted,0) = 0 or m.time_deleted {operator} {threshold})")
+
+
+def _append_media_sql_filters(args, _m_columns):
     if getattr(args, "keep_dir", False):
         args.keep_dir = str(Path(args.keep_dir).expanduser())
 
         if os.path.isabs(args.keep_dir):
             if os.path.exists(args.keep_dir):
                 keep_path = Path(args.keep_dir).resolve()
-                args.filter_sql.append(f'and path not like "{keep_path}{os.sep}%"')
+                args.filter_sql.append("and path not like :keep_dir")
+                args.filter_bindings["keep_dir"] = f"{keep_path}{os.sep}%"
         else:
-            args.filter_sql.append(f'and path not like "%{os.sep}{args.keep_dir.lstrip(":/").strip(os.sep)}{os.sep}%"')
+            args.filter_sql.append("and path not like :keep_dir")
+            args.filter_bindings["keep_dir"] = (
+                f"%{os.sep}{args.keep_dir.lstrip(':/').strip(os.sep)}{os.sep}%"
+            )
 
-    if args.no_video:
-        args.filter_sql.append(" and video_count=0 ")
-    if args.no_audio:
-        args.filter_sql.append(" and audio_count=0 ")
-    if args.subtitles:
-        args.filter_sql.append(" and subtitle_count>0 ")
-    if args.no_subtitles:
-        args.filter_sql.append(" and subtitle_count=0 ")
+    media_filters = {
+        "no_video": " and video_count=0 ",
+        "no_audio": " and audio_count=0 ",
+        "subtitles": " and subtitle_count>0 ",
+        "no_subtitles": " and subtitle_count=0 ",
+    }
+    for attribute, sql in media_filters.items():
+        if getattr(args, attribute):
+            args.filter_sql.append(sql)
 
+
+def _append_playback_sql_filters(args):
     if args.played_within:
         args.aggregate_filter_sql.append(
             f"and time_last_played >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.played_within)}')) as int) ",
@@ -872,8 +849,10 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             + ")",
         )
 
+
+def _append_deleted_sql_filters(args, m_columns, pl_columns, table_prefix):
     if args.only_deleted:
-        args.hide_deleted = False  # --deleted overrides the --hide-deleted default
+        args.hide_deleted = False
 
     if args.action == SC.playlists:
         if args.db and "time_deleted" not in pl_columns:
@@ -890,6 +869,25 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) > 0")
     elif args.hide_deleted:
         args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) = 0")
+
+
+def sql_fs_post(args, table_prefix="m.") -> None:
+    _encode_search_terms(args)
+    parse_args_limit(args)
+
+    pl_columns = db_utils.columns(args, "playlists")
+    args.playlists_sort, args.playlists_select = parse_args_sort(args, pl_columns)
+    m_columns = db_utils.columns(args, "media")
+    args.sort, args.select = parse_args_sort(args, m_columns)
+
+    if not args.database:
+        return
+
+    _prepare_sql_filters(args, m_columns)
+    _append_time_sql_filters(args)
+    _append_media_sql_filters(args, m_columns)
+    _append_playback_sql_filters(args)
+    _append_deleted_sql_filters(args, m_columns, pl_columns, table_prefix)
 
 
 def mmv_folders(parent_parser):
@@ -2959,11 +2957,14 @@ def matplotlib_post(args, unknown_args):
             method = getattr(plt, method_name)
 
             # kwarg values that name a column are passed as the column data, e.g. c=size
-            kwargs = {k: (series(v) if isinstance(v, str) and v in df.columns else v) for k, v in kwargs.items()}
+            converted_kwargs = {
+                key: (series(value) if isinstance(value, str) and value in df.columns else value)
+                for key, value in kwargs.items()
+            }
 
             if not cols:
                 log.debug("Running plt.%s(%s, %s)", method_name, pargs, kwargs)
-                method(*pargs, **kwargs)
+                method(*pargs, **converted_kwargs)
             elif len(cols) == 1:
                 log.debug("Running plt.%s(df[%s], %s, %s)", method_name, cols[0], pargs, kwargs)
                 s = series(cols[0])
@@ -2971,15 +2972,15 @@ def matplotlib_post(args, unknown_args):
                     kind = getattr(args, "scale", "auto")
                     if kind == "auto":
                         kind = detect_distribution(s)
-                    plot_histogram(plt.gca(), s, kind=kind, **kwargs)
+                    plot_histogram(plt.gca(), s, kind=kind, **converted_kwargs)
                 else:
-                    method(s, *pargs, **kwargs)
+                    method(s, *pargs, **converted_kwargs)
             else:
                 # the first column is x-axis and the rest are y-axes
                 x = series(cols[0])
                 for y_col in cols[1:]:
                     log.debug("Running plt.%s(df[%s], df[%s], %s, %s)", method_name, cols[0], y_col, pargs, kwargs)
-                    method(x, series(y_col), *pargs, **kwargs)
+                    method(x, series(y_col), *pargs, **converted_kwargs)
 
         auto_label_axes(plt, actions)
 
@@ -3024,8 +3025,7 @@ def torrents_start(parser):
     )
 
 
-def qBittorrent_torrents(parent_parser):
-    parser = parent_parser.add_argument_group("qBittorrent Torrents")
+def _qBittorrent_torrent_state(parser):
     parser.add_argument("--active", action="store_true", help="Include active torrents")
     parser.add_argument("--inactive", "--dead", action="store_true", help="Include inactive torrents")
     parser.add_argument("--now", action=argparse.BooleanOptionalAction, help="Include currently UL/DL torrents")
@@ -3119,6 +3119,8 @@ def qBittorrent_torrents(parent_parser):
         help="Path used by positional torrent searches: status, download, save, or both",
     )
 
+
+def _qBittorrent_torrent_constraints(parser):
     parser.add_argument(
         "--sizes",
         "--size",
@@ -3171,6 +3173,8 @@ def qBittorrent_torrents(parent_parser):
         "--tracker-count", "--trackers-count", action="append", help="Include only torrents with N number of trackers"
     )
 
+
+def _qBittorrent_torrent_output(parser):
     parser.add_argument("--file-counts", action="store_true", help="Include file counts column (a bit slow)")
     parser.add_argument("--trackers", action="store_true", help="Include tracker column")
     parser.add_argument("--status", "--state", action="store_true", help="Include state column")
@@ -3209,59 +3213,49 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
 
 
+def qBittorrent_torrents(parent_parser):
+    parser = parent_parser.add_argument_group("qBittorrent Torrents")
+    _qBittorrent_torrent_state(parser)
+    _qBittorrent_torrent_constraints(parser)
+    _qBittorrent_torrent_output(parser)
+
+
 def qBittorrent_torrents_post(args):
-    if args.sizes:
-        args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
-    if args.dl_speed:
-        args.dl_speed = sql_utils.parse_human_to_lambda(nums.human_to_bits, args.dl_speed * 8)
-    if args.ul_speed:
-        args.ul_speed = sql_utils.parse_human_to_lambda(nums.human_to_bits, args.ul_speed * 8)
-
-    if args.remaining:
-        args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
-    if args.downloaded:
-        args.downloaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded)
-    if args.uploaded:
-        args.uploaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded)
-    if args.downloaded_session:
-        args.downloaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded_session)
-    if args.uploaded_session:
-        args.uploaded_session = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded_session)
-    if args.avg_sizes:
-        args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
-    if args.file_count:
-        args.file_count = sql_utils.parse_human_to_lambda(int, args.file_count)
-    if args.tracker_count:
-        args.tracker_count = sql_utils.parse_human_to_lambda(int, args.tracker_count)
-
-    if args.priority:
-        args.priority = sql_utils.parse_human_to_lambda(int, args.priority)
-    if args.seeders:
-        args.seeders = sql_utils.parse_human_to_lambda(int, args.seeders)
-    if args.leechers:
-        args.leechers = sql_utils.parse_human_to_lambda(int, args.leechers)
-
-    if args.time_added:
-        args.time_added = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_added)
-    if args.time_stalled:
-        args.time_stalled = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_stalled)
-    if args.time_unseeded:
-        args.time_unseeded = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_unseeded)
-    if args.time_active:
-        args.time_active = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_active)
-    if args.time_downloading:
-        args.time_downloading = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_downloading)
-    if args.time_seeding:
-        args.time_seeding = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_seeding)
-    if args.time_completed:
-        args.time_completed = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_completed)
-    if args.time_remaining:
-        args.time_remaining = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_remaining)
-
-    if args.ratio:
-        args.ratio = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.ratio)
-    if args.progress:
-        args.progress = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.progress)
+    converters = {
+        "sizes": nums.human_to_bytes,
+        "dl_speed": (nums.human_to_bits, 8),
+        "ul_speed": (nums.human_to_bits, 8),
+        "remaining": nums.human_to_bytes,
+        "downloaded": nums.human_to_bytes,
+        "uploaded": nums.human_to_bytes,
+        "downloaded_session": nums.human_to_bytes,
+        "uploaded_session": nums.human_to_bytes,
+        "avg_sizes": nums.human_to_bytes,
+        "file_count": int,
+        "tracker_count": int,
+        "priority": int,
+        "seeders": int,
+        "leechers": int,
+        "time_added": nums.human_to_seconds,
+        "time_stalled": nums.human_to_seconds,
+        "time_unseeded": nums.human_to_seconds,
+        "time_active": nums.human_to_seconds,
+        "time_downloading": nums.human_to_seconds,
+        "time_seeding": nums.human_to_seconds,
+        "time_completed": nums.human_to_seconds,
+        "time_remaining": nums.human_to_seconds,
+        "ratio": nums.float_from_percent,
+        "progress": nums.float_from_percent,
+    }
+    for attribute, converter_spec in converters.items():
+        value = getattr(args, attribute)
+        if value:
+            if isinstance(converter_spec, tuple):
+                value = value * converter_spec[1]
+                converter = converter_spec[0]
+            else:
+                converter = converter_spec
+            setattr(args, attribute, sql_utils.parse_human_to_lambda(converter, value))
 
     if set(["active", "inactive"]).issubset(args.defaults.keys()) and (args.torrent_search or args.file_search):
         args.active = False

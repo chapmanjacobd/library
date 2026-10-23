@@ -22,9 +22,9 @@ class CasefoldAction:
 def _case_conflicts(entries) -> dict[str, list[str]]:
     grouped = defaultdict(list)
     seen = set()
-    for parent, path in entries:
-        key = (os.fspath(parent), Path(path).name.casefold())
-        path = os.fspath(path)
+    for parent, raw_path in entries:
+        key = (os.fspath(parent), Path(raw_path).name.casefold())
+        path = os.fspath(raw_path)
         if path not in seen:
             grouped[key].append(path)
             seen.add(path)

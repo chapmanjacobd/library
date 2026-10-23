@@ -158,31 +158,37 @@ def route_links(args, m, original_path, link_paths, backend_args_cache, builtin_
     builtin_paths = []
     succeeded = True
     for link_path in link_paths:
-        if safe_links and not safe_supported(args, link_path):
-            log.info("Skipping unsupported URL (safe_mode) %s", link_path)
-            continue
-
-        profile = args.profile
-        if profile == DBType.auto:
-            profile = resolve_download_profile(args, link_path)
-        if profile == args.profile:
-            backend_args = args
-        else:
-            backend_args = backend_args_cache.get(profile)
-            if backend_args is None:
-                backend_args = backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
-
-        if profile in (DBType.audio, DBType.video):
-            succeeded = tube_backend.download(backend_args, m | {"path": link_path}) is not False and succeeded
-        elif profile == DBType.image:
-            succeeded = gallery_backend.download(backend_args, m | {"path": link_path}) is not False and succeeded
-        else:  # filesystem, or an unexpected resolved profile
+        routed = _route_link(args, m, link_path, backend_args_cache, safe_links)
+        if routed is None:
             builtin_paths.append(link_path)
+        else:
+            succeeded = routed and succeeded
 
     if builtin_paths:
         succeeded = builtin_fn(args, m, original_path, builtin_paths) is not False and succeeded
     if succeeded:
         _finalize_source(args, original_path)
+
+
+def _route_link(args, media, link_path, backend_args_cache, safe_links):
+    if safe_links and not safe_supported(args, link_path):
+        log.info("Skipping unsupported URL (safe_mode) %s", link_path)
+        return True
+
+    profile = args.profile
+    if profile == DBType.auto:
+        profile = resolve_download_profile(args, link_path)
+    backend_args = args
+    if profile != args.profile:
+        backend_args = backend_args_cache.get(profile)
+        if backend_args is None:
+            backend_args = backend_args_cache[profile] = arg_utils.args_override(args, {"profile": profile})
+
+    if profile in (DBType.audio, DBType.video):
+        return tube_backend.download(backend_args, media | {"path": link_path}) is not False
+    if profile == DBType.image:
+        return gallery_backend.download(backend_args, media | {"path": link_path}) is not False
+    return None
 
 
 def _finalize_source(args, original_path) -> None:
@@ -212,20 +218,11 @@ def safe_supported(args, path) -> bool:
     return True
 
 
-def _download(usage, *, links: bool = False, database_positional: bool = False) -> None:
-    args = parse_args(usage, links=links, database_positional=database_positional)
-
-    if not args.database:
-        if links:
-            return extract_links._run_extract(args)
-        return extract_links._download_paths(args, {})
-
+def _prepare_database(args):
     if not args.simulate:
         db_playlists.create(args)
         db_media.create(args)
-
     m_columns = db_utils.columns(args, "media")
-
     if (
         "limit" in args.defaults
         and "media" in args.db.table_names()
@@ -243,118 +240,147 @@ def _download(usage, *, links: bool = False, database_positional: bool = False) 
                         """
                     )
 
-    args.blocklist_rules = []
-    if "blocklist" in args.db.table_names():
-        args.blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
+    args.blocklist_rules = (
+        [{row["key"]: row["value"]} for row in args.db["blocklist"].rows]
+        if "blocklist" in args.db.table_names()
+        else []
+    )
+    return m_columns
 
+
+def _get_download_media(args):
     media = list(shell_utils.gen_d(args))
     if not media:
         query, bindings = construct_download_query(args)
         media = list(args.db.query(query, bindings))
-
     if not media:
         processes.no_media_found()
+    return media
 
+
+def _get_link_paths(args, original_path, media):
+    get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
+    try:
+        if args.recursive:
+            link_iter = extract_links.crawl(args, [original_path])
+        else:
+            link_iter = get_inner_urls(args, original_path)
+        return [link_dict["link"] for link_dict in link_iter]
+    except requests.HTTPError as excinfo:
+        log.warning("HTTPError %s. Recording download attempt: %s", excinfo.response.status_code, original_path)
+        db_media.download_add(
+            args,
+            webpath=original_path,
+            info=media,
+            error=str(excinfo),
+            mark_deleted=excinfo.response.status_code == HTTPStatus.NOT_FOUND,
+            delete_webpath_entry=False,
+        )
+        web.post_download(args)
+        return None
+
+
+def _should_skip_download(args, media, m_columns):
+    if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(media, args.blocklist_rules):
+        return True
+    if args.safe and not args.extract_links and not safe_supported(args, media["path"]):
+        log.info("Skipping unsupported URL (safe_mode) %s", media["path"])
+        return True
+    return _skip_download_state(args, media, m_columns)
+
+
+def _skip_download_state(args, media, m_columns):
+    if args.force or "time_modified" not in m_columns:
+        return False
+
+    previous_time_attempted = media.get("time_modified") or consts.APPLICATION_START
+    row = args.db.pop_dict(
+        f"""
+        SELECT
+            time_modified
+            , time_deleted
+            {", download_attempts" if 'download_attempts' in m_columns else ', 0 as download_attempts'}
+        FROM media
+        WHERE path=?
+        """,
+        [media["path"]],
+    )
+    log.debug(row)
+    if not row:
+        return False
+    if row["time_deleted"]:
+        log.info(
+            "Download was marked as deleted %s ago. Skipping %s",
+            strings.duration(consts.now() - row["time_deleted"]),
+            media["path"],
+        )
+        return True
+    if row.get("time_modified") and row["time_modified"] > int(previous_time_attempted):
+        log.info(
+            "Download already attempted %s ago. Skipping %s",
+            strings.duration(consts.now() - row["time_modified"]),
+            media["path"],
+        )
+        return True
+    if row.get("download_attempts") and row["download_attempts"] >= args.download_retries:
+        log.info("Download attempts exceed download retries limit. Skipping %s", media["path"])
+        return True
+    return False
+
+
+def _download_media(args, media, m_columns, backend_args_cache):
+    if _should_skip_download(args, media, m_columns):
+        return
+    try:
+        original_path = media["path"]
+        if args.extract_links:
+            link_paths = _get_link_paths(args, original_path, media)
+            if link_paths is None:
+                return
+            if not link_paths:
+                log.info("No relevant links in page. Recording download attempt: %s", original_path)
+                db_media.download_add(args, original_path, media, error="No relevant links in page")
+                web.post_download(args)
+                return
+        else:
+            link_paths = [original_path]
+
+        route_links(
+            args,
+            media,
+            original_path,
+            link_paths,
+            backend_args_cache,
+            _download_builtin,
+            safe_links=args.safe and args.extract_links,
+        )
+    except Exception:
+        print("db:", args.database)
+        raise
+
+
+def _download_media_list(args, media, m_columns):
+    backend_args_cache = {}
+    for media_row in media:
+        _download_media(args, media_row, m_columns, backend_args_cache)
+
+
+def _download(usage, *, links: bool = False, database_positional: bool = False) -> None:
+    args = parse_args(usage, links=links, database_positional=database_positional)
+    if not args.database:
+        if links:
+            return extract_links.run_extract(args)
+        return extract_links.download_paths(args, {})
+
+    m_columns = _prepare_database(args)
+    media = _get_download_media(args)
     if args.print:
         media_printer.media_printer(args, media)
         return None
     if args.simulate:
-        print("Would download:", *(m["path"] for m in media), sep="\n")
+        print("Would download:", *(media_row["path"] for media_row in media), sep="\n")
         return None
-
-    get_inner_urls = iterables.return_unique(extract_links.iter_links, lambda d: d["link"])
-    backend_args_cache = {}
-    for m in media:
-        if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
-            continue
-
-        if args.safe and not args.extract_links and not safe_supported(args, m["path"]):
-            log.info("Skipping unsupported URL (safe_mode) %s", m["path"])
-            continue
-
-        # check if download already attempted recently by another process
-        previous_time_attempted = m.get("time_modified") or consts.APPLICATION_START  # 0 is nullified
-        if not args.force and "time_modified" in m_columns:
-            d = args.db.pop_dict(
-                f"""
-                SELECT
-                    time_modified
-                    , time_deleted
-                    {", download_attempts" if 'download_attempts' in m_columns else ', 0 as download_attempts'}
-                FROM media
-                WHERE path=?
-                """,
-                [m["path"]],
-            )
-            log.debug(d)
-            if d:
-                if d["time_deleted"]:
-                    log.info(
-                        "Download was marked as deleted %s ago. Skipping %s",
-                        strings.duration(consts.now() - d["time_deleted"]),
-                        m["path"],
-                    )
-                    continue
-                elif d.get("time_modified") and d["time_modified"] > int(previous_time_attempted):
-                    log.info(
-                        "Download already attempted %s ago. Skipping %s",
-                        strings.duration(consts.now() - d["time_modified"]),
-                        m["path"],
-                    )
-                    continue
-                elif d.get("download_attempts") and d["download_attempts"] >= args.download_retries:
-                    log.info("Download attempts exceed download retries limit. Skipping %s", m["path"])
-                    continue
-
-        try:  # attempt to download
-            log.debug(m)
-
-            original_path = m["path"]
-
-            if args.extract_links:
-                link_paths = []
-                try:
-                    if args.recursive:
-                        link_iter = extract_links.crawl(args, [original_path])
-                    else:
-                        link_iter = get_inner_urls(args, original_path)
-                    link_paths.extend(link_dict["link"] for link_dict in link_iter)
-                except requests.HTTPError as excinfo:
-                    log.warning(
-                        "HTTPError %s. Recording download attempt: %s", excinfo.response.status_code, original_path
-                    )
-                    db_media.download_add(
-                        args,
-                        webpath=original_path,
-                        info=m,
-                        error=str(excinfo),
-                        mark_deleted=excinfo.response.status_code == HTTPStatus.NOT_FOUND,
-                        delete_webpath_entry=False,
-                    )
-                    web.post_download(args)
-                    continue
-
-                if not link_paths:
-                    log.info("No relevant links in page. Recording download attempt: %s", original_path)
-                    db_media.download_add(args, original_path, m, error="No relevant links in page")
-                    web.post_download(args)
-                    continue
-            else:
-                link_paths = [original_path]
-
-            route_links(
-                args,
-                m,
-                original_path,
-                link_paths,
-                backend_args_cache,
-                _download_builtin,
-                safe_links=args.safe and args.extract_links,
-            )
-
-        except Exception:
-            print("db:", args.database)
-            raise
+    _download_media_list(args, media, m_columns)
     return None
 
 
