@@ -19,6 +19,7 @@ def _drop_path_only_unique_indexes(args) -> None:
         if index_columns == ["path"]:
             args.db.execute(f"DROP INDEX {quoted_index_name}")
 
+
 """
 playlists table
     profile = Type of extractor -- consts.DBType
