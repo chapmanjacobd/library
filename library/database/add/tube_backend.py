@@ -129,7 +129,13 @@ playlists_of_playlists = set()
 added_media_count = 0
 
 
-def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> None:
+def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, retrieved_paths=None) -> None:
+    if retrieved_paths is None:
+        retrieved_paths = set()
+    if playlist_path in retrieved_paths:
+        return
+    retrieved_paths.add(playlist_path)
+
     yt_dlp = load_module_level_yt_dlp()
     t = Timer()
 
@@ -161,7 +167,13 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     elif webpath in playlists_of_playlists:
                         raise ExistingPlaylistVideoReached  # prevent infinite bug
 
-                    get_playlist_metadata(args, webpath, ydl_opts, playlist_root=False)
+                    get_playlist_metadata(
+                        args,
+                        webpath,
+                        ydl_opts,
+                        playlist_root=False,
+                        retrieved_paths=retrieved_paths,
+                    )
                     log.debug("get_playlist_metadata %s", t.elapsed())
                     playlists_of_playlists.add(webpath)
                     return [], info

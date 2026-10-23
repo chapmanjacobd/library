@@ -43,3 +43,26 @@ def test_tubeupdate(play_mocked):
     assert out["TEST1"] == 1
     assert out["TEST2"] == 4
     assert out["TEST3"] == 2
+
+
+@mock.patch(
+    "library.database.add.tube_add.db_playlists.get_all",
+    return_value=[
+        {"path": "same-playlist", "extractor_config": '{"profile": "audio"}'},
+        {"path": "same-playlist", "extractor_config": '{"profile": "video"}'},
+    ],
+)
+@mock.patch("library.database.add.tube_backend.get_playlist_metadata")
+def test_tubeupdate_retrieves_each_path_once(play_mocked, playlists_mocked):
+    lb(["tube-update", tube_db, "--force"])
+
+    assert playlists_mocked.call_count == 1
+    assert play_mocked.call_count == 1
+
+
+@mock.patch("library.database.add.tube_backend.get_playlist_metadata")
+def test_tubeadd_retrieves_each_path_once(play_mocked, tmp_path):
+    database = str(tmp_path / "tube.db")
+    lb(["tube-add", database, "--force", "same-playlist", "same-playlist"])
+
+    assert play_mocked.call_count == 1

@@ -4,7 +4,7 @@ from pathlib import Path
 from library import usage
 from library.database.add import tube_backend
 from library.database.manage import db_media, db_playlists
-from library.utils import arggroups, argparse_utils, consts, db_utils, shell_utils
+from library.utils import arggroups, argparse_utils, consts, db_utils, iterables, shell_utils
 from library.utils.consts import DBType, SC
 from library.utils.log_utils import log
 
@@ -41,7 +41,7 @@ def tube_add(args=None) -> None:
         sys.argv = ["tubeadd", *args]
 
     args = parse_args(SC.tube_add, usage=usage.tube_add)
-    paths = shell_utils.gen_paths(args)
+    paths = list(iterables.ordered_set(shell_utils.gen_paths(args)))
 
     db_playlists.create(args)
     db_media.create(args)
@@ -67,8 +67,8 @@ def tube_add(args=None) -> None:
             ignore=True,
         )
     else:
-        paths = list(paths)
         known_playlists = set()
+        retrieved_paths = set()
         if not args.force and len(paths) > MAX_PATHS_WITHOUT_FORCE:
             known_playlists = db_media.get_paths(args)
 
@@ -81,7 +81,14 @@ def tube_add(args=None) -> None:
                 log.info("[%s]: Known already. Skipping!", path)
                 continue
 
-            tube_backend.get_playlist_metadata(args, path, tube_backend.tube_opts(args))
+            if path in retrieved_paths:
+                continue
+            tube_backend.get_playlist_metadata(
+                args,
+                path,
+                tube_backend.tube_opts(args),
+                retrieved_paths=retrieved_paths,
+            )
 
             if args.extra or args.subs or args.auto_subs:
                 log.warning("[%s]: Getting extra metadata", path)
@@ -105,7 +112,12 @@ def tube_update(args=None) -> None:
     )
 
     print("Checking", len(tube_playlists), "playlists for updates")
+    seen_paths = set()
+    retrieved_paths = set()
     for d in tube_playlists:
+        if d["path"] in seen_paths or d["path"] in retrieved_paths:
+            continue
+        seen_paths.add(d["path"])
         tube_backend.get_playlist_metadata(
             args,
             d["path"],
@@ -114,6 +126,7 @@ def tube_update(args=None) -> None:
                 playlist_opts=d.get("extractor_config", "{}"),
                 func_opts={"ignoreerrors": "only_download"},
             ),
+            retrieved_paths=retrieved_paths,
         )
 
         if args.extra or args.subs or args.auto_subs:
