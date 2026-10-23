@@ -500,7 +500,7 @@ def torrent_paths_on_different_drives(t):
     return path_utils.mountpoint(t.download_path) != path_utils.mountpoint(t.save_path)
 
 
-def reset_torrent_progress(_args, qbt_client, torrent):
+def reset_torrent_progress(qbt_client, torrent):
     originally_stopped = bool(torrent.state_enum.is_stopped)
     qbt_client.torrents_stop(torrent_hashes=[torrent.hash])
 
@@ -1045,7 +1045,7 @@ def _apply_torrent_actions(args, qbt_client, torrents):
     if args.reset_progress:
         print("Resetting progress of", len(torrents))
         for torrent in torrents:
-            reset_torrent_progress(args, qbt_client, torrent)
+            reset_torrent_progress(qbt_client, torrent)
     _move_torrents(args, qbt_client, torrents)
     _apply_limits_and_checks(args, qbt_client, torrents, torrent_hashes)
     _apply_tracker_actions(args, qbt_client, torrents)

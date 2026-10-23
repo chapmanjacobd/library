@@ -725,7 +725,7 @@ def ensure_download_parent(path: Path) -> None:
     log.warning("Moved existing file %s to %s to create a download directory", legacy_path, parent)
 
 
-def _resume_download(_args, url, path, response, remote_size, current_session):
+def _resume_download(url, path, response, remote_size, current_session):
     if not path.exists():
         log.info("Writing %s \n\tto %s", url, path)
         return response, path, False
@@ -802,7 +802,7 @@ def _download_url_once(args, url, output_path, retry_num):
             output_path = str(path / "index.html")
             path = Path(output_path)
 
-        response, path, skip_write = _resume_download(args, url, path, response, remote_size, current_session)
+        response, path, skip_write = _resume_download(url, path, response, remote_size, current_session)
         if skip_write:
             return str(path)
         output_path = _write_download(args, url, path, response, remote_size, retry_num)

@@ -264,7 +264,7 @@ def _page_path(args, playlist_path, page_value, page_limit):
     return set_page(playlist_path, args.page_key, page_value)
 
 
-def _scan_page(args, page_path, _page_limit, page_count):
+def _scan_page(args, page_path, page_count):
     page_known = set()
     page_new = {}
     end_of_playlist = False
@@ -335,7 +335,7 @@ def extractor(args, playlist_path):
         page_path = _page_path(args, playlist_path, page_value, page_limit)
 
         log.info("Loading page %s", page_path)
-        page_known, page_new, page_finished = _scan_page(args, page_path, page_limit, page_count)
+        page_known, page_new, page_finished = _scan_page(args, page_path, page_count)
         end_of_playlist = end_of_playlist or page_finished
 
         add_media(args, [{"path": k, **v} for k, v in page_new.items()])

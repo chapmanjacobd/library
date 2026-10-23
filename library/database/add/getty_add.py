@@ -99,7 +99,7 @@ def update_activity_stream(args):
             break
 
 
-def objects_extract(_args, j):
+def objects_extract(j):
     assert j["type"] == "HumanMadeObject"
 
     known_keys = set(
@@ -215,7 +215,7 @@ def update_objects(args):
 
         page_data = getty_fetch(unknown_object)
         if page_data:
-            images = objects_extract(args, page_data)
+            images = objects_extract(page_data)
             for image in images:
                 db_media.add(args, {"playlists_id": playlists_id, **image})
         else:

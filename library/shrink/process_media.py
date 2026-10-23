@@ -434,7 +434,7 @@ def _collect_process_media(args):
     return media, archive_paths, mp_args
 
 
-def _summarize_media(media, _args):
+def _summarize_media(media):
     summary = {}
     for media_item in media:
         media_key = f"{media_item['media_type']}: {media_item['ext']}"
@@ -652,7 +652,7 @@ def _process_media_item(args, media, new_free_space):
 def process_media() -> None:
     args = parse_args()
     media, archive_paths, mp_args = _collect_process_media(args)
-    summary, totals = _summarize_media(media, args)
+    summary, totals = _summarize_media(media)
     _print_media_summary(summary, totals)
 
     new_free_space = 0

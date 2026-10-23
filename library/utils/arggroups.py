@@ -796,7 +796,7 @@ def _append_time_sql_filters(args):
         args.filter_sql.append(f"and (COALESCE(m.time_deleted,0) = 0 or m.time_deleted {operator} {threshold})")
 
 
-def _append_media_sql_filters(args, _m_columns):
+def _append_media_sql_filters(args):
     if getattr(args, "keep_dir", False):
         args.keep_dir = str(Path(args.keep_dir).expanduser())
 
@@ -885,7 +885,7 @@ def sql_fs_post(args, table_prefix="m.") -> None:
 
     _prepare_sql_filters(args, m_columns)
     _append_time_sql_filters(args)
-    _append_media_sql_filters(args, m_columns)
+    _append_media_sql_filters(args)
     _append_playback_sql_filters(args)
     _append_deleted_sql_filters(args, m_columns, pl_columns, table_prefix)
 

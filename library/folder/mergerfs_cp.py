@@ -121,7 +121,7 @@ def mergerfs_cp_file(args, merger_fs_src, destination):
         print(f"Could not find srcmount of {merger_fs_src}")
 
 
-def cp_args(_args):
+def cp_args():
     cmd_args = ["cp"]
     cmd_args.append("--no-clobber")
 
@@ -133,7 +133,7 @@ def cp_args(_args):
 def mergerfs_cp():
     args = parse_args()
 
-    args.cp_args = cp_args(args)
+    args.cp_args = cp_args()
     args.mergerfs_mount = get_destination_mount(args.destination)
     if args.mergerfs_mount == "":
         processes.exit_error("Could not detect any mergerfs mounts")

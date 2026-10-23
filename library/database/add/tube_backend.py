@@ -679,7 +679,7 @@ def _handle_failed_download(args, m, info, local_path, media_check_failed, ydl_l
     return download_status, ydl_errors_txt, media_check_failed
 
 
-def _save_download_archive(ydl, yt_dlp, _args, m, info, download_archive):
+def _save_download_archive(ydl, yt_dlp, m, info, download_archive):
     if len(yt_archive) == 0 or info is None:
         return
     archive_id = ydl._make_archive_id(info)  # noqa: SLF001
@@ -715,7 +715,7 @@ def download(args, m) -> bool:
         ydl_errors_txt = "Media check failed\n" + ydl_errors_txt
 
     if download_status == DLStatus.SUCCESS and len(yt_archive) > 0 and info is not None:
-        _save_download_archive(ydl, yt_dlp, args, m, info, download_archive)
+        _save_download_archive(ydl, yt_dlp, m, info, download_archive)
 
     db_media.download_add(
         args,

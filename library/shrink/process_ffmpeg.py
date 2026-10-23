@@ -402,7 +402,7 @@ def _output_suffix(video_stream, audio_stream):
     return ".gif.mkv"
 
 
-def _run_ffmpeg(_args, command, output_paths):
+def _run_ffmpeg(command, output_paths):
     try:
         processes.cmd(*command, limit_ram=True, nice=10)
     except subprocess.CalledProcessError as excinfo:
@@ -591,7 +591,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
     if args.simulate:
         print(shlex.join(command))
         return str(path)
-    command_result = _run_ffmpeg(args, command, output_paths)
+    command_result = _run_ffmpeg(command, output_paths)
     if command_result is False:
         output_result = str(path)
     else:

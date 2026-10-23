@@ -66,7 +66,7 @@ def _word_sort_value(sort_name, word, corpus_stats, words, reverse_words, ns_opt
         raise NotImplementedError from exc
 
 
-def _gen_word_key(word_sorts, word, _args, ns_opts, corpus_stats, words, reverse_words):
+def _gen_word_key(word_sorts, word, ns_opts, corpus_stats, words, reverse_words):
     key_parts = []
     for sort_option in word_sorts:
         reverse = sort_option.startswith("-")
@@ -83,7 +83,7 @@ def word_sorter(args, ns_opts, word_sorts: list[consts.WordSortOpt], corpus_stat
     try:
         split_index = word_sorts.index("mcda")
     except ValueError:
-        words = sorted(l, key=partial(_gen_word_key, word_sorts, args=args, ns_opts=ns_opts, corpus_stats=corpus_stats, words=l, reverse_words=reverse_words))
+        words = sorted(l, key=partial(_gen_word_key, word_sorts, ns_opts=ns_opts, corpus_stats=corpus_stats, words=l, reverse_words=reverse_words))
     else:
         # Split the list into two parts
         before_mcda = word_sorts[:split_index]
@@ -92,7 +92,7 @@ def word_sorter(args, ns_opts, word_sorts: list[consts.WordSortOpt], corpus_stat
         rank = mcda.mcda_sorted(
             args,
             keys=[
-                _gen_word_key(after_mcda, xs, args, ns_opts, corpus_stats, l, reverse_words)
+                _gen_word_key(after_mcda, xs, ns_opts, corpus_stats, l, reverse_words)
                 for xs in l
             ],
         )
@@ -100,7 +100,7 @@ def word_sorter(args, ns_opts, word_sorts: list[consts.WordSortOpt], corpus_stat
         words = sorted(
             l,
             key=lambda word: (
-                *_gen_word_key(before_mcda, word, args, ns_opts, corpus_stats, l, reverse_words),
+                *_gen_word_key(before_mcda, word, ns_opts, corpus_stats, l, reverse_words),
                 rank["original_index"][l.index(word)],
             ),
         )

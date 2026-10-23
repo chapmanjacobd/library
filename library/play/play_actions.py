@@ -307,7 +307,7 @@ def file_or_folder_media(args, paths):
 
 
 def folder_media(args, media):
-    media = big_dirs.group_files_by_parent(args, media)
+    media = big_dirs.group_files_by_parent(media)
     media = big_dirs.process_big_dirs(args, media)
     media = iterables.list_dict_filter_bool(media, keep_0=False)
     return media
@@ -387,7 +387,7 @@ def _apply_big_dirs(args, media, timer):
         return media
 
     media_keyed = {d["path"]: d for d in media}
-    folders = big_dirs.group_files_by_parents(args, media)
+    folders = big_dirs.group_files_by_parents(media)
     folders = big_dirs.process_big_dirs(args, folders)
     folders = mcda.group_sort_by(args, folders)
     log.debug("process_bigdirs: %s", timer.elapsed())
@@ -412,7 +412,7 @@ def _apply_big_dirs(args, media, timer):
     return media
 
 
-def _apply_playqueue_filters(args, media, _timer):
+def _apply_playqueue_filters(args, media):
     if getattr(args, "exists", False):
         marked = db_media.mark_media_deleted(
             args, [d["path"] for d in media if d and d["path"] and not Path(d["path"]).exists()]
@@ -512,7 +512,7 @@ def process_playqueue(args) -> None:
         log.debug("player.get_related_media: %s", timer.elapsed())
 
     media = _apply_big_dirs(args, media, timer)
-    media = _apply_playqueue_filters(args, media, timer)
+    media = _apply_playqueue_filters(args, media)
     if media is None:
         return
     media = _sort_playqueue(args, media, timer)

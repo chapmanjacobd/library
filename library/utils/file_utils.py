@@ -98,7 +98,7 @@ def head_foot_stream(url, head_len, foot_len):
     return stream
 
 
-def _detect_special_mimetype(path, ext, _puremagic):
+def _detect_special_mimetype(path, ext):
     if ext in (".zarr", ".zarr/"):
         return "Zarr"
     if Path(path).is_dir():
@@ -170,7 +170,7 @@ def detect_mimetype(path):
     import puremagic
 
     ext = puremagic.ext_from_filename(path)
-    file_type = _detect_special_mimetype(path, ext, puremagic)
+    file_type = _detect_special_mimetype(path, ext)
 
     if file_type is None:
         file_type = _detect_magic_mimetype(path, puremagic)

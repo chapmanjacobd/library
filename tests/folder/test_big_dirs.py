@@ -14,7 +14,7 @@ def test_reaggregate_direct_parent_folders():
     ]
     args = NoneSpace(max_depth=None, min_depth=0)
 
-    folders = big_dirs.group_files_by_parent(args, media)
+    folders = big_dirs.group_files_by_parent(media)
     reaggregated = big_dirs.reaggregate_at_depth(args, folders)
 
     assert folders[0]["folders"] == 0

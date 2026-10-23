@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def group_files_by_parents(_args, media) -> list[dict]:
+def group_files_by_parents(media) -> list[dict]:
     p_media = {}
     min_parts = 10
     for m in media:
@@ -88,7 +88,7 @@ def group_files_by_parents(_args, media) -> list[dict]:
     return [{**v, "path": format_folder(k)} for k, v in d.items()]
 
 
-def group_files_by_parent(_args, media) -> list[dict]:
+def group_files_by_parent(media) -> list[dict]:
     p_media = defaultdict(list)
     for m in media:
         p_media[str(Path(m["path"]).parent)].append(m)
@@ -224,9 +224,9 @@ def big_dirs() -> None:
             for group in groups
         ]
     elif args.parents:
-        folders = group_files_by_parents(args, media)
+        folders = group_files_by_parents(media)
     else:
-        folders = group_files_by_parent(args, media)
+        folders = group_files_by_parent(media)
 
     folders = mcda.group_sort_by(args, folders)
     media = process_big_dirs(args, folders)

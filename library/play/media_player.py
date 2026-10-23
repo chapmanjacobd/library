@@ -593,7 +593,7 @@ def single_player(args, m):
     return r
 
 
-def _create_window_player(_args, window_geometry, m):
+def _create_window_player(window_geometry, m):
     print(m["path"])
     m["player"].extend(window_geometry)
     return {
@@ -629,7 +629,7 @@ def multiple_player(args, playlist) -> None:
                     log.debug("%s IndexError", t_idx)
                     m = playlist.get_m()
                     if m:
-                        players.append(_create_window_player(args, window_geometry, m))
+                        players.append(_create_window_player(window_geometry, m))
                 else:
                     # log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
@@ -645,7 +645,7 @@ def multiple_player(args, playlist) -> None:
 
                         m = playlist.get_m()
                         if m:
-                            players[t_idx] = _create_window_player(args, window_geometry, m)
+                            players[t_idx] = _create_window_player(window_geometry, m)
                         else:
                             del players[t_idx]
 

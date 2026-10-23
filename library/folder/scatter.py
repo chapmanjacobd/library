@@ -348,7 +348,7 @@ def _rebin_folder(files_in_folder, folder_path, disk_free):
     return untouched, rebinned
 
 
-def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
+def rebin_consolidate(args, all_files) -> tuple[list, list]:
     total_size = sum(d["size"] or 0 for d in all_files)
     print(strings.file_size(total_size), len(all_files), "files total")
     disk_free = {
@@ -408,7 +408,7 @@ def scatter() -> None:
     print_path_stats(path_stats)
 
     if args.consolidate:
-        untouched, rebinned = rebin_consolidate(args, disk_stats, files)
+        untouched, rebinned = rebin_consolidate(args, files)
     else:
         untouched, rebinned = rebin_files(args, disk_stats, files)
 

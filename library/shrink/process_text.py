@@ -212,7 +212,7 @@ def _process_text_ocr(args, path):
     return path
 
 
-def _calibre_command(_args, path, output_path, ext):
+def _calibre_command(path, output_path, ext):
     command = [
         "ebook-convert",
         str(path),
@@ -288,7 +288,7 @@ def _run_calibre_conversion(args, path, output_path, ext):
         return None, None, None
 
     try:
-        processes.cmd(*_calibre_command(args, path, output_path, ext), limit_ram=True, nice=6)
+        processes.cmd(*_calibre_command(path, output_path, ext), limit_ram=True, nice=6)
     except subprocess.CalledProcessError:
         log.exception("[%s]: Calibre failed to process book. Skipping...", str(path))
         if output_path.exists():
@@ -351,7 +351,7 @@ def process_path(args, path) -> str | None:
         output_path = path_utils.clean_path(os.fsencode(output_path))
 
     if args.simulate:
-        command = _calibre_command(args, path, output_path, ext)
+        command = _calibre_command(path, output_path, ext)
         print(shlex.join(command))
         return str(path)
 
