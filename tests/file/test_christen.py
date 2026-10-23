@@ -98,11 +98,11 @@ def test_case_insensitive_with_emojis():
 def test_mojibake_fix_is_opt_in():
     b = "/docs/cafÃ©.txt".encode()
 
-    assert clean_path(b) == "/docs/cafÃ©.txt"
-    assert clean_path(b, fix_mojibake=True) == "/docs/café.txt"
+    assert clean_path(b) == p("/docs/cafÃ©.txt")
+    assert clean_path(b, fix_mojibake=True) == p("/docs/café.txt")
 
 
 def test_mojibake_fix_recleans_corrected_text():
     b = "/docs/fooï¼\x8fbar.txt".encode()
 
-    assert clean_path(b, fix_mojibake=True) == "/docs/foo bar.txt"
+    assert clean_path(b, fix_mojibake=True) == p("/docs/foo bar.txt")

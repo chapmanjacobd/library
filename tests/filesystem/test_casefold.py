@@ -1,8 +1,30 @@
+from functools import wraps
 import sqlite3
+
+import pytest
 
 from library.filesystem import casefold
 
 
+def case_sensitive(test):
+    @wraps(test)
+    def wrapper(tmp_path, *args, **kwargs):
+        probe = tmp_path / "case-sensitivity-probe"
+        alternate = tmp_path / "CASE-SENSITIVITY-PROBE"
+        probe.mkdir()
+        try:
+            alternate.mkdir()
+        except FileExistsError:
+            pytest.skip("casefold fixture requires a case-sensitive filesystem")
+        else:
+            alternate.rmdir()
+            probe.rmdir()
+        return test(tmp_path, *args, **kwargs)
+
+    return wrapper
+
+
+@case_sensitive
 def test_find_case_conflicts_is_deterministic(tmp_path):
     (tmp_path / "video").mkdir()
     (tmp_path / "Video").mkdir()
@@ -16,6 +38,7 @@ def test_find_case_conflicts_is_deterministic(tmp_path):
     assert casefold.choose_preferred_path(conflicts["video"]) == str(tmp_path / "Video")
 
 
+@case_sensitive
 def test_apply_case_conflicts_dry_run_does_not_modify(tmp_path):
     preferred = tmp_path / "Video"
     source = tmp_path / "video"
@@ -30,6 +53,7 @@ def test_apply_case_conflicts_dry_run_does_not_modify(tmp_path):
     assert any(action.action == "move" for action in actions)
 
 
+@case_sensitive
 def test_apply_case_conflicts_merges_directories(tmp_path):
     preferred = tmp_path / "Video"
     source = tmp_path / "video"
