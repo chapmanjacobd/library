@@ -353,6 +353,7 @@ def _process_duplicate_group(args, group, is_interactive):
     left = group[0]
     dups = group[1:]
     kept_dups = []
+
     def delete_dupe(duplicate, detach=is_interactive):
         _delete_dupe(args, duplicate, detach)
     while dups:

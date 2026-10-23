@@ -6,6 +6,7 @@ from library.database.manage import db_media, db_playlists
 from library.utils import consts, printing, strings
 from library.utils.log_utils import log
 
+
 @functools.lru_cache(maxsize=1)
 def gallery_dl_available() -> bool:
     """Whether gallery-dl (pip install gallery-dl) is importable.

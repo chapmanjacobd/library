@@ -583,7 +583,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
     command = [
         "ffmpeg",
         "-nostdin",
-        *( ["-v", "9", "-loglevel", "99"] if args.verbose > consts.LOG_DEBUG_SQL else ["-hide_banner", "-loglevel", "warning"] ),
+        *(["-v", "9", "-loglevel", "99"] if args.verbose > consts.LOG_DEBUG_SQL else ["-hide_banner", "-loglevel", "warning"]),
         "-y", "-i", str(path), "-movflags", "use_metadata_tags", *ff_opts,
         "-map_metadata", "0", "-map_chapters", "0", "-dn", "-max_interleave_delta", "0", str(output_path),
     ]
@@ -600,6 +600,7 @@ def process_path(args, path, include_timecode=False, **kwargs) -> str | list[str
     if output_result is not _PROCESS_CONTINUE:
         return output_result
     return _finalize_transcode(args, path, probe, video_stream, output_paths, original_stats, is_split, is_file_error)
+
 
 def process_ffmpeg(defaults_override=None):
     args = parse_args(defaults_override)

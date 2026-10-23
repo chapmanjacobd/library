@@ -344,6 +344,7 @@ def check_shrink(args, m) -> list:
         log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []
 
+
 def _archive_paths(media):
     return list(
         dict.fromkeys(

@@ -232,7 +232,7 @@ def filter_corpus(corpus_stats, words, unique, dups):
         (False, False): lambda: True,
     }
     try:
-        return rules[(unique, dups)]()
+        return rules[unique, dups]()
     except KeyError as exc:
         raise NotImplementedError from exc
 

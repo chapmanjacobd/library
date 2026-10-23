@@ -201,6 +201,7 @@ def print_info(args, dft):
         _print_categorical_info(args, df)
     _print_missing_info(df, pd)
 
+
 def file_eda(args, path):
     dfs = file_utils.read_file_to_dataframes(
         path,

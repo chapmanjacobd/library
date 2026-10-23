@@ -629,7 +629,7 @@ def compare_block_strings(value: str, media_value: str) -> bool:
         (True, False): lambda: media_value.endswith(value.lstrip("%")),
         (True, True): lambda: inner_value in media_value,
     }
-    return matchers[(starts_with_wild, ends_with_wild)]()
+    return matchers[starts_with_wild, ends_with_wild]()
 
 
 def is_blocked_dict_like_sql(m: dict, blocklist: list[dict]) -> bool:

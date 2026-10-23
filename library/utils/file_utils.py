@@ -10,6 +10,7 @@ import urllib3
 
 from library.utils import consts, processes, web
 from library.utils.log_utils import log
+from itertools import starmap
 
 MIN_DETECTION_COHERENCE = 0.8
 
@@ -258,7 +259,7 @@ def _read_excel_tables(path, table_name, table_index, start_row, end_row, skip_h
     )
     if isinstance(excel_data, pd.DataFrame):
         return [NDF(name, excel_data.loc[name]) for name in excel_data.index.levels[0]]  # type: ignore
-    return [NDF(sheet_name, dataframe) for sheet_name, dataframe in excel_data.items()]
+    return list(starmap(NDF, excel_data.items()))
 
 
 def _read_xarray_table(path, mimetype):
@@ -467,7 +468,6 @@ def read_file_to_dataframes(
     if mimetype is None:
         msg = f"{path}: File type could not be determined. Pass in --filetype"
         raise ValueError(msg)
-
 
     dfs: list[NDF] = _read_typed_tables(
         path, mimetype, table_name, table_index, start_row, end_row, order_by, encoding, skip_headers
