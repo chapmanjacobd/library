@@ -31,6 +31,7 @@ def test_playlist_identity_includes_extractor_config():
     args = SimpleNamespace(database=":memory:", verbose=0, extractor_config={})
     args.db = db_utils.connect(args)
     db_playlists.create(args)
+    db_utils.optimize(args)
 
     first_id = db_playlists._add(args, {"path": "same-path", "extractor_config": {"source": "first"}})
     second_id = db_playlists._add(args, {"path": "same-path", "extractor_config": {"source": "second"}})
@@ -40,3 +41,16 @@ def test_playlist_identity_includes_extractor_config():
     assert db_playlists.get_id(args, "same-path", {"source": "second"}) == second_id
     assert db_playlists.exists(args, "same-path", {"source": "first"})
     assert not db_playlists.exists(args, "same-path", {"source": "missing"})
+
+
+def test_playlist_identity_migrates_path_only_unique_index():
+    args = SimpleNamespace(database=":memory:", verbose=0, extractor_config={})
+    args.db = db_utils.connect(args)
+    db_playlists.create(args)
+    args.db.execute("CREATE UNIQUE INDEX idx_playlists_path ON playlists (path)")
+
+    db_playlists.create(args)
+    first_id = db_playlists.add(args, "same-path", {"extractor_config": {"source": "first"}})
+    second_id = db_playlists.add(args, "same-path", {"extractor_config": {"source": "second"}})
+
+    assert first_id != second_id

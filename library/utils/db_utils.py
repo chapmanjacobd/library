@@ -95,6 +95,7 @@ config = {
         "search_columns": ["path", "title", "tracker", "author", "comment"],
         "column_order": ["id", "path", "extractor_key"],
         "ignore_columns": ["extractor_playlist_id"],
+        "unique_columns": [],
     },
     "media": {
         "search_columns": [
@@ -179,6 +180,9 @@ def optimize(args) -> None:
         str_columns = [k for k, v in table_columns.items() if v is str and k not in search_columns + ignore_columns]
         if "path" in table_columns:
             str_columns = list({*str_columns, "path"})
+        unique_columns = table_config.get("unique_columns")
+        if unique_columns is None:
+            unique_columns = ["path"] if "path" in table_columns else []
 
         optimized_column_order = list(iterables.ordered_set([*int_columns, *(table_config.get("column_order") or [])]))
         compare_order = zip(table_columns, optimized_column_order, strict=False)
@@ -199,7 +203,7 @@ def optimize(args) -> None:
         for column in int_columns + str_columns:
             log.info("Creating index: %s", column)
             try:
-                db[table].create_index([column], unique=column == "path", if_not_exists=True, analyze=True)  # type: ignore
+                db[table].create_index([column], unique=column in unique_columns, if_not_exists=True, analyze=True)  # type: ignore
             except sqlite3.IntegrityError:
                 log.warning("%s %s table %s column is not unique", args.database, table, column)
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore

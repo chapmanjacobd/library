@@ -4,6 +4,21 @@ from library.database.manage.dedupe_db import dedupe_rows
 from library.utils import consts, date_utils, db_utils, iterables, objects
 from library.utils.log_utils import log
 
+
+def _quote_identifier(identifier: str) -> str:
+    return '"' + identifier.replace('"', '""') + '"'
+
+
+def _drop_path_only_unique_indexes(args) -> None:
+    for index in args.db.execute("PRAGMA index_list(playlists)").fetchall():
+        index_name = index[1]
+        if not index[2]:
+            continue
+        quoted_index_name = _quote_identifier(index_name)
+        index_columns = [row[2] for row in args.db.execute(f"PRAGMA index_info({quoted_index_name})")]
+        if index_columns == ["path"]:
+            args.db.execute(f"DROP INDEX {quoted_index_name}")
+
 """
 playlists table
     profile = Type of extractor -- consts.DBType
@@ -30,6 +45,7 @@ def create(args):
         );
         """
     )
+    _drop_path_only_unique_indexes(args)
     try:
         args.db.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS playlists_uniq_path_idx ON playlists (path, extractor_config);"
@@ -136,6 +152,7 @@ def _add(args, entry):
         entry["time_deleted"] = 0
         args.db["playlists"].upsert(entry, pk="id", alter=True)
     else:
+        _drop_path_only_unique_indexes(args)
         entry["time_created"] = consts.APPLICATION_START
         entry["hours_update_delay"] = 70  # about three days
         args.db["playlists"].insert(entry, alter=True)
