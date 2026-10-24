@@ -551,7 +551,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
     subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
 
     bindings = {**subpath_params}
-    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("S_")}}
+    bindings = {**bindings, **args.filter_bindings}
 
     media = list(args.db.query(query, bindings))
     log.debug("len(dir_media) = %s", len(media))
@@ -611,7 +611,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
     """
 
     bindings = {**playlists_params}
-    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("S_")}}
+    bindings = {**bindings, **args.filter_bindings}
 
     media = list(args.db.query(query, bindings))
     log.debug("len(playlist_media) = %s", len(media))

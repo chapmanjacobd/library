@@ -1,3 +1,4 @@
+import os
 import shlex
 from argparse import ArgumentParser
 from pathlib import Path
@@ -7,7 +8,7 @@ from unittest import mock
 import pytest
 
 from library.__main__ import library as lb
-from library.database.manage import db_history
+from library.database.manage import db_history, db_media
 from library.utils import arggroups, consts
 from library.utils.consts import SC
 from library.utils.objects import NoneSpace
@@ -209,3 +210,25 @@ def test_fs_direct_paths_apply_sort_and_limit(play_mocked, temp_file_tree):
     out = play_mocked.call_args[0][1]
 
     assert [Path(m["path"]).name for m in out] == ["z.mp4"]
+
+
+def test_get_dir_media_applies_non_search_bindings():
+    args = connect_db_args(v_db)
+    args.table = "media"
+    args.select = ["path"]
+    args.defaults = {"sort"}
+    args.filter_sql = []
+    args.aggregate_filter_sql = []
+    args.filter_bindings = {}
+
+    dirs = [str(Path("tests/data").resolve())]
+    unfiltered = db_media.get_dir_media(args, dirs, include_subdirs=True)
+    excluded_paths = {m["path"] for m in unfiltered if Path(m["path"]).name == "test.mp4"}
+    assert excluded_paths
+
+    args.filter_sql = ["and path not like :keep_dir"]
+    args.filter_bindings = {"keep_dir": f"%{os.sep}test.mp4"}
+    media = db_media.get_dir_media(args, dirs, include_subdirs=True)
+
+    assert media
+    assert not {m["path"] for m in media} & excluded_paths
