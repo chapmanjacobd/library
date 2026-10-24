@@ -68,6 +68,41 @@ def delete_playlists(args, playlists) -> None:
     print(f"Deleted {deleted_playlist_count} playlists ({deleted_media_count} media records)")
 
 
+_PLAYLIST_FILTER_ARGS = (
+    "include",
+    "exclude",
+    "where",
+    "ext",
+    "sizes",
+    "bitrates",
+    "local_media_only",
+    "online_media_only",
+    "time_created",
+    "created_within",
+    "created_before",
+    "time_modified",
+    "modified_within",
+    "modified_before",
+    "time_deleted",
+    "deleted_within",
+    "deleted_before",
+    "downloaded_within",
+    "downloaded_before",
+    "keep_dir",
+    "no_video",
+    "no_audio",
+    "subtitles",
+    "no_subtitles",
+    "duration",
+    "duration_from_size",
+)
+
+
+def _playlists_filtered(args) -> bool:
+    """Whether the playlist query is narrowed beyond the default deleted filter."""
+    return any(getattr(args, arg, None) for arg in _PLAYLIST_FILTER_ARGS)
+
+
 def playlists() -> None:
     args = parse_args()
 
@@ -76,6 +111,9 @@ def playlists() -> None:
     query, bindings = construct_playlists_query(args)
 
     if "playlists_id" in m_columns:
+        # `Playlist-less media` is only meaningful for an unfiltered listing. When
+        # searching/filtering, keep just the media belonging to matching playlists.
+        join = "JOIN" if _playlists_filtered(args) else "LEFT JOIN"
         query = f"""
         select
             coalesce(p.path, "Playlist-less media") path
@@ -87,7 +125,7 @@ def playlists() -> None:
             {', sum(m.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media m
-        LEFT JOIN ({query}) p on p.id = m.playlists_id
+        {join} ({query}) p on p.id = m.playlists_id
         group by m.playlists_id, coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """

@@ -1,4 +1,6 @@
+import sqlite3
 from types import SimpleNamespace
+from unittest import mock
 
 from library.__main__ import library as lb
 from library.database.manage import db_playlists
@@ -25,6 +27,44 @@ def test_playlists3(capsys):
     assert "playlists_count" in captured
     assert "media_count" in captured
     assert len(captured) > 200
+
+
+@mock.patch("library.play.media_printer.media_printer")
+def test_playlists_search_excludes_nonmatching_playlists(mocked, temp_db):
+    db1 = temp_db()
+    conn = sqlite3.connect(db1)
+    conn.executescript(
+        """
+        CREATE TABLE playlists (
+            id INTEGER PRIMARY KEY,
+            path TEXT,
+            title TEXT,
+            extractor_key TEXT,
+            time_deleted INTEGER
+        );
+        CREATE TABLE media (
+            id INTEGER PRIMARY KEY,
+            playlists_id INTEGER,
+            path TEXT,
+            size INTEGER
+        );
+        INSERT INTO playlists VALUES (1, 'matching-playlist', 'match', 'test', 0);
+        INSERT INTO playlists VALUES (2, 'other-playlist', 'other', 'test', 0);
+        INSERT INTO media VALUES (1, 1, 'file-1', 100);
+        INSERT INTO media VALUES (2, 2, 'file-2', 200);
+        INSERT INTO media VALUES (3, NULL, 'file-3', 300);
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    lb(["playlists", db1, "matching"])
+
+    out = mocked.call_args[0][1]
+    assert len(out) == 1
+    assert out[0]["path"] == "matching-playlist"
+    assert out[0]["size"] == 100
+    assert out[0]["count"] == 1
 
 
 def test_playlist_identity_includes_extractor_config():
