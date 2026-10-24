@@ -510,7 +510,9 @@ def test_generated_readme_documents_every_nested_command():
 
     for path in __main__._canonical_nested_paths_for_all_groups():  # noqa: SLF001
         assert f"###### {path}\n" in readme
-        target, _consumed = __main__.nested_target(path.split())
+        nested = __main__.nested_target(path.split())
+        assert nested is not None
+        target, _consumed = nested
         canonical_path = __main__.canonical_target_paths().get(target, path)
         assert f"    $ library {path} -h\n    usage: library {canonical_path}" in readme
 

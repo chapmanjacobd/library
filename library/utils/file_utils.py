@@ -4,7 +4,7 @@ from contextlib import suppress
 from functools import wraps
 from io import StringIO
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import urllib3
 
@@ -206,7 +206,7 @@ def retry_with_different_encodings(func):
 
 class NamedDataFrame(NamedTuple):
     df_name: str | None
-    df: object
+    df: Any
 
 
 NDF = NamedDataFrame

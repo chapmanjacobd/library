@@ -221,5 +221,6 @@ def test_extract_metadata_skips_text_without_textract(monkeypatch, tmp_path):
     mp_args = SimpleNamespace(profiles=[DBType.text], scan_all_files=False, ocr=False, speech_recognition=False)
     m = fs_add_metadata.extract_metadata(mp_args, str(book))
 
+    assert m is not None
     assert m["path"] == str(book)
     assert "tags" not in m

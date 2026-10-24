@@ -30,7 +30,7 @@ def open_text_input(parser: argparse.ArgumentParser, path: str):
 
 
 class ArgparseList(argparse.Action):
-    def __call__(self, _parser, namespace, values, _option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         items = getattr(namespace, self.dest, None) or []
 
         if isinstance(values, str):
@@ -42,7 +42,7 @@ class ArgparseList(argparse.Action):
 
 
 class ArgparseSlice(argparse.Action):
-    def __call__(self, _parser, namespace, values, _option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         if not isinstance(values, str):
             raise TypeError
 
@@ -69,7 +69,7 @@ class ArgparseSlice(argparse.Action):
 
 
 class ArgparseDict(argparse.Action):
-    def __call__(self, _parser, args, values, _option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         try:
             d = {}
             k_eq_v = list(values.split(" "))
@@ -88,11 +88,11 @@ class ArgparseDict(argparse.Action):
         except ValueError as ex:
             msg = f'Could not parse argument "{values}" as k1=1 k2=2 format {ex}'
             raise argparse.ArgumentError(self, msg) from ex
-        setattr(args, self.dest, d)
+        setattr(namespace, self.dest, d)
 
 
 class ArgparseArgsOrStdin(argparse.Action):
-    def __call__(self, parser, namespace, values, _option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         if values == STDIN_DASH:
             lines = read_stdin(parser.prog)
         else:
@@ -101,7 +101,7 @@ class ArgparseArgsOrStdin(argparse.Action):
 
 
 class ArgparseArgsOrStdinGen(argparse.Action):
-    def __call__(self, parser, namespace, values, _option_string=None):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
         if values == STDIN_DASH:
             print(f"{parser.prog}: Reading from stdin...", file=sys.stderr)
             lines = sys.stdin

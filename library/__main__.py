@@ -199,24 +199,36 @@ progs = {
 }
 
 
-def _build_cli_metadata():
-    modules = {record.module: list(record.aliases) for record in COMMANDS}
-    path_records = [record for record in COMMANDS if record.path is not None]
+NestedCommandTree = str | dict[str, "NestedCommandTree"]
 
-    paths = {record.path for record in path_records}
-    nested_commands = {}
-    for record in path_records:
-        parts = record.path.split()
+
+def _build_cli_metadata() -> tuple[dict[str, list[str]], dict[str, NestedCommandTree]]:
+    modules = {record.module: list(record.aliases) for record in COMMANDS}
+    path_records: list[tuple[str, str]] = [
+        (record.path, record.target) for record in COMMANDS if record.path is not None
+    ]
+
+    paths = {path for path, _target in path_records}
+    nested_commands: dict[str, NestedCommandTree] = {}
+    for path, target in path_records:
+        parts = path.split()
         current = nested_commands
         for part in parts[:-1]:
-            current = current.setdefault(part, {})
+            child = current.setdefault(part, {})
+            if isinstance(child, str):
+                child = {}
+                current[part] = child
+            current = child
 
         leaf = parts[-1]
-        has_children = any(other.startswith(f"{record.path} ") for other in paths)
-        if has_children:
-            current.setdefault(leaf, {})["_target"] = record.target
+        if any(other.startswith(f"{path} ") for other in paths):
+            child = current.setdefault(leaf, {})
+            if isinstance(child, str):
+                child = {}
+                current[leaf] = child
+            child["_target"] = target
         else:
-            current[leaf] = record.target
+            current[leaf] = target
 
     return modules, nested_commands
 
@@ -356,7 +368,9 @@ def _nested_target_canonical(path: list[str]) -> tuple[str, int] | None:
             return current, consumed
 
     if isinstance(current, dict) and "_target" in current:
-        return current["_target"], consumed
+        target = current["_target"]
+        if isinstance(target, str):
+            return target, consumed
     return None
 
 

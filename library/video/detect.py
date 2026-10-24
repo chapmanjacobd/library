@@ -292,7 +292,7 @@ def _has_freeze_ratio(path: str, video_duration: float, ratio: float, samples: i
                 if previous is not None and _frame_mse(previous, frame) <= threshold:
                     if freeze_start is None:
                         freeze_start = previous_timestamp
-                    if timestamp - freeze_start >= required_duration:
+                    if freeze_start is not None and timestamp - freeze_start >= required_duration:
                         return True
                 else:
                     freeze_start = None

@@ -193,7 +193,7 @@ def _check_corruption(args, path, m, duration):
             raise
         else:
             if media_check.corruption_threshold_exceeded(
-                args.delete_corrupt, corruption, duration
+                threshold=args.delete_corrupt, corruption=corruption, duration=duration
             ) and not file_utils.is_file_open(path):
                 threshold_str = (
                     strings.percent(args.delete_corrupt) if 0 < args.delete_corrupt < 1 else f"{args.delete_corrupt}s"

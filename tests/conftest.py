@@ -99,7 +99,7 @@ def temp_file_tree(request):
 
 
 class _QuietHTTPHandler(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, *args):
+    def log_message(self, format, *args):  # noqa: A002, ARG002
         pass
 
 

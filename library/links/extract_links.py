@@ -178,7 +178,10 @@ def parse_inner_urls(args, base_url, markup):
         soup = BeautifulSoup(markup, "lxml")
 
     stop_texts = getattr(args, "stop_text", None) or []
-    if any(soup.find(string=lambda s, stop_text=stop_text: stop_text in s) for stop_text in stop_texts):
+    if any(
+        soup.find(string=lambda s, stop_text=stop_text: isinstance(s, str) and stop_text in s)
+        for stop_text in stop_texts
+    ):
         return None
 
     if base_url.startswith("//"):

@@ -35,7 +35,9 @@ def test_usage(capsys, subcommand):
 
     usage = capsys.readouterr().out.splitlines()[0]
     assert usage.startswith("usage: library")
-    target, _consumed = nested_target(subcommand.split())
+    nested = nested_target(subcommand.split())
+    assert nested is not None
+    target, _consumed = nested
     canonical_path = canonical_target_paths().get(target, subcommand)
     assert canonical_path in usage
 

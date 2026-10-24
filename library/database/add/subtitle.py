@@ -1,5 +1,6 @@
 import re, subprocess, tempfile
 from pathlib import Path
+from typing import TypedDict
 
 import ffmpeg
 
@@ -59,6 +60,11 @@ def ssa_to_markdown(text):
     return text
 
 
+class _CombinedCaption(TypedDict):
+    time: int
+    text: str
+
+
 def read_sub_unsafe(path):
     import pysubs2
 
@@ -66,7 +72,7 @@ def read_sub_unsafe(path):
     subs.remove_miscellaneous_events()
     subs.sort()
 
-    combined_captions = {}
+    combined_captions: dict[int, _CombinedCaption] = {}
     for caption in subs:
         text = strings.remove_consecutive_whitespace(ssa_to_markdown(caption.text).strip())
         if strings.remove_text_inside_brackets(text):

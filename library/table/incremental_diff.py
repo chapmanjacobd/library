@@ -246,16 +246,16 @@ def _iter_stream_chunks(path, kind, batch_size, encoding, start_row):  # noqa: P
     import pandas as pd
 
     if kind == "csv":
-        skiprows = range(1, start_row + 1) if start_row else None
-        reader = pd.read_csv(
-            path,
-            chunksize=batch_size,
-            skiprows=skiprows,
-            encoding=encoding,
-        )
+        skiprows = list(range(1, start_row + 1)) if start_row else None
         if batch_size is None:
-            yield reader
+            yield pd.read_csv(path, skiprows=skiprows, encoding=encoding)
         else:
+            reader = pd.read_csv(
+                path,
+                chunksize=batch_size,
+                skiprows=skiprows,
+                encoding=encoding,
+            )
             yield from reader
         return
 

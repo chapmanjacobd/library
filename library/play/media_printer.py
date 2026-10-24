@@ -220,7 +220,7 @@ def _aggregate_columns(media, aggregate, cols):
 
 def _aggregate_media(args, media, action, compact_print_args, tables, m_columns, cols):
     total_duration = sum(nums.safe_int(m.get("duration")) or 0 for m in media)
-    if "a" not in compact_print_args or "Aggregate" in media[0].get("path") or "":
+    if "a" not in compact_print_args or "Aggregate" in media[0].get("path"):
         return media, total_duration
 
     aggregate = {"path": "Aggregate", "count": _aggregate_count(media, action)}

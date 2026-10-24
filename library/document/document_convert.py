@@ -18,7 +18,7 @@ IMAGE_EXTENSIONS = (consts.IMAGE_EXTENSIONS | consts.PIL_EXTENSIONS) - {"pdf"}
 DOCUMENT_EXTENSIONS = TEXT_EXTENSIONS | IMAGE_EXTENSIONS | {"pdf"}
 
 
-def build_parser(usage_text: str) -> argparse.ArgumentParser:
+def build_parser(usage_text: str) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage_text)
     parser.add_argument("--ocr", action="store_true", help="Run OCRmyPDF on the generated PDF")
     parser.add_argument(

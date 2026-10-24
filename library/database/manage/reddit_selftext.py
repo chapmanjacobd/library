@@ -25,7 +25,7 @@ def get_page_links(path, text) -> tuple[set, set]:
     internal_links = set()
     external_links = set()
 
-    for a in soup.findAll("a", attrs={"href": True}):
+    for a in soup.find_all("a", href=True):
         href = a["href"].strip()
         if all([len(href) > 1, href[0] != "#", "javascript:" not in href, "mailto:" not in href, "tel:" not in href]):
             if "http" in href or "https" in href:

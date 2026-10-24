@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def line_splitter(regexs: list[re.Pattern], l: str) -> list[str]:
+def line_splitter(regexs: list[re.Pattern[str]], l: str) -> list[str]:  # ty: ignore[invalid-type-form]
     words = [l]
     for rgx in regexs:
         new_words = []

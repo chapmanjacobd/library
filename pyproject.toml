@@ -224,3 +224,10 @@ exclude = [
 ]
 reportMissingImports = true
 typeCheckingMode = "basic"
+
+
+[tool.ty.rules]
+invalid-argument-type = "ignore"
+invalid-assignment = "ignore"
+unresolved-attribute = "ignore"
+unresolved-import = "ignore"

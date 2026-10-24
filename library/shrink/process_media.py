@@ -2,6 +2,7 @@ import argparse, concurrent.futures, json, math, os, sqlite3, subprocess
 from contextlib import suppress
 from pathlib import Path
 from shutil import which
+from typing import TypedDict
 
 from library import usage
 from library.database.manage import db_history
@@ -459,10 +460,13 @@ def _summarize_media(media):
         summary[media_key]["compressed_size"] += media_item.get("compressed_size") or 0
         summary[media_key]["processing_time"] += media_item.get("processing_time") or 0
 
-    summary = [{"media_key": key, **value} for key, value in summary.items()]
-    totals = tuple(sum(item[key] for item in summary) for key in ("current_size", "future_size", "savings", "processing_time"))
-    summary = sorted(summary, key=lambda item: item["savings"], reverse=True)
-    return iterables.list_dict_filter_bool(summary, keep_0=False), totals
+    totals = tuple(
+        sum(value[key] for value in summary.values())
+        for key in ("current_size", "future_size", "savings", "processing_time")
+    )
+    ordered = sorted(summary.items(), key=lambda item: item[1]["savings"], reverse=True)
+    rows = [{"media_key": key, **value} for key, value in ordered]
+    return iterables.list_dict_filter_bool(rows, keep_0=False), totals
 
 
 def _print_media_summary(summary, totals):
@@ -492,8 +496,14 @@ def _process_media_type(args, media):
         return None
 
 
+class _OutputFile(TypedDict):
+    path: str
+    size: int
+    duration: float | None
+
+
 def _inspect_multiple_outputs(args, media, new_path):
-    new_outputs = []
+    new_outputs: list[_OutputFile] = []
     for raw_output_path in new_path:
         output_path = str(raw_output_path)
         try:

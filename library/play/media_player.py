@@ -259,7 +259,7 @@ def geom_walk(display, v=1, h=1) -> list[list[int]]:
     return geoms
 
 
-def grid_stack(display, qty, swap=False) -> list[tuple]:
+def grid_stack(display, qty, swap=False) -> list[tuple[str, str, str] | tuple[list[int], str]]:
     if qty == 1:
         return [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"')]
     else:
@@ -341,7 +341,7 @@ def modify_display_size_for_taskbar(display):
         return display
 
 
-def get_multiple_player_template(args) -> list[tuple[str, str]]:
+def get_multiple_player_template(args) -> list[tuple[str, str, str] | tuple[list[int], str]]:
     import screeninfo
 
     displays = screeninfo.get_monitors()
