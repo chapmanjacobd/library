@@ -308,8 +308,14 @@ def print_df(df):
     import pandas as pd
 
     if isinstance(df, pd.DataFrame):
+        df = df.copy()
         for col in df.select_dtypes(include=["category"]).columns:
             df[col] = df[col].astype("str")
+        # String fill values are invalid for pandas extension dtypes such as Float64.
+        # Cast columns containing missing values to object before filling them.
+        for col in df.columns:
+            if pd.api.types.is_extension_array_dtype(df[col].dtype) and df[col].isna().any():
+                df[col] = df[col].astype(object)
     print()
     print(df.fillna("<NA>").to_markdown(tablefmt="github"))
     print()

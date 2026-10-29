@@ -46,6 +46,16 @@ def test_col_duration():
     assert printing.col_duration([{"t": 946684800, "t1": 1}], "t") == [{"t": "30 years and 7 days", "t1": 1}]
 
 
+def test_print_df_handles_nullable_extension_dtypes(capsys):
+    import pandas as pd
+
+    printing.print_df(pd.DataFrame({"value": pd.Series([1.0, None], dtype="Float64")}))
+
+    captured = capsys.readouterr().out
+    assert "1.0" in captured
+    assert "<NA>" in captured
+
+
 def test_print_overwrite_uses_output_stream(monkeypatch):
     class TTYBuffer(io.StringIO):
         def isatty(self):
