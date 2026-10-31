@@ -1,4 +1,4 @@
-import argparse, datetime, functools, http.cookiejar, json, os, pathlib, random, re, shutil, socket, sys, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
+import argparse, datetime, functools, http.cookiejar, json, os, pathlib, platform, random, re, shutil, socket, subprocess, sys, tempfile, time, urllib.error, urllib.parse, urllib.request, warnings
 from contextlib import suppress
 from email.message import Message
 from email.utils import parsedate_to_datetime
@@ -36,6 +36,7 @@ MIN_DETAILS_PATH_PARTS = 3
 class _WebState:
     session = None
     cookie_jar = None
+    request_headers = None
     internetarchive = None
     cdx_toolkit = None
 
@@ -169,6 +170,211 @@ def parse_cookies_from_browser(input_str):
     return (browser_name, profile, keyring, container)
 
 
+_BROWSER_EXECUTABLES = {
+    "brave": ("brave-browser", "brave"),
+    "chrome": ("google-chrome-stable", "google-chrome", "chrome"),
+    "chromium": ("chromium", "chromium-browser"),
+    "edge": ("microsoft-edge-stable", "microsoft-edge", "edge"),
+    "firefox": ("firefox",),
+    "opera": ("opera",),
+    "vivaldi": ("vivaldi",),
+    "whale": ("whale",),
+}
+_CHROMIUM_BROWSERS = {"brave", "chrome", "chromium", "edge", "opera", "vivaldi", "whale"}
+
+
+@functools.cache
+def _browser_version(browser_name):
+    for executable_name in _BROWSER_EXECUTABLES.get(browser_name, ()):
+        executable = which(executable_name)
+        if executable is None:
+            continue
+        try:
+            result = subprocess.run(
+                [executable, "--version"],
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=5,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        version_match = re.search(r"\b\d+(?:\.\d+)+\b", f"{result.stdout}\n{result.stderr}")
+        if version_match:
+            return version_match.group()
+    return None
+
+
+def _read_json_file(path):
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as excinfo:
+        log.debug("Could not read browser preferences %s: %s", path, excinfo)
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _read_firefox_preferences(profile_path):
+    preferences = {}
+    preference_pattern = re.compile(
+        r"""user_pref\(\s*"(?P<name>(?:\\.|[^"])*)"\s*,\s*(?P<value>true|false|null|"(?:\\.|[^"])*")\s*\);"""
+    )
+    for filename in ("prefs.js", "user.js"):
+        try:
+            contents = (profile_path / filename).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            continue
+        except (OSError, UnicodeDecodeError) as excinfo:
+            log.debug("Could not read Firefox preferences %s: %s", profile_path / filename, excinfo)
+            continue
+        for match in preference_pattern.finditer(contents):
+            try:
+                name = json.loads(f'"{match.group("name")}"')
+                value = json.loads(match.group("value"))
+            except json.JSONDecodeError:
+                continue
+            preferences[name] = value
+    return preferences
+
+
+def _browser_profile_for_headers(browser_name, profile):
+    if profile and any(sep in profile for sep in (os.path.sep, os.path.altsep) if sep):
+        expanded_profile = os.path.expanduser(profile)
+        if os.path.isdir(expanded_profile):
+            return Path(expanded_profile)
+
+    profile_root = get_browser_profile_path(browser_name, profile)
+    if profile_root is None:
+        return None
+    profile_root = Path(profile_root)
+    if browser_name in _CHROMIUM_BROWSERS:
+        profile_name = profile or _chromium_last_used_profile(profile_root)
+        if profile_name:
+            profile_path = profile_root / profile_name
+            if profile_path.is_dir():
+                return profile_path
+    return profile_root
+
+
+def _browser_platform():
+    if sys.platform == "win32":
+        return "Windows"
+    if sys.platform == "darwin":
+        return "macOS"
+    if sys.platform.startswith("linux"):
+        return "Linux"
+    return platform.system() or "Unknown"
+
+
+def _browser_ua_platform():
+    if sys.platform == "win32":
+        return "Windows NT 10.0; Win64; x64"
+    if sys.platform == "darwin":
+        return "Macintosh; Intel Mac OS X 10_15_7"
+    return f"X11; Linux {platform.machine()}"
+
+
+def _browser_user_agent_override(browser_name, profile_path):
+    if profile_path is None:
+        return None
+    if browser_name == "firefox":
+        preferences = _read_firefox_preferences(profile_path)
+        override = preferences.get("general.useragent.override")
+    elif browser_name in _CHROMIUM_BROWSERS:
+        preferences = _read_json_file(profile_path / "Preferences")
+        override = preferences.get("user_agent")
+    else:
+        override = None
+    return override if isinstance(override, str) and override else None
+
+
+def _browser_user_agent(browser_name, profile_path):
+    override = _browser_user_agent_override(browser_name, profile_path)
+    if override:
+        return override
+    version = _browser_version(browser_name)
+    if not version:
+        return None
+
+    if browser_name == "firefox":
+        return f"Mozilla/5.0 ({_browser_ua_platform()}; rv:{version}) Gecko/20100101 Firefox/{version}"
+
+    user_agent = f"Mozilla/5.0 ({_browser_ua_platform()}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version} Safari/537.36"
+    browser_tokens = {
+        "edge": f" Edg/{version}",
+        "opera": f" OPR/{version}",
+        "vivaldi": f" Vivaldi/{version}",
+        "whale": f" Whale/{version}",
+    }
+    return user_agent + browser_tokens.get(browser_name, "")
+
+
+def browser_headers(args):
+    cookies_from_browser = getattr(args, "cookies_from_browser", None)
+    if not cookies_from_browser:
+        return {}
+
+    browser_name, profile, _keyring, _container = parse_cookies_from_browser(cookies_from_browser)
+    profile_path = _browser_profile_for_headers(browser_name, profile)
+    headers = {}
+
+    user_agent = _browser_user_agent(browser_name, profile_path)
+    if user_agent:
+        headers["User-Agent"] = user_agent
+
+    if profile_path is not None:
+        if browser_name == "firefox":
+            preferences = _read_firefox_preferences(profile_path)
+            accept_languages = preferences.get("intl.accept_languages")
+            do_not_track = preferences.get("privacy.donottrackheader.enabled")
+        elif browser_name in _CHROMIUM_BROWSERS:
+            preferences = _read_json_file(profile_path / "Preferences")
+            accept_languages = preferences.get("intl", {}).get("accept_languages")
+            do_not_track = preferences.get("enable_do_not_track")
+        else:
+            accept_languages = None
+            do_not_track = None
+
+        if isinstance(accept_languages, str) and accept_languages:
+            headers["Accept-Language"] = accept_languages
+        if do_not_track is True:
+            headers["DNT"] = "1"
+
+    if browser_name in _CHROMIUM_BROWSERS and user_agent:
+        version_match = re.search(r"(?:Chrome|Edg|OPR|Vivaldi|Whale)/(\d+)", user_agent)
+        if version_match:
+            major_version = version_match.group(1)
+            browser_brand = {
+                "chrome": "Google Chrome",
+                "edge": "Microsoft Edge",
+                "opera": "Opera",
+                "vivaldi": "Vivaldi",
+                "whale": "Whale",
+            }.get(browser_name)
+            brands = [f'"Chromium";v="{major_version}"', '"Not_A Brand";v="99"']
+            if browser_brand:
+                brands.append(f'"{browser_brand}";v="{major_version}"')
+            headers.update(
+                {
+                    "Sec-CH-UA": ", ".join(brands),
+                    "Sec-CH-UA-Mobile": "?0",
+                    "Sec-CH-UA-Platform": f'"{_browser_platform()}"',
+                }
+            )
+
+    return headers
+
+
+def _request_headers(args=None):
+    from yt_dlp.utils.networking import std_headers
+
+    headers = dict(std_headers)
+    headers.update(browser_headers(args))
+    return headers
+
+
 def load_cookie_jar(args):
     current_cookie_jar = _configured_state(cookie_jar, _COOKIE_JAR_PROXY, "cookie_jar")
 
@@ -193,8 +399,6 @@ def requests_session(args=None):
     current_session = _configured_state(session, _SESSION_PROXY, "session")
     current_cookie_jar = load_cookie_jar(args)
 
-    from yt_dlp.utils.networking import std_headers
-
     if current_session is None:
         import requests
 
@@ -205,7 +409,9 @@ def requests_session(args=None):
         current_session.mount("http://", _get_retry_adapter(args))
         current_session.mount("https://", _get_retry_adapter(args))
 
-        std_params = {"headers": std_headers, "timeout": consts.REQUESTS_TIMEOUT, "allow_redirects": max_redirects > 0}
+        _web_state.request_headers = _request_headers(args)
+        current_session.headers.update(_web_state.request_headers)
+        std_params = {"timeout": consts.REQUESTS_TIMEOUT, "allow_redirects": max_redirects > 0}
         current_session.request = functools.partial(current_session.request, **std_params)
         current_session.get = functools.partial(current_session.get, **std_params)
 
@@ -217,6 +423,12 @@ def requests_session(args=None):
 
         if current_cookie_jar:
             current_session.cookies = current_cookie_jar  # type: ignore
+    elif current_browser_headers := browser_headers(args):
+        _web_state.request_headers = {
+            **(_web_state.request_headers or _request_headers()),
+            **current_browser_headers,
+        }
+        current_session.headers.update(current_browser_headers)
 
     return current_session
 
@@ -1202,10 +1414,8 @@ def scroll_down(driver):
 
 
 def extract_html(url) -> str:
-    from yt_dlp.utils.networking import std_headers
-
     session = requests_session()
-    r = session.get(url, timeout=120, headers=std_headers)
+    r = session.get(url, timeout=120, headers=_web_state.request_headers)
     r.raise_for_status()
     markup = r.text
     return markup

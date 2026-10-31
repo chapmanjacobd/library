@@ -15,7 +15,7 @@ from library.data.yt_dlp_errors import (
 )
 from library.database.manage import db_media, db_playlists
 from library.file import media_check
-from library.utils import consts, db_utils, iterables, objects, path_utils, printing, shell_utils, sql_utils, strings
+from library.utils import consts, db_utils, iterables, objects, path_utils, printing, shell_utils, sql_utils, strings, web
 from library.utils.consts import DBType, DLStatus, VideoArchiveError
 from library.utils.log_utils import Timer, log
 from library.utils.processes import FFProbe
@@ -90,10 +90,16 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
     all_opts = {
         **default_opts,
         **func_opts,
-        "cookies_from_browser": getattr(args, "cookies_from_browser", None),
+        "cookiesfrombrowser": getattr(args, "cookies_from_browser", None),
         **json.loads(playlist_opts),
         **cli_opts,
     }
+    browser_headers = web.browser_headers(args)
+    if browser_headers:
+        all_opts["http_headers"] = {
+            **browser_headers,
+            **all_opts.get("http_headers", {}),
+        }
 
     if args.verbose == 0 and not consts.PYTEST_RUNNING:
         all_opts.update(ignoreerrors="only_download")

@@ -88,6 +88,21 @@ def test_safe_mode():
     assert tube_backend.is_supported("www.com") is False
 
 
+def test_tube_opts_uses_browser_cookies_and_headers(monkeypatch):
+    monkeypatch.setattr(tube_backend.web, "browser_headers", lambda _args: {"User-Agent": "browser"})
+    args = SimpleNamespace(
+        cookies_from_browser="chrome",
+        extractor_config={},
+        ignore_errors=False,
+        verbose=0,
+    )
+
+    opts = tube_backend.tube_opts(args)
+
+    assert opts["cookiesfrombrowser"] == "chrome"
+    assert opts["http_headers"]["User-Agent"] == "browser"
+
+
 @pytest.mark.skip("network")
 def test_get_video_metadata():
     args = SimpleNamespace(verbose=0, ignore_errors=False)

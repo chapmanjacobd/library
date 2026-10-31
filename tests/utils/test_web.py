@@ -706,6 +706,51 @@ def test_parse_cookies_from_browser():
         web.parse_cookies_from_browser("chrome+invalid_keyring")
 
 
+def test_browser_headers_from_chromium_profile(monkeypatch, tmp_path):
+    profile = tmp_path / "Default"
+    profile.mkdir()
+    (profile / "Preferences").write_text(
+        '{"intl": {"accept_languages": "fr-FR,fr"}, "enable_do_not_track": true}',
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(web, "get_browser_profile_path", lambda _browser, _profile: tmp_path)
+    monkeypatch.setattr(web, "_chromium_last_used_profile", lambda _root: "Default")
+    monkeypatch.setattr(web, "_browser_version", lambda _browser: "156.0.8078.47")
+
+    headers = web.browser_headers(SimpleNamespace(cookies_from_browser="chromium"))
+
+    assert headers["User-Agent"].endswith("Chrome/156.0.8078.47 Safari/537.36")
+    assert headers["Accept-Language"] == "fr-FR,fr"
+    assert headers["DNT"] == "1"
+    assert headers["Sec-CH-UA-Platform"] == '"Linux"'
+
+
+def test_browser_headers_use_firefox_override(monkeypatch, tmp_path):
+    (tmp_path / "prefs.js").write_text(
+        'user_pref("general.useragent.override", "Mozilla/5.0 custom");\n'
+        'user_pref("intl.accept_languages", "de-DE,de");\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(web, "get_browser_profile_path", lambda _browser, _profile: tmp_path)
+
+    headers = web.browser_headers(SimpleNamespace(cookies_from_browser="firefox"))
+
+    assert headers == {"User-Agent": "Mozilla/5.0 custom", "Accept-Language": "de-DE,de"}
+
+
+def test_requests_session_uses_browser_headers(monkeypatch, tmp_path):
+    monkeypatch.setattr(web, "session", requests.Session())
+    monkeypatch.setattr(web, "load_cookie_jar", lambda _args: None)
+    monkeypatch.setattr(web, "get_browser_profile_path", lambda _browser, _profile: tmp_path)
+    monkeypatch.setattr(web, "_browser_version", lambda _browser: "156.0.8078.47")
+
+    args = SimpleNamespace(cookies_from_browser="chromium")
+    session = web.requests_session(args)
+
+    assert session.headers["User-Agent"].endswith("Chrome/156.0.8078.47 Safari/537.36")
+
+
 def test_chromium_last_used_profile(tmp_path):
     (tmp_path / "Profile 1").mkdir()
     (tmp_path / "Local State").write_text(
