@@ -306,11 +306,13 @@ def _clobber_missing_destination(args, source, destination, orig_destination):
     return source, destination
 
 
-def prepare_destination_folder_symlinks(args, root, source, destination) -> tuple[str | None, str]:
-    policy = getattr(args, "destination_folder_symlinks", arggroups.DestinationSymlink.FOLLOW)
-    if policy == arggroups.DestinationSymlink.FOLLOW:
-        return source, destination
+def _destination_symlink_policy(args, path):
+    if os.path.isdir(path):
+        return getattr(args, "destination_folder_symlinks", arggroups.DestinationSymlink.AS_IS)
+    return getattr(args, "destination_file_symlinks", arggroups.DestinationSymlink.AS_IS)
 
+
+def prepare_destination_folder_symlinks(args, root, source, destination) -> tuple[str | None, str]:
     root = os.path.normpath(root)
     parent = os.path.dirname(os.path.normpath(destination))
     root_prefix = root.rstrip(os.sep) + os.sep
@@ -328,9 +330,15 @@ def prepare_destination_folder_symlinks(args, root, source, destination) -> tupl
     for component in components:
         if not os.path.islink(component):
             continue
+
+        policy = _destination_symlink_policy(args, component)
         if policy == arggroups.DestinationSymlink.REPLACE:
-            log.info("Replacing symlink directory\t%s", component)
+            log.info("Replacing symlink destination\t%s", component)
             unlink(args, component)
+        elif policy == arggroups.DestinationSymlink.FOLLOW and not os.path.isdir(component):
+            target = os.path.realpath(component)
+            if destination == component or destination.startswith(component + os.sep):
+                destination = target + destination[len(component) :]
         elif policy == arggroups.DestinationSymlink.AS_IS:
             source, destination = _resolve_folder_over_file(
                 args, source, destination, component, orig_destination
@@ -345,11 +353,8 @@ def _handle_destination_symlink(args, source, destination, orig_destination):
     if not os.path.islink(destination):
         return source, destination, orig_destination, False
 
+    policy = _destination_symlink_policy(args, destination)
     is_folder = os.path.isdir(destination)
-    if is_folder:
-        policy = getattr(args, "destination_folder_symlinks", arggroups.DestinationSymlink.FOLLOW)
-    else:
-        policy = getattr(args, "destination_file_symlinks", arggroups.DestinationSymlink.AS_IS)
 
     if policy == arggroups.DestinationSymlink.REPLACE:
         log.info("Replacing symlink destination\t%s", destination)

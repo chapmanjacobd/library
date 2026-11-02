@@ -651,7 +651,8 @@ def command_usage(command: str) -> str:
     elif function_name in {"extensions", "mimetypes", "sizes"}:
         usage_value = usage_mod.disk_usage
     elif function_name in {"merge_cp", "merge_mv", "rel_cp", "rel_mv"}:
-        usage_value = usage_mod.merge_mv
+        operation = "copy" if function_name in {"merge_cp", "rel_cp"} else "move"
+        usage_value = usage_mod.merge_mv(operation)
     elif function_name == "process_audio":
         usage_value = usage_mod.process_ffmpeg
     else:

@@ -1098,7 +1098,7 @@ mv_list = """library folder move list [--limit LIMIT] [--lower LOWER] [--upper U
                 rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 """
 
-merge_mv = """library folder merge move SOURCE ... DEST [--simulate] [--ext EXT]
+_merge_mv_usage = """library folder merge move SOURCE ... DEST [--simulate] [--ext EXT]
 
     merging-move: combine file trees
 
@@ -1132,20 +1132,21 @@ merge_mv = """library folder merge move SOURCE ... DEST [--simulate] [--ext EXT]
     tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
 
     Source tree defaults:
-      --source-file-symlinks preserve     copy/move the link itself
-      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+      --source-file-symlinks preserve     {verb} the link itself
+      --source-folder-symlinks preserve   {verb} the link itself; do not recurse
 
     Destination tree defaults:
-      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
-      --destination-folder-symlinks follow merge into the linked directory
+      --destination-file-symlinks as-is   treat the link as a file; conflicts use --file-over-file
+      --destination-folder-symlinks as-is treat the link as a file; conflicts use --file-over-file
+                                          incoming folder merges use --folder-over-file
 
     Source choices:
-      preserve  copy/move the link itself
-      follow    copy/move the link target
+      preserve  {verb} the link itself
+      follow    {verb} the link target
       skip      ignore the link
 
     Destination choices:
-      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      as-is     treat the link as the existing file entry; conflicts use --file-over-file
       follow    write through the file link or merge into the folder link target
       replace   delete the link and create a real file or directory in its place
 
@@ -1174,6 +1175,10 @@ merge_mv = """library folder merge move SOURCE ... DEST [--simulate] [--ext EXT]
             library play audio --db audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/sync/weekly/
 """
+
+
+def merge_mv(operation="move"):
+    return _merge_mv_usage.format(verb="copy" if operation == "copy" else "move")
 
 
 mergerfs_cp = """library folder copy mergerfs SOURCE ... DEST [--simulate] [--ext EXT]

@@ -914,8 +914,8 @@ library folder merge relative-move /src/d1/ /mnt/d1/ /mnt/dest/
         choices=objects.class_enum(SourceSymlink),
         default="preserve",
         help="""How to handle symlinks to files found within source trees
-preserve  copy/move the link itself (default)
-follow    copy/move the link target
+preserve  preserve the link itself (default)
+follow    use the link target
 skip      ignore the link
 
 Symlinks passed explicitly as source arguments are always followed""",
@@ -925,8 +925,8 @@ Symlinks passed explicitly as source arguments are always followed""",
         choices=objects.class_enum(SourceSymlink),
         default="preserve",
         help="""How to handle symlinks to folders found within source trees
-preserve  copy/move the link itself (default)
-follow    copy/move the link target contents
+preserve  preserve the link itself (default)
+follow    use the link target contents
 skip      ignore the link
 
 Symlinks passed explicitly as source arguments are always followed""",
@@ -1638,11 +1638,12 @@ Explicit destination arguments are always followed""",
     parser.add_argument(
         "--destination-folder-symlinks",
         choices=objects.class_enum(DestinationSymlink),
-        default="follow",
+        default="as-is",
         help="""How to handle a destination symlink that points to a folder
-as-is    treat the symlink as a non-directory entry
-         Conflict resolution uses --folder-over-file
-follow   treat the symlink as a directory and merge into its target (default)
+as-is    treat the link as a file (default)
+         File-name collisions use --file-over-file
+         Incoming folder merges use --folder-over-file
+follow   treat the symlink as a directory and merge into its target
 replace  delete the symlink and create a real directory in its place
 
 Explicit destination arguments are always followed""",

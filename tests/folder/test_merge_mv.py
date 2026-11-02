@@ -372,6 +372,47 @@ def test_source_file_symlinks_follow(subcommand, temp_file_tree):
 
 
 @pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
+@pytest.mark.parametrize(
+    ("file_policy", "folder_policy"),
+    [("follow", "preserve"), ("preserve", "follow")],
+)
+def test_source_symlink_policies_are_independent(file_policy, folder_policy, temp_file_tree):
+    outside = temp_file_tree({"target.txt": "target", "folder": {"nested.txt": "nested"}})
+    src = temp_file_tree({})
+    os.symlink(os.path.join(outside, "target.txt"), os.path.join(src, "link.txt"))
+    os.symlink(os.path.join(outside, "folder"), os.path.join(src, "linkdir"))
+
+    dest = temp_file_tree({})
+    lb(
+        [
+            "merge-cp",
+            "--source-file-symlinks",
+            file_policy,
+            "--source-folder-symlinks",
+            folder_policy,
+            src + os.sep,
+            dest,
+        ]
+    )
+
+    dest_link = Path(dest) / "link.txt"
+    if file_policy == "follow":
+        assert not dest_link.is_symlink()
+        assert dest_link.read_text() == "target"
+    else:
+        assert dest_link.is_symlink()
+        assert os.readlink(dest_link) == os.path.join(outside, "target.txt")
+
+    dest_linkdir = Path(dest) / "linkdir"
+    if folder_policy == "follow":
+        assert not dest_linkdir.is_symlink()
+        assert (dest_linkdir / "nested.txt").read_text() == "nested"
+    else:
+        assert dest_linkdir.is_symlink()
+        assert os.readlink(dest_linkdir) == os.path.join(outside, "folder")
+
+
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
 def test_source_folder_symlinks_skip(subcommand, temp_file_tree):
     outside = temp_file_tree({"nested.txt": "nested"})
@@ -501,7 +542,7 @@ def test_file_over_symlink_follow(subcommand, temp_file_tree):
 
 @pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
-def test_folder_over_symlink_follow_default(subcommand, temp_file_tree):
+def test_folder_over_symlink_as_is_default(subcommand, temp_file_tree):
     src = temp_file_tree({"outer": {"file4.txt": "new"}})
     outside = temp_file_tree({"existing.txt": "old"})
     dest = temp_file_tree({})
@@ -509,6 +550,87 @@ def test_folder_over_symlink_follow_default(subcommand, temp_file_tree):
     os.symlink(outside, link)
 
     lb([subcommand, src + os.sep, dest])
+
+    dest_dir = Path(dest) / "outer"
+    assert not dest_dir.is_symlink()
+    assert (dest_dir / "file4.txt").read_text() == "new"
+
+    nested_link = dest_dir / "outer"
+    assert nested_link.is_symlink()
+    assert os.readlink(nested_link) == outside
+    assert not (Path(outside) / "file4.txt").exists()
+    assert (Path(outside) / "existing.txt").read_text() == "old"
+
+
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+def test_folder_over_file_symlink_as_is_uses_folder_over_file(subcommand, temp_file_tree):
+    src = temp_file_tree({"outer": {"file4.txt": "new"}})
+    outside = temp_file_tree({"old.txt": "old"})
+    dest = temp_file_tree({})
+    link = os.path.join(dest, "outer")
+    os.symlink(os.path.join(outside, "old.txt"), link)
+
+    lb(
+        [
+            subcommand,
+            "--destination-file-symlinks",
+            "as-is",
+            "--destination-folder-symlinks",
+            "replace",
+            src + os.sep,
+            dest,
+        ]
+    )
+
+    dest_dir = Path(dest) / "outer"
+    assert not dest_dir.is_symlink()
+    assert (dest_dir / "file4.txt").read_text() == "new"
+
+    nested_link = dest_dir / "outer"
+    assert nested_link.is_symlink()
+    assert os.readlink(nested_link) == os.path.join(outside, "old.txt")
+    assert (Path(outside) / "old.txt").read_text() == "old"
+
+
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+def test_folder_over_file_symlink_replace_uses_file_policy(subcommand, temp_file_tree):
+    src = temp_file_tree({"outer": {"file4.txt": "new"}})
+    outside = temp_file_tree({"old.txt": "old"})
+    dest = temp_file_tree({})
+    link = os.path.join(dest, "outer")
+    os.symlink(os.path.join(outside, "old.txt"), link)
+
+    lb(
+        [
+            subcommand,
+            "--destination-file-symlinks",
+            "replace",
+            "--destination-folder-symlinks",
+            "follow",
+            src + os.sep,
+            dest,
+        ]
+    )
+
+    dest_dir = Path(dest) / "outer"
+    assert not dest_dir.is_symlink()
+    assert (dest_dir / "file4.txt").read_text() == "new"
+    assert not (dest_dir / "outer").exists()
+    assert (Path(outside) / "old.txt").read_text() == "old"
+
+
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+def test_folder_over_symlink_follow(subcommand, temp_file_tree):
+    src = temp_file_tree({"outer": {"file4.txt": "new"}})
+    outside = temp_file_tree({"existing.txt": "old"})
+    dest = temp_file_tree({})
+    link = os.path.join(dest, "outer")
+    os.symlink(outside, link)
+
+    lb([subcommand, "--destination-folder-symlinks", "follow", src + os.sep, dest])
 
     assert os.path.islink(link)
     assert os.readlink(link) == outside

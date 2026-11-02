@@ -2486,20 +2486,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
 
     Source tree defaults:
-      --source-file-symlinks preserve     copy/move the link itself
-      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+      --source-file-symlinks preserve     move the link itself
+      --source-folder-symlinks preserve   move the link itself; do not recurse
 
     Destination tree defaults:
-      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
-      --destination-folder-symlinks follow merge into the linked directory
+      --destination-file-symlinks as-is   treat the link as a file; conflicts use --file-over-file
+      --destination-folder-symlinks as-is treat the link as a file; conflicts use --file-over-file
+                                          incoming folder merges use --folder-over-file
 
     Source choices:
-      preserve  copy/move the link itself
-      follow    copy/move the link target
+      preserve  move the link itself
+      follow    move the link target
       skip      ignore the link
 
     Destination choices:
-      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      as-is     treat the link as the existing file entry; conflicts use --file-over-file
       follow    write through the file link or merge into the folder link target
       replace   delete the link and create a real file or directory in its place
 
@@ -2570,20 +2571,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
 
     Source tree defaults:
-      --source-file-symlinks preserve     copy/move the link itself
-      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+      --source-file-symlinks preserve     copy the link itself
+      --source-folder-symlinks preserve   copy the link itself; do not recurse
 
     Destination tree defaults:
-      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
-      --destination-folder-symlinks follow merge into the linked directory
+      --destination-file-symlinks as-is   treat the link as a file; conflicts use --file-over-file
+      --destination-folder-symlinks as-is treat the link as a file; conflicts use --file-over-file
+                                          incoming folder merges use --folder-over-file
 
     Source choices:
-      preserve  copy/move the link itself
-      follow    copy/move the link target
+      preserve  copy the link itself
+      follow    copy the link target
       skip      ignore the link
 
     Destination choices:
-      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      as-is     treat the link as the existing file entry; conflicts use --file-over-file
       follow    write through the file link or merge into the folder link target
       replace   delete the link and create a real file or directory in its place
 
@@ -2654,20 +2656,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
 
     Source tree defaults:
-      --source-file-symlinks preserve     copy/move the link itself
-      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+      --source-file-symlinks preserve     move the link itself
+      --source-folder-symlinks preserve   move the link itself; do not recurse
 
     Destination tree defaults:
-      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
-      --destination-folder-symlinks follow merge into the linked directory
+      --destination-file-symlinks as-is   treat the link as a file; conflicts use --file-over-file
+      --destination-folder-symlinks as-is treat the link as a file; conflicts use --file-over-file
+                                          incoming folder merges use --folder-over-file
 
     Source choices:
-      preserve  copy/move the link itself
-      follow    copy/move the link target
+      preserve  move the link itself
+      follow    move the link target
       skip      ignore the link
 
     Destination choices:
-      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      as-is     treat the link as the existing file entry; conflicts use --file-over-file
       follow    write through the file link or merge into the folder link target
       replace   delete the link and create a real file or directory in its place
 
@@ -2738,20 +2741,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
 
     Source tree defaults:
-      --source-file-symlinks preserve     copy/move the link itself
-      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+      --source-file-symlinks preserve     copy the link itself
+      --source-folder-symlinks preserve   copy the link itself; do not recurse
 
     Destination tree defaults:
-      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
-      --destination-folder-symlinks follow merge into the linked directory
+      --destination-file-symlinks as-is   treat the link as a file; conflicts use --file-over-file
+      --destination-folder-symlinks as-is treat the link as a file; conflicts use --file-over-file
+                                          incoming folder merges use --folder-over-file
 
     Source choices:
-      preserve  copy/move the link itself
-      follow    copy/move the link target
+      preserve  copy the link itself
+      follow    copy the link target
       skip      ignore the link
 
     Destination choices:
-      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      as-is     treat the link as the existing file entry; conflicts use --file-over-file
       follow    write through the file link or merge into the folder link target
       replace   delete the link and create a real file or directory in its place
 
