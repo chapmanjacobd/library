@@ -158,13 +158,17 @@ def _check_move_limits(args, stat):
         raise SystemExit(124)
 
 
-def filter_src(args, path):
+def filter_src(args, path, follow_symlinks=False):
     # REMEMBER to exclude in merge-mv shortcut
     try:
-        stat = os.lstat(path)
+        stat = os.stat(path) if follow_symlinks else os.lstat(path)
     except OSError:
         return False
-    if not (S_ISREG(stat.st_mode) or S_ISLNK(stat.st_mode)):
+    if follow_symlinks:
+        if not S_ISREG(stat.st_mode):
+            log.debug("Skipping non-regular file %s", path)
+            return False
+    elif not (S_ISREG(stat.st_mode) or S_ISLNK(stat.st_mode)):
         log.debug("Skipping non-regular file %s", path)
         return False
     if not _passes_file_filters(args, path, stat):

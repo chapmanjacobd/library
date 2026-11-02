@@ -306,6 +306,67 @@ def _clobber_missing_destination(args, source, destination, orig_destination):
     return source, destination
 
 
+def prepare_destination_folder_symlinks(args, root, source, destination) -> tuple[str | None, str]:
+    policy = getattr(args, "destination_folder_symlinks", arggroups.DestinationSymlink.FOLLOW)
+    if policy == arggroups.DestinationSymlink.FOLLOW:
+        return source, destination
+
+    root = os.path.normpath(root)
+    parent = os.path.dirname(os.path.normpath(destination))
+    root_prefix = root.rstrip(os.sep) + os.sep
+
+    components = []
+    path = parent
+    while path and (path == root or path.startswith(root_prefix)):
+        components.append(path)
+        if path == root:
+            break
+        path = os.path.dirname(path)
+    components.reverse()
+
+    orig_destination = destination
+    for component in components:
+        if not os.path.islink(component):
+            continue
+        if policy == arggroups.DestinationSymlink.REPLACE:
+            log.info("Replacing symlink directory\t%s", component)
+            unlink(args, component)
+        elif policy == arggroups.DestinationSymlink.AS_IS:
+            source, destination = _resolve_folder_over_file(
+                args, source, destination, component, orig_destination
+            )
+            if source is None:
+                return None, destination
+
+    return source, destination
+
+
+def _handle_destination_symlink(args, source, destination, orig_destination):
+    if not os.path.islink(destination):
+        return source, destination, orig_destination, False
+
+    is_folder = os.path.isdir(destination)
+    if is_folder:
+        policy = getattr(args, "destination_folder_symlinks", arggroups.DestinationSymlink.FOLLOW)
+    else:
+        policy = getattr(args, "destination_file_symlinks", arggroups.DestinationSymlink.AS_IS)
+
+    if policy == arggroups.DestinationSymlink.REPLACE:
+        log.info("Replacing symlink destination\t%s", destination)
+        unlink(args, destination)
+        if args.simulate:
+            source, destination = _clobber_missing_destination(args, source, destination, orig_destination)
+            return source, destination, orig_destination, True
+    elif policy == arggroups.DestinationSymlink.FOLLOW:
+        if is_folder:
+            source, destination = _clobber_existing_folder(args, source, destination, orig_destination)
+            return source, destination, orig_destination, True
+        destination = os.path.realpath(destination)
+        orig_destination = destination
+
+    return source, destination, orig_destination, False
+
+
 def clobber(args, source, destination) -> tuple[str | None, str]:
     if source == destination:
         log.info("Destination is the same as source\t%s", destination)
@@ -315,11 +376,11 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
         return None, destination
 
     orig_destination = destination
-    if os.path.islink(destination) and not os.path.islink(source):
-        log.info("Replacing symlink destination\t%s", destination)
-        unlink(args, destination)
-        if args.simulate:
-            return _clobber_missing_destination(args, source, destination, orig_destination)
+    source, destination, orig_destination, resolved = _handle_destination_symlink(
+        args, source, destination, orig_destination
+    )
+    if resolved:
+        return source, destination
 
     if os.path.lexists(destination):
         if os.path.isdir(destination) and not os.path.islink(destination):

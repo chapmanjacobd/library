@@ -909,6 +909,28 @@ library folder merge relative-move /src/d1/ /mnt/d1/ /mnt/dest/
     )
     parser.add_argument("--bsd", "--rsync", action="store_true", help="BSD/rsync trailing slash behavior")
     parser.add_argument("--parent", "-P", action="store_true", help="Include parent (dirname) when merging")
+    parser.add_argument(
+        "--source-file-symlinks",
+        choices=objects.class_enum(SourceSymlink),
+        default="preserve",
+        help="""How to handle symlinks to files found within source trees
+preserve  copy/move the link itself (default)
+follow    copy/move the link target
+skip      ignore the link
+
+Symlinks passed explicitly as source arguments are always followed""",
+    )
+    parser.add_argument(
+        "--source-folder-symlinks",
+        choices=objects.class_enum(SourceSymlink),
+        default="preserve",
+        help="""How to handle symlinks to folders found within source trees
+preserve  copy/move the link itself (default)
+follow    copy/move the link target contents
+skip      ignore the link
+
+Symlinks passed explicitly as source arguments are always followed""",
+    )
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--dest-bsd", "--bsd-dest", "--dest", action="store_true", help="Destination match target mode")
@@ -1470,6 +1492,18 @@ class FileOverFile:
     DELETE_DEST_ASK = "delete-dest-ask"
 
 
+class SourceSymlink:
+    PRESERVE = "preserve"
+    FOLLOW = "follow"
+    SKIP = "skip"
+
+
+class DestinationSymlink:
+    AS_IS = "as-is"
+    FOLLOW = "follow"
+    REPLACE = "replace"
+
+
 class FileOverFolder:
     SKIP = "skip"
     RENAME_SRC = "rename-src"
@@ -1588,6 +1622,30 @@ Choose ONE of the following options:
   delete-src   will delete the incoming folder tree
   delete-dest  will delete the existing file
   merge        will move the existing file to en.wikipedia.org/wiki/wiki""",
+    )
+    parser.add_argument(
+        "--destination-file-symlinks",
+        choices=objects.class_enum(DestinationSymlink),
+        default="as-is",
+        help="""How to handle a destination symlink that points to a file (or is dangling)
+as-is    treat the symlink as the existing file entry (default)
+         Conflict resolution uses --file-over-file
+follow   write through the symlink to its target
+replace  delete the symlink and create the incoming file in its place
+
+Explicit destination arguments are always followed""",
+    )
+    parser.add_argument(
+        "--destination-folder-symlinks",
+        choices=objects.class_enum(DestinationSymlink),
+        default="follow",
+        help="""How to handle a destination symlink that points to a folder
+as-is    treat the symlink as a non-directory entry
+         Conflict resolution uses --folder-over-file
+follow   treat the symlink as a directory and merge into its target (default)
+replace  delete the symlink and create a real directory in its place
+
+Explicit destination arguments are always followed""",
     )
     parser.add_argument(
         "--skip-open", action="store_true", help="Skip source files that are already open in another process"

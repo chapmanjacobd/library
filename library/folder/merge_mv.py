@@ -105,13 +105,22 @@ def parse_args(defaults_override=None):
 
 
 @track_moved
-def mmv_file(args, source, destination):
+def mmv_file(args, source, destination, follow_source=False):
     if args.simulate:
         print(source)
         print("-->", destination)
         return True
     else:
         try:
+            if follow_source and os.path.islink(source):
+                moved = shell_utils.rename_move_file(os.path.realpath(source), destination)
+                if moved:
+                    if not _symlink_target_has_content(source):
+                        devices.unlink(args, source)
+                    log.debug("moved %s\t%s", source, destination)
+                    return True
+                return False
+
             moved = shell_utils.rename_move_file(source, destination)
         except Exception:
             log.exception("Could not move %s", source)
@@ -123,19 +132,29 @@ def mmv_file(args, source, destination):
 
 
 @track_moved
-def mcp_file(args, source, destination):
+def mcp_file(args, source, destination, follow_source=False):
     if args.simulate:
         print(source)
         print("==>", destination)
         return True
     else:
         try:
-            out = shutil.copy2(source, destination, follow_symlinks=False)
+            out = shutil.copy2(source, destination, follow_symlinks=follow_source)
         except Exception:
             log.exception("Could not copy %s", source)
             return False
         log.debug("copied %s\t%s", source, out)
         return True
+
+
+def _symlink_target_has_content(path):
+    target = os.path.realpath(path)
+    if not os.path.isdir(target):
+        return os.path.lexists(target)
+    for _, _, files in os.walk(target):
+        if files:
+            return True
+    return False
 
 
 def _source_destination(args, source, destination):
@@ -157,6 +176,10 @@ def _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
             not args.move_include,
             not args.modify_depth,
             not os.path.exists(folder_dest),
+            getattr(args, "source_file_symlinks", arggroups.SourceSymlink.PRESERVE)
+            == arggroups.SourceSymlink.PRESERVE,
+            getattr(args, "source_folder_symlinks", arggroups.SourceSymlink.PRESERVE)
+            == arggroups.SourceSymlink.PRESERVE,
         ]
     ):
         return False
@@ -176,17 +199,12 @@ def _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
     return False
 
 
-def _replace_symlink_dirs(args, root, destination):
-    root = os.path.normpath(root)
-    root_prefix = root.rstrip(os.sep) + os.sep
-    path = os.path.dirname(os.path.normpath(destination))
-    while path and (path == root or path.startswith(root_prefix)):
-        if os.path.islink(path):
-            log.info("Replacing symlink directory\t%s", path)
-            devices.unlink(args, path)
-        if path == root:
-            break
-        path = os.path.dirname(path)
+def _source_symlink_policy(args, path):
+    if not os.path.islink(path):
+        return None
+    if os.path.isdir(path):
+        return getattr(args, "source_folder_symlinks", arggroups.SourceSymlink.PRESERVE)
+    return getattr(args, "source_file_symlinks", arggroups.SourceSymlink.PRESERVE)
 
 
 def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
@@ -198,28 +216,64 @@ def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
     if _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
         return
 
-    prepared_parents = set()
-    for path in rglob_gen(source, args.ext or None, include_symlinks=True):
-        if filter_src.filter_src(args, path) is False:
-            log.debug("rglob-file skipped %s", path)
-            continue
-        relpath = os.path.relpath(path, source)
-        log.debug("rglob-file relpath %s", relpath)
-        if args.modify_depth:
-            rel_path = Path(relpath)
-            parts = rel_path.parent.parts
-            parts = parts[args.modify_depth]
-            relpath = os.path.join(*parts, rel_path.name)
-            log.debug("rglob-file modify_depth %s %s", parts, relpath)
-        file_dest = os.path.join(folder_dest, relpath)
-        log.debug("rglob-file file_dest %s", file_dest)
-        parent = os.path.dirname(file_dest)
-        if parent not in prepared_parents:
-            _replace_symlink_dirs(args, folder_dest, file_dest)
-            prepared_parents.add(parent)
-        src, dest = devices.clobber(args, path, file_dest)
-        if src:
-            yield src, dest
+    followed_dir_links = getattr(args, "_followed_source_symlinks", None)
+    if followed_dir_links is None:
+        followed_dir_links = []
+        args._followed_source_symlinks = followed_dir_links
+
+    visited_dirs = set()
+    try:
+        stat = os.stat(source)
+        visited_dirs.add((stat.st_dev, stat.st_ino))
+    except OSError:
+        pass
+
+    stack = [source]
+    while stack:
+        current = stack.pop()
+        for path in rglob_gen(current, args.ext or None, include_symlinks=True):
+            follow = False
+            if os.path.islink(path):
+                policy = _source_symlink_policy(args, path)
+                if policy == arggroups.SourceSymlink.SKIP:
+                    log.debug("source symlink skipped %s", path)
+                    continue
+                if policy == arggroups.SourceSymlink.FOLLOW:
+                    if os.path.isdir(path):
+                        try:
+                            stat = os.stat(path)
+                        except OSError:
+                            continue
+                        dir_key = (stat.st_dev, stat.st_ino)
+                        if dir_key in visited_dirs:
+                            log.warning("Skipping symlink loop\t%s", path)
+                            continue
+                        visited_dirs.add(dir_key)
+                        followed_dir_links.append(path)
+                        stack.append(path)
+                        continue
+                    follow = True
+
+            if filter_src.filter_src(args, path, follow_symlinks=follow) is False:
+                log.debug("rglob-file skipped %s", path)
+                continue
+            relpath = os.path.relpath(path, source)
+            log.debug("rglob-file relpath %s", relpath)
+            if args.modify_depth:
+                rel_path = Path(relpath)
+                parts = rel_path.parent.parts
+                parts = parts[args.modify_depth]
+                relpath = os.path.join(*parts, rel_path.name)
+                log.debug("rglob-file modify_depth %s %s", parts, relpath)
+            file_dest = os.path.join(folder_dest, relpath)
+            log.debug("rglob-file file_dest %s", file_dest)
+            src, dest = devices.prepare_destination_folder_symlinks(args, folder_dest, path, file_dest)
+            if src is None:
+                log.debug("destination symlink skipped %s", path)
+                continue
+            src, dest = devices.clobber(args, src, dest)
+            if src:
+                yield src, dest, follow
 
 
 def _file_destination(args, source, destination, source_destination):
@@ -245,20 +299,26 @@ def _file_destination(args, source, destination, source_destination):
 
 
 def _gen_file_dest(args, source, destination, source_destination):
-    if filter_src.filter_src(args, source) is False:
+    follow = os.path.islink(source)
+    if filter_src.filter_src(args, source, follow_symlinks=follow) is False:
         log.debug("rglob-file skipped %s", source)
         return
     file_dest = _file_destination(args, source, destination, source_destination)
     src, dest = devices.clobber(args, source, file_dest)
     if src:
-        yield src, dest
+        yield src, dest, follow
 
 
 def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowed=False):
     for source in sources:
         source_destination = _source_destination(args, source, destination)
-        if os.path.isdir(source) and not os.path.islink(source):
-            yield from _gen_folder_dest(args, source, source_destination, shortcut_allowed)
+        if os.path.isdir(source):
+            yield from _gen_folder_dest(
+                args,
+                source,
+                source_destination,
+                shortcut_allowed and not os.path.islink(source),
+            )
         else:
             yield from _gen_file_dest(args, source, destination, source_destination)
 
@@ -276,8 +336,10 @@ def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as ex:
         for f in (
-            ex.submit(mv_fn, args, src, dest)
-            for src, dest in gen_src_dest(args, sources, destination, shortcut_allowed=shortcut_allowed)
+            ex.submit(mv_fn, args, src, dest, follow_source)
+            for src, dest, follow_source in gen_src_dest(
+                args, sources, destination, shortcut_allowed=shortcut_allowed
+            )
         ):
             f.result()
 
@@ -290,8 +352,15 @@ def merge_mv(defaults_override=None):
     else:
         mmv_folders(args, mmv_file, args.paths, args.destination, shortcut_allowed=True)
         if not args.simulate:
+            for p in getattr(args, "_followed_source_symlinks", []):
+                if not _symlink_target_has_content(p):
+                    devices.unlink(args, p)
+
             for p in args.paths:
-                if os.path.isdir(p):
+                if os.path.islink(p):
+                    if os.path.isdir(p) and not _symlink_target_has_content(p):
+                        devices.unlink(args, p)
+                elif os.path.isdir(p):
                     path_utils.bfs_removedirs(p)
 
 

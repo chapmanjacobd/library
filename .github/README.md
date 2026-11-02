@@ -2478,6 +2478,36 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
 
+    Symlink handling. Explicit CLI arguments are always followed.
+
+                               source                    destination
+    CLI argument               follow                    follow
+    tree -> file               --source-file-symlinks    --destination-file-symlinks
+    tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
+
+    Source tree defaults:
+      --source-file-symlinks preserve     copy/move the link itself
+      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+
+    Destination tree defaults:
+      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
+      --destination-folder-symlinks follow merge into the linked directory
+
+    Source choices:
+      preserve  copy/move the link itself
+      follow    copy/move the link target
+      skip      ignore the link
+
+    Destination choices:
+      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      follow    write through the file link or merge into the folder link target
+      replace   delete the link and create a real file or directory in its place
+
+    Examples:
+      library folder merge copy --source-folder-symlinks follow src/ dest/
+      library folder merge copy --destination-folder-symlinks replace src/ dest/
+      library folder merge copy --destination-folder-symlinks as-is --folder-over-file delete-dest src/ dest/
+
     By default all files are included (the filesystem profile). Pass --video, --audio, --image,
     or --text to restrict to specific media extensions. --auto selects every media type
     (video, audio, image, and text) but still excludes other filesystem files.
@@ -2531,6 +2561,36 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library folder merge move --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    Symlink handling. Explicit CLI arguments are always followed.
+
+                               source                    destination
+    CLI argument               follow                    follow
+    tree -> file               --source-file-symlinks    --destination-file-symlinks
+    tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
+
+    Source tree defaults:
+      --source-file-symlinks preserve     copy/move the link itself
+      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+
+    Destination tree defaults:
+      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
+      --destination-folder-symlinks follow merge into the linked directory
+
+    Source choices:
+      preserve  copy/move the link itself
+      follow    copy/move the link target
+      skip      ignore the link
+
+    Destination choices:
+      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      follow    write through the file link or merge into the folder link target
+      replace   delete the link and create a real file or directory in its place
+
+    Examples:
+      library folder merge copy --source-folder-symlinks follow src/ dest/
+      library folder merge copy --destination-folder-symlinks replace src/ dest/
+      library folder merge copy --destination-folder-symlinks as-is --folder-over-file delete-dest src/ dest/
 
     By default all files are included (the filesystem profile). Pass --video, --audio, --image,
     or --text to restrict to specific media extensions. --auto selects every media type
@@ -2586,6 +2646,36 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
 
+    Symlink handling. Explicit CLI arguments are always followed.
+
+                               source                    destination
+    CLI argument               follow                    follow
+    tree -> file               --source-file-symlinks    --destination-file-symlinks
+    tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
+
+    Source tree defaults:
+      --source-file-symlinks preserve     copy/move the link itself
+      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+
+    Destination tree defaults:
+      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
+      --destination-folder-symlinks follow merge into the linked directory
+
+    Source choices:
+      preserve  copy/move the link itself
+      follow    copy/move the link target
+      skip      ignore the link
+
+    Destination choices:
+      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      follow    write through the file link or merge into the folder link target
+      replace   delete the link and create a real file or directory in its place
+
+    Examples:
+      library folder merge copy --source-folder-symlinks follow src/ dest/
+      library folder merge copy --destination-folder-symlinks replace src/ dest/
+      library folder merge copy --destination-folder-symlinks as-is --folder-over-file delete-dest src/ dest/
+
     By default all files are included (the filesystem profile). Pass --video, --audio, --image,
     or --text to restrict to specific media extensions. --auto selects every media type
     (video, audio, image, and text) but still excludes other filesystem files.
@@ -2639,6 +2729,36 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library folder merge move --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    Symlink handling. Explicit CLI arguments are always followed.
+
+                               source                    destination
+    CLI argument               follow                    follow
+    tree -> file               --source-file-symlinks    --destination-file-symlinks
+    tree -> folder             --source-folder-symlinks  --destination-folder-symlinks
+
+    Source tree defaults:
+      --source-file-symlinks preserve     copy/move the link itself
+      --source-folder-symlinks preserve   copy/move the link itself; do not recurse
+
+    Destination tree defaults:
+      --destination-file-symlinks as-is   treat the link as a file; conflict resolution uses --file-over-file
+      --destination-folder-symlinks follow merge into the linked directory
+
+    Source choices:
+      preserve  copy/move the link itself
+      follow    copy/move the link target
+      skip      ignore the link
+
+    Destination choices:
+      as-is     treat the link as the existing entry; conflict resolution uses --*-over-*
+      follow    write through the file link or merge into the folder link target
+      replace   delete the link and create a real file or directory in its place
+
+    Examples:
+      library folder merge copy --source-folder-symlinks follow src/ dest/
+      library folder merge copy --destination-folder-symlinks replace src/ dest/
+      library folder merge copy --destination-folder-symlinks as-is --folder-over-file delete-dest src/ dest/
 
     By default all files are included (the filesystem profile). Pass --video, --audio, --image,
     or --text to restrict to specific media extensions. --auto selects every media type
