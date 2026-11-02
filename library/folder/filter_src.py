@@ -2,8 +2,10 @@ import os, sys, time
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
+from stat import S_ISREG
 
 from library.utils import nums, printing, processes, strings
+from library.utils.log_utils import log
 
 
 @dataclass
@@ -161,7 +163,10 @@ def filter_src(args, path):
     # REMEMBER to exclude in merge-mv shortcut
     try:
         stat = os.stat(path)
-    except FileNotFoundError:
+    except OSError:
+        return False
+    if not S_ISREG(stat.st_mode):
+        log.debug("Skipping non-regular file %s", path)
         return False
     if not _passes_file_filters(args, path, stat):
         return False

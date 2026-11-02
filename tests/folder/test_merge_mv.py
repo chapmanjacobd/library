@@ -1,4 +1,5 @@
 import os
+import socket
 from pathlib import Path
 
 import pytest
@@ -211,6 +212,24 @@ def test_merge_two_simple_folders(subcommand, temp_file_tree):
 
     expected = {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
     assert read_relative_file_tree_dict(target, inodes=subcommand == "merge-mv") == expected
+
+
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Unix domain sockets are not available on Windows")
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+def test_non_regular_file_skipped(subcommand, temp_file_tree):
+    src = temp_file_tree({"file4.txt": "4"})
+    sock_path = os.path.join(src, "test.sock")
+
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.bind(sock_path)
+    try:
+        dest = temp_file_tree({})
+        lb([subcommand, src + os.sep, dest])
+
+        assert (Path(dest) / "file4.txt").exists()
+        assert not (Path(dest) / "test.sock").exists()
+    finally:
+        sock.close()
 
 
 def test_simulate(temp_file_tree):

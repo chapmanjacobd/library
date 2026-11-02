@@ -111,7 +111,11 @@ def mmv_file(args, source, destination):
         print("-->", destination)
         return True
     else:
-        moved = shell_utils.rename_move_file(source, destination)
+        try:
+            moved = shell_utils.rename_move_file(source, destination)
+        except Exception:
+            log.exception("Could not move %s", source)
+            return False
         if moved:
             log.debug("moved %s\t%s", source, destination)
             return True
@@ -123,9 +127,15 @@ def mcp_file(args, source, destination):
     if args.simulate:
         print(source)
         print("==>", destination)
+        return True
     else:
-        out = shutil.copy2(source, destination)
+        try:
+            out = shutil.copy2(source, destination)
+        except Exception:
+            log.exception("Could not copy %s", source)
+            return False
         log.debug("copied %s\t%s", source, out)
+        return True
 
 
 def _source_destination(args, source, destination):
