@@ -315,6 +315,12 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
         return None, destination
 
     orig_destination = destination
+    if os.path.islink(destination) and not os.path.islink(source):
+        log.info("Replacing symlink destination\t%s", destination)
+        unlink(args, destination)
+        if args.simulate:
+            return _clobber_missing_destination(args, source, destination, orig_destination)
+
     if os.path.lexists(destination):
         if os.path.isdir(destination) and not os.path.islink(destination):
             source, destination = _clobber_existing_folder(args, source, destination, orig_destination)

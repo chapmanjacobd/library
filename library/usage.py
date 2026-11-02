@@ -1124,6 +1124,8 @@ merge_mv = """library folder merge move SOURCE ... DEST [--simulate] [--ext EXT]
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
 
+    Symlinks are preserved as links. However, a regular file or folder always replaces an existing symlink at the destination
+
     By default all files are included (the filesystem profile). Pass --video, --audio, --image,
     or --text to restrict to specific media extensions. --auto selects every media type
     (video, audio, image, and text) but still excludes other filesystem files.

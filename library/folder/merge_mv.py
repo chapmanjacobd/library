@@ -176,6 +176,19 @@ def _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
     return False
 
 
+def _replace_symlink_dirs(args, root, destination):
+    root = os.path.normpath(root)
+    root_prefix = root.rstrip(os.sep) + os.sep
+    path = os.path.dirname(os.path.normpath(destination))
+    while path and (path == root or path.startswith(root_prefix)):
+        if os.path.islink(path):
+            log.info("Replacing symlink directory\t%s", path)
+            devices.unlink(args, path)
+        if path == root:
+            break
+        path = os.path.dirname(path)
+
+
 def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
     folder_dest = source_destination
     if not args.relative_to and (args.parent or (args.bsd and not source.endswith(os.sep))):
@@ -185,6 +198,7 @@ def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
     if _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
         return
 
+    prepared_parents = set()
     for path in rglob_gen(source, args.ext or None, include_symlinks=True):
         if filter_src.filter_src(args, path) is False:
             log.debug("rglob-file skipped %s", path)
@@ -199,6 +213,10 @@ def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
             log.debug("rglob-file modify_depth %s %s", parts, relpath)
         file_dest = os.path.join(folder_dest, relpath)
         log.debug("rglob-file file_dest %s", file_dest)
+        parent = os.path.dirname(file_dest)
+        if parent not in prepared_parents:
+            _replace_symlink_dirs(args, folder_dest, file_dest)
+            prepared_parents.add(parent)
         src, dest = devices.clobber(args, path, file_dest)
         if src:
             yield src, dest
