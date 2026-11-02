@@ -30,7 +30,7 @@ def unlink_partial_dst(src, dst):
 def _handle_rename_os_error(src, dst, excinfo, simulate):
     if excinfo.errno == errno.ENOENT:
         parent = os.path.dirname(dst)
-        if not parent or not os.path.exists(src):
+        if not parent or not os.path.lexists(src):
             log.error("FileNotFoundError. %s", src)
             return None
         os.makedirs(parent, exist_ok=True)
@@ -58,6 +58,8 @@ def rename_move_file(src, dst, simulate=False):
         return None
     else:
         try:
+            if os.path.islink(src):
+                return _move_symlink(src, dst)
             return shutil.move(src, dst)
         except PermissionError:  # errno.EACCES, errno.EPERM
             log.warning("PermissionError. %s", dst)
@@ -67,6 +69,19 @@ def rename_move_file(src, dst, simulate=False):
         except KeyboardInterrupt:
             unlink_partial_dst(src, dst)
             raise
+
+
+def _move_symlink(src, dst):
+    try:
+        os.rename(src, dst)
+        return dst
+    except OSError as excinfo:
+        if excinfo.errno != errno.EXDEV:
+            raise
+
+    shutil.copy2(src, dst, follow_symlinks=False)
+    os.unlink(src)
+    return dst
 
 
 def rename_no_replace(src, dst):
@@ -171,6 +186,8 @@ def rglob_gen(
     exclude: Iterable[str] | None = None,
     include: Iterable[str] | None = None,
     exclude_dirs: Iterable[str] | None = None,
+    *,
+    include_symlinks: bool = False,
 ):
     if extensions is not None:
         extensions = tuple(f".{ext.lstrip('.')}" for ext in extensions)
@@ -190,9 +207,9 @@ def rglob_gen(
                     continue
                 folders.add(entry.path)
                 stack.append(entry.path)
-            elif entry.is_symlink():
+            elif entry.is_symlink() and not include_symlinks:
                 continue
-            else:  # file or close enough
+            else:  # file, symlink, or close enough
                 if extensions and not entry.path.lower().endswith(extensions):
                     continue
                 if include and not any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include):

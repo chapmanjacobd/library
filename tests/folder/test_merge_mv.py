@@ -232,6 +232,69 @@ def test_non_regular_file_skipped(subcommand, temp_file_tree):
         sock.close()
 
 
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+def test_symlinks_preserved(subcommand, temp_file_tree):
+    src = temp_file_tree({"subdir": {"target.txt": "4"}})
+    os.symlink(os.path.join("subdir", "target.txt"), os.path.join(src, "link.txt"))
+    os.symlink("subdir", os.path.join(src, "linkdir"))
+    os.symlink("missing.txt", os.path.join(src, "broken.txt"))
+
+    dest = temp_file_tree({})
+    lb([subcommand, src + os.sep, dest])
+
+    assert (Path(dest) / "subdir" / "target.txt").read_text() == "4"
+
+    link = Path(dest) / "link.txt"
+    assert link.is_symlink()
+    assert os.readlink(link) == os.path.join("subdir", "target.txt")
+
+    linkdir = Path(dest) / "linkdir"
+    assert linkdir.is_symlink()
+    assert os.readlink(linkdir) == "subdir"
+
+    broken = Path(dest) / "broken.txt"
+    assert broken.is_symlink()
+    assert os.readlink(broken) == "missing.txt"
+
+
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+def test_explicit_symlink_preserved(subcommand, temp_file_tree):
+    target = temp_file_tree({"target.txt": "4", "subdir": {}})
+    src = temp_file_tree({})
+
+    link = os.path.join(src, "link.txt")
+    os.symlink(os.path.join(target, "target.txt"), link)
+    linkdir = os.path.join(src, "linkdir")
+    os.symlink(os.path.join(target, "subdir"), linkdir)
+
+    dest = temp_file_tree({})
+    lb([subcommand, link, linkdir, dest])
+
+    dest_link = Path(dest) / "link.txt"
+    assert dest_link.is_symlink()
+    assert os.readlink(dest_link) == os.path.join(target, "target.txt")
+
+    dest_linkdir = Path(dest) / "linkdir"
+    assert dest_linkdir.is_symlink()
+    assert os.readlink(dest_linkdir) == os.path.join(target, "subdir")
+
+
+@pytest.mark.skipif(consts.IS_WINDOWS, reason="Symlink creation may require privileges on Windows")
+def test_symlink_over_symlink_rename_dest(temp_file_tree):
+    src = temp_file_tree({})
+    os.symlink("source-target", os.path.join(src, "link.txt"))
+
+    dest = temp_file_tree({})
+    os.symlink("dest-target", os.path.join(dest, "link.txt"))
+
+    lb(["merge-cp", os.path.join(src, "link.txt"), dest])
+
+    assert os.readlink(Path(dest) / "link.txt") == "source-target"
+    assert os.readlink(Path(dest) / "link_1.txt") == "dest-target"
+
+
 def test_simulate(temp_file_tree):
     src1 = temp_file_tree(simple_file_tree) + os.sep
     src2 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})

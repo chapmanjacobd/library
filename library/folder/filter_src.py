@@ -1,8 +1,7 @@
 import os, sys, time
 from dataclasses import dataclass
 from fnmatch import fnmatch
-from pathlib import Path
-from stat import S_ISREG
+from stat import S_ISLNK, S_ISREG
 
 from library.utils import nums, printing, processes, strings
 from library.utils.log_utils import log
@@ -162,10 +161,10 @@ def _check_move_limits(args, stat):
 def filter_src(args, path):
     # REMEMBER to exclude in merge-mv shortcut
     try:
-        stat = os.stat(path)
+        stat = os.lstat(path)
     except OSError:
         return False
-    if not S_ISREG(stat.st_mode):
+    if not (S_ISREG(stat.st_mode) or S_ISLNK(stat.st_mode)):
         log.debug("Skipping non-regular file %s", path)
         return False
     if not _passes_file_filters(args, path, stat):
@@ -203,8 +202,8 @@ def track_moved(func):
             return func(*args, **kwargs)
         stats = _get_move_stats(args[0])
         try:
-            file_size = Path(args[1]).stat().st_size
-        except FileNotFoundError:
+            file_size = os.lstat(args[1]).st_size
+        except OSError:
             file_size = 0
 
         if not args[0].simulate:

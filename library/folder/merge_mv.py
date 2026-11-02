@@ -130,7 +130,7 @@ def mcp_file(args, source, destination):
         return True
     else:
         try:
-            out = shutil.copy2(source, destination)
+            out = shutil.copy2(source, destination, follow_symlinks=False)
         except Exception:
             log.exception("Could not copy %s", source)
             return False
@@ -185,7 +185,7 @@ def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
     if _try_folder_shortcut(args, source, folder_dest, shortcut_allowed):
         return
 
-    for path in rglob_gen(source, args.ext or None):
+    for path in rglob_gen(source, args.ext or None, include_symlinks=True):
         if filter_src.filter_src(args, path) is False:
             log.debug("rglob-file skipped %s", path)
             continue
@@ -239,7 +239,7 @@ def _gen_file_dest(args, source, destination, source_destination):
 def gen_src_dest(args, sources: Iterable[str], destination: str, shortcut_allowed=False):
     for source in sources:
         source_destination = _source_destination(args, source, destination)
-        if os.path.isdir(source):
+        if os.path.isdir(source) and not os.path.islink(source):
             yield from _gen_folder_dest(args, source, source_destination, shortcut_allowed)
         else:
             yield from _gen_file_dest(args, source, destination, source_destination)
@@ -252,7 +252,7 @@ def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):
     destination = os.path.realpath(destination) + (os.sep if destination.endswith(os.sep) else "")
 
     sources = (
-        os.path.realpath(s) + (os.sep if str(s).endswith(os.sep) else "")  # preserve trailing slash for --bsd
+        os.path.abspath(s) + (os.sep if str(s).endswith(os.sep) else "")  # preserve trailing slash for --bsd
         for s in sources
     )
 

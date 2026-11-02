@@ -98,7 +98,7 @@ def unlink(args, p):
 def rmtree(args, p):
     if args.simulate:
         print("rmtree", p)
-    elif os.path.isdir(p):
+    elif os.path.isdir(p) and not os.path.islink(p):
         log.debug("rmtree\t%s", p)
         shutil.rmtree(p)
     else:
@@ -122,30 +122,34 @@ def alt_name(file_path):
     file_path = Path(file_path)
     alternative_path = file_path
     counter = 1
-    while alternative_path.exists():
+    while os.path.lexists(alternative_path):
         new_name = f"{file_path.stem}_{counter}{file_path.suffix}"
         alternative_path = file_path.with_name(new_name)
         counter += 1
     return str(alternative_path)
 
 
+def _paths_content_equal(source, destination):
+    if os.path.islink(source) or os.path.islink(destination):
+        return (
+            os.path.islink(source)
+            and os.path.islink(destination)
+            and os.readlink(source) == os.readlink(destination)
+        )
+    return sample_compare.sample_cmp(source, destination, ignore_holes=True)
+
+
 def _apply_file_over_file_optional(args, source, destination, src_size, dst_size, option):
     predicates = {
-        arggroups.FileOverFileOptional.DELETE_DEST_HASH: lambda: sample_compare.sample_cmp(
-            source, destination, ignore_holes=True
-        ),
+        arggroups.FileOverFileOptional.DELETE_DEST_HASH: lambda: _paths_content_equal(source, destination),
         arggroups.FileOverFileOptional.DELETE_DEST_SIZE: lambda: src_size == dst_size,
         arggroups.FileOverFileOptional.DELETE_DEST_LARGER: lambda: src_size < dst_size,
         arggroups.FileOverFileOptional.DELETE_DEST_SMALLER: lambda: src_size > dst_size,
-        arggroups.FileOverFileOptional.DELETE_SRC_HASH: lambda: sample_compare.sample_cmp(
-            source, destination, ignore_holes=True
-        ),
+        arggroups.FileOverFileOptional.DELETE_SRC_HASH: lambda: _paths_content_equal(source, destination),
         arggroups.FileOverFileOptional.DELETE_SRC_SIZE: lambda: src_size == dst_size,
         arggroups.FileOverFileOptional.DELETE_SRC_LARGER: lambda: src_size > dst_size,
         arggroups.FileOverFileOptional.DELETE_SRC_SMALLER: lambda: src_size < dst_size,
-        arggroups.FileOverFileOptional.SKIP_HASH: lambda: sample_compare.sample_cmp(
-            source, destination, ignore_holes=True
-        ),
+        arggroups.FileOverFileOptional.SKIP_HASH: lambda: _paths_content_equal(source, destination),
         arggroups.FileOverFileOptional.SKIP_SIZE: lambda: src_size == dst_size,
         arggroups.FileOverFileOptional.SKIP_LARGER: lambda: src_size > dst_size,
         arggroups.FileOverFileOptional.SKIP_SMALLER: lambda: src_size < dst_size,
@@ -196,12 +200,12 @@ def _delete_source(args, source):
 
 
 def _clobber_existing_file(args, source, destination):
-    if not os.path.exists(source):
+    if not os.path.lexists(source):
         log.error("Source file does not exist: %s", source)
         return None, destination
 
-    src_stat = os.stat(source)
-    dst_stat = os.stat(destination)
+    src_stat = os.lstat(source)
+    dst_stat = os.lstat(destination)
     if os.path.samestat(src_stat, dst_stat):
         log.info("Destination is the same as source\t%s", destination)
         return None, destination
@@ -311,8 +315,8 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
         return None, destination
 
     orig_destination = destination
-    if os.path.exists(destination):
-        if os.path.isdir(destination):
+    if os.path.lexists(destination):
+        if os.path.isdir(destination) and not os.path.islink(destination):
             source, destination = _clobber_existing_folder(args, source, destination, orig_destination)
         else:
             source, destination = _clobber_existing_file(args, source, destination)

@@ -1,4 +1,4 @@
-import argparse, errno
+import argparse, errno, os
 from unittest.mock import patch
 
 import pytest
@@ -31,7 +31,7 @@ def test_rename_move_file_permission_error(mock_move, caplog):
 def test_rename_move_file_file_not_found_error(mock_move):
     mock_move.side_effect = OSError(2, "No such file or directory")
 
-    with patch("os.path.exists", return_value=True), patch("os.makedirs"):
+    with patch("os.path.lexists", return_value=True), patch("os.makedirs"):
         # reset recursion limit to avoid infinite if logic is wrong?
         # Actually logic is: if ENOENT, check src exists.
         # If we mock move to fail again, it will loop.
@@ -39,6 +39,45 @@ def test_rename_move_file_file_not_found_error(mock_move):
         mock_move.side_effect = [OSError(2, "No such file or directory"), None]
         shell_utils.rename_move_file("src", "parent/dst")
         assert mock_move.call_count == 2
+
+
+def test_rename_move_file_moves_symlink(tmp_path):
+    target = tmp_path / "target.txt"
+    target.write_text("target")
+    src = tmp_path / "link.txt"
+    src.symlink_to("target.txt")
+
+    dst = tmp_path / "dest" / "link.txt"
+    dst.parent.mkdir()
+
+    assert shell_utils.rename_move_file(src, dst) == dst
+    assert dst.is_symlink()
+    assert os.readlink(dst) == "target.txt"
+    assert not os.path.lexists(src)
+
+
+def test_rename_move_file_moves_symlink_cross_device(tmp_path, monkeypatch):
+    target = tmp_path / "target.txt"
+    target.write_text("target")
+    src = tmp_path / "link.txt"
+    src.symlink_to("target.txt")
+
+    dst = tmp_path / "dest" / "link.txt"
+    dst.parent.mkdir()
+
+    real_rename = os.rename
+
+    def fake_rename(src_path, dst_path):
+        if str(src_path) == str(src):
+            raise OSError(errno.EXDEV, "Invalid cross-device link")
+        return real_rename(src_path, dst_path)
+
+    monkeypatch.setattr(os, "rename", fake_rename)
+
+    assert shell_utils.rename_move_file(src, dst) == dst
+    assert dst.is_symlink()
+    assert os.readlink(dst) == "target.txt"
+    assert not os.path.lexists(src)
 
 
 @patch("shutil.move")
@@ -278,6 +317,22 @@ def test_rglob_gen_warns_and_skips_eio(caplog):
         assert list(shell_utils.rglob_gen("/base")) == ["/base/root.txt", "/base/good_dir/nested.txt"]
 
     assert "Skipping folder /base/bad_dir" in caplog.text
+
+
+def test_rglob_gen_include_symlinks(tmp_path):
+    (tmp_path / "target.txt").write_text("target")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "nested.txt").write_text("nested")
+    (tmp_path / "link.txt").symlink_to("target.txt")
+    (tmp_path / "linkdir").symlink_to("sub")
+
+    assert sorted(shell_utils.rglob_gen(tmp_path)) == [str(tmp_path / "sub" / "nested.txt"), str(tmp_path / "target.txt")]
+    assert sorted(shell_utils.rglob_gen(tmp_path, include_symlinks=True)) == [
+        str(tmp_path / "link.txt"),
+        str(tmp_path / "linkdir"),
+        str(tmp_path / "sub" / "nested.txt"),
+        str(tmp_path / "target.txt"),
+    ]
 
 
 def test_rglob_warns_and_skips_eio(caplog):
