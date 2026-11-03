@@ -18,6 +18,7 @@ from library.data.http_errors import (
     UnrecoverableError,
     raise_for_status,
 )
+from library._version import __version__ as library_version
 from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, printing, processes, strings
 from library.utils.log_utils import clamp_index, log
 from library.utils.path_utils import path_tuple_from_url
@@ -26,6 +27,7 @@ warnings.filterwarnings("ignore", category=bs4.XMLParsedAsHTMLWarning)
 
 HTML_MIME_TYPES = ("text/html", "text/xhtml", "application/xhtml+xml")
 XML_MIME_TYPES = ("text/xml", "application/xml")
+DEFAULT_USER_AGENT = f"lb/{library_version}"
 INTERNET_ARCHIVE_NO_RETRIES = -1
 HTTP_NOT_FOUND = 404
 HTTP_PARTIAL_CONTENT = 206
@@ -181,6 +183,8 @@ _BROWSER_EXECUTABLES = {
     "whale": ("whale",),
 }
 _CHROMIUM_BROWSERS = {"brave", "chrome", "chromium", "edge", "opera", "vivaldi", "whale"}
+FIREFOX_MACOS_UA_PLATFORM = "Macintosh; Intel Mac OS X 10.15"
+CHROMIUM_MACOS_UA_PLATFORM = "Macintosh; Intel Mac OS X 10_15_7"
 
 
 @functools.cache
@@ -268,11 +272,13 @@ def _browser_platform():
     return platform.system() or "Unknown"
 
 
-def _browser_ua_platform():
+def _browser_ua_platform(browser_name):
     if sys.platform == "win32":
         return "Windows NT 10.0; Win64; x64"
     if sys.platform == "darwin":
-        return "Macintosh; Intel Mac OS X 10_15_7"
+        # Browsers freeze these tokens in their UA; they are not derived from the host's
+        # macOS version. Firefox uses a dotted version, Chromium uses underscores.
+        return FIREFOX_MACOS_UA_PLATFORM if browser_name == "firefox" else CHROMIUM_MACOS_UA_PLATFORM
     return f"X11; Linux {platform.machine()}"
 
 
@@ -299,9 +305,9 @@ def _browser_user_agent(browser_name, profile_path):
         return None
 
     if browser_name == "firefox":
-        return f"Mozilla/5.0 ({_browser_ua_platform()}; rv:{version}) Gecko/20100101 Firefox/{version}"
+        return f"Mozilla/5.0 ({_browser_ua_platform(browser_name)}; rv:{version}) Gecko/20100101 Firefox/{version}"
 
-    user_agent = f"Mozilla/5.0 ({_browser_ua_platform()}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version} Safari/537.36"
+    user_agent = f"Mozilla/5.0 ({_browser_ua_platform(browser_name)}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{version} Safari/537.36"
     browser_tokens = {
         "edge": f" Edg/{version}",
         "opera": f" OPR/{version}",
@@ -311,7 +317,18 @@ def _browser_user_agent(browser_name, profile_path):
     return user_agent + browser_tokens.get(browser_name, "")
 
 
+def _mirrored_selenium_user_agent(args):
+    """Return the live Selenium UA, but only when it belongs to a cookie source we are using."""
+    if not (getattr(args, "cookies_from_browser", None) or getattr(args, "cookies", None)):
+        return None
+    return getattr(args, "selenium_user_agent", None)
+
+
 def browser_headers(args):
+    selenium_user_agent = _mirrored_selenium_user_agent(args)
+    if selenium_user_agent:
+        return {"User-Agent": selenium_user_agent}
+
     cookies_from_browser = getattr(args, "cookies_from_browser", None)
     if not cookies_from_browser:
         return {}
@@ -367,11 +384,26 @@ def browser_headers(args):
     return headers
 
 
+def request_headers(args=None):
+    """Headers for the requests session.
+
+    Mirror the browser that produced the cookies when one is known (``--cookies-from-browser``
+    or a live Selenium session); otherwise identify as ``lb`` so sites that challenge
+    browser-like agents still serve the file.
+    """
+    if args is None:
+        args = argparse.Namespace()
+
+    headers = browser_headers(args)
+    headers.setdefault("User-Agent", DEFAULT_USER_AGENT)
+    return headers
+
+
 def _request_headers(args=None):
     from yt_dlp.utils.networking import std_headers
 
     headers = dict(std_headers)
-    headers.update(browser_headers(args))
+    headers.update(request_headers(args))
     return headers
 
 
@@ -394,6 +426,7 @@ def load_cookie_jar(args):
 
 
 def requests_session(args=None):
+    provided_args = args is not None
     if args is None:
         args = argparse.Namespace()
     current_session = _configured_state(session, _SESSION_PROXY, "session")
@@ -423,12 +456,12 @@ def requests_session(args=None):
 
         if current_cookie_jar:
             current_session.cookies = current_cookie_jar  # type: ignore
-    elif current_browser_headers := browser_headers(args):
+    elif provided_args and (current_request_headers := request_headers(args)):
         _web_state.request_headers = {
             **(_web_state.request_headers or _request_headers()),
-            **current_browser_headers,
+            **current_request_headers,
         }
-        current_session.headers.update(current_browser_headers)
+        current_session.headers.update(current_request_headers)
 
     return current_session
 
@@ -810,6 +843,43 @@ def _load_chrome_driver(args, webdriver, xvfb, profile):
     args.driver = webdriver.Chrome(options=options)
 
 
+def _sync_selenium_user_agent(args):
+    """Use the live browser's exact User-Agent for the requests session and backends.
+
+    A browser built from a profile can report a different UA than the version string we
+    reconstruct from the executable (ESR builds, platform overrides, snap/flatpak wrappers).
+    Cookies issued by bot challenges can be bound to that exact UA, so prefer the driver's.
+    """
+    driver = getattr(args, "driver", None)
+    if driver is None:
+        return
+
+    try:
+        user_agent = driver.execute_script("return navigator.userAgent")
+    except Exception as excinfo:
+        log.debug("Could not read Selenium User-Agent: %s", excinfo)
+        return
+    if not isinstance(user_agent, str) or not user_agent:
+        return
+    if not (getattr(args, "cookies_from_browser", None) or getattr(args, "cookies", None)):
+        return
+
+    args.selenium_user_agent = user_agent
+
+    current_session = _configured_state(session, _SESSION_PROXY, "session")
+    if current_session is not None:
+        current_session.headers["User-Agent"] = user_agent
+        for header in list(current_session.headers):
+            if header.startswith("Sec-CH-UA"):
+                del current_session.headers[header]
+
+    if _web_state.request_headers:
+        _web_state.request_headers["User-Agent"] = user_agent
+        for header in list(_web_state.request_headers):
+            if header.startswith("Sec-CH-UA"):
+                del _web_state.request_headers[header]
+
+
 def load_selenium(args, wire=False):
     if getattr(args, "driver", False):
         return
@@ -833,6 +903,7 @@ def load_selenium(args, wire=False):
         _load_firefox_driver(args, webdriver, xvfb)
     else:
         _load_chrome_driver(args, webdriver, xvfb, profile)
+    _sync_selenium_user_agent(args)
 
 
 def quit_selenium(args):

@@ -3,7 +3,7 @@ from pathlib import Path
 from types import ModuleType
 
 from library.database.manage import db_media, db_playlists
-from library.utils import consts, printing, strings
+from library.utils import consts, printing, strings, web
 from library.utils.log_utils import log
 
 
@@ -61,6 +61,10 @@ def load_module_level_gallery_dl(args=None) -> ModuleType:
 
         if hasattr(args, "prefix"):
             gallery_dl.config.set(("extractor",), "base-directory", args.prefix)
+
+        user_agent = web.browser_headers(args).get("User-Agent")
+        if user_agent:
+            gallery_dl.config.set(("extractor",), "user-agent", user_agent)
 
     return gallery_dl
 

@@ -94,10 +94,10 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
         **json.loads(playlist_opts),
         **cli_opts,
     }
-    browser_headers = web.browser_headers(args)
-    if browser_headers:
+    request_headers = web.browser_headers(args)
+    if request_headers:
         all_opts["http_headers"] = {
-            **browser_headers,
+            **request_headers,
             **all_opts.get("http_headers", {}),
         }
 

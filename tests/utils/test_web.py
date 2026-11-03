@@ -751,6 +751,57 @@ def test_requests_session_uses_browser_headers(monkeypatch, tmp_path):
     assert session.headers["User-Agent"].endswith("Chrome/156.0.8078.47 Safari/537.36")
 
 
+def test_browser_headers_prefer_selenium_user_agent():
+    headers = web.browser_headers(
+        SimpleNamespace(selenium_user_agent="Mozilla/5.0 custom", cookies_from_browser="firefox")
+    )
+
+    assert headers == {"User-Agent": "Mozilla/5.0 custom"}
+
+
+def test_browser_headers_ignore_selenium_without_cookies():
+    headers = web.browser_headers(SimpleNamespace(selenium_user_agent="Mozilla/5.0 custom"))
+
+    assert headers == {}
+
+
+def test_request_headers_default_user_agent():
+    headers = web.request_headers(SimpleNamespace())
+
+    assert headers == {"User-Agent": web.DEFAULT_USER_AGENT}
+
+
+def test_requests_session_uses_default_user_agent(monkeypatch):
+    monkeypatch.setattr(web, "session", requests.Session())
+    monkeypatch.setattr(web, "load_cookie_jar", lambda _args: None)
+
+    session = web.requests_session(SimpleNamespace())
+
+    assert session.headers["User-Agent"] == web.DEFAULT_USER_AGENT
+
+
+def test_sync_selenium_user_agent_updates_session(monkeypatch):
+    monkeypatch.setattr(web, "session", requests.Session())
+    driver = SimpleNamespace(execute_script=lambda _script: "Mozilla/5.0 custom")
+    args = SimpleNamespace(driver=driver, cookies_from_browser="firefox")
+
+    web._sync_selenium_user_agent(args)  # noqa: SLF001
+
+    assert args.selenium_user_agent == "Mozilla/5.0 custom"
+    assert web.session.headers["User-Agent"] == "Mozilla/5.0 custom"
+
+
+def test_sync_selenium_user_agent_without_cookies_is_ignored(monkeypatch):
+    monkeypatch.setattr(web, "session", requests.Session())
+    driver = SimpleNamespace(execute_script=lambda _script: "Mozilla/5.0 custom")
+    args = SimpleNamespace(driver=driver)
+
+    web._sync_selenium_user_agent(args)  # noqa: SLF001
+
+    assert not hasattr(args, "selenium_user_agent")
+    assert web.session.headers.get("User-Agent") != "Mozilla/5.0 custom"
+
+
 def test_chromium_last_used_profile(tmp_path):
     (tmp_path / "Profile 1").mkdir()
     (tmp_path / "Local State").write_text(
