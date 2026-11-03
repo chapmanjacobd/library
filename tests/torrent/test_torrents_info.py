@@ -1,6 +1,8 @@
+import logging
 from types import SimpleNamespace
 
 import pytest
+import qbittorrentapi
 
 from library.torrent import torrents_info
 
@@ -229,3 +231,26 @@ def test_filter_torrents_by_criteria_can_select_same_drives(monkeypatch):
     args = Arguments(defaults=Arguments(), avg_sizes=lambda _size: True, different_drives=False)
 
     assert [t.name for t in torrents_info.filter_torrents_by_criteria(args, torrents)] == ["same"]
+
+
+def test_export_torrents_skips_torrent_that_cannot_be_exported(tmp_path, monkeypatch, caplog):
+    monkeypatch.chdir(tmp_path)
+
+    broken = SimpleNamespace(name="broken", hash="aaa", tracker_domain=lambda: "tracker")
+    working = SimpleNamespace(name="working", hash="bbb", tracker_domain=lambda: "tracker")
+
+    class QBitTorrent:
+        def torrents_export(self, torrent_hash):
+            if torrent_hash == "aaa":
+                raise qbittorrentapi.Conflict409Error("a piece layer is invalid [libtorrent:215]")
+            return b"torrent data"
+
+    args = SimpleNamespace(export=True)
+
+    with caplog.at_level(logging.WARNING):
+        torrents_info._export_torrents(args, QBitTorrent(), [broken, working])
+
+    exported = {path.name: path.read_bytes() for path in (tmp_path / "exported_torrents").iterdir()}
+    assert list(exported.values()) == [b"torrent data"]
+    assert "bbb" in next(iter(exported))
+    assert "Unable to export broken (aaa)" in caplog.text

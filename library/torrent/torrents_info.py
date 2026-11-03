@@ -995,6 +995,8 @@ def _apply_tracker_actions(args, qbt_client, torrents):
 
 
 def _export_torrents(args, qbt_client, torrents):
+    import qbittorrentapi
+
     if args.export:
         export_path = Path("exported_torrents")
         export_path.mkdir(exist_ok=True)
@@ -1003,7 +1005,12 @@ def _export_torrents(args, qbt_client, torrents):
             file_name = path_utils.clean_path(
                 f"{torrent.tracker_domain()}_{torrent.name}_{torrent.hash}.torrent".encode()
             )
-            (export_path / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=torrent.hash))
+            try:
+                torrent_file = qbt_client.torrents_export(torrent_hash=torrent.hash)
+            except qbittorrentapi.Conflict409Error as exc:
+                log.warning("Unable to export %s (%s): %s", torrent.name, torrent.hash, exc)
+                continue
+            (export_path / file_name).write_bytes(torrent_file)
         print()
 
 
