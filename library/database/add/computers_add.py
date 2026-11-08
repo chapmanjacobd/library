@@ -98,11 +98,16 @@ def computer_add(args, hostnames):
                 log_warning_if_same_free_space(computer_info, disks)
 
                 computer_info["path"] = hostname
-                playlists_id = db_playlists.add_entry(args, objects.dict_filter_bool(computer_info))
+                playlists_id = db_playlists.add_entry(
+                    args, objects.dict_filter_bool(computer_info) | {"extractor_config": {}}
+                )
 
                 # remove ghost disks
                 with args.db.conn:
-                    args.db["media"].delete_where("playlists_id = ?", [playlists_id])
+                    args.db["media"].delete_where(
+                        "playlists_id IN (SELECT id FROM playlists WHERE path = ?)", [hostname]
+                    )
+                    args.db["playlists"].delete_where("path = ? AND id != ?", [hostname, playlists_id])
 
                 for disk in disks:
                     disk_with_playlist = disk | {"playlists_id": playlists_id}

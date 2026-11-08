@@ -66,31 +66,28 @@ def parse_args():
 
 
 def get_disks(args, computer_db):
-    try:
-        disks_columns = computer_db["media"].columns_dict
-    except Exception:
-        disks_columns = {}
-
-    disks = list(
-        computer_db.query(
-            f"""
+    disks = []
+    for disk in computer_db.query(
+        """
             SELECT
                 computers.path host
-                , disks.path mountpoint
-                {', disks.free - coalesce(disks.allocated,0) AS free' if 'allocated' in disks_columns else ', disks.free'}
-                , disks.total
+                , disks.*
             FROM media AS disks
             JOIN playlists AS computers ON computers.id = disks.playlists_id
-            WHERE free >= :min_free_space
+            WHERE computers.id = (
+                SELECT id FROM playlists
+                WHERE path = computers.path
+                ORDER BY coalesce(time_modified, time_created, 0) DESC, id DESC
+                LIMIT 1
+            )
             AND (device_read_5s + device_write_5s) /(30) /2 <= :max_io_rate
-            ORDER BY free
             """,
-            {
-                "min_free_space": args.min_free_space,
-                "max_io_rate": args.max_io_rate,
-            },
-        )
-    )
+        {"max_io_rate": args.max_io_rate},
+    ):
+        free = disk["free"] - (disk.get("allocated") or 0)
+        if free >= args.min_free_space:
+            disks.append({"host": disk["host"], "mountpoint": disk["path"], "free": free, "total": disk["total"]})
+    disks.sort(key=lambda d: d["free"])
     if args.hosts:
         disks = [d for d in disks if d["host"] in args.hosts]
     if args.include_disks:
