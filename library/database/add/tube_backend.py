@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 from subprocess import CalledProcessError
 from types import ModuleType
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
 
 from library.database.add import subtitle
 from library.data.yt_dlp_errors import (
@@ -21,6 +22,7 @@ from library.utils.log_utils import Timer, log
 from library.utils.processes import FFProbe
 
 MAX_CORRUPTION_SCORE = 7
+YOUTUBE_MUSIC_REDIRECT = re.compile(r"YouTube Music is not directly supported\. Redirecting to (https?://\S+)")
 
 yt_archive = set()
 
@@ -238,11 +240,86 @@ def _update_playlist_frequency(args, playlist_path, count_before_extract, state)
         db_playlists.update_less_frequently(args, playlist_path)
 
 
-def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, retrieved_paths=None, _state=None) -> None:
+def _youtube_collection_url(base_url, link):
+    if not isinstance(link, str) or not link.startswith(("/", "http://", "https://")):
+        return None
+    try:
+        url = urlsplit(urljoin(base_url, link))
+    except ValueError:
+        return None
+    if url.scheme not in ("http", "https") or url.netloc not in (
+        "youtube.com",
+        "www.youtube.com",
+        "m.youtube.com",
+        "music.youtube.com",
+    ):
+        return None
+
+    channel = re.fullmatch(r"/channel/([A-Za-z0-9_-]+)(?:/[^/]*)?/?", url.path)
+    if channel:
+        return f"https://www.youtube.com/channel/{channel.group(1)}"
+    if url.path.rstrip("/") == "/playlist":
+        playlist_id = parse_qs(url.query).get("list", [""])[0]
+        if re.fullmatch(r"[A-Za-z0-9_-]+", playlist_id):
+            return "https://www.youtube.com/playlist?" + urlencode({"list": playlist_id})
+    return None
+
+
+def _youtube_music_links(ydl, yt_dlp, redirect_url):
+    from bs4 import BeautifulSoup
+
+    try:
+        redirect = urlsplit(redirect_url)
+    except ValueError:
+        return []
+    if (
+        redirect.scheme != "https"
+        or redirect.netloc not in ("youtube.com", "www.youtube.com", "m.youtube.com")
+        or not _youtube_collection_url(redirect_url, redirect_url)
+    ):
+        return []
+
+    try:
+        with ydl.urlopen(redirect_url) as response:
+            markup = response.read().decode("utf-8", errors="replace")
+    except (OSError, yt_dlp.networking.exceptions.RequestError) as excinfo:
+        log.warning("Could not discover YouTube Music links from %s: %s", redirect_url, excinfo)
+        return []
+
+    links = []
+    soup = BeautifulSoup(markup, "lxml")
+    for tag in soup.find_all():
+        links.extend(
+            tag[attr] for attr in ("href", "url", "src", "data-src", "data-url", "data-original") if tag.has_attr(attr)
+        )
+
+    if "ytInitialData" in markup or "yt-initial-data" in markup:
+        data = ydl.get_info_extractor("YoutubeTab").extract_yt_initial_data("channel", markup, fatal=False)
+        pending = [data]
+        while pending:
+            value = pending.pop()
+            if isinstance(value, dict):
+                pending.extend(value.values())
+            elif isinstance(value, list):
+                pending.extend(value)
+            elif isinstance(value, str):
+                links.append(value)
+
+    current = _youtube_collection_url(redirect_url, redirect_url)
+    return list(
+        iterables.ordered_set(
+            url for link in links if (url := _youtube_collection_url(redirect_url, link)) and url != current
+        )
+    )
+
+
+def get_playlist_metadata(
+    args, playlist_path, ydl_opts, playlist_root=True, retrieved_paths=None, _state=None
+) -> list[str]:
     if retrieved_paths is None:
         retrieved_paths = set()
     if playlist_path in retrieved_paths:
-        return
+        return []
     retrieved_paths.add(playlist_path)
 
     state = _playlist_state if _state is None else _state
@@ -256,12 +333,28 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True, ret
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
 
+        redirects = []
+        if args.action == consts.SC.tube_add:
+            report_warning = ydl.report_warning
+
+            def capture_warning(message, *warning_args, **warning_kwargs):
+                if match := YOUTUBE_MUSIC_REDIRECT.search(message):
+                    redirects.append(match.group(1))
+                return report_warning(message, *warning_args, **warning_kwargs)
+
+            ydl.report_warning = capture_warning
+
         log.debug("yt-dlp initialized %s", t.elapsed())
         count_before_extract = state.added_media_count
         if _extract_playlist_info(
             ydl, yt_dlp, args, playlist_path, count_before_extract, ExistingPlaylistVideoReached, t, state
         ):
             _update_playlist_frequency(args, playlist_path, count_before_extract, state)
+        return [
+            link
+            for redirect_url in iterables.ordered_set(redirects)
+            for link in _youtube_music_links(ydl, yt_dlp, redirect_url)
+        ]
 
 
 def yt_subs_config(args):

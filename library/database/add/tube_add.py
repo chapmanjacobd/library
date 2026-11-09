@@ -1,4 +1,5 @@
 import argparse, sys
+from collections import deque
 from pathlib import Path
 
 from library import usage
@@ -72,7 +73,10 @@ def tube_add(args=None) -> None:
         if not args.force and len(paths) > MAX_PATHS_WITHOUT_FORCE:
             known_playlists = db_media.get_paths(args)
 
-        for path in paths:
+        pending_paths = deque(paths)
+        scheduled_paths = set(paths)
+        while pending_paths:
+            path = pending_paths.popleft()
             if args.safe and not tube_backend.is_supported(path):
                 log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
                 continue
@@ -83,12 +87,15 @@ def tube_add(args=None) -> None:
 
             if path in retrieved_paths:
                 continue
-            tube_backend.get_playlist_metadata(
+            discovered_paths = tube_backend.get_playlist_metadata(
                 args,
                 path,
                 tube_backend.tube_opts(args),
                 retrieved_paths=retrieved_paths,
             )
+            for discovered_path in (p for p in discovered_paths or () if p not in scheduled_paths):
+                scheduled_paths.add(discovered_path)
+                pending_paths.append(discovered_path)
 
             if args.extra or args.subs or args.auto_subs:
                 log.warning("[%s]: Getting extra metadata", path)

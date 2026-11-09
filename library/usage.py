@@ -625,6 +625,9 @@ tube_add = r"""library database add video [--safe] [--extra] [--subs] [--auto-su
 
         library database add video dl.db https://www.youdl.com/c/BranchEducation/videos
 
+    When YouTube Music redirects to YouTube, also add linked channels and playlists
+    found on the redirected page.
+
     Add links from a line-delimited file
 
         cat ./my_yt_subscriptions.txt | library database add video reddit.db -
