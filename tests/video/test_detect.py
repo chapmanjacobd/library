@@ -143,7 +143,7 @@ def test_combined_full_frame_filters_share_one_frame_stream(monkeypatch):
 
     monkeypatch.setattr(detect, "_iter_sampled_frames", sampled_frames)
 
-    assert detect._matches_full_frame_filters(  # noqa: SLF001
+    assert detect._matches_full_frame_filters(  # ruff: ignore[private-member-access]
         "video.mp4",
         detect.FreezeSpec(ratio=0.5),
         blank=True,

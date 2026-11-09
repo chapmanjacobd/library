@@ -281,7 +281,7 @@ class _ShortStreamResponse:
     status_code = 200
     headers: ClassVar = {"Content-Type": "text/plain", "Content-Length": "100"}
 
-    def iter_content(self, chunk_size=1):  # noqa: ARG002 - mirrors requests' iter_content signature
+    def iter_content(self, chunk_size=1):  # ruff: ignore[unused-method-argument] - mirrors requests' iter_content signature
         yield b"short"  # 5 bytes, less than the advertised Content-Length
 
     def close(self):
@@ -785,7 +785,7 @@ def test_sync_selenium_user_agent_updates_session(monkeypatch):
     driver = SimpleNamespace(execute_script=lambda _script: "Mozilla/5.0 custom")
     args = SimpleNamespace(driver=driver, cookies_from_browser="firefox")
 
-    web._sync_selenium_user_agent(args)  # noqa: SLF001
+    web._sync_selenium_user_agent(args)  # ruff: ignore[private-member-access]
 
     assert args.selenium_user_agent == "Mozilla/5.0 custom"
     assert web.session.headers["User-Agent"] == "Mozilla/5.0 custom"
@@ -796,7 +796,7 @@ def test_sync_selenium_user_agent_without_cookies_is_ignored(monkeypatch):
     driver = SimpleNamespace(execute_script=lambda _script: "Mozilla/5.0 custom")
     args = SimpleNamespace(driver=driver)
 
-    web._sync_selenium_user_agent(args)  # noqa: SLF001
+    web._sync_selenium_user_agent(args)  # ruff: ignore[private-member-access]
 
     assert not hasattr(args, "selenium_user_agent")
     assert web.session.headers.get("User-Agent") != "Mozilla/5.0 custom"
@@ -809,13 +809,13 @@ def test_chromium_last_used_profile(tmp_path):
         encoding="utf-8",
     )
 
-    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"  # noqa: SLF001
+    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"  # ruff: ignore[private-member-access]
 
 
 def test_chromium_profile_falls_back_to_existing_profile(tmp_path):
     (tmp_path / "Profile 1").mkdir()
 
-    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"  # noqa: SLF001
+    assert web._chromium_last_used_profile(tmp_path) == "Profile 1"  # ruff: ignore[private-member-access]
 
 
 def test_is_index():
@@ -852,7 +852,7 @@ def test_fake_title():
     assert web.fake_title(url) == expected
 
 
-def mock_requests_session_head(url, timeout=None):  # noqa: ARG001 - mirrors requests' head signature
+def mock_requests_session_head(url, timeout=None):  # ruff: ignore[unused-function-argument] - mirrors requests' head signature
     mock_response = Mock()
     if url.endswith(".html"):
         mock_response.headers = {"Content-Type": "text/html"}

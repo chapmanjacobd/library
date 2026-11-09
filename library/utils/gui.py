@@ -29,7 +29,7 @@ class MrSuperDialogue:
         style = Style(self.root)
         style.theme_use("clam")
         photo = PhotoImage(file=str((base_folder / ".." / "assets" / "kotobago.png").resolve()))
-        self.root.wm_iconphoto(True, photo)  # noqa: FBT003
+        self.root.wm_iconphoto(True, photo)  # ruff: ignore[boolean-positional-value-in-call]
         self.root.wm_attributes("-topmost", 1)
 
     def _configure_widgets(self, path, qty, true_action, false_action):

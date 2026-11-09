@@ -721,7 +721,7 @@ def _dispatch(args) -> None:
         if hasattr(args, "_nested_args"):
             if subcommand:
                 sys.argv[0] = f"library {subcommand}"
-            sys.argv[1:] = args._nested_args  # noqa: SLF001
+            sys.argv[1:] = args._nested_args  # ruff: ignore[private-member-access]
         elif len(sys.argv) >= MIN_NESTED_ARGV_LENGTH:
             subcommand = sys.argv[1]
             del sys.argv[1]

@@ -45,7 +45,7 @@ def get_caller_name():
 
 def get_argparse_defaults(parser):
     defaults = {}
-    for action in parser._actions:  # noqa: SLF001
+    for action in parser._actions:  # ruff: ignore[private-member-access]
         if not action.required and action.default is not None and action.dest != "help":
             default = action.default
             if action.type is not None:
@@ -2510,7 +2510,7 @@ def build_actions(unknown_args, df_columns):
     while i < len(unknown_args):
         token = unknown_args[i]
         method_name, value = token.split("=", 1) if "=" in token else (token, None)
-        if token == "--":  # bare separator between plt commands  # noqa: S105
+        if token == "--":  # bare separator between plt commands  # ruff: ignore[hardcoded-password-string]
             i += 1
             continue
         if is_plt_method(token):

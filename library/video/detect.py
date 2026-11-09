@@ -303,7 +303,7 @@ def _has_freeze_ratio(path: str, video_duration: float, ratio: float, samples: i
     return False
 
 
-def _matches_full_frame_filters(  # noqa: PLR0911,PLR0912 - coordinates two streaming predicates
+def _matches_full_frame_filters(  # ruff: ignore[too-many-return-statements, too-many-branches] - coordinates two streaming predicates
     path: str,
     freeze: FreezeSpec | None,
     *,
@@ -657,7 +657,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def detect() -> None:  # noqa: PLR0912 - coordinates independent detector predicates
+def detect() -> None:  # ruff: ignore[too-many-branches] - coordinates independent detector predicates
     args = parse_args()
     if args.samples < MIN_SAMPLES:
         raise ValueError("--samples must be at least 2")

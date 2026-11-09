@@ -77,11 +77,11 @@ def parse_tsv(path: str | Path, columns: dict[str, str]):
 def _download(url: str, destination: Path) -> None:
     partial = destination.with_suffix(destination.suffix + ".part")
     offset = partial.stat().st_size if partial.exists() else 0
-    request = urllib.request.Request(url)  # noqa: S310 - URL is a fixed IMDb HTTPS endpoint
+    request = urllib.request.Request(url)  # ruff: ignore[suspicious-url-open-usage] - URL is a fixed IMDb HTTPS endpoint
     if offset:
         request.add_header("Range", f"bytes={offset}-")
 
-    with urllib.request.urlopen(request, timeout=120) as response:  # noqa: S310 - URL is a fixed IMDb HTTPS endpoint
+    with urllib.request.urlopen(request, timeout=120) as response:  # ruff: ignore[suspicious-url-open-usage] - URL is a fixed IMDb HTTPS endpoint
         if response.status == HTTP_OK and offset:
             partial.write_bytes(b"")
             offset = 0
@@ -326,14 +326,14 @@ def _target_details(connection: sqlite3.Connection, table: str) -> tuple[set[str
     id_column = "id" if "id" in columns else "rowid"
     if id_column == "rowid":
         try:
-            connection.execute(f"SELECT rowid FROM {quote_identifier(table)} LIMIT 0")  # noqa: S608 - table is validated
+            connection.execute(f"SELECT rowid FROM {quote_identifier(table)} LIMIT 0")  # ruff: ignore[hardcoded-sql-expression] - table is validated
         except sqlite3.OperationalError as exc:
             message = f"{table!r} needs an id column because it has no rowid"
             raise ValueError(message) from exc
     return columns, path_column, id_column
 
 
-def enrich_database(  # noqa: PLR0912, PLR0915 - enrichment coordinates schema, index, and update phases
+def enrich_database(  # ruff: ignore[too-many-branches, too-many-statements] - enrichment coordinates schema, index, and update phases
     database: str,
     *,
     table: str = "media",
@@ -378,7 +378,7 @@ def enrich_database(  # noqa: PLR0912, PLR0915 - enrichment coordinates schema, 
                 for column in ENRICH_COLUMNS
             )
             rows = list(
-                target.execute(f"SELECT {', '.join(selected)} FROM {quote_identifier(table)}")  # noqa: S608 - identifiers are validated
+                target.execute(f"SELECT {', '.join(selected)} FROM {quote_identifier(table)}")  # ruff: ignore[hardcoded-sql-expression] - identifiers are validated
             )
             counts = dict.fromkeys(ENRICH_COLUMNS, 0)
             updates = []
@@ -423,7 +423,7 @@ def enrich_database(  # noqa: PLR0912, PLR0915 - enrichment coordinates schema, 
                 for changes, row_id in updates:
                     assignments = ", ".join(f"{quote_identifier(column)} = ?" for column in changes)
                     query = (
-                        f"UPDATE {quote_identifier(table)} SET {assignments} "  # noqa: S608 - identifiers are validated
+                        f"UPDATE {quote_identifier(table)} SET {assignments} "  # ruff: ignore[hardcoded-sql-expression] - identifiers are validated
                         f"WHERE {quote_identifier(id_column) if id_column != 'rowid' else 'rowid'} = ?"
                     )
                     target.execute(query, (*changes.values(), row_id))

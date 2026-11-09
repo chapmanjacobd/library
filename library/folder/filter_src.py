@@ -17,7 +17,7 @@ def _get_move_stats(args):
     stats = getattr(args, "_move_stats", None)
     if stats is None:
         stats = _MoveStats()
-        args._move_stats = stats  # noqa: SLF001
+        args._move_stats = stats  # ruff: ignore[private-member-access]
     return stats
 
 

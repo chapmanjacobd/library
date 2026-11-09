@@ -148,7 +148,7 @@ def nouns() -> None:
     dictionary = ()
     if not args.all:
         with (Path(__file__).parent / ".." / "data" / "dictionary.pkl").open("rb") as f:
-            dictionary = pickle.load(f)  # noqa: S301 - this is a bundled, read-only application asset
+            dictionary = pickle.load(f)  # ruff: ignore[suspicious-pickle-usage] - this is a bundled, read-only application asset
 
     def part_processor(args, parts):
         for part in parts:

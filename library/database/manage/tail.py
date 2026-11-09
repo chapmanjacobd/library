@@ -19,7 +19,7 @@ def _table_cursor(connection, table: str) -> dict[str, Any] | None:
     if without_rowid:
         return None
     try:
-        connection.execute(f"SELECT rowid FROM {quote_identifier(table)} LIMIT 0")  # noqa: S608 - table is metadata
+        connection.execute(f"SELECT rowid FROM {quote_identifier(table)} LIMIT 0")  # ruff: ignore[hardcoded-sql-expression] - table is metadata
     except sqlite3.OperationalError:
         return None
     return {"column": "rowid", "kind": "rowid", "value": None}
@@ -51,7 +51,7 @@ def get_initial_cursors(connection, selected: str | None = None) -> dict[str, di
         column = cursor["column"]
         expression = "rowid" if column == "rowid" else quote_identifier(column)
         value = connection.execute(
-            f"SELECT MAX({expression}) FROM {quote_identifier(table)}"  # noqa: S608 - identifiers come from SQLite metadata
+            f"SELECT MAX({expression}) FROM {quote_identifier(table)}"  # ruff: ignore[hardcoded-sql-expression] - identifiers come from SQLite metadata
         ).fetchone()[0]
         cursor["value"] = value
         cursors[table] = cursor
@@ -75,7 +75,7 @@ def tail_once(
         comparison = "IS NOT NULL" if previous is None else "> ?"
         params = () if previous is None else (previous,)
         query = (
-            f"SELECT {expression} AS __library_tail_key, * FROM {quote_identifier(table)} "  # noqa: S608 - identifiers come from SQLite metadata
+            f"SELECT {expression} AS __library_tail_key, * FROM {quote_identifier(table)} "  # ruff: ignore[hardcoded-sql-expression] - identifiers come from SQLite metadata
             f"WHERE {expression} {comparison} ORDER BY {expression} LIMIT ?"
         )
         result = connection.execute(query, (*params, limit))

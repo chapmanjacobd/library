@@ -781,7 +781,7 @@ def _handle_failed_download(args, m, info, local_path, media_check_failed, ydl_l
 def _save_download_archive(ydl, yt_dlp, m, info, download_archive):
     if len(yt_archive) == 0 or info is None:
         return
-    archive_id = ydl._make_archive_id(info)  # noqa: SLF001
+    archive_id = ydl._make_archive_id(info)  # ruff: ignore[private-member-access]
     if archive_id is None:
         vid = coerce_to_yt_id(m["path"])
         if vid:

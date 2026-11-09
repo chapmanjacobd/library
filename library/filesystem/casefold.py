@@ -91,7 +91,7 @@ def read_paths_from_database(database: str) -> list[str]:
         where = "WHERE path IS NOT NULL"
         if "time_deleted" in columns:
             where += " AND COALESCE(time_deleted, 0) = 0"
-        query = f"SELECT DISTINCT path FROM media {where}"  # noqa: S608 - table and column names are fixed
+        query = f"SELECT DISTINCT path FROM media {where}"  # ruff: ignore[hardcoded-sql-expression] - table and column names are fixed
         return [path for (path,) in connection.execute(query) if path]
 
 

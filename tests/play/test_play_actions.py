@@ -99,7 +99,7 @@ db_history.create(args)
 
 temp_parser = ArgumentParser(add_help=False)
 arggroups.sql_fs(temp_parser)
-opts = temp_parser._actions  # noqa: SLF001
+opts = temp_parser._actions  # ruff: ignore[private-member-access]
 
 
 @pytest.mark.parametrize(

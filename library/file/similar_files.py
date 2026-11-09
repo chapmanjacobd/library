@@ -263,7 +263,7 @@ def filter_groups_by_content(args, groups):
     return filtered_groups
 
 
-def similar_files():  # noqa: PLR0912
+def similar_files():  # ruff: ignore[too-many-branches]
     args = parse_args()
     media = list(shell_utils.gen_d(args))
     media = filter_engine.filter_items_by_criteria(args, media)

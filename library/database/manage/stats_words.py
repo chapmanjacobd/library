@@ -31,7 +31,7 @@ def word_stats(database: str, table: str = "media") -> list[dict]:
 
         where = " WHERE COALESCE(time_deleted, 0) = 0" if "time_deleted" in columns else ""
         groups = defaultdict(list)
-        query = f"SELECT path, size FROM {table}{where}"  # noqa: S608 - table is validated above
+        query = f"SELECT path, size FROM {table}{where}"  # ruff: ignore[hardcoded-sql-expression] - table is validated above
         for path, size in conn.execute(query):
             if path and size is not None:
                 sentence = strings.path_to_sentence(path)

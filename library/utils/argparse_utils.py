@@ -30,7 +30,7 @@ def open_text_input(parser: argparse.ArgumentParser, path: str):
 
 
 class ArgparseList(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
+    def __call__(self, parser, namespace, values, option_string=None):  # ruff: ignore[unused-method-argument]
         items = getattr(namespace, self.dest, None) or []
 
         if isinstance(values, str):
@@ -42,7 +42,7 @@ class ArgparseList(argparse.Action):
 
 
 class ArgparseSlice(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
+    def __call__(self, parser, namespace, values, option_string=None):  # ruff: ignore[unused-method-argument]
         if not isinstance(values, str):
             raise TypeError
 
@@ -69,7 +69,7 @@ class ArgparseSlice(argparse.Action):
 
 
 class ArgparseDict(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
+    def __call__(self, parser, namespace, values, option_string=None):  # ruff: ignore[unused-method-argument]
         try:
             d = {}
             k_eq_v = list(values.split(" "))
@@ -92,7 +92,7 @@ class ArgparseDict(argparse.Action):
 
 
 class ArgparseArgsOrStdin(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
+    def __call__(self, parser, namespace, values, option_string=None):  # ruff: ignore[unused-method-argument]
         if values == STDIN_DASH:
             lines = read_stdin(parser.prog)
         else:
@@ -101,7 +101,7 @@ class ArgparseArgsOrStdin(argparse.Action):
 
 
 class ArgparseArgsOrStdinGen(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
+    def __call__(self, parser, namespace, values, option_string=None):  # ruff: ignore[unused-method-argument]
         if values == STDIN_DASH:
             print(f"{parser.prog}: Reading from stdin...", file=sys.stderr)
             lines = sys.stdin
@@ -171,7 +171,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
         else:
             result = default_metavar
 
-        def format(tuple_size):  # noqa: A001
+        def format(tuple_size):  # ruff: ignore[builtin-variable-shadowing]
             if isinstance(result, tuple):
                 return result
             else:
@@ -197,7 +197,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
                     default = opts[0]
                 else:
                     default = opts[1]
-            elif isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):  # noqa: SLF001
+            elif isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):  # ruff: ignore[private-member-access]
                 pass
             elif action.default == "":
                 pass
@@ -243,7 +243,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
         extra = []
         if default:
             extra.append(f"default: {default}")
-        if not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)) and const:  # noqa: SLF001
+        if not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)) and const:  # ruff: ignore[private-member-access]
             extra.append(f"const: {const}")
         extra = "; ".join(extra)
 
@@ -281,7 +281,7 @@ def arggroup_parser(functions):
     temp_parser = ArgumentParser(add_help=False)
     for func in functions:
         func(temp_parser)
-    return {a.dest: a for a in temp_parser._actions}  # noqa: SLF001
+    return {a.dest: a for a in temp_parser._actions}  # ruff: ignore[private-member-access]
 
 
 def forward_arggroups(args, *arggroups, **overrides):

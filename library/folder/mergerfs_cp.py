@@ -104,7 +104,7 @@ def get_destination_mount(destination):
     return lcp
 
 
-def mergerfs_cp_file(args, merger_fs_src, destination, follow_source=False):  # noqa: ARG001
+def mergerfs_cp_file(args, merger_fs_src, destination, follow_source=False):  # ruff: ignore[unused-function-argument]
     found_file = False
     for srcmount in args.srcmounts:
         relative_to_mount = os.path.relpath(merger_fs_src, args.mergerfs_mount)

@@ -15,7 +15,7 @@ def get_file_extension(filepath) -> str:
     return os.path.splitext(os.fspath(filepath))[1].lstrip(".").lower()
 
 
-def categorize_file(filename) -> str:  # noqa: PLR0911
+def categorize_file(filename) -> str:  # ruff: ignore[too-many-return-statements]
     ext = get_file_extension(filename)
 
     if ext in consts.PLAIN_EXTENSIONS | consts.CALIBRE_EXTENSIONS:

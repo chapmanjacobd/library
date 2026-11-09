@@ -25,7 +25,7 @@ def test_block_new_url_with_tube_metadata():
     )
 
     with (
-        mock.patch("library.utils.consts.PYTEST_RUNNING", False),  # noqa: FBT003
+        mock.patch("library.utils.consts.PYTEST_RUNNING", False),  # ruff: ignore[boolean-positional-value-in-call]
         mock.patch("library.download.block.shell_utils.gen_paths", return_value=["https://example.com/new.mp4"]),
         mock.patch(
             "library.download.block.tube_backend.get_video_metadata",

@@ -22,7 +22,7 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _render(node: Tag | NavigableString) -> str:  # noqa: PLR0911
+def _render(node: Tag | NavigableString) -> str:  # ruff: ignore[too-many-return-statements]
     if isinstance(node, NavigableString):
         return str(node)
 

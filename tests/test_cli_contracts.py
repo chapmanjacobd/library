@@ -475,7 +475,7 @@ def test_usage_catalog_lists_executable_help_path_only():
     assert len(catalog) >= 14
     assert len(commands) >= 99
     assert len(commands) == len(set(commands))
-    assert set(commands) == set(__main__._canonical_nested_paths_for_all_groups())  # noqa: SLF001
+    assert set(commands) == set(__main__._canonical_nested_paths_for_all_groups())  # ruff: ignore[private-member-access]
 
 
 def test_usage_catalog_normalizes_nested_aliases():
@@ -508,7 +508,7 @@ def test_generated_readme_matches_committed_documentation():
 def test_generated_readme_documents_every_nested_command():
     readme = Path(".github/README.md").read_text()
 
-    for path in __main__._canonical_nested_paths_for_all_groups():  # noqa: SLF001
+    for path in __main__._canonical_nested_paths_for_all_groups():  # ruff: ignore[private-member-access]
         assert f"###### {path}\n" in readme
         nested = __main__.nested_target(path.split())
         assert nested is not None

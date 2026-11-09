@@ -61,7 +61,7 @@ def schema_report(
                         "type": schema_row["type"],
                         "columns": None,
                         "details": schema_row["sql"],
-                        "rows": connection.execute(f"SELECT COUNT(*) FROM {quoted_name}").fetchone()[0],  # noqa: S608 - table is validated
+                        "rows": connection.execute(f"SELECT COUNT(*) FROM {quoted_name}").fetchone()[0],  # ruff: ignore[hardcoded-sql-expression] - table is validated
                         "pages": details["pages"],
                         "bytes": details["bytes"],
                         "stats_source": source,
@@ -69,7 +69,7 @@ def schema_report(
                 )
             if kind in (None, "column"):
                 for column in table_info(connection, name):
-                    report.append(  # noqa: PERF401 - rows have a stable schema shared by all report kinds
+                    report.append(  # ruff: ignore[manual-list-comprehension] - rows have a stable schema shared by all report kinds
                         {
                             "kind": "column",
                             "schema": "main",

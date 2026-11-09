@@ -2025,7 +2025,7 @@ pause = """library playback pause
 next = """library playback next
 
     Go to the next track in the playqueue, optionally delete the currently playing media
-"""  # noqa: A001
+"""  # ruff: ignore[builtin-variable-shadowing]
 
 seek = """library playback seek
 

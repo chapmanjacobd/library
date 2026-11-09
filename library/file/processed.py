@@ -31,7 +31,7 @@ def _metadata_result(media: dict) -> bool | None:
     return None
 
 
-def is_processed(media: dict | str | os.PathLike) -> bool:  # noqa: PLR0911
+def is_processed(media: dict | str | os.PathLike) -> bool:  # ruff: ignore[too-many-return-statements]
     """Return whether a media path has one of the library's processed codecs."""
     if isinstance(media, dict):
         path = str(media.get("path", ""))

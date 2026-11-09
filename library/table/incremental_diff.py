@@ -161,7 +161,7 @@ def _input_type_error(path, detail):
     return TypeError(f"{path}: {detail}")
 
 
-def _iter_json_array(path, encoding):  # noqa: PLR0912,PLR0915
+def _iter_json_array(path, encoding):  # ruff: ignore[too-many-branches, too-many-statements]
     decoder = json.JSONDecoder()
 
     with open(path, encoding=encoding or "utf-8") as stream:
@@ -242,7 +242,7 @@ def _iter_json_array(path, encoding):  # noqa: PLR0912,PLR0915
             expect_value = False
 
 
-def _iter_stream_chunks(path, kind, batch_size, encoding, start_row):  # noqa: PLR0912
+def _iter_stream_chunks(path, kind, batch_size, encoding, start_row):  # ruff: ignore[too-many-branches]
     import pandas as pd
 
     if kind == "csv":
@@ -432,8 +432,8 @@ def _id_diff_frames(connection, args):
     left_records = []
     right_records = []
     for _token, left_blob, right_blob in cursor:
-        left = pickle.loads(left_blob) if left_blob is not None else None  # noqa: S301
-        right = pickle.loads(right_blob) if right_blob is not None else None  # noqa: S301
+        left = pickle.loads(left_blob) if left_blob is not None else None  # ruff: ignore[suspicious-pickle-usage]
+        right = pickle.loads(right_blob) if right_blob is not None else None  # ruff: ignore[suspicious-pickle-usage]
         if left is not None and right is not None and _rows_equal(left, right, args.join_keys):
             continue
         left_records.append(left)

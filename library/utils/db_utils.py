@@ -19,7 +19,7 @@ def connect(args, conn=None, **kwargs):
     LOG_SQL = args.verbose >= consts.LOG_DEBUG_SQL
     tracer = trace if LOG_SQL else None
 
-    sqlite3.enable_callback_tracebacks(True)  # noqa: FBT003
+    sqlite3.enable_callback_tracebacks(True)  # ruff: ignore[boolean-positional-value-in-call]
 
     class DB(Database):
         def pop(self, sql: str, params: Iterable | dict | None = None, ignore_errors=None) -> Any | None:

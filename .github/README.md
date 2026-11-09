@@ -131,7 +131,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.4; 143 subcommands)
+    library (v4.0.5; 143 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
@@ -787,6 +787,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Create a dl database / add links to an existing database
 
         library database add video dl.db https://www.youdl.com/c/BranchEducation/videos
+
+    When YouTube Music redirects to YouTube, also add linked channels and playlists
+    found on the redirected page.
 
     Add links from a line-delimited file
 
