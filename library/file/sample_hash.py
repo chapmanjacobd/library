@@ -86,6 +86,9 @@ def sample_hash() -> None:
             path = future_to_path[future]
             try:
                 file_hash_hex = future.result()
-                print(file_hash_hex, shlex.quote(path), sep="\t")
+                if file_hash_hex is None:
+                    print(f"Error hashing {path}: No such file or directory")
+                else:
+                    print(file_hash_hex, shlex.quote(path), sep="\t")
             except Exception as excinfo:
                 print(f"Error hashing {path}: {excinfo}")
