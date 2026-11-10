@@ -1775,7 +1775,7 @@ def get_title(args, url):
 
     try:
         if getattr(args, "local_html", False):
-            html_text = Path(url).read_text()
+            html_text = Path(url).read_text(encoding="utf-8")
             url = "file://" + url
         elif args.selenium:
             selenium_get_page(args, url)

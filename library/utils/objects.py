@@ -160,13 +160,13 @@ def filter_namespace(args, config_opts) -> dict | None:
 @contextmanager
 def json_shelve(filename, default):
     try:
-        with open(filename) as f:
+        with open(filename, encoding="utf-8") as f:
             stored_mappings = json.load(f)
             default.update(stored_mappings)
 
         yield default
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             json.dump(default, f)
 
     except OSError:

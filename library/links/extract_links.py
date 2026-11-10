@@ -223,7 +223,7 @@ def _load_remote_markup(url):
 def _load_markup(args, url):
     if args.local_html:
         local_path = url.removeprefix("file://")
-        return pathlib.Path(unquote(local_path)).read_text(), "file://" + local_path, False
+        return pathlib.Path(unquote(local_path)).read_text(encoding="utf-8"), "file://" + local_path, False
     markup, is_error = _load_remote_markup(url)
     return markup, url, is_error
 

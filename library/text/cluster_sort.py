@@ -389,13 +389,13 @@ def _write_grouped_paths(args, groups, *, image):
 
         for i, group in enumerate(groups, start=1):
             output_path = output_parent / (output_name + "_" + str(i).zfill(min_len))
-            with open(output_path, "w") as output_fd:
+            with open(output_path, "w", encoding="utf-8") as output_fd:
                 output_fd.writelines(group["grouped_paths"])
         return
 
     lines = (p + "\n" for d in groups for p in d["grouped_paths"])
     if args.output_path:
-        with open(args.output_path, "w") as output_fd:
+        with open(args.output_path, "w", encoding="utf-8") as output_fd:
             output_fd.writelines(lines)
     else:
         printing.pipe_lines(lines)

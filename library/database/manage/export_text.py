@@ -32,7 +32,7 @@ def media_to_files(args):
 
         lines.append("</body></html>")
 
-        with open(f"{title}.html", "w") as f:
+        with open(f"{title}.html", "w", encoding="utf-8") as f:
             f.writelines(lines)
 
 

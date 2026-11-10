@@ -97,7 +97,7 @@ def _calculate_end(args, end, duration):
 
 
 def listen_chromecast(args, m: dict) -> subprocess.CompletedProcess | None:
-    Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
+    Path(consts.CAST_NOW_PLAYING).write_text(m["path"], encoding="utf-8")
     catt = which("catt") or "catt"
     start, _end = calculate_duration(args, m)
 

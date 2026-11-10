@@ -1,6 +1,25 @@
 from library.utils import consts, file_utils
 
 
+def test_pickle_requires_explicit_format_or_pkl_extension(tmp_path, monkeypatch):
+    import pandas as pd
+    import pytest
+
+    dataframe = pd.DataFrame({"value": [1]})
+    pkl_path = tmp_path / "data.pkl"
+    dataframe.to_pickle(pkl_path)
+    other_path = tmp_path / "data.bin"
+    dataframe.to_pickle(other_path)
+    monkeypatch.setattr(file_utils, "detect_mimetype", lambda _: "Pickle")
+
+    assert file_utils.read_file_to_dataframes(str(pkl_path))[0].df.equals(dataframe)
+
+    with pytest.raises(ValueError, match="File type could not be determined"):
+        file_utils.read_file_to_dataframes(str(other_path))
+
+    assert file_utils.read_file_to_dataframes(str(other_path), mimetype="pickle")[0].df.equals(dataframe)
+
+
 def test_filter_deleted(tmp_path):
     # Create some files
     f1 = tmp_path / "f1.txt"

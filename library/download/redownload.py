@@ -150,7 +150,7 @@ def redownload() -> None:
                 pd.DataFrame(non_tube_media).to_csv(out_path, index=False)
             except ModuleNotFoundError:
                 out_path = tempfile.mktemp(".json")
-                with open(out_path, "w") as jf:
+                with open(out_path, "w", encoding="utf-8") as jf:
                     json.dump(non_tube_media, jf)
             print(
                 len(non_tube_media),

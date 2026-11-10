@@ -502,11 +502,11 @@ def test_generated_readme_matches_committed_documentation():
         text=True,
     ).stdout
 
-    assert generated == Path(".github/README.md").read_text()
+    assert generated == Path(".github/README.md").read_text(encoding="utf-8")
 
 
 def test_generated_readme_documents_every_nested_command():
-    readme = Path(".github/README.md").read_text()
+    readme = Path(".github/README.md").read_text(encoding="utf-8")
 
     for path in __main__._canonical_nested_paths_for_all_groups():  # ruff: ignore[private-member-access]
         assert f"###### {path}\n" in readme

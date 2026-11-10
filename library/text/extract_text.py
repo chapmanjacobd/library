@@ -106,7 +106,7 @@ def _select_text(args, select_fn, url):
         return
 
     if args.local_html:
-        markup = Path(url).read_text()
+        markup = Path(url).read_text(encoding="utf-8")
     else:
         try:
             response = web.session.get(url, timeout=120)
@@ -153,7 +153,7 @@ def extract_text() -> None:
             if args.download:
                 save_path = web.url_to_local_path(url)
                 Path(save_path).parent.mkdir(exist_ok=True, parents=True)
-                with open(save_path, "w") as f:
+                with open(save_path, "w", encoding="utf-8") as f:
                     f.writelines(s + "\n" for s in output_lines)
     finally:
         if args.selenium:

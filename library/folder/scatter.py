@@ -434,7 +434,7 @@ def scatter() -> None:
             continue
 
         temp_file = Path(tempfile.mktemp())
-        with temp_file.open("w") as f:
+        with temp_file.open("w", encoding="utf-8") as f:
             f.writelines("\n".join(dest_disk_files))
 
         print(

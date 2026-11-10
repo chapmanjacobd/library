@@ -279,7 +279,7 @@ def get_playlist_metadata(args, playlist_path):
     if added_media_count == 0:
         from rich import inspect
 
-        with open(os.devnull, "w") as output:
+        with open(os.devnull, "w", encoding="utf-8") as output:
             job = gallery_dl.job.DataJob(playlist_path, file=output, ensure_ascii=False)
             job.run()
         inspect(job.data)

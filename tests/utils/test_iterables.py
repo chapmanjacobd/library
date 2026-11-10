@@ -1,3 +1,5 @@
+import pytest
+
 from library.utils import iterables
 from tests.utils import take5
 
@@ -105,11 +107,11 @@ def test_divisors_upto_sqrt():
 
 
 def test_similarity():
-    assert iterables.similarity([1, 2, 3], [1, 2, 3]) == 1.0
-    assert iterables.similarity([1, 2, 3], [4, 5, 6]) == 0.0
-    assert iterables.similarity([1, 2], [2, 3]) == 1 / 3
-    assert iterables.similarity([], []) == 0.0
-    assert iterables.similarity(None, None) == 0.0
+    assert iterables.similarity([1, 2, 3], [1, 2, 3]) == pytest.approx(1)
+    assert iterables.similarity([1, 2, 3], [4, 5, 6]) == pytest.approx(0)
+    assert iterables.similarity([1, 2], [2, 3]) == pytest.approx(1 / 3)
+    assert iterables.similarity([], []) == pytest.approx(0)
+    assert iterables.similarity(None, None) == pytest.approx(0)
 
 
 def test_concat():
@@ -126,7 +128,7 @@ def test_value_counts():
 
 
 def test_divide_sequence():
-    assert iterables.divide_sequence([100, 2, 5]) == 10.0
+    assert iterables.divide_sequence([100, 2, 5]) == pytest.approx(10)
     assert iterables.divide_sequence([10, 0]) == float("-inf")
     assert iterables.divide_sequence([0, 10]) == float("inf")
 

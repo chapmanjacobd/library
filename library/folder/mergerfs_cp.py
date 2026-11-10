@@ -75,7 +75,7 @@ def parse_args():
 
 def get_mergerfs_mounts():
     mounts = []
-    with open("/proc/self/mountinfo", "r") as f:
+    with open("/proc/self/mountinfo", "r", encoding="utf-8") as f:
         for line in f:
             values = line.split()
             mountroot, mountpoint = values[3:5]

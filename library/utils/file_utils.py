@@ -5,6 +5,7 @@ from functools import wraps
 from io import StringIO
 from pathlib import Path
 from typing import Any, NamedTuple
+from urllib.parse import urlsplit
 
 import urllib3
 
@@ -373,7 +374,8 @@ def _read_pandas_table(path, mimetype, start_row, end_row, encoding, skip_header
         "parq": lambda: pd.read_parquet(path),
         "parquet": lambda: pd.read_parquet(path),
         "application/parquet": lambda: pd.read_parquet(path),
-        "pkl": lambda: pd.read_pickle(path),  # Pickle is explicitly selected by the caller.
+        # Pickle can execute arbitrary code; only load files from trusted sources.
+        "pkl": lambda: pd.read_pickle(path),
         "pickle": lambda: pd.read_pickle(path),
         "stata": lambda: pd.read_stata(path),
         "feather": lambda: pd.read_feather(path),
@@ -458,11 +460,18 @@ def read_file_to_dataframes(
 ) -> list[NDF]:
     import pandas as pd
 
+    mimetype_explicit = mimetype is not None
     if mimetype is None:
         with suppress(TimeoutError):
             mimetype = detect_mimetype(path)
     if mimetype is not None:
         mimetype = mimetype.strip().lower()
+    if (
+        mimetype in ("pkl", "pickle")
+        and not mimetype_explicit
+        and Path(urlsplit(str(path)).path).suffix.lower() != ".pkl"
+    ):
+        mimetype = None
     log.info(mimetype)
 
     if mimetype is None:

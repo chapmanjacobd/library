@@ -184,7 +184,7 @@ def _save_selected_paths(args, selected_paths):
     if not selected_paths:
         return
     temp_file = Path(tempfile.mktemp())
-    with temp_file.open("w") as f:
+    with temp_file.open("w", encoding="utf-8") as f:
         f.writelines(l + "\n" for l in selected_paths)
 
     print(

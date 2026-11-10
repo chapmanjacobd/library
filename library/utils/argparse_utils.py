@@ -24,7 +24,7 @@ def open_text_input(parser: argparse.ArgumentParser, path: str):
     if path == "-":
         return sys.stdin
     try:
-        return open(path)
+        return open(path, encoding="utf-8")
     except OSError as error:
         parser.error(f"can't open '{path}': {error}")
 

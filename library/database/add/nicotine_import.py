@@ -45,7 +45,7 @@ def nicotine_import() -> None:
         file_stats = Path(path).stat()
         time_created = int(file_stats.st_mtime) or int(file_stats.st_ctime)
 
-        with open(path) as fp:
+        with open(path, encoding="utf-8") as fp:
             data = json.load(fp)
 
         data = from_nicotine_file_list_to_records(data)

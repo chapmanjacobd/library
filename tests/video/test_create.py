@@ -113,7 +113,7 @@ def test_images_to_video_repeats_images_until_audio_ends(monkeypatch, tmp_path):
 
     def run(command, _args):
         commands.append(command)
-        list_contents.append(Path(command[command.index("-i") + 1]).read_text())
+        list_contents.append(Path(command[command.index("-i") + 1]).read_text(encoding="utf-8"))
         Path(command[-1]).write_bytes(b"output")
 
     monkeypatch.setattr(create, "_run", run)
@@ -161,7 +161,7 @@ def test_images_to_video_holds_last_image_until_audio_ends(monkeypatch, tmp_path
 
     def run(command, _args):
         commands.append(command)
-        list_contents.append(Path(command[command.index("-i") + 1]).read_text())
+        list_contents.append(Path(command[command.index("-i") + 1]).read_text(encoding="utf-8"))
         Path(command[-1]).write_bytes(b"output")
 
     monkeypatch.setattr(create, "_run", run)
@@ -251,7 +251,7 @@ def test_images_to_video_shuffles_with_seed_and_applies_stretch(monkeypatch, tmp
 
     def run(command, _args):
         commands.append(command)
-        list_contents.append(Path(command[command.index("-i") + 1]).read_text())
+        list_contents.append(Path(command[command.index("-i") + 1]).read_text(encoding="utf-8"))
         Path(command[-1]).write_bytes(b"output")
 
     monkeypatch.setattr(create, "_run", run)

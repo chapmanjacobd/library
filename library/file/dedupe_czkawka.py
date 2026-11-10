@@ -63,7 +63,7 @@ def backup_and_read_file(file_path):
         except Exception as excinfo:
             print(f"Failed to create backup file: {excinfo}")
 
-    content = Path(file_path).read_text()
+    content = Path(file_path).read_text(encoding="utf-8")
     return content
 
 
@@ -115,13 +115,13 @@ def extract_group_data(group_content):
 
 
 def truncate_file_before_match(filename, match_string):
-    with open(filename) as file:
+    with open(filename, encoding="utf-8") as file:
         lines = file.readlines()
     matching_lines = [i for i, line in enumerate(lines) if match_string in line]
 
     if len(matching_lines) == 1:
         line_index = matching_lines[0]
-        Path(filename).write_text("".join(lines[line_index - 1 :]))
+        Path(filename).write_text("".join(lines[line_index - 1 :]), encoding="utf-8")
         print(f"Progress saved. File truncated before the line containing: '{match_string}'")
         remaining = sum(1 for s in lines[line_index - 1 :] if s == "\n") - 1
         num_videos = sum(1 for s in lines[line_index - 1 :] if s != "\n") - 12

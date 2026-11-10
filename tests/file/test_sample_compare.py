@@ -19,8 +19,8 @@ def test_sample_cmp_missing_file(caplog, tmp_path):
     f1 = tmp_path / "one"
     f2 = tmp_path / "two"
     missing = tmp_path / "missing"
-    pathlib.Path(f1).write_text("hello world")
-    pathlib.Path(f2).write_text("hello world")
+    pathlib.Path(f1).write_text("hello world", encoding="utf-8")
+    pathlib.Path(f2).write_text("hello world", encoding="utf-8")
 
     assert sample_compare.sample_cmp(f1, f2, missing) is True
     assert f"File not found {missing}" in caplog.text

@@ -362,9 +362,9 @@ def resolve_absolute_paths(paths):
 
 
 def filter_file(path, sieve) -> None:
-    with open(path) as fr:
+    with open(path, encoding="utf-8") as fr:
         lines = fr.readlines()
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp:
+        with tempfile.NamedTemporaryFile(encoding="utf-8", mode="w", delete=False) as temp:
             temp.writelines(line for line in lines if line.rstrip() not in sieve)
             temp.flush()
             os.fsync(temp.fileno())
@@ -437,10 +437,10 @@ if [ $? -ne 0 ]; then
 fi
 """
     move_sh_path = Path(tempfile.mktemp(dir=consts.TEMP_SCRIPT_DIR, prefix="move_", suffix=".sh"))
-    move_sh_path.write_text(move_sh)
+    move_sh_path.write_text(move_sh, encoding="utf-8")
     move_sh_path.chmod(move_sh_path.stat().st_mode | 0o100)
 
-    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".tsv") as temp:
+    with tempfile.NamedTemporaryFile(encoding="utf-8", mode="w", delete=False, suffix=".tsv") as temp:
         temp.writelines(
             f"{shlex.quote(existing_path)}\t{shlex.quote(new_path)}\n" for existing_path, new_path in file_list
         )

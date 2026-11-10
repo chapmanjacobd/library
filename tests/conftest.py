@@ -84,7 +84,7 @@ def create_file_tree(parent_dir, tree):
             os.makedirs(path)
             create_file_tree(path, contents)
         else:
-            path.write_text(contents)
+            path.write_text(contents, encoding="utf-8")
 
 
 @pytest.fixture
@@ -160,7 +160,7 @@ def read_relative_file_tree_dict(temp_dir, inodes=True):
 
     base_path = Path(temp_dir)
     if base_path.is_file():
-        return {base_path.name: (base_path.stat().st_ino, base_path.read_text()) if inodes else base_path.read_text()}
+        return {base_path.name: (base_path.stat().st_ino, base_path.read_text(encoding="utf-8")) if inodes else base_path.read_text(encoding="utf-8")}
 
     return _generate_tree_dict(base_path)
 
@@ -175,7 +175,7 @@ def test_file_tree_creation(temp_file_tree):
     temp_dir = temp_file_tree(file_tree)
 
     assert Path(temp_dir).exists()
-    assert Path(temp_dir, "file4.txt").read_text() == "Content of file 4"
+    assert Path(temp_dir, "file4.txt").read_text(encoding="utf-8") == "Content of file 4"
     assert Path(temp_dir, "folder1", "subfolder1").is_dir()
     assert file_tree == read_relative_file_tree_dict(temp_dir)
 

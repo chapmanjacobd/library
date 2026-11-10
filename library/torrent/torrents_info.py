@@ -856,7 +856,7 @@ def _delete_incomplete_torrents(args, torrents):
             for base_path in base_paths:
                 file_path = Path(base_path) / file.name
                 if file_path.exists() and not file_path.is_dir():
-                    if file.progress == 0.0:
+                    if file.progress <= 0.0:
                         stat = file_path.stat()
                         if stat.st_blocks and stat.st_blocks > MIN_ALLOCATED_BLOCKS:
                             log.error(
@@ -868,7 +868,7 @@ def _delete_incomplete_torrents(args, torrents):
                     if file.progress < args.delete_incomplete:
                         log.warning("Deleting incomplete file: %s", file_path)
                         shell_utils.trash(args, str(file_path), detach=False)
-                    elif file.progress == 1.0:
+                    elif file.progress >= 1.0:
                         log.info("Keeping complete file: %s", file_path)
                     else:
                         log.warning("Keeping %s incomplete file: %s", strings.percent(1 - file.progress), file_path)

@@ -104,7 +104,7 @@ def parse_args():
     if args.words_nums_map:
         mappings_path = Path(args.words_nums_map)
         if not mappings_path.exists() or mappings_path.stat().st_size == 0:
-            mappings_path.write_text("{}")
+            mappings_path.write_text("{}", encoding="utf-8")
 
     arggroups.table_like_post(args)
 

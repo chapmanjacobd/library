@@ -38,10 +38,10 @@ def test_get_playhead():
 
     # use MPV time
     start_time = time.time() - 2
-    Path(metadata_path).write_text("start=5.000000")
+    Path(metadata_path).write_text("start=5.000000", encoding="utf-8")
     assert mpv_utils.get_playhead(args, path, start_time) == 5
     # check invalid MPV time
-    Path(metadata_path).write_text("start=13.000000")
+    Path(metadata_path).write_text("start=13.000000", encoding="utf-8")
     assert mpv_utils.get_playhead(args, path, start_time, media_duration=12) == 2
 
     # use python time only if MPV does not exist

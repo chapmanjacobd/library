@@ -86,16 +86,16 @@ class TimecodeTestCase(unittest.TestCase):
 
 
 def test_from_timestamp_seconds():
-    assert strings.from_timestamp_seconds(":30") == 30.0
-    assert strings.from_timestamp_seconds("0:30") == 30.0
-    assert strings.from_timestamp_seconds("00:30") == 30.0
-    assert strings.from_timestamp_seconds("1:") == 60.0
-    assert strings.from_timestamp_seconds("1::") == 3600.0
-    assert strings.from_timestamp_seconds("::1") == 1.0
-    assert strings.from_timestamp_seconds(":1") == 1.0
-    assert strings.from_timestamp_seconds("00:01:35") == 95.0
+    assert strings.from_timestamp_seconds(":30") == pytest.approx(30)
+    assert strings.from_timestamp_seconds("0:30") == pytest.approx(30)
+    assert strings.from_timestamp_seconds("00:30") == pytest.approx(30)
+    assert strings.from_timestamp_seconds("1:") == pytest.approx(60)
+    assert strings.from_timestamp_seconds("1::") == pytest.approx(3600)
+    assert strings.from_timestamp_seconds("::1") == pytest.approx(1)
+    assert strings.from_timestamp_seconds(":1") == pytest.approx(1)
+    assert strings.from_timestamp_seconds("00:01:35") == pytest.approx(95)
     assert strings.from_timestamp_seconds("00:00:00.001") == pytest.approx(0.001)
-    assert strings.from_timestamp_seconds("01:00:00") == 3600.0
+    assert strings.from_timestamp_seconds("01:00:00") == pytest.approx(3600)
     assert strings.from_timestamp_seconds("01:00:00.1") == pytest.approx(3600.1)
 
 

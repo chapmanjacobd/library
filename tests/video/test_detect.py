@@ -42,8 +42,8 @@ def test_detection_durations_parse_milliseconds(monkeypatch):
 
     args = detect.parse_args()
 
-    assert args.black_detect_duration == 1.2
-    assert args.blank_detect_duration == 0.25
+    assert args.black_detect_duration == pytest.approx(1.2)
+    assert args.blank_detect_duration == pytest.approx(0.25)
 
 
 def test_detection_mode_is_required(monkeypatch):

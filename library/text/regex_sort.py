@@ -336,7 +336,7 @@ def regex_sort() -> None:
         lines = (p + "\n" for p in lines)
 
     if args.output_path:
-        with open(args.output_path, "w") as output_fd:
+        with open(args.output_path, "w", encoding="utf-8") as output_fd:
             output_fd.writelines(lines)
     else:
         printing.pipe_lines(lines)

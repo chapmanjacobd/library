@@ -31,7 +31,7 @@ def round_floats(o, significance=2):
 
 def _get_uptime_info(psutil):
     if IS_LINUX:
-        with open("/proc/uptime", "r") as f:
+        with open("/proc/uptime", "r", encoding="utf-8") as f:
             uptime_data = f.read().split()
             up_time = float(uptime_data[0])
             return {
@@ -55,7 +55,7 @@ def _linux_system_name():
         "/sys/class/dmi/id/board_name",
     ):
         with suppress(FileNotFoundError):
-            value = Path(path).read_text().strip()
+            value = Path(path).read_text(encoding="utf-8").strip()
             if value and value != "To Be Filled By O.E.M.":
                 info_strings.extend(value.split())
     return info_strings
@@ -105,7 +105,7 @@ def _get_system_name():
 def _get_bios_date():
     if IS_LINUX:
         bios_date_path = Path("/sys/class/dmi/id/bios_date")
-        return bios_date_path.read_text().strip() if bios_date_path.exists() else None
+        return bios_date_path.read_text(encoding="utf-8").strip() if bios_date_path.exists() else None
     if IS_WINDOWS:
         import winreg
 
@@ -130,7 +130,7 @@ def _get_processor():
         os.environ["PATH"] = os.environ["PATH"] + os.pathsep + "/usr/sbin"
         return subprocess.check_output("sysctl -n machdep.cpu.brand_string").strip()
     if IS_LINUX:
-        with open("/proc/cpuinfo", "r") as f:
+        with open("/proc/cpuinfo", "r", encoding="utf-8") as f:
             for line in f:
                 if "model name" in line:
                     return line.split(":")[1].strip()
@@ -145,7 +145,7 @@ def _get_scaling_governors():
                 if re.match(r"cpu\d+", dir_name):
                     governor_path = os.path.join(root, dir_name, "cpufreq", "scaling_governor")
                     if os.path.exists(governor_path):
-                        with open(governor_path, "r") as f:
+                        with open(governor_path, "r", encoding="utf-8") as f:
                             governors.append(f.read().strip())
         return ", ".join(t[0] for t in Counter(governors).most_common())
     if IS_WINDOWS:
@@ -163,7 +163,7 @@ def _get_scaling_governors():
 
 def _get_loadavg():
     if IS_LINUX:
-        with open("/proc/loadavg", "r") as f:
+        with open("/proc/loadavg", "r", encoding="utf-8") as f:
             loadavg_data = f.read().split()
             return {
                 "loadavg_1min": float(loadavg_data[0]),

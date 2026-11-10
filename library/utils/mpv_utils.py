@@ -10,7 +10,7 @@ def path_to_mpv_watchlater_md5(path: str) -> str:
 
 
 def mpv_watchlater_value(path, key) -> str | None:
-    data = Path(path).read_text().splitlines()
+    data = Path(path).read_text(encoding="utf-8").splitlines()
     for s in data:
         if s.startswith(key + "="):
             return s.split("=")[1]
