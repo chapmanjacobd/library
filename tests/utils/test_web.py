@@ -706,7 +706,11 @@ def test_parse_cookies_from_browser():
         web.parse_cookies_from_browser("chrome+invalid_keyring")
 
 
-def test_browser_headers_from_chromium_profile(monkeypatch, tmp_path):
+@pytest.mark.parametrize(
+    ("platform", "expected_platform"),
+    [("linux", "Linux"), ("darwin", "macOS"), ("win32", "Windows")],
+)
+def test_browser_headers_from_chromium_profile(monkeypatch, tmp_path, platform, expected_platform):
     profile = tmp_path / "Default"
     profile.mkdir()
     (profile / "Preferences").write_text(
@@ -717,13 +721,14 @@ def test_browser_headers_from_chromium_profile(monkeypatch, tmp_path):
     monkeypatch.setattr(web, "get_browser_profile_path", lambda _browser, _profile: tmp_path)
     monkeypatch.setattr(web, "_chromium_last_used_profile", lambda _root: "Default")
     monkeypatch.setattr(web, "_browser_version", lambda _browser: "156.0.8078.47")
+    monkeypatch.setattr(web, "sys", SimpleNamespace(platform=platform))
 
     headers = web.browser_headers(SimpleNamespace(cookies_from_browser="chromium"))
 
     assert headers["User-Agent"].endswith("Chrome/156.0.8078.47 Safari/537.36")
     assert headers["Accept-Language"] == "fr-FR,fr"
     assert headers["DNT"] == "1"
-    assert headers["Sec-CH-UA-Platform"] == '"Linux"'
+    assert headers["Sec-CH-UA-Platform"] == f'"{expected_platform}"'
 
 
 def test_browser_headers_use_firefox_override(monkeypatch, tmp_path):
