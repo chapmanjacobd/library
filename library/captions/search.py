@@ -61,6 +61,8 @@ def printer(args, captions) -> None:
 
 
 def merge_captions(args, captions):
+    captions = [caption for caption in captions if caption.get("text") is not None]
+
     def get_end(caption):
         return caption["time"] + (len(caption["text"]) / 4.2 / 220 * 60)
 
