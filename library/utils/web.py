@@ -1010,7 +1010,7 @@ def ensure_download_parent(path: Path) -> None:
 
 def _resume_download(url, path, response, remote_size, current_session):
     if not path.exists():
-        log.info("Writing %s \n\tto %s", url, path)
+        log.info("Downloading %s", url)
         return response, path, False
     if not remote_size:
         path.unlink()
