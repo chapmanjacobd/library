@@ -2204,10 +2204,10 @@ def filter_links(parent_parser):
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument(
-        "--no-url-encode",
-        "--skip-url-encode",
+        "--url-encode-filters",
+        "--encode-filters",
         action="store_true",
-        help="Skip URL-encode for --path-include/--path-exclude",
+        help="URL-encode --path-include/--path-exclude patterns (disabled by default)",
     )
     parser.add_argument(
         "--url-renames",
@@ -2240,7 +2240,7 @@ def filter_links_post(args):
         args.text_exclude = [s.lower() for s in args.text_exclude]
         args.after_exclude = [s.lower() for s in args.after_exclude]
 
-    if not args.no_url_encode:
+    if args.url_encode_filters:
         from library.utils.web import url_encode
 
         def encode_pattern(pattern):

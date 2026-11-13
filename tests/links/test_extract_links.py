@@ -5,8 +5,59 @@ import pytest
 
 from library.__main__ import library as lb
 from library.links import extract_links
-from library.utils import web
+from library.utils import arggroups, web
 from library.utils.consts import DBType
+
+
+def _filter_args(**overrides):
+    args = SimpleNamespace(
+        href=False,
+        url=False,
+        src=False,
+        data_src=False,
+        srcset=False,
+        data_srcset=False,
+        case_sensitive=False,
+        path_include=[],
+        path_exclude=[],
+        text_include=[],
+        text_exclude=[],
+        before_include=[],
+        before_exclude=[],
+        after_include=[],
+        after_exclude=[],
+        url_encode_filters=False,
+    )
+    for key, value in overrides.items():
+        setattr(args, key, value)
+    return args
+
+
+def test_filter_links_does_not_url_encode_by_default():
+    args = _filter_args(path_include=["action=download"], path_exclude=["&id="])
+
+    arggroups.filter_links_post(args)
+
+    assert args.path_include == ["action=download"]
+    assert args.path_exclude == ["&id="]
+
+
+def test_filter_links_url_encode_filters():
+    args = _filter_args(path_include=["action=download"], path_exclude=["&id="], url_encode_filters=True)
+
+    arggroups.filter_links_post(args)
+
+    assert args.path_include == ["action%3Ddownload"]
+    assert args.path_exclude == ["%26id%3D"]
+
+
+def test_extract_links_path_include_with_query_string(tmp_path, capsys):
+    html = tmp_path / "index.html"
+    html.write_text('<a href="https://www.example.com/test.php?action=download&id=20">download</a>')
+
+    lb(["extract-links", "--local-html", str(html), "--path-include", "action=download"])
+
+    assert capsys.readouterr().out.split() == ["https://www.example.com/test.php?action=download&id=20"]
 
 
 def test_links_local_html_none(capsys):
