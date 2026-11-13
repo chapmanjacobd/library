@@ -320,7 +320,7 @@ def _patch_backend_routing(monkeypatch):
 
 def test_links_download_routes_by_profile(monkeypatch):
     routed = _patch_backend_routing(monkeypatch)
-    args = SimpleNamespace(profile=DBType.auto, direct=False, safe=False, prefix=".")
+    args = SimpleNamespace(profile=DBType.auto, direct=False, safe=False, prefix=".", verbose=0)
     cache = {}
 
     for url in ["https://x/clip", "https://x/pic", "https://x/raw.html"]:
@@ -333,7 +333,7 @@ def test_links_download_routes_by_profile(monkeypatch):
 
 def test_links_download_explicit_profile_skips_resolution(monkeypatch):
     routed = _patch_backend_routing(monkeypatch)
-    args = SimpleNamespace(profile=DBType.filesystem, direct=False, safe=False, prefix=".")
+    args = SimpleNamespace(profile=DBType.filesystem, direct=False, safe=False, prefix=".", verbose=0)
     cache = {}
 
     extract_links._download_one(args, "https://x/clip", cache)  # ruff: ignore[private-member-access]
@@ -346,7 +346,7 @@ def test_links_download_direct_uses_builtin(monkeypatch):
     """`links-download --direct` must bypass yt-dlp/gallery-dl routing even for a
     supported URL."""
     routed = _patch_backend_routing(monkeypatch)
-    args = SimpleNamespace(profile=DBType.auto, direct=True, safe=False, prefix=".")
+    args = SimpleNamespace(profile=DBType.auto, direct=True, safe=False, prefix=".", verbose=0)
     cache = {}
 
     extract_links._download_one(args, "https://x/clip", cache)  # ruff: ignore[private-member-access]
@@ -358,7 +358,7 @@ def test_links_download_direct_uses_builtin(monkeypatch):
 
 def test_links_download_safe_skips_unsafe_links(monkeypatch):
     routed = _patch_backend_routing(monkeypatch)
-    args = SimpleNamespace(profile=DBType.auto, direct=False, safe=True, prefix=".")
+    args = SimpleNamespace(profile=DBType.auto, direct=False, safe=True, prefix=".", verbose=0)
     cache = {}
 
     for url in ["https://x/clip", "https://x/raw.html"]:
@@ -366,6 +366,21 @@ def test_links_download_safe_skips_unsafe_links(monkeypatch):
 
     assert routed["tube"] == ["https://x/clip"]
     assert routed["builtin"] == []
+
+
+def test_links_download_prints_downloaded_paths(monkeypatch, capsys):
+    monkeypatch.setattr(extract_links.web, "download_link", lambda _args, _url: "/downloads/file.html")
+    args = SimpleNamespace(
+        profile=DBType.filesystem,
+        direct=True,
+        safe=False,
+        prefix=".",
+        verbose=1,
+    )
+
+    extract_links._download_one(args, "https://x/raw.html", {})  # ruff: ignore[private-member-access]
+
+    assert capsys.readouterr().out.splitlines() == ["/downloads/file.html"]
 
 
 def test_builtin_download_propagates_failures(monkeypatch):

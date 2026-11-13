@@ -174,6 +174,8 @@ def download(args, m) -> bool:
         info["path"] = webpath
 
     local_path = getattr(job.pathfmt, "path", "") or None
+    if local_path and args.verbose >= consts.LOG_INFO:
+        print(local_path)
     db_media.download_add(
         args,
         webpath,

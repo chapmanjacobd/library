@@ -412,6 +412,8 @@ def _download_builtin(args, m, original_path, dl_paths) -> bool:
             any_error = True
 
         for local_path in local_paths:
+            if local_path and args.verbose >= consts.LOG_INFO:
+                print(local_path)
             db_media.download_add(
                 args,
                 webpath=original_path,

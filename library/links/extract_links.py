@@ -382,10 +382,12 @@ def crawl(args, seeds):
 
 def _builtin_download(args, url) -> None:
     try:
-        web.download_link(args, url)
+        local_path = web.download_link(args, url)
     except (RuntimeError, requests.RequestException, ValueError, OSError) as excinfo:
         log.error("[%s]: %s", url, excinfo)
         raise
+    if local_path and args.verbose >= consts.LOG_INFO:
+        print(local_path)
 
 
 def _download_one(args, url, backend_args_cache) -> None:
