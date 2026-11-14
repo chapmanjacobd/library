@@ -622,6 +622,9 @@ def multiple_player(args, playlist) -> None:
                     window_geometry = [f"--geometry={x_size}x{y_size}+{x}+{y}", screen_name]
 
                 window_geometry = ["--window-scale=1", "--no-border", "--no-keepaspect-window", *window_geometry]
+                if getattr(args, "fstack", False) and os.environ.get("WAYLAND_DISPLAY"):
+                    # Don't ask the Wayland compositor to focus newly spawned stack windows.
+                    window_geometry.append("--focus-on=never")
 
                 try:
                     m = players[t_idx]
