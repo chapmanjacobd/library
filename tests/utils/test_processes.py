@@ -94,6 +94,26 @@ def test_cmd_failure_non_strict(mock_run):
     assert result.returncode == 1
 
 
+def test_unar_delete_skips_non_archive(tmp_path, monkeypatch):
+    archive_path = tmp_path / "icon.1"
+    archive_path.write_text("not an archive")
+    calls = []
+
+    def fail_lsar(*command, **_kwargs):
+        calls.append(command)
+        raise subprocess.CalledProcessError(1, "lsar")
+
+    monkeypatch.setattr(processes, "cmd", fail_lsar)
+
+    output_path, updates = processes.unar_delete(str(archive_path))
+
+    assert calls == [("lsar", "-json", str(archive_path))]
+    assert output_path == str(tmp_path / "icon")
+    assert updates == []
+    assert archive_path.exists()
+    assert not (tmp_path / "icon").exists()
+
+
 @patch("importlib.import_module")
 @patch("subprocess.check_call")
 def test_load_or_install_modules(mock_check_call, mock_import_module):

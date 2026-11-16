@@ -649,17 +649,25 @@ def _remove_archive_parts(archive_path, part_files):
 
 def unar_delete(archive_path, single_file_flatten=False, flatten=True):
     output_path = unar_out_path(archive_path)
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
 
-    lsar_output = cmd("lsar", "-json", archive_path, nice=6)
+    try:
+        lsar_output = cmd("lsar", "-json", archive_path, nice=6)
+    except subprocess.CalledProcessError:
+        log.info("[%s]: Not an archive; skipping extraction", archive_path)
+        return output_path, []
     try:
         lsar_json = strings.safe_json_loads(lsar_output.stdout)
     except json.JSONDecodeError:
         log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
         return output_path, []
-    part_files = lsar_json["lsarProperties"]["XADVolumes"]
+    if lsar_json.get("lsarError"):
+        log.warning("[%s]: lsar error %s", archive_path, lsar_json["lsarError"])
+
+    part_files = lsar_json.get("lsarProperties", {}).get("XADVolumes") or [archive_path]
     original_stats = os.stat(archive_path)
+
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
     try:
         cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path, nice=9)
