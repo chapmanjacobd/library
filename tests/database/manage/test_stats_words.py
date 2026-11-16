@@ -11,6 +11,7 @@ def test_word_stats_aggregates_unique_path_words_and_ignores_deleted(tmp_path):
         "INSERT INTO media VALUES (?, ?, ?)",
         [
             ("/library/Science/Fiction/book.mkv", 100, 0),
+            ("/library/Science/Fiction/book.mkv", 100, 0),  # same path in another playlist
             ("/library/Science/fiction/film.mkv", 300, 0),
             ("/library/Science/deleted.mkv", 900, 123),
         ],
