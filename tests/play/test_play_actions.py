@@ -59,7 +59,7 @@ fs_flags = [
 media_flags = [
     ("--no-video", 0, ""),
     ("-B --solo", 0, ""),
-    ("-B --episode", 0, ""),
+    ("-B --episode", 4, "corrupt.mp4"),
     ("--no-subtitles", 1, "test_frame.gif"),
     ("-w subtitle_count=1", 1, "corrupt.mp4"),
     ("--fetch-siblings=4", 4, "corrupt.mp4"),

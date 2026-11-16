@@ -168,8 +168,8 @@ def _load_media(args):
     media = shell_utils.gen_d(args)
     media = filter_engine.filter_items_by_criteria(args, media)
     media = [d if "size" in d else file_utils.get_file_stats(d) for d in media]
-    media = big_dirs.group_files_by_parent(media)
-    return big_dirs.process_big_dirs(args, media)
+    folders = big_dirs.group_files_by_parent(media)
+    return big_dirs.process_big_dirs(args, folders, media)
 
 
 def _filter_number_groups(args, media):
