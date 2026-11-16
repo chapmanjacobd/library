@@ -1,3 +1,4 @@
+# ruff: file-ignore[hardcoded-sql-expression]
 import os, sqlite3
 
 import humanize
@@ -66,24 +67,40 @@ def parse_args():
 
 
 def get_disks(args, computer_db):
-    disks = []
-    for disk in computer_db.query(
+    pl_columns = computer_db["playlists"].columns_dict
+    m_columns = computer_db["media"].columns_dict
+    active_computers = "\nAND COALESCE(computers.time_deleted, 0)=0" if "time_deleted" in pl_columns else ""
+    active_disks = "\nAND COALESCE(disks.time_deleted, 0)=0" if "time_deleted" in m_columns else ""
+    active_snapshot = "\nAND COALESCE(time_deleted, 0)=0" if "time_deleted" in pl_columns else ""
+
+    # The concatenated fragments are fixed SQL conditions, not user input.
+    query = (
         """
-            SELECT
-                computers.path host
-                , disks.*
-            FROM media AS disks
-            JOIN playlists AS computers ON computers.id = disks.playlists_id
-            WHERE computers.id = (
+        SELECT
+            computers.path host
+            , disks.*
+        FROM media AS disks
+        JOIN playlists AS computers ON computers.id = disks.playlists_id
+        WHERE 1=1
+        """
+        + active_computers
+        + active_disks
+        + """
+            AND computers.id = (
                 SELECT id FROM playlists
                 WHERE path = computers.path
+        """
+        + active_snapshot
+        + """
                 ORDER BY coalesce(time_modified, time_created, 0) DESC, id DESC
                 LIMIT 1
             )
             AND (device_read_5s + device_write_5s) /(30) /2 <= :max_io_rate
-            """,
-        {"max_io_rate": args.max_io_rate},
-    ):
+        """
+    )
+
+    disks = []
+    for disk in computer_db.query(query, {"max_io_rate": args.max_io_rate}):
         free = disk["free"] - (disk.get("allocated") or 0)
         if free >= args.min_free_space:
             disks.append({"host": disk["host"], "mountpoint": disk["path"], "free": free, "total": disk["total"]})

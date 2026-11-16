@@ -48,6 +48,61 @@ def test_get_disks_uses_latest_host_snapshot(allocated_column):
     ]
 
 
+def test_get_disks_ignores_deleted_snapshots_and_disks():
+    args = SimpleNamespace(
+        database=":memory:",
+        verbose=0,
+        min_free_space=50,
+        max_io_rate=100,
+        hosts=None,
+        include_disks=None,
+        exclude_disks=None,
+    )
+    db = db_utils.connect(args)
+    db["playlists"].insert_all(
+        [
+            {"id": 1, "path": "host", "time_modified": 100, "time_created": 10, "time_deleted": 0},
+            {"id": 2, "path": "host", "time_modified": 200, "time_created": 20, "time_deleted": 1},
+        ],
+        pk="id",
+    )
+    db["media"].insert_all(
+        [
+            {
+                "playlists_id": 1,
+                "path": "/mnt/active",
+                "free": 1000,
+                "total": 2000,
+                "device_read_5s": 0,
+                "device_write_5s": 0,
+                "time_deleted": 0,
+            },
+            {
+                "playlists_id": 1,
+                "path": "/mnt/deleted-disk",
+                "free": 1000,
+                "total": 2000,
+                "device_read_5s": 0,
+                "device_write_5s": 0,
+                "time_deleted": 1,
+            },
+            {
+                "playlists_id": 2,
+                "path": "/mnt/deleted-snapshot",
+                "free": 1000,
+                "total": 2000,
+                "device_read_5s": 0,
+                "device_write_5s": 0,
+                "time_deleted": 0,
+            },
+        ]
+    )
+
+    assert allocate_torrents.get_disks(args, db) == [
+        {"host": "host", "mountpoint": "/mnt/active", "free": 1000, "total": 2000},
+    ]
+
+
 @pytest.mark.parametrize(
     ("first_modified", "second_modified", "expected_free"),
     [(300, 200, 100), (100, None, 200), (200, 200, 200)],
