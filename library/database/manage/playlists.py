@@ -89,12 +89,17 @@ _PLAYLIST_FILTER_ARGS = (
     "downloaded_within",
     "downloaded_before",
     "keep_dir",
+    "portrait",
     "no_video",
     "no_audio",
     "subtitles",
     "no_subtitles",
+    "played_within",
+    "played_before",
+    "partial",
     "duration",
     "duration_from_size",
+    "only_deleted",
 )
 
 
@@ -114,9 +119,15 @@ def playlists() -> None:
         # `Playlist-less media` is only meaningful for an unfiltered listing. When
         # searching/filtering, keep just the media belonging to matching playlists.
         join = "JOIN" if _playlists_filtered(args) else "LEFT JOIN"
+        conditions = []
         # Media whose playlist exists but is hidden (eg. deleted) is not
         # playlist-less; it must be excluded, not relabelled.
-        where = "where m.playlists_id is null or p.id is not null" if join == "LEFT JOIN" else ""
+        if join == "LEFT JOIN":
+            conditions.append("(m.playlists_id is null or p.id is not null)")
+        # `--hide-deleted` applies to media too, not just playlists.
+        if args.hide_deleted and "time_deleted" in m_columns:
+            conditions.append("coalesce(m.time_deleted, 0)=0")
+        where = f"where {' and '.join(conditions)}" if conditions else ""
         query = f"""
         select
             coalesce(p.path, "Playlist-less media") path

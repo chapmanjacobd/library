@@ -68,7 +68,7 @@ def test_playlists_search_excludes_nonmatching_playlists(mocked, temp_db):
 
 
 @mock.patch("library.play.media_printer.media_printer")
-def test_playlists_exclude_media_of_deleted_playlists(mocked, temp_db):
+def test_playlists_exclude_hidden_media(mocked, temp_db):
     db1 = temp_db()
     conn = sqlite3.connect(db1)
     conn.executescript(
@@ -84,13 +84,15 @@ def test_playlists_exclude_media_of_deleted_playlists(mocked, temp_db):
             id INTEGER PRIMARY KEY,
             playlists_id INTEGER,
             path TEXT,
-            size INTEGER
+            size INTEGER,
+            time_deleted INTEGER
         );
         INSERT INTO playlists VALUES (1, 'visible-playlist', 'visible', 'test', 0);
         INSERT INTO playlists VALUES (2, 'deleted-playlist', 'deleted', 'test', 1);
-        INSERT INTO media VALUES (1, 1, 'visible-file', 100);
-        INSERT INTO media VALUES (2, 2, 'deleted-file', 200);
-        INSERT INTO media VALUES (3, NULL, 'playlist-less-file', 300);
+        INSERT INTO media VALUES (1, 1, 'visible-file', 100, 0);
+        INSERT INTO media VALUES (2, 1, 'deleted-file-in-visible-playlist', 50, 1);
+        INSERT INTO media VALUES (3, 2, 'deleted-playlist-file', 200, 1);
+        INSERT INTO media VALUES (4, NULL, 'playlist-less-file', 300, 0);
         """
     )
     conn.commit()
@@ -103,6 +105,12 @@ def test_playlists_exclude_media_of_deleted_playlists(mocked, temp_db):
     assert out[0]["size"] == 400
     assert out[0]["playlists_count"] == 2
     assert out[0]["media_count"] == 2
+
+    lb(["playlists", db1, "--only-deleted"])
+
+    out = mocked.call_args[0][1]
+    assert [d["path"] for d in out] == ["deleted-playlist"]
+    assert out[0]["size"] == 200
 
 
 def test_playlist_identity_includes_extractor_config():
