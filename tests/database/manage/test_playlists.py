@@ -67,6 +67,44 @@ def test_playlists_search_excludes_nonmatching_playlists(mocked, temp_db):
     assert out[0]["count"] == 1
 
 
+@mock.patch("library.play.media_printer.media_printer")
+def test_playlists_exclude_media_of_deleted_playlists(mocked, temp_db):
+    db1 = temp_db()
+    conn = sqlite3.connect(db1)
+    conn.executescript(
+        """
+        CREATE TABLE playlists (
+            id INTEGER PRIMARY KEY,
+            path TEXT,
+            title TEXT,
+            extractor_key TEXT,
+            time_deleted INTEGER
+        );
+        CREATE TABLE media (
+            id INTEGER PRIMARY KEY,
+            playlists_id INTEGER,
+            path TEXT,
+            size INTEGER
+        );
+        INSERT INTO playlists VALUES (1, 'visible-playlist', 'visible', 'test', 0);
+        INSERT INTO playlists VALUES (2, 'deleted-playlist', 'deleted', 'test', 1);
+        INSERT INTO media VALUES (1, 1, 'visible-file', 100);
+        INSERT INTO media VALUES (2, 2, 'deleted-file', 200);
+        INSERT INTO media VALUES (3, NULL, 'playlist-less-file', 300);
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    lb(["playlists", db1, "-pa"])
+
+    out = mocked.call_args[0][1]
+    assert len(out) == 1
+    assert out[0]["size"] == 400
+    assert out[0]["playlists_count"] == 2
+    assert out[0]["media_count"] == 2
+
+
 def test_playlist_identity_includes_extractor_config():
     args = SimpleNamespace(database=":memory:", verbose=0, extractor_config={})
     args.db = db_utils.connect(args)

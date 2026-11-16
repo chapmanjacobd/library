@@ -114,6 +114,9 @@ def playlists() -> None:
         # `Playlist-less media` is only meaningful for an unfiltered listing. When
         # searching/filtering, keep just the media belonging to matching playlists.
         join = "JOIN" if _playlists_filtered(args) else "LEFT JOIN"
+        # Media whose playlist exists but is hidden (eg. deleted) is not
+        # playlist-less; it must be excluded, not relabelled.
+        where = "where m.playlists_id is null or p.id is not null" if join == "LEFT JOIN" else ""
         query = f"""
         select
             coalesce(p.path, "Playlist-less media") path
@@ -126,6 +129,7 @@ def playlists() -> None:
             , count(*) count
         from media m
         {join} ({query}) p on p.id = m.playlists_id
+        {where}
         group by m.playlists_id, coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """
