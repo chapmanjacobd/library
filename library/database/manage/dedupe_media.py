@@ -491,7 +491,7 @@ def _delete_duplicates(args, duplicates):
         log.info("Skipping CSV export because pandas is not installed")
 
     duplicates_size = sum(filter(None, [duplicate["duplicate_size"] for duplicate in duplicates]))
-    print(f"Approx. space savings: {strings.file_size(duplicates_size // 2)}")
+    print(f"Approx. space savings: {strings.file_size(duplicates_size)}")
 
     if duplicates and (args.force or devices.confirm("Delete duplicates?")):  # type: ignore
         log.info("Deleting...")
