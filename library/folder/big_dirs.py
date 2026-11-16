@@ -107,8 +107,8 @@ def group_files_by_parent(media) -> list[dict]:
             "played": sum(bool(m.get("time_last_played")) for m in grouped_media),
             "exists": sum(not bool(m.get("time_deleted")) for m in grouped_media),
             "deleted": sum(bool(m.get("time_deleted")) for m in grouped_media),
-            "deleted_size": sum(m.get("size") or 0 for m in media if bool(m.get("time_deleted"))),
-            "deleted_duration": sum(m.get("duration") or 0 for m in media if bool(m.get("time_deleted"))),
+            "deleted_size": sum(m.get("size") or 0 for m in grouped_media if bool(m.get("time_deleted"))),
+            "deleted_duration": sum(m.get("duration") or 0 for m in grouped_media if bool(m.get("time_deleted"))),
         }
 
     return [{"path": format_folder(k), **v} for k, v in d.items()]
@@ -131,6 +131,8 @@ def reaggregate_at_depth(args, folders) -> list[dict]:
             d[parent]["total"] += f["total"]
             d[parent]["exists"] += f["exists"]
             d[parent]["deleted"] += f["deleted"]
+            d[parent]["deleted_size"] = (d[parent].get("deleted_size") or 0) + (f.get("deleted_size") or 0)
+            d[parent]["deleted_duration"] = (d[parent].get("deleted_duration") or 0) + (f.get("deleted_duration") or 0)
             d[parent]["played"] += f["played"]
             d[parent]["folders"] += f["folders"]
         else:
