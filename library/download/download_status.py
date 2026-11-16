@@ -86,16 +86,32 @@ def _update_extractor_stats(extractor_stats, media_row, retry_delay, download_re
 
 
 def _print_errors(args):
-    if "error" not in db_utils.columns(args, "media") or args.verbose < consts.LOG_INFO:
+    m_columns = db_utils.columns(args, "media")
+    if "error" not in m_columns or args.verbose < consts.LOG_INFO:
         return
-    query = """
+
+    where = ["error is not null"]
+    if getattr(args, "hide_deleted", False):
+        if "time_deleted" in m_columns:
+            where.append("coalesce(m.time_deleted, 0)=0")
+        if "playlists_id" in m_columns and "time_deleted" in db_utils.columns(args, "playlists"):
+            where.append(
+                """(m.playlists_id is null or exists(
+                    select 1 from playlists p
+                    where p.id = m.playlists_id and coalesce(p.time_deleted, 0)=0
+                ))"""
+            )
+
+    query = f"""
     select error, count(*) count
-    from media
-    where error is not null
+    from media m
+    where {' and '.join(where)}
     group by 1
     order by 2 DESC
     """
     errors = list(args.db.query(query))
+    if not errors:
+        return
     small_group = errors[:20][-1]["count"]
     common_errors = []
     other_errors = []
