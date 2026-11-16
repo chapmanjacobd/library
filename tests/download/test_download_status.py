@@ -32,6 +32,7 @@ def test_print_errors_excludes_hidden_media(temp_db, monkeypatch):
         INSERT INTO media (playlists_id, path, error, time_deleted) VALUES (1, 'b', 'err-b', 1);
         INSERT INTO media (playlists_id, path, error, time_deleted) VALUES (2, 'c', 'err-c', 0);
         INSERT INTO media (playlists_id, path, error, time_deleted) VALUES (NULL, 'd', 'err-d', 0);
+        INSERT INTO media (playlists_id, path, error, time_deleted) VALUES (0, 'e', 'err-e', 0);
         """
     )
     conn.commit()
@@ -49,7 +50,12 @@ def test_print_errors_excludes_hidden_media(temp_db, monkeypatch):
 
     download_status._print_errors(args)
 
-    assert {(d["error"], d["count"]) for d in captured} == {("err-a", 1), ("err-d", 1), ("Other", 0)}
+    assert {(d["error"], d["count"]) for d in captured} == {
+        ("err-a", 1),
+        ("err-d", 1),
+        ("err-e", 1),
+        ("Other", 0),
+    }
 
 
 def test_download_status_handles_null_download_time(monkeypatch):

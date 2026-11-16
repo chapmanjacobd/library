@@ -68,6 +68,40 @@ def test_playlists_search_excludes_nonmatching_playlists(mocked, temp_db):
 
 
 @mock.patch("library.play.media_printer.media_printer")
+def test_playlists_group_zero_and_null_as_playlist_less(mocked, temp_db):
+    db1 = temp_db()
+    conn = sqlite3.connect(db1)
+    conn.executescript(
+        """
+        CREATE TABLE playlists (
+            id INTEGER PRIMARY KEY,
+            path TEXT,
+            extractor_key TEXT,
+            time_deleted INTEGER
+        );
+        CREATE TABLE media (
+            id INTEGER PRIMARY KEY,
+            playlists_id INTEGER,
+            path TEXT,
+            size INTEGER
+        );
+        INSERT INTO media VALUES (1, 0, 'file-1', 100);
+        INSERT INTO media VALUES (2, NULL, 'file-2', 200);
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    lb(["playlists", db1])
+
+    out = mocked.call_args[0][1]
+    assert len(out) == 1
+    assert out[0]["path"] == "Playlist-less media"
+    assert out[0]["count"] == 2
+    assert out[0]["size"] == 300
+
+
+@mock.patch("library.play.media_printer.media_printer")
 def test_playlists_exclude_hidden_media(mocked, temp_db):
     db1 = temp_db()
     conn = sqlite3.connect(db1)

@@ -123,7 +123,8 @@ def playlists() -> None:
         # Media whose playlist exists but is hidden (eg. deleted) is not
         # playlist-less; it must be excluded, not relabelled.
         if join == "LEFT JOIN":
-            conditions.append("(m.playlists_id is null or p.id is not null)")
+            # 0 is the sentinel for media that belongs to no playlist (eg. single files).
+            conditions.append("(coalesce(m.playlists_id, 0) = 0 or p.id is not null)")
         # `--hide-deleted` applies to media too, not just playlists.
         if args.hide_deleted and "time_deleted" in m_columns:
             conditions.append("coalesce(m.time_deleted, 0)=0")
@@ -141,7 +142,7 @@ def playlists() -> None:
         from media m
         {join} ({query}) p on p.id = m.playlists_id
         {where}
-        group by m.playlists_id, coalesce(p.path, "Playlist-less media")
+        group by coalesce(m.playlists_id, 0), coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """
 

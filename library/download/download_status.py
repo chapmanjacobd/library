@@ -96,7 +96,7 @@ def _print_errors(args):
             where.append("coalesce(m.time_deleted, 0)=0")
         if "playlists_id" in m_columns and "time_deleted" in db_utils.columns(args, "playlists"):
             where.append(
-                """(m.playlists_id is null or exists(
+                """(coalesce(m.playlists_id, 0) = 0 or exists(
                     select 1 from playlists p
                     where p.id = m.playlists_id and coalesce(p.time_deleted, 0)=0
                 ))"""
