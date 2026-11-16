@@ -175,7 +175,10 @@ def _save_torrent_info(args, torrent_info, known_hashes, idx, num_paths, start_t
     log.debug(torrent_info)
     torrent_info["webpath"] = iterables.safe_unpack(sorted(torrent_info.pop("web_seeds"), key=len, reverse=True))
     playlists_id = db_playlists.add_entry(args, objects.dict_filter_bool(torrent_info))
-    files = [file | {"playlists_id": playlists_id} for file in files]
+    files = [file | {"playlists_id": playlists_id} for file in files if file.get("path")]
+    if not files:
+        log.warning("[%s]: no file paths found; skipping media insert", torrent_info["path"])
+        return
     args.db["media"].insert_all(files, pk=["playlists_id", "path"], alter=True, replace=True)
 
 
