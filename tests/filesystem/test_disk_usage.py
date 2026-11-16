@@ -78,6 +78,7 @@ def test_folder_stats_refreshes_after_media_change(temp_db):
         "INSERT INTO media (path, size, duration, time_deleted) VALUES (?, ?, ?, ?)",
         [
             ("/root/a/file1.mp4", 1, 2, 0),
+            ("/root/a/file1.mp4", 1, 2, 0),  # same path in another playlist
             ("/root/a/deep/file2.mp4", 2, 3, 0),
             ("/root/a/deleted.mp4", 100, 100, 1),
         ],

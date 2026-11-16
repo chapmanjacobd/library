@@ -113,9 +113,14 @@ def _refresh(db) -> None:
     direct_parents = set()
     for media in db.query(
         """
-        SELECT path, COALESCE(size, 0) AS size, COALESCE(duration, 0) AS duration
+        SELECT
+            path
+            , MAX(COALESCE(size, 0)) AS size
+            , MAX(COALESCE(duration, 0)) AS duration
         FROM media
         WHERE COALESCE(time_deleted, 0) = 0
+            AND path IS NOT NULL
+        GROUP BY path
         """
     ):
         parents = list(_parents(media["path"]))
