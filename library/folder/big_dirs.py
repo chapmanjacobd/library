@@ -1,9 +1,8 @@
-import argparse, os
+import argparse
 from collections import defaultdict
-from pathlib import Path
 
 from library import usage
-from library.filesystem.disk_usage import check_depth, count_folders, format_folder
+from library.filesystem.disk_usage import check_depth, count_folders, format_folder, split_path
 from library.play import media_printer
 from library.table import mcda
 from library.utils import (
@@ -90,14 +89,15 @@ def _is_url_path(path) -> bool:
 def group_files_by_parents(media) -> list[dict]:
     # Folder grouping is for local files; URLs are not filesystem folders.
     media = [m for m in media if not _is_url_path(m["path"])]
-    min_parts = min((len(str(m["path"]).split(os.sep)) for m in media), default=10)
+    split_media = [(split_path(m["path"]), m) for m in media]
+    min_parts = min((len(parts) for (parts, _), _ in split_media), default=10)
 
     p_media = {}
-    for m in media:
-        p = m["path"].split(os.sep)
+    for (parts, sep), m in split_media:
+        p = list(parts)
         while len(p) >= MIN_PATH_PARTS:
             p.pop()
-            parent = os.sep.join(p)
+            parent = sep.join(p) or sep
 
             if parent not in p_media:
                 p_media[parent] = [m]
@@ -111,7 +111,8 @@ def group_files_by_parents(media) -> list[dict]:
     # Keep the parent folder of the shallowest file and every deeper folder.
     min_parent_parts = min_parts - 1
     for parent, _ in list(d.items()):
-        if len(parent.split(os.sep)) < min_parent_parts:
+        parts, _ = split_path(parent)
+        if len(parts) < min_parent_parts:
             d.pop(parent)
 
     parents = set(d.keys())
@@ -126,7 +127,8 @@ def group_files_by_parent(media) -> list[dict]:
     p_media = defaultdict(list)
     for m in media:
         if not _is_url_path(m["path"]):
-            p_media[str(Path(m["path"]).parent)].append(m)
+            parts, sep = split_path(m["path"])
+            p_media[sep.join(parts[:-1]) or "."].append(m)
 
     d = {}
     for parent, grouped_media in list(p_media.items()):
@@ -143,7 +145,7 @@ def group_media_by_depth(media, args) -> list[dict]:
         if _is_url_path(m["path"]):
             continue
 
-        parts = str(m["path"]).split(os.sep)
+        parts, sep = split_path(m["path"])
         if len(parts) < MIN_PATH_PARTS:
             continue
 
@@ -153,7 +155,7 @@ def group_media_by_depth(media, args) -> list[dict]:
         if not folder_parts or not check_depth(args, len(folder_parts)):
             continue
 
-        parent = os.sep.join(folder_parts)
+        parent = sep.join(folder_parts) or sep
         groups[parent].append(m)
 
         if len(parts) - 1 > len(folder_parts):
@@ -180,14 +182,14 @@ def reaggregate_at_depth(args, folders, media=None) -> list[dict]:
     d = {}
     child_dirs = defaultdict(set)
     for f in folders:
-        original_parts = f["path"].rstrip(os.sep).split(os.sep)
+        original_parts, sep = split_path(f["path"])
         p = original_parts
         if args.max_depth:
             p = p[: args.max_depth]
         if not check_depth(args, len(p)):
             continue
 
-        parent = os.sep.join(p)
+        parent = sep.join(p) or sep
         if len(original_parts) > len(p):
             child = original_parts[len(p)]
             if child:

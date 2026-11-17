@@ -89,10 +89,29 @@ def check_depth(args, n):
         return args.min_depth <= n
 
 
+def path_separator(p) -> str:
+    # Media paths are not always in the OS-native style (eg. posix paths on Windows)
+    p = str(p)
+    if os.sep in p:
+        return os.sep
+    if os.altsep and os.altsep in p:
+        return os.altsep
+    return os.sep
+
+
+def split_path(p) -> tuple[list[str], str]:
+    p = str(p)
+    sep = path_separator(p)
+    if p != sep:
+        p = p.rstrip(sep)
+    return p.split(sep), sep
+
+
 def format_folder(p):
     p = str(p)
-    if p != os.sep:
-        return p + os.sep
+    sep = path_separator(p)
+    if p != sep:
+        return p + sep
     else:
         return p
 
@@ -100,10 +119,10 @@ def format_folder(p):
 def count_folders(parents):
     subdirectory_count = defaultdict(int)
     for parent_path in parents:
-        parts = parent_path.rstrip(os.sep).split(os.sep)  # TODO handle URLs on Windows
+        parts, sep = split_path(parent_path)
         while len(parts) >= MIN_PATH_PARTS:
             parts.pop()
-            parent = os.sep.join(parts)
+            parent = sep.join(parts)
             subdirectory_count[parent] += 1
 
     return subdirectory_count
