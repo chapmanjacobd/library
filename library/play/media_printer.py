@@ -10,30 +10,34 @@ from library.utils import arggroups, consts, db_utils, iterables, nums, printing
 from library.utils.consts import SC
 from library.utils.log_utils import log
 
-MAX_LOCAL_RESULTS = 50
-MAX_MISSING_LOCAL_PATHS = 2
+
+def iter_existing_media(media, nonexistent_paths=None):
+    for m in media:
+        path = m["path"]
+        if path.startswith("http") or os.path.exists(path):
+            yield m
+        elif nonexistent_paths is not None:
+            nonexistent_paths.append(path)
 
 
 def filter_deleted(media):
-    http_list = []
-    local_list = []
     nonexistent_local_paths = []
+    existing_media = list(iter_existing_media(media, nonexistent_local_paths))
+    return existing_media, nonexistent_local_paths
 
-    for i, m in enumerate(media):
-        path = m["path"]
-        if path.startswith("http"):
-            http_list.append(m)
-            continue
 
-        if len(local_list) == MAX_LOCAL_RESULTS and len(nonexistent_local_paths) <= MAX_MISSING_LOCAL_PATHS:
-            return local_list + http_list + media[i:], nonexistent_local_paths
+def filter_missing_media(args, media, compact_print_args):
+    if not (getattr(args, "exists", False) or "e" in compact_print_args):
+        return media
+    if not media or "path" not in media[0]:
+        return media
 
-        if os.path.exists(path):
-            local_list.append(m)
-        else:
-            nonexistent_local_paths.append(path)
-
-    return local_list + http_list, nonexistent_local_paths
+    media, nonexistent_paths = filter_deleted(media)
+    if getattr(args, "exists", False) and nonexistent_paths and getattr(args, "db", None) is not None:
+        db_media.mark_media_deleted(args, nonexistent_paths)
+    if not media:
+        processes.no_media_found()
+    return media
 
 
 def cadence_adjusted_items(args, items: int, time_column=None):
@@ -170,6 +174,21 @@ def _mark_watched_media(args, media, compact_print_args):
             log.warning(f"Marked {marked} metadata records as watched")
 
 
+def _has_media_actions(args, compact_print_args):
+    return any(
+        [
+            getattr(args, "delete_files", False),
+            getattr(args, "delete_rows", False),
+            getattr(args, "mark_deleted", False),
+            getattr(args, "mark_watched", False),
+            "D" in compact_print_args,
+            "d" in compact_print_args,
+            "w" in compact_print_args,
+            "r" in compact_print_args,
+        ]
+    )
+
+
 def _apply_media_actions(args, media, compact_print_args):
     _delete_media_files(args, media)
     _delete_media_rows(args, media, compact_print_args)
@@ -282,25 +301,33 @@ def _format_media(args, media, action, compact_print_args, is_template):
     return iterables.list_dict_filter_bool(media)
 
 
-def _print_csv_media(args, media, cols):
-    if getattr(args, "exists", False):
-        media, deleted_paths = filter_deleted(media)
-        db_media.mark_media_deleted(args, deleted_paths)
-        if len(media) == 0:
-            raise FileNotFoundError
-
+def _print_csv_media(args, media, cols, check_exists=False):
     if not cols:
         cols = ["path"]
-    if len(cols) == 1:
-        printing.pipe_lines(str(d.get(cols[0], "")) + "\n" for d in media)
-        return
 
-    selected_cols = [{k: d.get(k, None) for k in cols} for d in media]
-    virtual_csv = StringIO()
-    csv.DictWriter(virtual_csv, fieldnames=cols).writerows(selected_cols)
-    virtual_csv.seek(0)
-    for line in virtual_csv.readlines():
-        printing.pipe_print(line.strip())
+    nonexistent_paths = []
+    rows = iter_existing_media(media, nonexistent_paths) if check_exists else media
+    printed = 0
+
+    if len(cols) == 1:
+        column = cols[0]
+        for d in rows:
+            printing.pipe_print(str(d.get(column, "")))
+            printed += 1
+    else:
+        virtual_csv = StringIO()
+        writer = csv.DictWriter(virtual_csv, fieldnames=cols)
+        for d in rows:
+            virtual_csv.seek(0)
+            virtual_csv.truncate(0)
+            writer.writerow({k: d.get(k, None) for k in cols})
+            printing.pipe_print(virtual_csv.getvalue().strip())
+            printed += 1
+
+    if check_exists and getattr(args, "exists", False) and nonexistent_paths and getattr(args, "db", None) is not None:
+        db_media.mark_media_deleted(args, nonexistent_paths)
+    if check_exists and printed == 0:
+        processes.no_media_found()
 
 
 def _print_table_media(args, media, media_len, units, total_duration, compact_print_args):
@@ -345,7 +372,9 @@ def _print_table_media(args, media, media_len, units, total_duration, compact_pr
             print("Total duration:", total_duration)
 
 
-def _print_media(args, media, print_args, is_template, compact_print_args, cols, media_len, units, total_duration):
+def _print_media(
+    args, media, print_args, is_template, compact_print_args, cols, media_len, units, total_duration, check_exists=False
+):
     if args.to_json:
         printing.pipe_lines(json.dumps(m) + "\n" for m in media)
     elif is_template:
@@ -356,7 +385,7 @@ def _print_media(args, media, print_args, is_template, compact_print_args, cols,
                 message = f"Invalid --print template: {print_args}"
                 raise ValueError(message) from exc
     elif "f" in compact_print_args:
-        _print_csv_media(args, media, cols)
+        _print_csv_media(args, media, cols, check_exists)
     elif consts.MOBILE_TERMINAL:
         printing.extended_view(media)
     elif "j" in compact_print_args:
@@ -379,6 +408,19 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
         processes.no_media_found()
     data = _limit_media(args, data, action)
     media = deepcopy(data)
+
+    exists_check = getattr(args, "exists", False) or "e" in compact_print_args
+    stream_exists = (
+        exists_check
+        and not args.to_json
+        and not is_template
+        and "f" in compact_print_args
+        and "a" not in compact_print_args
+        and not _has_media_actions(args, compact_print_args)
+    )
+    if exists_check and not stream_exists:
+        media = filter_missing_media(args, media, compact_print_args)
+
     if args.verbose >= consts.LOG_DEBUG and cols and "*" in cols:
         breakpoint()
     if not media:
@@ -393,7 +435,18 @@ def media_printer(args, data, units: str | None = "media", media_len=None) -> No
     media, total_duration = _aggregate_media(args, media, action, compact_print_args, tables, m_columns, cols)
     _add_download_durations(args, media, action, compact_print_args, tables, m_columns)
     media = _format_media(args, media, action, compact_print_args, is_template)
-    _print_media(args, media, print_args, is_template, compact_print_args, cols, media_len, units, total_duration)
+    _print_media(
+        args,
+        media,
+        print_args,
+        is_template,
+        compact_print_args,
+        cols,
+        media_len,
+        units,
+        total_duration,
+        stream_exists,
+    )
 
 
 def printer(args, query, bindings, units=None) -> None:

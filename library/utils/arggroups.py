@@ -43,6 +43,12 @@ def get_caller_name():
     return None
 
 
+def parser_has_option(parser, option_string: str) -> bool:
+    return any(
+        option_string in action.option_strings for action in parser._actions  # ruff: ignore[private-member-access]
+    )
+
+
 def get_argparse_defaults(parser):
     defaults = {}
     for action in parser._actions:  # ruff: ignore[private-member-access]
@@ -133,6 +139,7 @@ Printing modes
 -p    # print as a table
 -p a  # print an aggregate report
 -p b  # print a big-dirs report (see library folder large -h for more info)
+-p e  # exclude paths which do not exist on-disk
 -p f  # print fields (defaults to path; useful for piping to utilities like xargs or GNU Parallel)
 -p d  # mark deleted
 -p w  # mark watched
@@ -141,6 +148,7 @@ When a printing mode is explicitly set then all rows will be fetched unless --li
 
 Some printing modes can be combined
 -p df  # print fields for piping into another program and mark as deleted
+-p fe  # print fields which exist on-disk
 -p bf  # print fields from big-dirs report""",
     )
     printing.add_argument("--list", action="store_const", dest="print", const="p", help="Print matching rows as a table")
@@ -160,6 +168,12 @@ Some printing modes can be combined
         action="store_true",
         help="Skip URL-decoding/unquoting when printing URLs",
     )
+    if not parser_has_option(parser, "--exists"):
+        printing.add_argument(
+            "--exists",
+            action="store_true",
+            help="Filter out files which do not exist on-disk before printing",
+        )
 
 
 def get_compact_print_args(args) -> str:
