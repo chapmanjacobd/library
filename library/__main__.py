@@ -741,10 +741,9 @@ def _dispatch(args) -> None:
         if len(sys.argv) > 1:
             log.error("Invalid args. I see: %s", sys.argv)
 
-    if len(sys.argv) > 1:
-        print_help(parser, file=sys.stderr)
-    else:
-        print_help(parser)
+    # Reaching this point is always an error (exit 1), so the help must not go to
+    # stdout where a downstream pipe could mistake it for command output.
+    print_help(parser, file=sys.stderr)
     raise SystemExit(1)
 
 
