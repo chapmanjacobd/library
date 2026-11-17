@@ -13,10 +13,10 @@ MIN_SLICE_PARTS = 2
 def read_stdin(prog=None):
     prog = prog or sys.argv[0]
     print(f"{prog}: Reading from stdin...", file=sys.stderr)
-    lines = sys.stdin.readlines()
-    if not lines or (len(lines) == 1 and lines[0].strip() == ""):
-        return None
-    return [s.strip() for s in lines]
+    # Blank lines must not become "" paths: downstream tools resolve "" to the
+    # current directory, which turns a blank help line into "move everything here".
+    paths = [s.strip() for s in sys.stdin.readlines() if s.strip()]
+    return paths or None
 
 
 def open_text_input(parser: argparse.ArgumentParser, path: str):

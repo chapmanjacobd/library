@@ -254,9 +254,9 @@ def usage() -> str:
     return f"library (v{__version__}; {count} subcommands)\n{''.join(tables)}"
 
 
-def print_help(parser) -> None:
-    print(usage())
-    print(parser.epilog)
+def print_help(parser, file=None) -> None:
+    print(usage(), file=file)
+    print(parser.epilog, file=file)
 
 
 NESTED_GROUP_ALIASES = {
@@ -741,7 +741,10 @@ def _dispatch(args) -> None:
         if len(sys.argv) > 1:
             log.error("Invalid args. I see: %s", sys.argv)
 
-    print_help(parser)
+    if len(sys.argv) > 1:
+        print_help(parser, file=sys.stderr)
+    else:
+        print_help(parser)
     raise SystemExit(1)
 
 
@@ -858,7 +861,7 @@ def library(args=None) -> None:
 
     if nested_group and nested_target(original_argv) is None:
         invalid_path = _invalid_nested_path(nested_group, original_argv)
-        print(_nested_help(nested_group, invalid_path))
+        print(_nested_help(nested_group, invalid_path), file=sys.stderr)
         raise SystemExit(1)
 
     if nested_group:

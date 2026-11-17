@@ -1,3 +1,4 @@
+import io
 import os
 import socket
 from pathlib import Path
@@ -191,6 +192,20 @@ def test_merge(assert_unchanged, src_type, dest_type, dest_opt, file_over_file_m
             "dest_after": dest_after,
         }
     )
+
+
+def test_stdin_blank_lines_do_not_expand_cwd(monkeypatch, tmp_path, temp_file_tree):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "cwd-file.txt").write_text("cwd")
+
+    src = temp_file_tree({"file.txt": "src"})
+    dest = temp_file_tree({})
+    monkeypatch.setattr("sys.stdin", io.StringIO(f"{src}{os.sep}file.txt\n\n"))
+
+    lb(["merge-mv", "-", dest + os.sep])
+
+    assert (Path(dest) / "file.txt").read_text() == "src"
+    assert not (Path(dest) / "cwd-file.txt").exists()
 
 
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])

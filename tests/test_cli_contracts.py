@@ -313,9 +313,10 @@ def test_nested_unknown_leaf_suggests_closest_command(capsys):
         lb(["database", "add", "filesytem"])
 
     assert exc_info.value.code == 1
-    output = capsys.readouterr().out
-    assert "Unknown command: database add filesytem" in output
-    assert "Did you mean: database add filesystem?" in output
+    captured = capsys.readouterr()
+    assert not captured.out
+    assert "Unknown command: database add filesytem" in captured.err
+    assert "Did you mean: database add filesystem?" in captured.err
 
 
 def test_version_flag_prints_version(capsys):
@@ -522,9 +523,10 @@ def test_nested_unknown_command_suggests_group_usage(capsys):
         lb(["database", "unknown"])
 
     assert exc_info.value.code == 1
-    output = capsys.readouterr().out
-    assert "Unknown command: database unknown" in output
-    assert "usage: library database <command>" in output
+    captured = capsys.readouterr()
+    assert not captured.out
+    assert "Unknown command: database unknown" in captured.err
+    assert "usage: library database <command>" in captured.err
 
 
 def test_group_aliases_report_unknown_subcommands(capsys):
@@ -533,7 +535,9 @@ def test_group_aliases_report_unknown_subcommands(capsys):
             lb(group)
 
         assert exc_info.value.code == 1
-        assert "Unknown command: " in capsys.readouterr().out
+        captured = capsys.readouterr()
+        assert not captured.out
+        assert "Unknown command: " in captured.err
 
 
 def test_compact_operation_first_spelling_is_group_agnostic():

@@ -1,4 +1,5 @@
 import argparse
+import io
 
 import pytest
 
@@ -58,3 +59,11 @@ def test_override_sort_random_substring():
 
     assert override_sort("randomness") == "randomness"
     assert override_sort("random") == "random()"
+
+
+def test_read_stdin_drops_blank_lines(monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO("first path\n\n  \nsecond path\n"))
+    assert argparse_utils.read_stdin("lb test") == ["first path", "second path"]
+
+    monkeypatch.setattr("sys.stdin", io.StringIO("\n \n"))
+    assert argparse_utils.read_stdin("lb test") is None
