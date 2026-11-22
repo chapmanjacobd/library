@@ -1,4 +1,4 @@
-import contextlib, functools, importlib, json, multiprocessing, os, shlex, shutil, signal, subprocess, sys, threading
+import contextlib, functools, importlib, json, multiprocessing, os, shlex, shutil, signal, subprocess, sys, tempfile, threading
 from contextlib import suppress
 from pathlib import Path
 from typing import NoReturn
@@ -647,6 +647,38 @@ def _remove_archive_parts(archive_path, part_files):
         log.warning("Error deleting files: %s %s", excinfo, part_files)
 
 
+def _tar_fallback(archive_path, output_path, lsar_json, output_created):
+    """Retry a partial unar extraction with tar.
+
+    unar does not understand GNU incremental dumpdir entries (typeflag ``D``).
+    It extracts the dumpdir header as a regular file and then fails to create
+    the directories listed inside it.  GNU tar handles those entries.
+    """
+    if not output_created or not shutil.which("tar"):
+        return False
+
+    format_names = {
+        str(lsar_json.get("lsarFormatName") or "").lower(),
+        str(lsar_json.get("lsarInnerFormatName") or "").lower(),
+    }
+    if "tar" not in format_names:
+        return False
+
+    part_files = lsar_json.get("lsarProperties", {}).get("XADVolumes") or [archive_path]
+    if len(part_files) != 1 or os.path.abspath(part_files[0]) != os.path.abspath(archive_path):
+        return False
+
+    fallback_path = tempfile.mkdtemp(prefix=".unar-tar-fallback-", dir=os.path.dirname(output_path) or ".")
+    try:
+        cmd("tar", "-xf", archive_path, "-C", fallback_path, nice=9)
+        shutil.rmtree(output_path)
+        os.replace(fallback_path, output_path)
+    except (subprocess.CalledProcessError, OSError):
+        shutil.rmtree(fallback_path, ignore_errors=True)
+        return False
+    return True
+
+
 def unar_delete(archive_path, single_file_flatten=False, flatten=True):
     output_path = unar_out_path(archive_path)
 
@@ -666,7 +698,8 @@ def unar_delete(archive_path, single_file_flatten=False, flatten=True):
     part_files = lsar_json.get("lsarProperties", {}).get("XADVolumes") or [archive_path]
     original_stats = os.stat(archive_path)
 
-    if not os.path.exists(output_path):
+    output_created = not os.path.exists(output_path)
+    if output_created:
         os.makedirs(output_path)
 
     try:
@@ -682,7 +715,20 @@ def unar_delete(archive_path, single_file_flatten=False, flatten=True):
                 excinfo.stderr.replace("Use the -p option to provide one.", "Use unar -p to extract."),
             )
             return output_path, []
-        if not any(unar_errors.file_error.match(line) for line in error_log):
+        if any(unar_errors.partial_error.match(line) for line in error_log):
+            log.warning(
+                "[%s]: Partial extraction (%s); retrying with tar",
+                archive_path,
+                error_log[-1],
+            )
+            if not _tar_fallback(archive_path, output_path, lsar_json, output_created):
+                log.error(
+                    "[%s]: Could not extract all entries; keeping archive. %s",
+                    archive_path,
+                    error_log[-1],
+                )
+                return output_path, []
+        elif not any(unar_errors.file_error.match(line) for line in error_log):
             raise
 
     path_updates = []

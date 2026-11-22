@@ -35,3 +35,11 @@ file_error = re.compile(
     ),
     flags=re.IGNORECASE,
 )
+
+partial_error = re.compile(
+    "|".join(
+        r""".*Could not create directory
+.*Opening file failed""".splitlines(),
+    ),
+    flags=re.IGNORECASE,
+)

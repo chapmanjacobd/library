@@ -1,4 +1,5 @@
-import multiprocessing, subprocess, time
+import json, multiprocessing, subprocess, time
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -112,6 +113,75 @@ def test_unar_delete_skips_non_archive(tmp_path, monkeypatch):
     assert updates == []
     assert archive_path.exists()
     assert not (tmp_path / "icon").exists()
+
+
+def _partial_extraction_lsar_json(archive_path):
+    return {
+        "lsarFormatName": "Gzip",
+        "lsarInnerFormatName": "Tar",
+        "lsarProperties": {"XADVolumes": [str(archive_path)]},
+        "lsarContents": [],
+    }
+
+
+def _fake_partial_unar_cmd(archive_path, tar_result):
+    def fake_cmd(*command, **_kwargs):
+        if command[0] == "lsar":
+            return subprocess.CompletedProcess(command, 0, stdout=json.dumps(_partial_extraction_lsar_json(archive_path)), stderr="")
+        if command[0] == "unar":
+            raise subprocess.CalledProcessError(
+                1,
+                command,
+                output="",
+                stderr="  ./etc  (10 B)... Failed! (Could not create directory)\n1626 files failed.",
+            )
+        if command[0] == "tar":
+            return tar_result(command)
+        raise AssertionError(command)
+
+    return fake_cmd
+
+
+def test_unar_delete_retries_partial_extraction_with_tar(tmp_path, monkeypatch):
+    archive_path = tmp_path / "site.tar.gz"
+    archive_path.write_bytes(b"archive")
+    output_path = tmp_path / "site"
+
+    def fake_tar(command):
+        target = Path(command[command.index("-C") + 1])
+        (target / "etc").mkdir()
+        (target / "etc" / "config.php").write_text("<?php")
+        (target / "public_html").mkdir()
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(processes, "cmd", _fake_partial_unar_cmd(archive_path, fake_tar))
+    monkeypatch.setattr(processes.shutil, "which", lambda _name: "/usr/bin/tar")
+
+    output, updates = processes.unar_delete(str(archive_path))
+
+    assert output == str(output_path)
+    assert updates == []
+    assert (output_path / "etc" / "config.php").read_text() == "<?php"
+    assert not archive_path.exists()
+
+
+def test_unar_delete_keeps_archive_when_partial_extraction_cannot_be_recovered(tmp_path, monkeypatch):
+    archive_path = tmp_path / "site.tar.gz"
+    archive_path.write_bytes(b"archive")
+    output_path = tmp_path / "site"
+
+    def fail_tar(command):
+        raise subprocess.CalledProcessError(2, command)
+
+    monkeypatch.setattr(processes, "cmd", _fake_partial_unar_cmd(archive_path, fail_tar))
+    monkeypatch.setattr(processes.shutil, "which", lambda _name: "/usr/bin/tar")
+
+    output, updates = processes.unar_delete(str(archive_path))
+
+    assert output == str(output_path)
+    assert updates == []
+    assert archive_path.exists()
+    assert list(tmp_path.glob(".unar-tar-fallback-*")) == []
 
 
 @patch("importlib.import_module")
