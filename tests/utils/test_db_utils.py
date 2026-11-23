@@ -1,7 +1,66 @@
+import json
+import sqlite3
+import struct
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from library.utils import consts, db_utils, sql_utils
+
+
+def _connect_args(database):
+    return SimpleNamespace(database=str(database), verbose=0)
+
+
+def _create_db(path):
+    with sqlite3.connect(path) as conn:
+        conn.execute("CREATE TABLE media (id INTEGER PRIMARY KEY, value TEXT)")
+        conn.executemany("INSERT INTO media (value) VALUES (?)", [(f"row{i}",) for i in range(1000)])
+    return path
+
+
+def _page_count(path):
+    with open(path, "rb") as f:
+        header = f.read(100)
+    return struct.unpack(">I", header[28:32])[0], struct.unpack(">H", header[16:18])[0]
+
+
+def test_connect_valid_database(tmp_path):
+    db_path = _create_db(tmp_path / "valid.db")
+
+    db = db_utils.connect(_connect_args(db_path))
+
+    assert db["media"].count == 1000
+    db.conn.close()
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_message"),
+    [
+        ("truncated", "truncated"),
+        ("not_a_database", "corrupt"),
+    ],
+)
+def test_connect_corrupt_database(tmp_path, caplog, mutation, expected_message):
+    db_path = _create_db(tmp_path / "corrupt.db")
+
+    if mutation == "truncated":
+        page_count, page_size = _page_count(db_path)
+        assert page_count > 2
+        with open(db_path, "r+b") as f:
+            f.truncate(page_size * 2)
+    else:
+        db_path.write_bytes(json.dumps({"not": "sqlite"}).encode())
+
+    with pytest.raises(SystemExit) as excinfo:
+        db_utils.connect(_connect_args(db_path))
+
+    assert excinfo.value.code == 1
+    assert str(db_path) in caplog.text
+    assert expected_message in caplog.text
+    assert ".recover" in caplog.text
 
 
 def test_includes():

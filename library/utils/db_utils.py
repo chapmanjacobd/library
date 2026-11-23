@@ -1,8 +1,8 @@
-import itertools, sqlite3
+import itertools, shlex, sqlite3, struct
 from collections.abc import Iterable
 from pathlib import Path
 from textwrap import dedent
-from typing import Any
+from typing import Any, NoReturn
 
 from library.utils import consts, iterables, nums, strings
 from library.utils.log_utils import log
@@ -13,6 +13,66 @@ from sqlite_utils import Database
 def trace(sql, params) -> None:
     sql = strings.remove_consecutives(dedent(sql), "\n")
     log.info(f"SQL: {sql} - params: {params}")
+
+
+SQLITE_HEADER_SIZE = 100
+
+
+def _is_corruption_error(excinfo: sqlite3.DatabaseError) -> bool:
+    message = str(excinfo).lower()
+    return any(hint in message for hint in ["malformed", "not a database", "corrupt", "disk image"])
+
+
+def _header_size_mismatch(database: str) -> str | None:
+    """Describe a database file that is shorter than its own header claims.
+
+    This is the signature of an interrupted copy or a partially-written restore.
+
+    Returns
+    -------
+    str | None
+        A size mismatch description, or None when the file is too short to tell
+        or when a WAL file may hold the missing pages.
+
+    """
+    wal_path = Path(f"{database}-wal")
+    if wal_path.exists() and wal_path.stat().st_size > 0:
+        return None
+
+    try:
+        with open(database, "rb") as f:
+            header = f.read(SQLITE_HEADER_SIZE)
+        actual_size = Path(database).stat().st_size
+    except OSError:
+        return None
+
+    if len(header) < SQLITE_HEADER_SIZE or not header.startswith(b"SQLite format 3\x00"):
+        return None
+
+    page_size = struct.unpack(">H", header[16:18])[0]
+    if page_size == 1:
+        page_size = 65536
+    page_count = struct.unpack(">I", header[28:32])[0]
+    expected_size = page_size * page_count
+    if not page_count or expected_size <= actual_size:
+        return None
+
+    return f"file is {actual_size:,} bytes but its header expects {expected_size:,} bytes"
+
+
+def _exit_on_corrupt_database(args) -> NoReturn:
+    quoted_database = shlex.quote(str(args.database))
+    log.error("Database file '%s' is corrupt and cannot be read.", args.database)
+    mismatch = _header_size_mismatch(args.database)
+    if mismatch:
+        log.error("The %s, so it was likely truncated.", mismatch)
+    log.error(
+        "Restore it from a backup, or salvage the readable rows into a new database with:\n"
+        "  sqlite3 %s '.recover' | sqlite3 %s.recovered",
+        quoted_database,
+        quoted_database,
+    )
+    raise SystemExit(1)
 
 
 def connect(args, conn=None, **kwargs):
@@ -70,12 +130,18 @@ def connect(args, conn=None, **kwargs):
         )
         raise SystemExit(1)
 
-    db = DB(conn or args.database, tracer=tracer, **kwargs)  # type: ignore
-    with db.conn:  # type: ignore
-        db.conn.execute("PRAGMA threads = 4")  # type: ignore
-        db.conn.execute("PRAGMA main.cache_size = -8000")  # type: ignore
+    try:
+        db = DB(conn or args.database, tracer=tracer, **kwargs)  # type: ignore
+        with db.conn:  # type: ignore
+            db.conn.execute("PRAGMA threads = 4")  # type: ignore
+            db.conn.execute("PRAGMA main.cache_size = -8000")  # type: ignore
 
-    db.enable_wal()
+        db.enable_wal()
+    except sqlite3.DatabaseError as excinfo:
+        if not _is_corruption_error(excinfo):
+            raise
+        _exit_on_corrupt_database(args)
+
     return db
 
 
