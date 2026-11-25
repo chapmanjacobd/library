@@ -2123,7 +2123,7 @@ wheels = [
 
 [[package]]
 name = "library"
-version = "4.0.9"
+version = "4.0.10"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
