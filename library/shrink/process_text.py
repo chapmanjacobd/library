@@ -247,7 +247,8 @@ def _package_epub(args, opf_path, epub_path, css_path):
         "--epub-inline-toc",
         "--dont-split-on-page-breaks",
         "--epub-max-image-size=none",
-        "--output-profile tablet",
+        "--output-profile",
+        "tablet",
         f"--extra-css={css_path}",
     ]
     if args.simulate:
