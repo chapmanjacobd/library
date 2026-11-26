@@ -4753,7 +4753,8 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         library torrent info query
 
     Positional torrent searches use the path aligned with torrent status by default.
-    Search a specific path field or both fields with --path-search:
+    Search a specific path field or both fields with --path-search.
+    Each torrent's content path is always searched too:
 
         library torrent info --dl --path-search save /mnt/d4/
         library torrent info --dl --path-search both /mnt/d4/
