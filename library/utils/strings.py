@@ -588,6 +588,12 @@ def _glob_normalize(value, case_sensitive):
     return str(value) if case_sensitive else str(value).casefold()
 
 
+def _glob_match(search_term, text, case_sensitive):
+    search_term = _glob_normalize(search_term, case_sensitive)
+    text = _glob_normalize(text, case_sensitive)
+    return search_term in text or fnmatch(text, "*" + search_term + "*")
+
+
 def glob_match_any(search_terms, texts, case_sensitive=False):
     if isinstance(search_terms, str):
         search_terms = [search_terms]
@@ -597,12 +603,11 @@ def glob_match_any(search_terms, texts, case_sensitive=False):
     if not search_terms or not texts:
         return False
 
-    texts = [_glob_normalize(t, case_sensitive) for t in texts if t]
+    texts = [t for t in texts if t]
 
     for search_term in search_terms:
-        search_pattern = "*" + _glob_normalize(search_term, case_sensitive) + "*"
         for text in texts:
-            if fnmatch(text, search_pattern):
+            if _glob_match(search_term, text, case_sensitive):
                 return True
 
     return False
@@ -617,18 +622,10 @@ def glob_match_all(search_terms, texts, case_sensitive=False):
     if not search_terms or not texts:
         return False
 
-    processed_texts = [_glob_normalize(t, case_sensitive) for t in texts if t]
+    texts = [t for t in texts if t]
 
     for search_term in search_terms:
-        search_pattern = "*" + _glob_normalize(search_term, case_sensitive) + "*"
-        found_match = False
-        for text in processed_texts:
-            if fnmatch(text, search_pattern):
-                found_match = True
-                break
-
-        # if after checking all texts, no match was found for the specific term
-        if not found_match:
+        if not any(_glob_match(search_term, text, case_sensitive) for text in texts):
             return False
 
     return True

@@ -178,6 +178,7 @@ def test_filter_torrents_by_criteria_searches_selected_path(monkeypatch, path_se
 
 def test_filter_torrents_by_criteria_searches_content_path(monkeypatch):
     monkeypatch.setattr(torrents_info, "torrent_files", lambda _torrent: [])
+    content_path = "/mnt/d4/downloading/incomplete [Group]/incomplete.mp4"
     torrents = [
         SimpleNamespace(
             name="incomplete",
@@ -185,14 +186,14 @@ def test_filter_torrents_by_criteria_searches_content_path(monkeypatch):
             hash="abc",
             save_path="/mnt/d5/seeding",
             download_path="/mnt/d4/downloading",
-            content_path="/mnt/d4/downloading/incomplete",
+            content_path=content_path,
             state_enum=SimpleNamespace(is_complete=False),
         ),
     ]
     args = Arguments(
         defaults=Arguments(),
         avg_sizes=lambda _size: True,
-        torrent_search=["/mnt/d4/downloading/incomplete"],
+        torrent_search=[content_path],
     )
 
     assert [t.name for t in torrents_info.filter_torrents_by_criteria(args, torrents)] == ["incomplete"]
