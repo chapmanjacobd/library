@@ -486,12 +486,18 @@ def torrent_paths_for_search(args, t):
     if path_search is None:
         path_search = "status"
     if path_search == "download":
-        return [t.download_path]
-    if path_search == "save":
-        return [t.save_path]
-    if path_search == "both":
-        return [t.download_path, t.save_path]
-    return [t.save_path if t.state_enum.is_complete else t.download_path]
+        paths = [t.download_path]
+    elif path_search == "save":
+        paths = [t.save_path]
+    elif path_search == "both":
+        paths = [t.download_path, t.save_path]
+    else:
+        paths = [t.save_path if t.state_enum.is_complete else t.download_path]
+
+    content_path = getattr(t, "content_path", None)
+    if content_path and content_path not in paths:
+        paths.append(content_path)
+    return paths
 
 
 def torrent_paths_on_different_drives(t):

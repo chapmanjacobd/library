@@ -3189,7 +3189,7 @@ def _qBittorrent_torrent_state(parser):
     parser.add_argument(
         "--path-search",
         choices=["status", "download", "save", "both"],
-        help="Path used by positional torrent searches: status, download, save, or both",
+        help="Path used by positional torrent searches: status, download, save, or both (content paths are always searched)",
     )
 
 

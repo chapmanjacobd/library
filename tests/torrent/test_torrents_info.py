@@ -87,16 +87,17 @@ def test_set_torrent_paths_preserves_save_path_when_only_temp_path_changes():
 @pytest.mark.parametrize(
     ("path_search", "expected"),
     [
-        ("status", ["/old/temp"]),
-        ("download", ["/old/temp"]),
-        ("save", ["/old/save"]),
-        ("both", ["/old/temp", "/old/save"]),
+        ("status", ["/old/temp", "/old/temp/name"]),
+        ("download", ["/old/temp", "/old/temp/name"]),
+        ("save", ["/old/save", "/old/temp/name"]),
+        ("both", ["/old/temp", "/old/save", "/old/temp/name"]),
     ],
 )
 def test_torrent_paths_for_search(path_search, expected):
     torrent = SimpleNamespace(
         save_path="/old/save",
         download_path="/old/temp",
+        content_path="/old/temp/name",
         state_enum=SimpleNamespace(is_complete=False),
     )
     args = SimpleNamespace(path_search=path_search)
@@ -104,18 +105,31 @@ def test_torrent_paths_for_search(path_search, expected):
     assert torrents_info.torrent_paths_for_search(args, torrent) == expected
 
 
+def test_torrent_paths_for_search_skips_duplicate_content_path():
+    torrent = SimpleNamespace(
+        save_path="/old/save",
+        download_path="/old/temp",
+        content_path="/old/save",
+        state_enum=SimpleNamespace(is_complete=True),
+    )
+    args = SimpleNamespace(path_search="save")
+
+    assert torrents_info.torrent_paths_for_search(args, torrent) == ["/old/save"]
+
+
 @pytest.mark.parametrize(
     ("different_drives", "expected"),
     [
-        (None, ["/old/temp"]),
-        (True, ["/old/temp", "/old/save"]),
-        (False, ["/old/temp", "/old/save"]),
+        (None, ["/old/temp", "/old/temp/name"]),
+        (True, ["/old/temp", "/old/save", "/old/temp/name"]),
+        (False, ["/old/temp", "/old/save", "/old/temp/name"]),
     ],
 )
 def test_torrent_paths_for_search_defaults_to_status_or_both(different_drives, expected):
     torrent = SimpleNamespace(
         save_path="/old/save",
         download_path="/old/temp",
+        content_path="/old/temp/name",
         state_enum=SimpleNamespace(is_complete=False),
     )
     args = SimpleNamespace(different_drives=different_drives)
@@ -160,6 +174,28 @@ def test_filter_torrents_by_criteria_searches_selected_path(monkeypatch, path_se
     )
 
     assert [t.name for t in torrents_info.filter_torrents_by_criteria(args, torrents)] == expected
+
+
+def test_filter_torrents_by_criteria_searches_content_path(monkeypatch):
+    monkeypatch.setattr(torrents_info, "torrent_files", lambda _torrent: [])
+    torrents = [
+        SimpleNamespace(
+            name="incomplete",
+            comment="",
+            hash="abc",
+            save_path="/mnt/d5/seeding",
+            download_path="/mnt/d4/downloading",
+            content_path="/mnt/d4/downloading/incomplete",
+            state_enum=SimpleNamespace(is_complete=False),
+        ),
+    ]
+    args = Arguments(
+        defaults=Arguments(),
+        avg_sizes=lambda _size: True,
+        torrent_search=["/mnt/d4/downloading/incomplete"],
+    )
+
+    assert [t.name for t in torrents_info.filter_torrents_by_criteria(args, torrents)] == ["incomplete"]
 
 
 def test_torrent_paths_on_different_drives(monkeypatch):
