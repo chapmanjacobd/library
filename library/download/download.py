@@ -68,7 +68,7 @@ def parse_args(usage=None, *, links: bool = False, database_positional: bool = F
         # not database filters, so keep them as paths
         args.paths = args.paths or []
     else:
-        arggroups.database_paths_post(args, legacy_database=False)
+        arggroups.database_paths_post(args)
 
     args.extract_links = links or getattr(args, "recursive", False) or getattr(args, "webcache", False)
 

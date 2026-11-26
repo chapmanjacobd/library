@@ -22,6 +22,10 @@ def parse_utils():
 
     arggroups.database(parser)
     args, unknown_args = parser.parse_known_args()
+    if getattr(args, "db", None):
+        args.database = args.db
+    if not args.database:
+        parser.error("the following arguments are required: DATABASE (or --db)")
     Path(args.database).touch()
     args.db = db_utils.connect(args)
     return args, unknown_args

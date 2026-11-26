@@ -55,7 +55,7 @@ def parse_args(defaults_override=None):
     arggroups.paths_or_stdin(parser, required=False)
     parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_intermixed_args()
-    arggroups.database_paths_post(args, legacy_database=True)
+    arggroups.database_paths_post(args)
     arggroups.args_post(args, parser)
 
     arggroups.files_post(args)

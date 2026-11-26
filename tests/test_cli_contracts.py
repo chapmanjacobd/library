@@ -14,6 +14,8 @@ from library import usage
 from library.database.add import gallery_add, tube_add
 from library.database.manage import dedupe_media
 from library.download import download
+from library.links import links_open
+from library.play import play_actions
 from library.shrink import process_image
 from library.playback import playback_control
 from library.utils import arggroups, argparse_utils, consts, objects
@@ -639,33 +641,32 @@ def test_top_level_filesystem_routes_dispatch_to_migrated_commands(monkeypatch):
     ]
 
 
-def test_migrated_path_parsers_promote_legacy_database_position():
+def test_database_paths_post_does_not_promote_positional_database():
     args = argparse.Namespace(database=None, paths=["tests/data/video.db", "path-filter"], include=[])
 
-    arggroups.database_paths_post(args, legacy_database=True)
+    arggroups.database_paths_post(args)
 
-    assert args.database == "tests/data/video.db"
-    assert args.include == ["path-filter"]
-    assert args.paths == []
+    assert args.database is None
+    assert args.paths == ["tests/data/video.db", "path-filter"]
+    assert args.include == []
 
 
-def test_migrated_path_parsers_promote_memory_database():
+def test_database_paths_post_does_not_promote_memory_database():
     args = argparse.Namespace(database=None, paths=[":memory:", "path-filter"], include=[])
 
-    arggroups.database_paths_post(args, legacy_database=True)
+    arggroups.database_paths_post(args)
 
-    assert argparse_utils.is_sqlite(":memory:")
-    assert args.database == ":memory:"
-    assert args.include == ["path-filter"]
-    assert args.paths == []
+    assert args.database is None
+    assert args.paths == [":memory:", "path-filter"]
+    assert args.include == []
 
 
-def test_migrated_path_parsers_keep_non_sqlite_db_path(tmp_path):
+def test_database_paths_post_keeps_positional_db_path(tmp_path):
     path = tmp_path / "archive.db"
     path.write_text("not a database")
     args = argparse.Namespace(database=None, paths=[str(path)], include=[])
 
-    arggroups.database_paths_post(args, legacy_database=True)
+    arggroups.database_paths_post(args)
 
     assert args.database is None
     assert args.paths == [str(path)]
@@ -687,6 +688,54 @@ def test_database_paths_post_moves_explicit_paths_to_filters():
 
     assert args.include == ["path-filter"]
     assert args.paths == []
+
+
+def test_required_database_accepts_positional(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links-open", v_db])
+
+    args = links_open.parse_args()
+
+    assert args.database == v_db
+
+
+def test_required_database_flag_skips_positional_slot(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links-open", "--db", v_db, "query"])
+
+    args = links_open.parse_args()
+
+    assert args.database == v_db
+    assert args.search == ["query"]
+
+
+def test_required_database_flag_satisfies_positional(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links-open", "--db", v_db])
+
+    args = links_open.parse_args()
+
+    assert args.database == v_db
+
+
+def test_required_database_last_flag_wins(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links-open", "--db", "ignored.db", "--db", v_db])
+
+    args = links_open.parse_args()
+
+    assert args.database == v_db
+
+
+def test_required_database_missing_errors(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["links", "open"])
+
+    with pytest.raises(SystemExit):
+        links_open.parse_args()
+
+
+def test_optional_database_last_flag_wins(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["play", "video", "--db", "ignored.db", "--db", v_db, "-p"])
+
+    args = play_actions.parse_args(SC.watch)
+
+    assert args.database == v_db
 
 
 def test_expand_profiles_auto_expands_to_all_media_types(monkeypatch):

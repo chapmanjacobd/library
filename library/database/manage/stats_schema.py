@@ -123,7 +123,7 @@ def schema_stats(
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(description=__doc__)
-    parser.add_argument("database")
+    parser.add_argument("database").database_positional = True
     parser.add_argument("--db", dest="database_override", metavar="DATABASE")
     parser.add_argument("--table")
     parser.add_argument("--kind", choices=SCHEMA_KINDS, help="filter results by schema object kind")

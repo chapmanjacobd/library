@@ -94,7 +94,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.database_optional(parser)
     arggroups.paths_or_stdin(parser, required=False)
     args = parser.parse_intermixed_args()
-    arggroups.database_paths_post(args, legacy_database=True)
+    arggroups.database_paths_post(args)
     arggroups.args_post(args, parser)
 
     arggroups.files_post(args)

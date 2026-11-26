@@ -92,6 +92,11 @@ def args_post(args, parser, create_db=False):
 
     args.action = (get_caller_name() or "").replace("_", "-")
 
+    if getattr(args, "db", None):
+        args.database = args.db
+    if getattr(parser, "database_required", False) and not getattr(args, "database", None):
+        parser.error("the following arguments are required: DATABASE (or --db)")
+
     if create_db:
         if getattr(args, "simulate", False):
             args.db = db_utils.connect(args, memory=True)
@@ -246,8 +251,10 @@ def capability_delete(parent_parser):
 
 def database(parent_parser, *, soft_delete=True):
     parser = parent_parser.add_argument_group("Database")
-    parser.add_argument("--db", "-db", help="Positional argument override")
-    parser.add_argument("database")
+    parser.add_argument("--db", "-db", metavar="DATABASE", help="SQLite database to query (overrides DATABASE)")
+    positional = parser.add_argument("database", metavar="DATABASE")
+    positional.database_positional = True
+    parent_parser.database_required = True
     if soft_delete:
         capability_soft_delete(parent_parser)
     capability_delete(parent_parser)
@@ -257,6 +264,7 @@ def database_optional(parent_parser, *, soft_delete=True):
     parser = parent_parser.add_argument_group("Database")
     parser.add_argument("--db", "-db", dest="database", metavar="DATABASE", help="SQLite database to query")
     parent_parser.set_defaults(db=None)
+    parent_parser.database_required = False
     if soft_delete:
         capability_soft_delete(parent_parser)
     capability_delete(parent_parser)
@@ -278,13 +286,7 @@ def paths_or_stdin(parent_parser, required=True, destination=False):
         )
 
 
-def database_paths_post(args, *, legacy_database=False):
-    if legacy_database and not args.database and args.paths:
-        candidate = args.paths[0]
-        if argparse_utils.is_sqlite(candidate):
-            args.database = candidate
-            args.paths = args.paths[1:]
-
+def database_paths_post(args):
     if args.database:
         args.include.extend(args.paths or [])
         args.paths = []

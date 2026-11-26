@@ -231,7 +231,7 @@ def _postprocess_args(args, parser, action):
     if args.chromecast and action not in (SC.watch, SC.listen):
         parser.error("--chromecast is supported only with watch or listen")
 
-    arggroups.database_paths_post(args, legacy_database=True)
+    arggroups.database_paths_post(args)
     arggroups.args_post(args, parser)
     arggroups.sql_fs_post(args)
     arggroups.files_post(args)

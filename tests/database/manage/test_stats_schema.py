@@ -51,3 +51,9 @@ def test_parse_args_accepts_kind():
     args = stats_schema.parse_args(["schema.db", "--kind", "index"])
 
     assert args.kind == "index"
+
+
+def test_parse_args_db_flag_replaces_positional_database():
+    args = stats_schema.parse_args(["--db", "override.db"])
+
+    assert args.database == "override.db"

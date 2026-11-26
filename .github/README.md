@@ -63,9 +63,9 @@ new files are read by `ffprobe`.
 
 ### 2. Watch / Listen from local files
 
-    library play video tv.db                           # the default post-action is to do nothing
-    library play video tv.db --post-action delete      # delete file after playing
-    library play audio finalists.db -k ask_delete      # ask whether to delete file after playing
+    library play video --db tv.db                           # the default post-action is to do nothing
+    library play video --db tv.db --post-action delete      # delete file after playing
+    library play audio --db finalists.db -k ask_delete      # ask whether to delete file after playing
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -113,7 +113,7 @@ any videos not seen before.
 
 ### 2. Watch / Listen from websites
 
-    library play video maker.db
+    library play video --db maker.db
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -487,17 +487,17 @@ flat commands are now only reachable through a group (for example
 ### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/mealtime.tw.db
-    library play video --random --duration 30m mealtime.tw.db
+    library play video --db mealtime.tw.db --random --duration 30m
 
 ### Listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/library-examples/raw/main/music.tl.db
-    library play audio -ct "House speakers" --random music.tl.db
+    library play audio --db music.tl.db -ct "House speakers" --random
 
 ### Hook into HackerNews
 
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
-    library play video --random --ignore-errors hackernews_only_direct.tw.db
+    library play video --db hackernews_only_direct.tw.db --random --ignore-errors
 
 ### Organize via separate databases
 
@@ -519,7 +519,7 @@ flat commands are now only reachable through a group (for example
 
 Wake up to your own music
 
-    30 7 * * * library play audio ./audio.db
+    30 7 * * * library play audio --db ./audio.db
 
 Wake up to your own music _only when you are *not* home_ (computer on local IP)
 
@@ -597,19 +597,19 @@ Incremental surfing. 📈🏄 totally rad!
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
 The folder large subcommand serves that purpose:
 
-    $ library folder large fs/d.db
+    $ library folder large --db fs/d.db
 
 Filter by folder depth (similar to QDirStat or WizTree)
 
-    $ library folder large --depth=3 audio.db
+    $ library folder large --db audio.db --depth=3
 
 There is also a flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--you can see who wrote those songs and delete all their other songs...)
 
-    $ library folder large --sort-groups-by deleted audio.db
+    $ library folder large --db audio.db --sort-groups-by deleted
 
 The play subcommands also support this functionality:
 
-    $ library play video --big-dirs ./my.db
+    $ library play video --db ./my.db --big-dirs
     $ library play video -B  # shorthand equivalent
 
 </details>
@@ -654,7 +654,7 @@ end
 
 You can use fzf in a subshell to choose a specific video from 1000 random options
 
-    library play video ~/lb/video.db (library play video ~/lb/video.db -pf --random -L 1000 | fzf)
+    library play video --db ~/lb/video.db (library play video --db ~/lb/video.db -pf --random -L 1000 | fzf)
 
 </details>
 

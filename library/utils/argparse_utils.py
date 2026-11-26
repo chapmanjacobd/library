@@ -1,4 +1,4 @@
-import argparse, json, shlex, sys
+import argparse, contextlib, json, shlex, sys
 
 from library.utils import nums
 from library.utils.consts import SQLITE_EXTENSIONS
@@ -257,6 +257,10 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
         return "".join(subactions) + format_two_columns(left, help_text)
 
 
+def has_database_flag(argv):
+    return any(arg in {"--db", "-db"} or arg.startswith(("--db=", "-db=")) for arg in argv)
+
+
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
         usage = kwargs.get("usage")
@@ -275,6 +279,44 @@ class ArgumentParser(argparse.ArgumentParser):
         kwargs["prog"] = canonical_prog or " ".join((usage or "").split(" ", maxsplit=3)[0:2]).strip() or None
         kwargs["formatter_class"] = lambda prog: CustomHelpFormatter(prog, max_help_position=40)
         super().__init__(*args, **kwargs)
+
+    def _without_database_positional(self, args):
+        argv = list(sys.argv[1:] if args is None else args)
+        if not has_database_flag(argv):
+            return contextlib.nullcontext()
+
+        database_actions = [
+            action
+            for action in self._actions  # ruff: ignore[private-member-access]
+            if getattr(action, "database_positional", False)
+        ]
+        if not database_actions:
+            return contextlib.nullcontext()
+
+        positions = [
+            (self._actions.index(action), action)  # ruff: ignore[private-member-access]
+            for action in database_actions
+        ]
+
+        @contextlib.contextmanager
+        def temporarily_removed():
+            for action in database_actions:
+                self._actions.remove(action)  # ruff: ignore[private-member-access]
+            try:
+                yield
+            finally:
+                for position, action in sorted(positions):
+                    self._actions.insert(position, action)  # ruff: ignore[private-member-access]
+
+        return temporarily_removed()
+
+    def parse_known_args(self, args=None, namespace=None):
+        with self._without_database_positional(args):
+            return super().parse_known_args(args, namespace)
+
+    def parse_known_intermixed_args(self, args=None, namespace=None):
+        with self._without_database_positional(args):
+            return super().parse_known_intermixed_args(args, namespace)
 
 
 def arggroup_parser(functions):

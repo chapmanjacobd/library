@@ -436,7 +436,7 @@ def enrich_database(  # ruff: ignore[too-many-branches, too-many-statements] - e
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(description=__doc__)
-    parser.add_argument("database")
+    parser.add_argument("database").database_positional = True
     parser.add_argument("--db", dest="database_override", metavar="DATABASE")
     parser.add_argument("--table", default="media")
     parser.add_argument("--force", "-f", action="store_true")
