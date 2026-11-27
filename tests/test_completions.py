@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
@@ -151,11 +152,17 @@ def test_install_zsh_writes_completion_files(tmp_path, monkeypatch):
 
 def test_install_powershell_writes_completion_file(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
 
     paths = completions.install("powershell")
 
+    if os.name == "nt":
+        completion_dir = tmp_path / "home" / "Documents" / "PowerShell" / "completions"
+    else:
+        completion_dir = tmp_path / "config" / "powershell" / "completions"
+
     assert [path.name for path in paths] == ["lb.ps1"]
-    assert paths[0] == tmp_path / "config" / "powershell" / "completions" / "lb.ps1"
+    assert paths[0] == completion_dir / "lb.ps1"
     assert "Register-ArgumentCompleter" in paths[0].read_text(encoding="utf-8")
 
 
