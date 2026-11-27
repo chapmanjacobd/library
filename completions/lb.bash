@@ -2275,7 +2275,7 @@ _lb_complete() {
             ;;
         completions|completion)
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=($(compgen -W '-h --help --list' -- "$cur"))
+                COMPREPLY=($(compgen -W '-h --help --list --install --uninstall --force' -- "$cur"))
                 return 0
             fi
             COMPREPLY=($(compgen -W 'bash zsh fish powershell' -- "$cur"))

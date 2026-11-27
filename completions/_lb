@@ -2286,7 +2286,7 @@ _lb() {
             ;;
         'completions'|'completion')
             if [[ $cur == -* ]]; then
-                compadd -- '-h' '--help' '--list'
+                compadd -- '-h' '--help' '--list' '--install' '--uninstall' '--force'
                 return
             fi
             compadd -- 'bash' 'zsh' 'fish' 'powershell'

@@ -160,15 +160,18 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>Shell completions</summary>
 
 Bash, zsh, fish, and PowerShell completions are generated from the same
-command tree and argparse parsers. Install them directly:
+command tree and argparse parsers. After `pip install library`, install
+completions for your current shell:
 
-    library completions bash > ~/.local/share/bash-completion/completions/lb
-    library completions zsh > "${{fpath[1]}}/_lb"
-    library completions fish > ~/.config/fish/completions/lb.fish
-    library completions powershell > ~/.config/powershell/lb.ps1  # dot-source from $PROFILE
+    library completions --install
 
-Ready-to-install files are also in the `completions/` directory, and
-`library completions --list` prints the supported shells.
+Install for specific shells (or all supported shells) with:
+
+    library completions --install bash zsh fish powershell
+
+Remove generated files with `library completions --uninstall`. Ready-to-install
+files are also in the `completions/` directory. The `--list` flag prints the
+supported shells.
 
 </details>
 
