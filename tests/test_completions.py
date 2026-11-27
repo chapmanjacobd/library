@@ -48,6 +48,12 @@ def test_completion_commands_include_parser_options_and_choices():
     )
 
 
+def test_completion_commands_include_positional_choices():
+    command = completions.completion_commands()["completions",]
+
+    assert command.positional_choices == completions.available_shells()
+
+
 def test_completions_command_lists_supported_shells(capsys):
     lb(["completions", "--list"])
 

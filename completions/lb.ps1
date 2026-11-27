@@ -1998,7 +1998,7 @@ Register-ArgumentCompleter -Native -CommandName lb,library -ScriptBlock {
         }
         'completions' {
             if ($wordToComplete -like '-*') { New-Completion @('-h', '--help', '--list'); return }
-            New-FileCompletion
+            New-Completion @('bash', 'zsh', 'fish', 'powershell')
         }
         'database' {
             New-Completion @('add', 'download', 'redownload', 'search', 'merge', 'dedupe', 'playlists', 'history', 'stats', 'tail', 'copy', 'enrich', 'export', 'optimize', 'import', 'update')

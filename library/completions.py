@@ -82,6 +82,7 @@ class CompletionCommand:
     description: str
     options: tuple[str, ...]
     value_choices: Mapping[str, tuple[str, ...]]
+    positional_choices: tuple[str, ...] = ()
 
 
 @dataclass
@@ -95,6 +96,7 @@ class _Node:
     flat_aliases: set[str] = field(default_factory=set)
     options: tuple[str, ...] = ()
     value_choices: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    positional_choices: tuple[str, ...] = ()
 
     @property
     def is_leaf(self) -> bool:
@@ -152,13 +154,16 @@ def _capture_parser(target: str) -> argparse.ArgumentParser | None:
 
 
 @cache
-def _parser_metadata(target: str) -> tuple[tuple[str, ...], dict[str, tuple[str, ...]]]:
+def _parser_metadata(
+    target: str,
+) -> tuple[tuple[str, ...], dict[str, tuple[str, ...]], tuple[str, ...]]:
     parser = _capture_parser(target)
     if parser is None:
-        return COMMAND_HELP_OPTIONS, {}
+        return COMMAND_HELP_OPTIONS, {}, ()
 
     options: list[str] = []
     value_choices: dict[str, tuple[str, ...]] = {}
+    positional_choices: list[str] = []
     for action in parser._actions:  # ruff: ignore[private-member-access]
         for option in action.option_strings:
             if option not in options:
@@ -168,14 +173,17 @@ def _parser_metadata(target: str) -> tuple[tuple[str, ...], dict[str, tuple[str,
         if choices:
             values = tuple(str(choice) for choice in choices)
             if values and all(" " not in value for value in values):
-                for option in action.option_strings:
-                    value_choices[option] = values
+                if action.option_strings:
+                    for option in action.option_strings:
+                        value_choices[option] = values
+                else:
+                    positional_choices.extend(value for value in values if value not in positional_choices)
 
     for option in COMMAND_HELP_OPTIONS:
         if option not in options:
             options.append(option)
 
-    return tuple(options), value_choices
+    return tuple(options), value_choices, tuple(positional_choices)
 
 
 def _invert_aliases(aliases: Mapping[str, str]) -> dict[str, tuple[str, ...]]:
@@ -218,9 +226,10 @@ def _find_node(root: _Node, path: Sequence[str]) -> _Node | None:
 
 def _annotate(node: _Node) -> None:
     if node.target:
-        options, value_choices = _parser_metadata(node.target)
+        options, value_choices, positional_choices = _parser_metadata(node.target)
         node.options = options
         node.value_choices = value_choices
+        node.positional_choices = positional_choices
     for child in node.children.values():
         _annotate(child)
 
@@ -315,6 +324,7 @@ def completion_commands() -> dict[tuple[str, ...], CompletionCommand]:
                 description=node.description,
                 options=node.options,
                 value_choices=dict(node.value_choices),
+                positional_choices=node.positional_choices,
             )
     return commands
 
@@ -458,13 +468,18 @@ def bash_script() -> str:
                         "            fi",
                     ]
                 )
-            lines.extend(
-                [
-                    "            compopt -o default 2>/dev/null || true",
-                    "            COMPREPLY=()",
-                    "            return 0",
-                ]
-            )
+            if node.positional_choices:
+                lines.extend(
+                    ["            " + _bash_compgen(" ".join(node.positional_choices)), "            return 0"]
+                )
+            else:
+                lines.extend(
+                    [
+                        "            compopt -o default 2>/dev/null || true",
+                        "            COMPREPLY=()",
+                        "            return 0",
+                    ]
+                )
         lines.append("            ;;")
 
     lines.extend(
@@ -578,7 +593,16 @@ def zsh_script() -> str:
                         "            fi",
                     ]
                 )
-            lines.extend(["            _files", "            return"])
+            if node.positional_choices:
+                lines.extend(
+                    [
+                        "            compadd -- "
+                        + " ".join(_zsh_quote(value) for value in node.positional_choices),
+                        "            return",
+                    ]
+                )
+            else:
+                lines.extend(["            _files", "            return"])
         lines.append("            ;;")
 
     lines.extend(["    esac", "}", "", '_lb "$@"', ""])
@@ -596,7 +620,7 @@ def _fish_condition(path_patterns: Sequence[str]) -> str:
     return f"contains -- (__lb_path) {paths}"
 
 
-def fish_script() -> str:
+def fish_script() -> str:  # ruff: ignore[too-many-branches]
     root = _completion_root()
     lines = [
         "# fish completion for library / lb",
@@ -688,7 +712,15 @@ def fish_script() -> str:
             if node.value_choices:
                 choice_options = " ".join(_fish_quote(option) for option in sorted(node.value_choices))
                 file_condition += "; and not contains -- (__lb_prev) " + choice_options
-            lines.append("complete -c lb -n " + _fish_quote(file_condition) + " -F")
+            if node.positional_choices:
+                lines.append(
+                    "complete -c lb -n "
+                    + _fish_quote(file_condition)
+                    + " -a "
+                    + _fish_quote(" ".join(node.positional_choices))
+                )
+            else:
+                lines.append("complete -c lb -n " + _fish_quote(file_condition) + " -F")
 
     lines.append("")
     return "\n".join(lines)
@@ -721,7 +753,10 @@ def _powershell_body(node: _Node, root: _Node) -> list[str]:
     else:
         if node.options:
             lines.append(f"if ($wordToComplete -like '-*') {{ New-Completion {_powershell_array(node.options)}; return }}")
-        lines.append("New-FileCompletion")
+        if node.positional_choices:
+            lines.append(f"New-Completion {_powershell_array(node.positional_choices)}")
+        else:
+            lines.append("New-FileCompletion")
     return lines
 
 

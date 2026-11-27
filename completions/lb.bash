@@ -2278,8 +2278,7 @@ _lb_complete() {
                 COMPREPLY=($(compgen -W '-h --help --list' -- "$cur"))
                 return 0
             fi
-            compopt -o default 2>/dev/null || true
-            COMPREPLY=()
+            COMPREPLY=($(compgen -W 'bash zsh fish powershell' -- "$cur"))
             return 0
             ;;
         database|db|databases)

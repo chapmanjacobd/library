@@ -2289,7 +2289,7 @@ _lb() {
                 compadd -- '-h' '--help' '--list'
                 return
             fi
-            _files
+            compadd -- 'bash' 'zsh' 'fish' 'powershell'
             return
             ;;
         'database'|'db'|'databases')
