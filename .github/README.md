@@ -149,7 +149,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.11; 144 subcommands)
+    library (v4.1.0; 144 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
