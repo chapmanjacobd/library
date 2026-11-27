@@ -1,0 +1,5 @@
+#compdef library
+
+# zsh autoloads completions by command name. Delegate `library` to `_lb`.
+autoload -Uz _lb
+_lb "$@"

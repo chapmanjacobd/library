@@ -119,6 +119,21 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 </details>
 
+<details><summary>Shell completions</summary>
+
+Bash, zsh, fish, and PowerShell completions are generated from the same
+command tree and argparse parsers. Install them directly:
+
+    library completions bash > ~/.local/share/bash-completion/completions/lb
+    library completions zsh > "${fpath[1]}/_lb"
+    library completions fish > ~/.config/fish/completions/lb.fish
+    library completions powershell > ~/.config/powershell/lb.ps1  # dot-source from $PROFILE
+
+Ready-to-install files are also in the `completions/` directory, and
+`library completions --list` prints the supported shells.
+
+</details>
+
 <details><summary>List all subcommands</summary>
 
 Commands are organized by workflow. Use `database` (or `db`) for database
@@ -131,7 +146,7 @@ flat commands are now only reachable through a group (for example
 `links extract`, `text extract`, and `torrent info`).
 
     $ library
-    library (v4.0.10; 143 subcommands)
+    library (v4.0.10; 144 subcommands)
 
     Media collection subcommands:
     ╭─────────────────────────────┬───────────────────────────────────────────────────────────────────────╮
@@ -476,6 +491,8 @@ flat commands are now only reachable through a group (for example
 
     Help subcommands:
     ╭─────────────┬──────────────────────────────────╮
+    │ completions │ Print shell completion scripts   │
+    ├─────────────┼──────────────────────────────────┤
     │ help search │ Search subcommands and help text │
     ╰─────────────┴──────────────────────────────────╯
 
@@ -4999,6 +5016,28 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 </details>
 
 ### Help subcommands
+
+###### completions
+
+<details><summary>Print shell completion scripts</summary>
+
+    $ library completions -h
+    usage: library completions [SHELL] [--list]
+
+    Print a completion script for SHELL. Supported shells: bash, zsh, fish,
+    powershell. Without SHELL, --list prints the supported shells.
+
+    Install the generated script with your shell's normal completion
+    mechanism. For example:
+
+        library completions bash > ~/.local/share/bash-completion/completions/lb
+        library completions zsh > "${fpath[1]}/_lb"
+        library completions fish > ~/.config/fish/completions/lb.fish
+
+    The repository also contains ready-to-install files in completions/.
+    
+
+</details>
 
 ###### help search
 

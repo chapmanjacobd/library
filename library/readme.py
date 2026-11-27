@@ -157,6 +157,21 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 </details>
 
+<details><summary>Shell completions</summary>
+
+Bash, zsh, fish, and PowerShell completions are generated from the same
+command tree and argparse parsers. Install them directly:
+
+    library completions bash > ~/.local/share/bash-completion/completions/lb
+    library completions zsh > "${{fpath[1]}}/_lb"
+    library completions fish > ~/.config/fish/completions/lb.fish
+    library completions powershell > ~/.config/powershell/lb.ps1  # dot-source from $PROFILE
+
+Ready-to-install files are also in the `completions/` directory, and
+`library completions --list` prints the supported shells.
+
+</details>
+
 <details><summary>List all subcommands</summary>
 
 Commands are organized by workflow. Use `database` (or `db`) for database

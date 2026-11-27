@@ -158,6 +158,7 @@ COMMANDS = (
     CommandSpec('database update gallery', 'gallery-update', ('gdl-update', 'gu'), 'library.database.add.gallery_add.gallery_update'),
     CommandSpec('database update reddit', 'reddit-update', ('ru',), 'library.database.add.reddit_add.reddit_update'),
     CommandSpec('database update links', 'links-update', (), 'library.database.add.links_add.links_update'),
+    CommandSpec('completions', 'completions', ('completion',), 'library.completions.completions'),
     CommandSpec('help search', 'search-help', ('h', 'help'), 'library.help.search_help.search_help'),
     CommandSpec(None, 'playback-ffwd', ('ffwd',), 'library.playback.playback_control.playback_ffwd'),
     CommandSpec(None, 'playback-rewind', ('rewind',), 'library.playback.playback_control.playback_rewind'),

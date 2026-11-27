@@ -194,6 +194,7 @@ progs = {
         "database update links": "Update a link-scraping database",
     },
     "Help subcommands": {
+        "completions": "Print shell completion scripts",
         "help search": "Search subcommands and help text",
     },
 }
