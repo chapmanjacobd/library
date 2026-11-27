@@ -5035,7 +5035,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         library completions fish > ~/.config/fish/completions/lb.fish
 
     The repository also contains ready-to-install files in completions/.
-    
+
 
 </details>
 

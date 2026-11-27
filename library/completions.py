@@ -62,7 +62,7 @@ USAGE = {
         library completions fish > ~/.config/fish/completions/lb.fish
 
     The repository also contains ready-to-install files in completions/.
-    """,
+""",
 }
 
 
