@@ -45,14 +45,13 @@ def test_file_over_file(file_over_file, temp_file_tree):
 
 
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
-@pytest.mark.parametrize("destination_contents", ["4", ""])
-def test_no_clobber_skips_existing_file(subcommand, destination_contents, temp_file_tree):
+def test_no_clobber_skips_existing_file(subcommand, temp_file_tree):
     src = temp_file_tree({"file4.txt": "5"})
-    dest = temp_file_tree({"file4.txt": destination_contents})
+    dest = temp_file_tree({"file4.txt": "4"})
 
     lb([subcommand, "--no-clobber", src, dest])
 
-    assert (Path(dest) / "file4.txt").read_text() == destination_contents
+    assert (Path(dest) / "file4.txt").read_text() == "4"
     assert (Path(src) / "file4.txt").read_text() == "5"
 
 

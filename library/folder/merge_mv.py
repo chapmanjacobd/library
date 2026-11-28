@@ -50,9 +50,7 @@ def parse_args(defaults_override=None):
 -I '*/.tmp/*' -I '*sad*'  # path must match either /.tmp/ or sad """,
     )
     parser.add_argument(
-        "--no-clobber",
-        action="store_true",
-        help="Skip files that already exist in the destination",
+        "--no-clobber", action="store_true", help="Shortcut for --file-over-file skip"
     )
     parser.add_argument(
         "--clobber", "--overwrite", action="store_true", help="Shortcut for --file-over-file delete-dest"
@@ -101,6 +99,9 @@ def parse_args(defaults_override=None):
             args.file_over_file = arggroups.file_over_file("skip-larger delete-dest")
         else:
             args.file_over_file = arggroups.file_over_file("delete-src-larger delete-dest")
+
+    if args.no_clobber:
+        args.file_over_file = arggroups.file_over_file("skip")
 
     args.profiles = arggroups.resolve_profiles(SC.merge_mv, args.profiles, require_deps=False)
 
@@ -292,9 +293,6 @@ def _gen_folder_dest(args, source, source_destination, shortcut_allowed):
             log.debug("rglob-file modify_depth %s %s", parts, relpath)
         file_dest = os.path.join(folder_dest, relpath)
         log.debug("rglob-file file_dest %s", file_dest)
-        if getattr(args, "no_clobber", False) and os.path.lexists(file_dest):
-            log.debug("destination exists, not clobbering %s", file_dest)
-            continue
         src, dest = devices.prepare_destination_folder_symlinks(args, folder_dest, path, file_dest)
         if src is None:
             log.debug("destination symlink skipped %s", path)

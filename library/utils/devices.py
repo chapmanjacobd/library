@@ -255,13 +255,6 @@ def _rmtree_destination(args, destination):
     return destination
 
 
-def _no_clobber(args, destination, reason: str) -> bool:
-    if getattr(args, "no_clobber", False):
-        log.info("%s; not clobbering\t%s", reason, destination)
-        return True
-    return False
-
-
 def _resolve_folder_over_file(args, source, destination, parent_dir, orig_destination):
     parent_file = parent_dir
     while not os.path.exists(parent_file):
@@ -307,8 +300,6 @@ def _clobber_missing_destination(args, source, destination, orig_destination):
     try:
         os.makedirs(parent_dir, exist_ok=True)
     except (FileExistsError, NotADirectoryError, FileNotFoundError):
-        if _no_clobber(args, destination, "Folder Over File conflict"):
-            return None, destination
         return _resolve_folder_over_file(args, source, destination, parent_dir, orig_destination)
     else:
         log.debug("Nothing to clobber %s\t%s", source, destination)
@@ -342,8 +333,6 @@ def prepare_destination_folder_symlinks(args, root, source, destination) -> tupl
 
         policy = _destination_symlink_policy(args, component)
         if policy == arggroups.DestinationSymlink.REPLACE:
-            if _no_clobber(args, component, "Destination symlink exists"):
-                return None, destination
             log.info("Replacing symlink destination\t%s", component)
             unlink(args, component)
         elif policy == arggroups.DestinationSymlink.FOLLOW and not os.path.isdir(component):
@@ -351,8 +340,6 @@ def prepare_destination_folder_symlinks(args, root, source, destination) -> tupl
             if destination == component or destination.startswith(component + os.sep):
                 destination = target + destination[len(component) :]
         elif policy == arggroups.DestinationSymlink.AS_IS:
-            if _no_clobber(args, component, "Folder Over File conflict"):
-                return None, destination
             source, destination = _resolve_folder_over_file(
                 args, source, destination, component, orig_destination
             )
@@ -391,9 +378,6 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
         return None, destination
     if getattr(args, "skip_open", False) and file_utils.is_file_open(source):
         log.info("Source already has an open file handler\t%s", destination)
-        return None, destination
-    if getattr(args, "no_clobber", False) and os.path.lexists(destination):
-        log.info("Destination exists; not clobbering\t%s", destination)
         return None, destination
 
     orig_destination = destination
