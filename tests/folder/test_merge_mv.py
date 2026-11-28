@@ -44,6 +44,33 @@ def test_file_over_file(file_over_file, temp_file_tree):
         raise NotImplementedError
 
 
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+@pytest.mark.parametrize("destination_contents", ["4", ""])
+def test_no_clobber_skips_existing_file(subcommand, destination_contents, temp_file_tree):
+    src = temp_file_tree({"file4.txt": "5"})
+    dest = temp_file_tree({"file4.txt": destination_contents})
+
+    lb([subcommand, "--no-clobber", src, dest])
+
+    assert (Path(dest) / "file4.txt").read_text() == destination_contents
+    assert (Path(src) / "file4.txt").read_text() == "5"
+
+
+@pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
+def test_no_clobber_copies_new_files(subcommand, temp_file_tree):
+    src = temp_file_tree({"file4.txt": "5", "new.txt": "new"})
+    dest = temp_file_tree({"file4.txt": "4"})
+
+    lb([subcommand, "--no-clobber", src, dest])
+
+    assert (Path(dest) / "file4.txt").read_text() == "4"
+    assert (Path(dest) / "new.txt").read_text() == "new"
+    if subcommand == "merge-mv":
+        assert not (Path(src) / "new.txt").exists()
+    else:
+        assert (Path(src) / "new.txt").read_text() == "new"
+
+
 @pytest.mark.parametrize("file_over_folder", objects.class_enum(arggroups.FileOverFolder))
 def test_file_over_folder(file_over_folder, temp_file_tree):
     src1 = temp_file_tree({"f1": "1"})
